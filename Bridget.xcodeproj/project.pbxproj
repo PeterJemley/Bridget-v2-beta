@@ -6,6 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		484A34912E32E8B100020B84 /* SwiftData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 484A34902E32E8B100020B84 /* SwiftData.framework */; };
+		484A34932E32E8BC00020B84 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 484A34922E32E8BC00020B84 /* MapKit.framework */; };
+		484A34952E32E8C400020B84 /* CoreML.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 484A34942E32E8C400020B84 /* CoreML.framework */; };
+		484A34972E32E8D400020B84 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 484A34962E32E8D400020B84 /* Accelerate.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		484A34702E32E81600020B84 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,11 +34,29 @@
 		484A34602E32E81500020B84 /* Bridget.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bridget.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		484A346F2E32E81600020B84 /* BridgetTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BridgetTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		484A34792E32E81600020B84 /* BridgetUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BridgetUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		484A34902E32E8B100020B84 /* SwiftData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftData.framework; path = System/Library/Frameworks/SwiftData.framework; sourceTree = SDKROOT; };
+		484A34922E32E8BC00020B84 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
+		484A34942E32E8C400020B84 /* CoreML.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreML.framework; path = System/Library/Frameworks/CoreML.framework; sourceTree = SDKROOT; };
+		484A34962E32E8D400020B84 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		484A34982E32E8E800020B84 /* libswiftObservation.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libswiftObservation.tbd; path = usr/lib/swift/libswiftObservation.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		484A348D2E32E85F00020B84 /* Exceptions for "Bridget" folder in "Bridget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 484A345F2E32E81500020B84 /* Bridget */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		484A34622E32E81500020B84 /* Bridget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				484A348D2E32E85F00020B84 /* Exceptions for "Bridget" folder in "Bridget" target */,
+			);
 			path = Bridget;
 			sourceTree = "<group>";
 		};
@@ -52,6 +77,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				484A34932E32E8BC00020B84 /* MapKit.framework in Frameworks */,
+				484A34972E32E8D400020B84 /* Accelerate.framework in Frameworks */,
+				484A34912E32E8B100020B84 /* SwiftData.framework in Frameworks */,
+				484A34952E32E8C400020B84 /* CoreML.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +107,7 @@
 				484A34622E32E81500020B84 /* Bridget */,
 				484A34722E32E81600020B84 /* BridgetTests */,
 				484A347C2E32E81600020B84 /* BridgetUITests */,
+				484A348F2E32E8B100020B84 /* Frameworks */,
 				484A34612E32E81500020B84 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +120,18 @@
 				484A34792E32E81600020B84 /* BridgetUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		484A348F2E32E8B100020B84 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				484A34982E32E8E800020B84 /* libswiftObservation.tbd */,
+				484A34962E32E8D400020B84 /* Accelerate.framework */,
+				484A34942E32E8C400020B84 /* CoreML.framework */,
+				484A34922E32E8BC00020B84 /* MapKit.framework */,
+				484A34902E32E8B100020B84 /* SwiftData.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -395,11 +437,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Bridget/Bridget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J5QAN9636K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Bridget/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -423,11 +467,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Bridget/Bridget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = J5QAN9636K;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Bridget/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
