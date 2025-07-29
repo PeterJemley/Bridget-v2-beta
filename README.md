@@ -304,4 +304,4 @@ Avoid `@StateObject`, `@ObservedObject`, or Combine. Instead, use `@Bindable` (O
 ### Custom Macros for Core ML
 - [ ] Consider custom macro for repetitive MLModelConfiguration boilerplate
 - [ ] Custom macro for [CLLocation] → MLMultiArray conversion patterns
-- [ ] Macro for ANE-optimized model loading with .computeUnits = .all 
+- [ ] Macro for ANE-optimized model loading with .computeUnits = .all
