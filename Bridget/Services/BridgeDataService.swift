@@ -2,45 +2,177 @@
 //  BridgeDataService.swift
 //  Bridget
 //
-//  Module: Services
-//  Purpose: Handles data ingestion and processing for bridge opening data
-//  Integration Points:
-//    - Fetches data from Seattle Open Data API (future)
-//    - Creates BridgeStatusModel instances from raw data
+//  Purpose: Historical bridge opening data service with caching infrastructure
+//  Dependencies: Foundation (URLSession, JSONDecoder, FileManager), BridgeStatusModel
+//  Integration Points: 
+//    - Fetches historical data from Seattle Open Data API: https://data.seattle.gov/resource/gm8h-9449.json
+//    - Implements retry logic with exponential backoff
+//    - Provides offline caching to disk for historical data
+//    - Creates BridgeStatusModel instances from historical API data
 //    - Generates RouteModel instances for route management
-//    - Called by ContentView to populate AppStateModel
-//    - Future: Will integrate with real-time traffic data services
+//    - Called by AppStateModel to populate historical route data
+//    - Future: Will integrate with real-time traffic data services (if available)
+//  Key Features:
+//    - Comprehensive error handling (BridgeDataError enum)
+//    - Historical data fallback for testing
+//    - JSON decoding with custom CodingKeys for historical records
+//    - Async/await network calls for historical data
+//    - Cache-first strategy for historical bridge opening records
 //
 
 import Foundation
 
 // MARK: - Data Models for JSON Decoding
 struct BridgeOpeningRecord: Codable {
-    let bridgeID: String
-    let openingTime: String
-    let closingTime: String?
+    let entitytype: String
+    let entityname: String
+    let entityid: String
+    let opendatetime: String
+    let closedatetime: String
+    let minutesopen: String
+    let latitude: String
+    let longitude: String
     
-    enum CodingKeys: String, CodingKey {
-        case bridgeID = "bridge_id"
-        case openingTime = "opening_time"
-        case closingTime = "closing_time"
+    // Computed properties for parsed values
+    var openDate: Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
+        return formatter.date(from: opendatetime)
     }
-}
-
-struct SeattleBridgeData: Codable {
-    let data: [BridgeOpeningRecord]
+    
+    var closeDate: Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
+        return formatter.date(from: closedatetime)
+    }
+    
+    var minutesOpenValue: Int? {
+        return Int(minutesopen)
+    }
+    
+    var latitudeValue: Double? {
+        return Double(latitude)
+    }
+    
+    var longitudeValue: Double? {
+        return Double(longitude)
+    }
 }
 
 // MARK: - Bridge Data Service
 class BridgeDataService {
     static let shared = BridgeDataService()
     
+    // MARK: - Cache Configuration
+    private let cacheDirectory = "BridgeCache"
+    private let cacheExpirationTime: TimeInterval = 300 // 5 minutes
+    private let maxRetryAttempts = 3
+    private let retryDelay: TimeInterval = 2.0
+    
     private init() {}
+    
+    // MARK: - Cache Management
+    private func getCacheDirectory() -> URL? {
+        guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        return documentsPath.appendingPathComponent(cacheDirectory)
+    }
+    
+    private func getCacheFileURL(for key: String) -> URL? {
+        return getCacheDirectory()?.appendingPathComponent("\(key).json")
+    }
+    
+    private func saveToCache<T: Codable>(_ data: T, for key: String) {
+        guard let cacheURL = getCacheFileURL(for: key) else { return }
+        
+        do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let data = try encoder.encode(data)
+            try data.write(to: cacheURL)
+        } catch {
+            print("Failed to save cache for key \(key): \(error)")
+        }
+    }
+    
+    private func loadFromCache<T: Codable>(_ type: T.Type, for key: String) -> T? {
+        guard let cacheURL = getCacheFileURL(for: key) else { return nil }
+        
+        do {
+            let data = try Data(contentsOf: cacheURL)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            return try decoder.decode(type, from: data)
+        } catch {
+            print("Failed to load cache for key \(key): \(error)")
+            return nil
+        }
+    }
+    
+    private func isCacheValid(for key: String) -> Bool {
+        guard let cacheURL = getCacheFileURL(for: key) else { return false }
+        
+        do {
+            let attributes = try FileManager.default.attributesOfItem(atPath: cacheURL.path)
+            guard let modificationDate = attributes[.modificationDate] as? Date else { return false }
+            
+            let cacheAge = Date().timeIntervalSince(modificationDate)
+            return cacheAge < cacheExpirationTime
+        } catch {
+            return false
+        }
+    }
     
     // MARK: - Historical Data Loading
     func loadHistoricalData() async throws -> [BridgeStatusModel] {
-        // For now, we'll use a sample URL - you'll need to replace with actual Seattle Open Data endpoint
-        guard let url = URL(string: "https://data.seattle.gov/resource/example-endpoint.json") else {
+        // Check cache first
+        if let cachedBridges: [BridgeStatusModel] = loadFromCache([BridgeStatusModel].self, for: "historical_bridges"),
+           isCacheValid(for: "historical_bridges") {
+            // Update cache metadata for all bridges
+            cachedBridges.forEach { $0.updateCacheMetadata() }
+            return cachedBridges
+        }
+        
+        // Try to load from network with retry logic
+        var lastError: Error?
+        
+        for attempt in 1...maxRetryAttempts {
+            do {
+                let bridges = try await fetchFromNetwork()
+                
+                // Update cache metadata and save to cache
+                bridges.forEach { $0.updateCacheMetadata() }
+                saveToCache(bridges, for: "historical_bridges")
+                
+                return bridges
+            } catch {
+                lastError = error
+                
+                if attempt < maxRetryAttempts {
+                    try await Task.sleep(nanoseconds: UInt64(retryDelay * Double(attempt) * 1_000_000_000))
+                }
+            }
+        }
+        
+        // If all attempts failed, try to load from cache even if stale
+        if let cachedBridges: [BridgeStatusModel] = loadFromCache([BridgeStatusModel].self, for: "historical_bridges") {
+            cachedBridges.forEach { $0.markAsStale() }
+            return cachedBridges
+        }
+        
+        throw lastError ?? BridgeDataError.networkError
+    }
+    
+    // MARK: - Network Fetching
+    private func fetchFromNetwork() async throws -> [BridgeStatusModel] {
+        var components = URLComponents(string: "https://data.seattle.gov/resource/gm8h-9449.json")!
+        components.queryItems = [
+            URLQueryItem(name: "$limit", value: "1000"),
+            URLQueryItem(name: "$order", value: "opendatetime DESC")
+        ]
+        
+        guard let url = components.url else {
             throw BridgeDataError.invalidURL
         }
         
@@ -57,25 +189,26 @@ class BridgeDataService {
     // MARK: - Data Processing
     private func processHistoricalData(_ data: Data) throws -> [BridgeStatusModel] {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
         
-        let bridgeData = try decoder.decode(SeattleBridgeData.self, from: data)
+        // The API returns an array directly, not wrapped in a "data" field
+        let bridgeRecords = try decoder.decode([BridgeOpeningRecord].self, from: data)
         
         // Group records by bridge ID
-        let groupedRecords = Dictionary(grouping: bridgeData.data) { $0.bridgeID }
+        let groupedRecords = Dictionary(grouping: bridgeRecords) { $0.entityid }
         
         // Convert to BridgeStatusModel instances
         var bridgeModels: [BridgeStatusModel] = []
         
         for (bridgeID, records) in groupedRecords {
             let openings = records.compactMap { record -> Date? in
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-                return dateFormatter.date(from: record.openingTime)
+                return record.openDate
             }
             
+            // Use the first record's entityname as the bridge name
+            let bridgeName = records.first?.entityname ?? "Unknown Bridge"
+            
             let bridgeModel = BridgeStatusModel(
-                bridgeID: bridgeID,
+                bridgeID: bridgeName,
                 historicalOpenings: openings.sorted()
             )
             
@@ -116,14 +249,58 @@ class BridgeDataService {
     
     // MARK: - Route Generation
     func generateRoutes(from bridges: [BridgeStatusModel]) -> [RouteModel] {
-        // Simple route generation for now - in practice, this would use actual routing logic
+        // Check cache first for generated routes
+        if let cachedRoutes: [RouteModel] = loadFromCache([RouteModel].self, for: "generated_routes"),
+           isCacheValid(for: "generated_routes") {
+            // Update cache metadata for all routes
+            cachedRoutes.forEach { $0.updateScoreMetadata() }
+            return cachedRoutes
+        }
+        
+        // Generate new routes
         let routes = [
             RouteModel(routeID: "Route-1", bridges: Array(bridges.prefix(2)), score: 0.0),
             RouteModel(routeID: "Route-2", bridges: Array(bridges.suffix(2)), score: 0.0),
             RouteModel(routeID: "Route-3", bridges: bridges, score: 0.0)
         ]
         
+        // Update cache metadata and save to cache
+        routes.forEach { $0.updateScoreMetadata() }
+        saveToCache(routes, for: "generated_routes")
+        
         return routes
+    }
+    
+    // MARK: - Cache Utilities
+    func clearCache() {
+        guard let cacheDir = getCacheDirectory() else { return }
+        
+        do {
+            let fileURLs = try FileManager.default.contentsOfDirectory(at: cacheDir, includingPropertiesForKeys: nil)
+            for fileURL in fileURLs {
+                try FileManager.default.removeItem(at: fileURL)
+            }
+        } catch {
+            print("Failed to clear cache: \(error)")
+        }
+    }
+    
+    func getCacheSize() -> Int64 {
+        guard let cacheDir = getCacheDirectory() else { return 0 }
+        
+        do {
+            let fileURLs = try FileManager.default.contentsOfDirectory(at: cacheDir, includingPropertiesForKeys: [.fileSizeKey])
+            return fileURLs.reduce(0) { total, fileURL in
+                do {
+                    let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+                    return total + (attributes[.size] as? Int64 ?? 0)
+                } catch {
+                    return total
+                }
+            }
+        } catch {
+            return 0
+        }
     }
 }
 

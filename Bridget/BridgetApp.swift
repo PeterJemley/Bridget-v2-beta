@@ -2,7 +2,23 @@
 //  BridgetApp.swift
 //  Bridget
 //
-//  Created by Peter Jemley on 7/24/25.
+//  Module: App
+//  Purpose: Main application entry point with SwiftData configuration
+//  Dependencies:
+//    - SwiftUI framework
+//    - SwiftData framework
+//    - ContentView (main UI)
+//    - Item model (SwiftData schema)
+//  Integration Points:
+//    - Configures SwiftData ModelContainer
+//    - Sets up main ContentView
+//    - Provides shared model container to views
+//    - Future: Will integrate with Core Data for persistence
+//  Key Features:
+//    - SwiftData schema configuration
+//    - ModelContainer setup with persistence
+//    - Main app window configuration
+//    - Error handling for container creation
 //
 
 import SwiftUI

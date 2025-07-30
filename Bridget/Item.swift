@@ -2,7 +2,20 @@
 //  Item.swift
 //  Bridget
 //
-//  Created by Peter Jemley on 7/24/25.
+//  Module: Models
+//  Purpose: SwiftData model for persistent data storage
+//  Dependencies:
+//    - Foundation (Date)
+//    - SwiftData framework
+//  Integration Points:
+//    - Used by BridgetApp for SwiftData schema
+//    - Provides persistent storage capability
+//    - Future: Will be extended for user preferences and history
+//  Key Features:
+//    - @Model annotation for SwiftData
+//    - Timestamp tracking for data persistence
+//    - Extensible model structure
+//    - Automatic persistence management
 //
 
 import Foundation

@@ -2,7 +2,19 @@
 //  BridgetTests.swift
 //  BridgetTests
 //
-//  Created by Peter Jemley on 7/24/25.
+//  Module: Tests
+//  Purpose: Basic test structure using the new Testing framework
+//  Dependencies:
+//    - Testing framework
+//    - Bridget module (for testing)
+//  Integration Points:
+//    - Provides basic test structure
+//    - Future: Will contain integration tests
+//  Key Features:
+//    - Async test support
+//    - Modern Testing framework usage
+//    - Extensible test structure
+//    - Example test implementation
 //
 
 import Testing
