@@ -74,8 +74,13 @@ class BridgeDataService {
     private let retryDelay: TimeInterval = 2.0
     
     // MARK: - Validation Configuration
-    /// Maximum allowed payload size in bytes (1MB)
-    private let maxAllowedSize: Int = 1_048_576
+    /// Maximum allowed payload size in bytes (5MB for safety)
+    private let maxAllowedSize: Int = 5 * 1024 * 1024
+    
+    /// Known bridge IDs for validation
+    private let knownBridgeIDs = Set([
+        "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"
+    ])
     
     private init() {}
     
@@ -221,9 +226,14 @@ class BridgeDataService {
         }
         
         // Validate response metadata
-        guard httpResponse.value(forHTTPHeaderField: "Content-Type")?.contains("application/json") == true else {
+        guard let contentType = httpResponse.value(forHTTPHeaderField: "Content-Type"),
+              contentType.contains("application/json") else {
             throw BridgeDataError.invalidContentType
         }
+        
+        #if DEBUG
+        print("Content-Type: \(contentType)")
+        #endif
         
         // Validate payload size
         guard data.count > 0, data.count < maxAllowedSize else {
@@ -235,6 +245,7 @@ class BridgeDataService {
     
     // MARK: - Data Processing
     private func processHistoricalData(_ data: Data) throws -> [BridgeStatusModel] {
+        // Centralized JSON decoder configuration
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dateDecodingStrategy = .iso8601
@@ -250,24 +261,64 @@ class BridgeDataService {
                 print("Payload was:", jsonString)
             }
             #endif
-            throw BridgeDataError.decodingError(decodingError)
+            throw BridgeDataError.decodingError(decodingError, rawData: data)
         }
         
-        // Strict field validation post-decode
+        // Post-decode business validation with enhanced filtering
         var validRecords: [BridgeOpeningRecord] = []
-        let isoFormatter = ISO8601DateFormatter()
+        var skippedCount = 0
         
         for record in bridgeRecords {
+            // Validate required fields
             guard !record.entityid.isEmpty,
-                  !record.entityname.isEmpty,
-                  let _ = isoFormatter.date(from: record.opendatetime) else {
+                  !record.entityname.isEmpty else {
                 #if DEBUG
-                print("Skipping invalid record: \(record)")
+                print("Skipping record with empty fields: \(record)")
                 #endif
+                skippedCount += 1
                 continue
             }
+            
+            // Validate bridge ID is known
+            guard knownBridgeIDs.contains(record.entityid) else {
+                #if DEBUG
+                print("Skipping unknown bridge ID: \(record.entityid)")
+                #endif
+                skippedCount += 1
+                continue
+            }
+            
+            // Validate date parsing (now handled by decoder, but double-check)
+            guard let openDate = record.openDate else {
+                #if DEBUG
+                print("Skipping record with invalid date: \(record.opendatetime)")
+                #endif
+                skippedCount += 1
+                continue
+            }
+            
+            // Validate date is reasonable (not too old or future)
+            let calendar = Calendar.current
+            let now = Date()
+            let minDate = calendar.date(byAdding: .year, value: -10, to: now) ?? now
+            let maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
+            
+            guard openDate >= minDate && openDate <= maxDate else {
+                #if DEBUG
+                print("Skipping record with out-of-range date: \(openDate)")
+                #endif
+                skippedCount += 1
+                continue
+            }
+            
             validRecords.append(record)
         }
+        
+        #if DEBUG
+        if skippedCount > 0 {
+            print("Filtered out \(skippedCount) invalid records from \(bridgeRecords.count) total")
+        }
+        #endif
         
         // Group records by bridge ID
         let groupedRecords = Dictionary(grouping: validRecords) { $0.entityid }
@@ -386,7 +437,7 @@ enum BridgeDataError: Error, LocalizedError {
     case networkError
     case invalidContentType
     case payloadSizeError
-    case decodingError(DecodingError)
+    case decodingError(DecodingError, rawData: Data)
     case processingError(String)
     
     var errorDescription: String? {
@@ -399,7 +450,7 @@ enum BridgeDataError: Error, LocalizedError {
             return "Invalid content type - expected JSON"
         case .payloadSizeError:
             return "Payload size is invalid (empty or too large)"
-        case .decodingError(let error):
+        case .decodingError(let error, _):
             return "JSON decoding failed: \(error.localizedDescription)"
         case .processingError(let message):
             return "Data processing error: \(message)"

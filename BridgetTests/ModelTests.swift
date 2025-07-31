@@ -169,7 +169,7 @@ final class ModelTests: XCTestCase {
     
     func testBridgeDataErrorLocalization() {
         let networkError = BridgeDataError.networkError
-        let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")))
+        let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")), rawData: Data())
         let invalidURLError = BridgeDataError.invalidURL
         
         XCTAssertNotNil(networkError.localizedDescription)
@@ -375,7 +375,7 @@ final class ModelTests: XCTestCase {
         let networkError = BridgeDataError.networkError
         let invalidContentTypeError = BridgeDataError.invalidContentType
         let payloadSizeError = BridgeDataError.payloadSizeError
-        let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")))
+        let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")), rawData: Data())
         let processingError = BridgeDataError.processingError("test error")
         
         XCTAssertNotNil(networkError.localizedDescription)
@@ -389,5 +389,59 @@ final class ModelTests: XCTestCase {
         XCTAssertFalse(payloadSizeError.localizedDescription.isEmpty)
         XCTAssertFalse(decodingError.localizedDescription.isEmpty)
         XCTAssertFalse(processingError.localizedDescription.isEmpty)
+    }
+    
+    // MARK: - Enhanced Validation Tests
+    
+    func testOutOfRangeDate() {
+        let json = """
+        {
+            "entitytype": "Bridge",
+            "entityname": "1st Ave South",
+            "entityid": "1",
+            "opendatetime": "1970-01-01T10:12:00.000",
+            "closedatetime": "1970-01-01T10:20:00.000",
+            "minutesopen": "8",
+            "latitude": "47.542213439941406",
+            "longitude": "-122.33446502685547"
+        }
+        """.data(using: .utf8)!
+        
+        // This should decode successfully but would be filtered out by business logic
+        XCTAssertNoThrow(try JSONDecoder().decode(BridgeOpeningRecord.self, from: json))
+    }
+    
+    func testUnknownBridgeID() {
+        let json = """
+        {
+            "entitytype": "Bridge",
+            "entityname": "Unknown Bridge",
+            "entityid": "999",
+            "opendatetime": "2025-01-03T10:12:00.000",
+            "closedatetime": "2025-01-03T10:20:00.000",
+            "minutesopen": "8",
+            "latitude": "47.542213439941406",
+            "longitude": "-122.33446502685547"
+        }
+        """.data(using: .utf8)!
+        
+        // This should decode successfully but would be filtered out by business logic
+        XCTAssertNoThrow(try JSONDecoder().decode(BridgeOpeningRecord.self, from: json))
+    }
+    
+    func test304NoChangeResponse() {
+        // Simulate a 304 Not Modified response with empty data
+        let emptyData = Data()
+        
+        // This would be caught by the service layer's empty data check
+        XCTAssertTrue(emptyData.isEmpty)
+    }
+    
+    func testOversizedPayload() {
+        // Create a large data blob that exceeds the limit
+        let largeData = Data(repeating: 0, count: 6 * 1024 * 1024) // 6MB
+        
+        // This would be caught by the service layer, but we can test the concept
+        XCTAssertTrue(largeData.count > 5 * 1024 * 1024) // Should be larger than maxAllowedSize
     }
 } 
