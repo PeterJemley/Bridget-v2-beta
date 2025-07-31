@@ -10,6 +10,15 @@
 - All tests passing with historical data
 - Cache infrastructure prepared for Phase 2
 
+**Phase 1.5: Data Validation & Error Handling** ✅ **COMPLETED**
+- Enhanced API response validation with Content-Type and payload size checks
+- Implemented comprehensive error classification with detailed diagnostics
+- Added business logic validation (bridge ID verification, date range filtering)
+- Centralized JSON decoder configuration with key/date strategies
+- Added debug logging for validation failures and skipped records
+- Comprehensive unit test coverage for all validation branches
+- Graceful degradation with detailed error context for production debugging
+
 **Phase 2: Offline Caching** **IN PROGRESS**
 - Cache metadata fields implemented with `@ObservationIgnored`
 - Cache serialization/deserialization ready
@@ -66,6 +75,32 @@
   - [x] Handle missing or malformed data
   - [x] Test edge cases
 
+### Phase 1.5: Data Validation & Error Handling ✅
+
+- [x] **Enhanced API response validation**
+  - [x] Content-Type header validation with debug logging
+  - [x] Payload size validation (5MB limit for safety)
+  - [x] HTTP status code validation
+  - [x] Empty response handling
+
+- [x] **Comprehensive error classification**
+  - [x] Enhanced BridgeDataError enum with associated context
+  - [x] LocalizedError conformance for user-friendly messages
+  - [x] Detailed error descriptions for debugging
+  - [x] Raw data preservation for error analysis
+
+- [x] **Business logic validation**
+  - [x] Known bridge ID validation with graceful filtering
+  - [x] Date range validation (10 years back, 1 year forward)
+  - [x] Required field validation with detailed logging
+  - [x] Skipped record counting and reporting
+
+- [x] **Centralized JSON processing**
+  - [x] Key decoding strategy for flexible JSON handling
+  - [x] Date decoding strategy for automatic parsing
+  - [x] Proper error wrapping with debug context
+  - [x] Comprehensive unit test coverage
+
 ### Phase 2: Offline Caching + Micro-UI
 
 - [x] **Implement data caching for offline support**
@@ -94,6 +129,43 @@
 - **Scoring isolation**: move ranking logic into its own RouteScoringService.
 - **Enhanced UI states**: add skeleton rows or richer loading placeholders.
 - **Logging**: instrument debug-only logs for bridge/route updates.
+
+## Ongoing Quality & Future-Proofing Strategy
+
+### 1. Ongoing Code Quality & Stability
+- **Automated CI Checks**
+  - Enforce linting (SwiftLint), formatting (SwiftFormat), and compile-time warnings
+  - Run unit tests on every pull request, plus watch for coverage drops
+- **Expand Test Coverage**
+  - Add integration tests that spin up real or mocked BridgeDataService to hit HTTP-cache and error paths
+  - Introduce UI tests (XCTest + XCTestUI) to verify loading indicators, error alerts, and skeleton views
+
+### 2. Observability & Monitoring
+- **Runtime Metrics**
+  - Instrument service layer with lightweight timing (signpost/logging) to measure "time-to-load" in staging/production
+  - Surface metrics back into app or analytics dashboard for trend-watching
+- **Error Reporting**
+  - Hook BridgeDataError cases into Sentry or crash-reporting tool to see which error branches fire in production
+
+### 3. Performance & Resource Management
+- **Profile on Device**
+  - Use Instruments to watch for memory spikes during JSON decoding or Core ML inference
+  - If maps/charts come later, verify that sub-observation avoids full-view redraws
+- **Refine Observation Tracking**
+  - Introduce withObservationTracking around hot loops (route scoring, data grouping) if slowdown or redundant updates are spotted
+
+### 4. Documentation & Onboarding
+- **Living README**
+  - Update project README with "How to run the disk-cache scheduler," "How to simulate API failures," and "How to add new bridges to your model"
+- **Architectural Diagrams**
+  - Consider simple sequence or component diagram (Mermaid or PlantUML) showing data flow from network → cache → model → view
+
+### 5. Future-Proofing for Phase 3 and Beyond
+- **Plugin Points**
+  - Keep BridgeDataService API surface stable even as Core ML or real-time feeds are swapped in
+  - Design RouteScoringService with clear protocol so A/B testing different algorithms doesn't require UI changes
+- **Versioning & Migration**
+  - If Open Data schema changes or ML model upgrades, plan for lightweight migration logic (e.g. "if new field X is present, use it; else fallback")
 
 ### Phase 3: HTTP Caching Optimization
 
