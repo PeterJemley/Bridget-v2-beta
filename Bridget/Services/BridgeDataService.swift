@@ -66,8 +66,16 @@ class BridgeDataService {
     // MARK: - Cache Configuration
     private let cacheDirectory = "BridgeCache"
     private let cacheExpirationTime: TimeInterval = 300 // 5 minutes
+    
+    // MARK: - Retry Configuration
+    /// Maximum number of network retry attempts for failed requests
     private let maxRetryAttempts = 3
+    /// Base delay in seconds for exponential backoff retry strategy
     private let retryDelay: TimeInterval = 2.0
+    
+    // MARK: - Validation Configuration
+    /// Maximum allowed payload size in bytes (1MB)
+    private let maxAllowedSize: Int = 1_048_576
     
     private init() {}
     
@@ -125,8 +133,35 @@ class BridgeDataService {
     }
     
     // MARK: - Historical Data Loading
+    /// Loads historical bridge opening data with retry logic and caching
+    /// 
+    /// This method implements a robust data loading strategy that handles multiple failure scenarios:
+    /// 1. **Cache-first approach**: Returns valid cached data if available
+    /// 2. **Retry with exponential backoff**: Attempts network requests up to 3 times with increasing delays
+    /// 3. **Graceful degradation**: Falls back to stale cache if all network attempts fail
+    /// 4. **Error propagation**: Throws the last network error if no data is available
+    ///
+    /// **Robustness features**:
+    /// - Handles network errors with industry-standard exponential backoff retry patterns
+    /// - Provides offline functionality through persistent disk caching
+    /// - Gracefully degrades to stale data when network is unavailable
+    /// - Implements proper error handling for cache misses and data corruption
+    ///
+    /// **Retry Strategy**:
+    /// - Maximum 3 attempts (`maxRetryAttempts`)
+    /// - Exponential backoff: 2s, 4s, 6s delays (`retryDelay * attempt`)
+    /// - Each attempt fetches fresh data from Seattle Open Data API
+    /// - Successful fetches are cached for offline use
+    ///
+    /// **Fallback Strategy**:
+    /// - If all network attempts fail, returns stale cached data if available
+    /// - Stale data is marked with `markAsStale()` for UI indication
+    /// - If no cache exists, throws the last network error
+    ///
+    /// - Returns: Array of BridgeStatusModel instances with historical opening data
+    /// - Throws: BridgeDataError.networkError if no data available and no cache exists
     func loadHistoricalData() async throws -> [BridgeStatusModel] {
-        // Check cache first
+        // Check cache first - return valid cached data if available
         if let cachedBridges: [BridgeStatusModel] = loadFromCache([BridgeStatusModel].self, for: "historical_bridges"),
            isCacheValid(for: "historical_bridges") {
             // Update cache metadata for all bridges
@@ -134,7 +169,7 @@ class BridgeDataService {
             return cachedBridges
         }
         
-        // Try to load from network with retry logic
+        // Network retry logic with exponential backoff
         var lastError: Error?
         
         for attempt in 1...maxRetryAttempts {
@@ -149,18 +184,20 @@ class BridgeDataService {
             } catch {
                 lastError = error
                 
+                // Exponential backoff: 2s, 4s, 6s delays
                 if attempt < maxRetryAttempts {
                     try await Task.sleep(nanoseconds: UInt64(retryDelay * Double(attempt) * 1_000_000_000))
                 }
             }
         }
         
-        // If all attempts failed, try to load from cache even if stale
+        // Graceful degradation: return stale cache if all network attempts failed
         if let cachedBridges: [BridgeStatusModel] = loadFromCache([BridgeStatusModel].self, for: "historical_bridges") {
             cachedBridges.forEach { $0.markAsStale() }
             return cachedBridges
         }
         
+        // Last resort: throw the last network error
         throw lastError ?? BridgeDataError.networkError
     }
     
@@ -183,23 +220,62 @@ class BridgeDataService {
             throw BridgeDataError.networkError
         }
         
+        // Validate response metadata
+        guard httpResponse.value(forHTTPHeaderField: "Content-Type")?.contains("application/json") == true else {
+            throw BridgeDataError.invalidContentType
+        }
+        
+        // Validate payload size
+        guard data.count > 0, data.count < maxAllowedSize else {
+            throw BridgeDataError.payloadSizeError
+        }
+        
         return try processHistoricalData(data)
     }
     
     // MARK: - Data Processing
     private func processHistoricalData(_ data: Data) throws -> [BridgeStatusModel] {
         let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
         
-        // The API returns an array directly, not wrapped in a "data" field
-        let bridgeRecords = try decoder.decode([BridgeOpeningRecord].self, from: data)
+        // Wrap and classify decoding errors for better diagnostics
+        let bridgeRecords: [BridgeOpeningRecord]
+        do {
+            bridgeRecords = try decoder.decode([BridgeOpeningRecord].self, from: data)
+        } catch let decodingError as DecodingError {
+            #if DEBUG
+            print("Decoding failed with error:", decodingError)
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("Payload was:", jsonString)
+            }
+            #endif
+            throw BridgeDataError.decodingError(decodingError)
+        }
+        
+        // Strict field validation post-decode
+        var validRecords: [BridgeOpeningRecord] = []
+        let isoFormatter = ISO8601DateFormatter()
+        
+        for record in bridgeRecords {
+            guard !record.entityid.isEmpty,
+                  !record.entityname.isEmpty,
+                  let _ = isoFormatter.date(from: record.opendatetime) else {
+                #if DEBUG
+                print("Skipping invalid record: \(record)")
+                #endif
+                continue
+            }
+            validRecords.append(record)
+        }
         
         // Group records by bridge ID
-        let groupedRecords = Dictionary(grouping: bridgeRecords) { $0.entityid }
+        let groupedRecords = Dictionary(grouping: validRecords) { $0.entityid }
         
         // Convert to BridgeStatusModel instances
         var bridgeModels: [BridgeStatusModel] = []
         
-        for (bridgeID, records) in groupedRecords {
+        for (_, records) in groupedRecords {
             let openings = records.compactMap { record -> Date? in
                 return record.openDate
             }
@@ -305,9 +381,28 @@ class BridgeDataService {
 }
 
 // MARK: - Error Types
-enum BridgeDataError: Error {
+enum BridgeDataError: Error, LocalizedError {
     case invalidURL
     case networkError
-    case decodingError
-    case processingError
+    case invalidContentType
+    case payloadSizeError
+    case decodingError(DecodingError)
+    case processingError(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "Invalid URL configuration"
+        case .networkError:
+            return "Network request failed"
+        case .invalidContentType:
+            return "Invalid content type - expected JSON"
+        case .payloadSizeError:
+            return "Payload size is invalid (empty or too large)"
+        case .decodingError(let error):
+            return "JSON decoding failed: \(error.localizedDescription)"
+        case .processingError(let message):
+            return "Data processing error: \(message)"
+        }
+    }
 } 

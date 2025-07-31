@@ -169,7 +169,7 @@ final class ModelTests: XCTestCase {
     
     func testBridgeDataErrorLocalization() {
         let networkError = BridgeDataError.networkError
-        let decodingError = BridgeDataError.decodingError
+        let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")))
         let invalidURLError = BridgeDataError.invalidURL
         
         XCTAssertNotNil(networkError.localizedDescription)
@@ -243,5 +243,151 @@ final class ModelTests: XCTestCase {
         } catch {
             XCTFail("Failed to decode BridgeOpeningRecord: \(error)")
         }
+    }
+    
+    // MARK: - Invalid Payload Tests
+    
+    func testMissingRequiredKeys() {
+        let json = """
+        {
+            "entitytype": "Bridge",
+            "entityname": "1st Ave South"
+            // Missing entityid, opendatetime, etc.
+        }
+        """.data(using: .utf8)!
+        
+        do {
+            _ = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+            XCTFail("Should have failed to decode record with missing keys")
+        } catch {
+            XCTAssertTrue(error is DecodingError)
+        }
+    }
+    
+    func testExtraUnknownKeys() {
+        let json = """
+        {
+            "entitytype": "Bridge",
+            "entityname": "1st Ave South",
+            "entityid": "1",
+            "opendatetime": "2025-01-03T10:12:00.000",
+            "closedatetime": "2025-01-03T10:20:00.000",
+            "minutesopen": "8",
+            "latitude": "47.542213439941406",
+            "longitude": "-122.33446502685547",
+            "unknown_field": "should_be_ignored"
+        }
+        """.data(using: .utf8)!
+        
+        do {
+            let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+            XCTAssertEqual(record.entityid, "1")
+            XCTAssertEqual(record.entityname, "1st Ave South")
+        } catch {
+            XCTFail("Should have decoded record with extra keys: \(error)")
+        }
+    }
+    
+    func testMalformedDateStrings() {
+        let json = """
+        {
+            "entitytype": "Bridge",
+            "entityname": "1st Ave South",
+            "entityid": "1",
+            "opendatetime": "invalid-date-format",
+            "closedatetime": "2025-01-03T10:20:00.000",
+            "minutesopen": "8",
+            "latitude": "47.542213439941406",
+            "longitude": "-122.33446502685547"
+        }
+        """.data(using: .utf8)!
+        
+        do {
+            let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+            XCTAssertNil(record.openDate, "Should have nil openDate for malformed date")
+            XCTAssertNotNil(record.closeDate, "Should have valid closeDate")
+        } catch {
+            XCTFail("Should have decoded record with malformed date: \(error)")
+        }
+    }
+    
+    func testEmptyArrayPayload() {
+        let json = "[]".data(using: .utf8)!
+        
+        do {
+            let records = try JSONDecoder().decode([BridgeOpeningRecord].self, from: json)
+            XCTAssertEqual(records.count, 0)
+        } catch {
+            XCTFail("Should have decoded empty array: \(error)")
+        }
+    }
+    
+    func testEmptyStringValues() {
+        let json = """
+        {
+            "entitytype": "Bridge",
+            "entityname": "",
+            "entityid": "",
+            "opendatetime": "2025-01-03T10:12:00.000",
+            "closedatetime": "2025-01-03T10:20:00.000",
+            "minutesopen": "8",
+            "latitude": "47.542213439941406",
+            "longitude": "-122.33446502685547"
+        }
+        """.data(using: .utf8)!
+        
+        do {
+            let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+            XCTAssertEqual(record.entityid, "")
+            XCTAssertEqual(record.entityname, "")
+            XCTAssertTrue(record.entityid.isEmpty)
+            XCTAssertTrue(record.entityname.isEmpty)
+        } catch {
+            XCTFail("Should have decoded record with empty strings: \(error)")
+        }
+    }
+    
+    func testInvalidNumericValues() {
+        let json = """
+        {
+            "entitytype": "Bridge",
+            "entityname": "1st Ave South",
+            "entityid": "1",
+            "opendatetime": "2025-01-03T10:12:00.000",
+            "closedatetime": "2025-01-03T10:20:00.000",
+            "minutesopen": "not_a_number",
+            "latitude": "invalid_latitude",
+            "longitude": "invalid_longitude"
+        }
+        """.data(using: .utf8)!
+        
+        do {
+            let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+            XCTAssertNil(record.minutesOpenValue)
+            XCTAssertNil(record.latitudeValue)
+            XCTAssertNil(record.longitudeValue)
+        } catch {
+            XCTFail("Should have decoded record with invalid numeric values: \(error)")
+        }
+    }
+    
+    func testUpdatedBridgeDataErrorLocalization() {
+        let networkError = BridgeDataError.networkError
+        let invalidContentTypeError = BridgeDataError.invalidContentType
+        let payloadSizeError = BridgeDataError.payloadSizeError
+        let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")))
+        let processingError = BridgeDataError.processingError("test error")
+        
+        XCTAssertNotNil(networkError.localizedDescription)
+        XCTAssertNotNil(invalidContentTypeError.localizedDescription)
+        XCTAssertNotNil(payloadSizeError.localizedDescription)
+        XCTAssertNotNil(decodingError.localizedDescription)
+        XCTAssertNotNil(processingError.localizedDescription)
+        
+        XCTAssertFalse(networkError.localizedDescription.isEmpty)
+        XCTAssertFalse(invalidContentTypeError.localizedDescription.isEmpty)
+        XCTAssertFalse(payloadSizeError.localizedDescription.isEmpty)
+        XCTAssertFalse(decodingError.localizedDescription.isEmpty)
+        XCTAssertFalse(processingError.localizedDescription.isEmpty)
     }
 } 

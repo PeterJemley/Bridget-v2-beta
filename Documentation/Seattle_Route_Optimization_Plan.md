@@ -10,13 +10,13 @@
 - All tests passing with historical data
 - Cache infrastructure prepared for Phase 2
 
-**Phase 2: Offline Caching** 🔄 **IN PROGRESS**
+**Phase 2: Offline Caching** **IN PROGRESS**
 - Cache metadata fields implemented with `@ObservationIgnored`
 - Cache serialization/deserialization ready
 - Retry logic with exponential backoff implemented
 - Cache-first strategy implemented
 
-**Phase 3: HTTP Caching Optimization** 📋 **BACKLOGGED**
+**Phase 3: HTTP Caching Optimization** **BACKLOGGED**
 - HTTP conditional GET with ETag/If-None-Match headers
 - 304 "Not Modified" response handling
 - UserDefaults ETag storage
@@ -66,7 +66,7 @@
   - [x] Handle missing or malformed data
   - [x] Test edge cases
 
-### Phase 2: Offline Caching + Micro-UI 🔄
+### Phase 2: Offline Caching + Micro-UI
 
 - [x] **Implement data caching for offline support**
   - [x] Cache metadata fields with `@ObservationIgnored`
@@ -88,7 +88,14 @@
 
 **Phase 2 Strategy**: Complete core offline caching logic while adding micro-UI improvements for immediate user feedback. Focus on foundation-first approach with small, self-contained UX tasks that provide immediate payoff without waiting for major visual polish.
 
-### Phase 3: HTTP Caching Optimization 📋
+**Key gaps to address next:**
+- **Performance hooks**: add withObservationTracking for any hot loops (e.g. route scoring).
+- **Real-time + Core ML**: build out a TrafficInferenceService, quantize models, integrate Apple Maps slowdowns.
+- **Scoring isolation**: move ranking logic into its own RouteScoringService.
+- **Enhanced UI states**: add skeleton rows or richer loading placeholders.
+- **Logging**: instrument debug-only logs for bridge/route updates.
+
+### Phase 3: HTTP Caching Optimization
 
 - [ ] **Implement HTTP conditional GET**
   - [ ] Add ETag/If-None-Match header support
