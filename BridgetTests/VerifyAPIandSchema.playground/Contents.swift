@@ -1,11 +1,12 @@
 import Foundation
 import PlaygroundSupport
+
 PlaygroundPage.current.needsIndefiniteExecution = true
 
 // 1) Point at the real endpoint (limit to 5 so it’s trivial)
 let sampleURL = URL(string: "https://data.seattle.gov/resource/gm8h-9449.json?$limit=5")!
 
-URLSession.shared.dataTask(with: sampleURL) { data, resp, err in
+URLSession.shared.dataTask(with: sampleURL) { data, _, err in
   guard let data = data, err == nil else {
     print("Network error:", err ?? "unknown")
     PlaygroundPage.current.finishExecution()
@@ -18,10 +19,11 @@ URLSession.shared.dataTask(with: sampleURL) { data, resp, err in
   }
 
   // 3) Inspect first record’s keys & types
-  if let arr = try? JSONSerialization.jsonObject(with: data) as? [[String:Any]],
-     let first = arr.first {
+  if let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
+     let first = arr.first
+  {
     print("\nKeys and Swift types in first record:")
-    for (k,v) in first {
+    for (k, v) in first {
       print(" • \(k):", type(of: v))
     }
   }

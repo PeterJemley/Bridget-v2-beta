@@ -1,0 +1,60 @@
+# ==== Global ====
+included:
+  - Bridget
+excluded:
+  - BridgetTests
+  - BridgetUITests
+  - Documentation
+  - .build
+  - build
+  - DerivedData
+
+# === Linting Rules ===
+line_length:
+  warning: 100
+  error: 120
+
+identifier_name:
+  min_length: 3
+  excluded:
+    - id
+    - UI
+
+type_body_length:
+  warning: 200
+  error: 300
+
+# Don't allow force-unwraps or force-trys
+force_unwrapping: error
+force_try: error
+
+# Encourage `guard` over `if let`
+conditional_binding_cascade: warning
+
+# Explicit self inside closures & methods
+explicit_self: warning
+
+# Optional chaining instead of `if let` when safe
+prefer_optional_chaining: warning
+
+# ==== Opt-In Rules ====
+opt_in_rules:
+  - closure_spacing
+  - empty_count
+  - explicit_top_level_acl
+  - sorted_imports
+  - unused_import
+  - vertical_whitespace
+
+# ==== Customizations ====
+custom_rules:
+  no_print:
+    name: "No print() in Production"
+    regex: '^\s*print\('
+    match_kinds:
+      - comment
+      - identifier
+    severity: warning
+
+# ==== Reporter ====
+reporter: "xcode"  # show inline in Xcode's issue navigator 

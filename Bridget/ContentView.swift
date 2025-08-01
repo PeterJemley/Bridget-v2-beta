@@ -23,17 +23,17 @@
 import SwiftUI
 
 struct ContentView: View {
-    @Bindable private var appState: AppStateModel
-    
-    init() {
-        self.appState = AppStateModel()
-    }
-    
-    var body: some View {
-        RouteListView(appState: appState)
-    }
+  @Bindable private var appState: AppStateModel
+
+  init() {
+    self.appState = AppStateModel()
+  }
+
+  var body: some View {
+    RouteListView(appState: appState)
+  }
 }
 
 #Preview {
-    ContentView()
+  ContentView()
 }

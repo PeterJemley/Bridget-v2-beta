@@ -1,0 +1,21 @@
+# ==== Basic Style ====
+--indent          2            # two-space indent
+--linebreaks      lf           # Unix style
+--allman          false        # K&R braces
+--wraparguments  afterfirst    # wrap long argument lists
+--wrapelements   beforefirst   # arrays/dicts
+
+# ==== Syntax Tweaks ====
+--commas           always       # trailing commas where valid
+--hexliteralcase   uppercase    # consistency in hex literals
+
+# ==== Disable Conflicting Rules ====
+--disable redundantSelf           # let SwiftLint handle explicit_self
+--disable consecutiveSpaces       # conflicts with some lint rules
+
+# ==== Rules for Clarity ====
+--semicolons     never            # discourage ; at end of lines
+--ranges         spaced           # space around half-open ranges
+--binarygrouping 4                # group digits in literals (e.g. 1_000)
+
+ 
