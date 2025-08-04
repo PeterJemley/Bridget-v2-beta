@@ -2,25 +2,31 @@
 //  AppStateModel.swift
 //  Bridget
 //
-//  Module: Models
-//  Purpose: Global application state management with error handling and async data loading
-//  Dependencies:
-//    - Foundation (for Date, Error types)
-//    - Observation framework
-//    - BridgeDataService (for data loading)
-//    - RouteModel (for route data)
-//  Integration Points:
-//    - Single source of truth for all route data and UI state
-//    - Passed to RouteListView via @Bindable for UI updates
-//    - Updated by BridgeDataService with loaded routes
-//    - Manages loading states and error handling
-//    - Future: Will be updated by real-time traffic and ML scoring services
-//  Key Features:
-//    - Async data loading within Observation Framework
-//    - Comprehensive error state management
-//    - Route selection and management
-//    - Sample data fallback on API failure
-//    - MainActor compliance for UI updates
+//  ## Module
+//  Models
+//
+//  ## Purpose
+//  Global application state management with error handling and async data loading
+//
+//  ## Dependencies
+//  - Foundation (for Date, Error types)
+//  - Observation framework
+//  - BridgeDataService (for data loading)
+//  - RouteModel (for route data)
+//
+//  ## Integration Points
+//  - Single source of truth for all route data and UI state
+//  - Passed to RouteListView via @Bindable for UI updates
+//  - Updated by BridgeDataService with loaded routes
+//  - Manages loading states and error handling
+//  - Future: Will be updated by real-time traffic and ML scoring services
+//
+//  ## Key Features
+//  - Async data loading within Observation Framework
+//  - Comprehensive error state management
+//  - Route selection and management
+//  - Sample data fallback on API failure
+//  - MainActor compliance for UI updates
 //
 
 import Foundation

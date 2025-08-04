@@ -2,9 +2,13 @@
 //  CacheService.swift
 //  Bridget
 //
-//  Purpose: Handles all caching operations including disk I/O and cache validation
-//  Dependencies: Foundation (FileManager, JSONEncoder, JSONDecoder)
-//  Integration Points:
+//  ## Purpose
+//  Handles all caching operations including disk I/O and cache validation
+//
+//  ## Dependencies
+//  Foundation (FileManager, JSONEncoder, JSONDecoder)
+//
+//  ## Integration Points
 //    - Manages disk-based caching for bridge data
 //    - Handles cache expiration and validation
 //    - Provides cache utilities for size management
@@ -27,50 +31,45 @@ import Foundation
 ///
 /// ## Key Features
 ///
-/// - **Disk-based Storage**: Uses FileManager for persistent cache storage
-/// - **JSON Serialization**: Automatic encoding/decoding of Codable types
-/// - **Cache Expiration**: Automatic validation based on file modification time
-/// - **Size Management**: Cache size calculation and cleanup utilities
-/// - **Error Handling**: Graceful degradation when cache operations fail
-/// - **Thread Safety**: Singleton pattern ensures consistent cache state
+/// - Disk-based Storage: Uses FileManager for persistent cache storage
+/// - JSON Serialization: Automatic encoding/decoding of Codable types
+/// - Cache Expiration: Automatic validation based on file modification time
+/// - Size Management: Cache size calculation and cleanup utilities
+/// - Error Handling: Graceful degradation when cache operations fail
+/// - Thread Safety: Singleton pattern ensures consistent cache state
 ///
 /// ## Usage
 ///
-/// ```swift
-/// let cacheService = CacheService.shared
+/// - let cacheService = CacheService.shared
 ///
-/// // Save data to cache
-/// cacheService.saveToCache(bridges, for: "historical_bridges")
+/// - Save data to cache
+///   cacheService.saveToCache(bridges, for: "historical_bridges")
 ///
-/// // Load data from cache
-/// if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache(
-///     [BridgeStatusModel].self, for: "historical_bridges") {
-///     // Use cached data
-/// }
+/// - Load data from cache
+///   if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache(
+///       [BridgeStatusModel].self, for: "historical_bridges") {
+///       // Use cached data
+///   }
 ///
-/// // Check cache validity
-/// if cacheService.isCacheValid(for: "historical_bridges") {
-///     // Cache is fresh
-/// }
-/// ```
+/// - Check cache validity
+///   if cacheService.isCacheValid(for: "historical_bridges") {
+///       // Cache is fresh
+///   }
 ///
 /// ## Topics
 ///
-/// ### Cache Operations
 /// - ``saveToCache(_:for:)``
 /// - ``loadFromCache(_:for:)``
 /// - ``isCacheValid(for:)``
-///
-/// ### Cache Management
 /// - ``clearCache()``
 /// - ``getCacheSize()``
 ///
 /// ## Cache Configuration
 ///
-/// - **Cache Directory**: `BridgeCache` in app's documents directory
-/// - **Expiration Time**: 5 minutes (300 seconds)
-/// - **File Format**: JSON with ISO8601 date encoding
-/// - **Error Handling**: Silent failure with console logging
+/// - Cache Directory: `BridgeCache` in app's documents directory
+/// - Expiration Time: 5 minutes (300 seconds)
+/// - File Format: JSON with ISO8601 date encoding
+/// - Error Handling: Silent failure with console logging
 class CacheService {
   static let shared = CacheService()
 

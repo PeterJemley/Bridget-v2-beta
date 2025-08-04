@@ -2,13 +2,17 @@
 //  NetworkClient.swift
 //  Bridget
 //
-//  Purpose: Handles all network operations with retry logic and validation
-//  Dependencies: Foundation (URLSession, HTTPURLResponse)
-//  Integration Points:
-//    - Fetches data from Seattle Open Data API
-//    - Implements retry logic with exponential backoff
-//    - Validates HTTP responses and payload sizes
-//    - Called by BridgeDataService for network operations
+//  ## Purpose
+//  Handles all network operations with retry logic and validation
+//
+//  ## Dependencies
+//  Foundation (URLSession, HTTPURLResponse)
+//
+//  ## Integration Points
+//  - Fetches data from Seattle Open Data API
+//  - Implements retry logic with exponential backoff
+//  - Validates HTTP responses and payload sizes
+//  - Called by BridgeDataService for network operations
 //
 
 import Foundation
@@ -31,10 +35,17 @@ class NetworkClient {
   /// Fetches data from the network with retry logic and validation
   ///
   /// This method implements a robust network fetching strategy:
-  /// 1. **Retry with exponential backoff**: Attempts network requests up to 3 times
-  /// 2. **HTTP-level validation**: Validates status codes, headers, content-type
-  /// 3. **Payload size validation**: Ensures response size is reasonable
-  /// 4. **Error propagation**: Throws specific network errors for different failure types
+  /// ## Retry with exponential backoff
+  /// Attempts network requests up to 3 times
+  ///
+  /// ## HTTP-level validation
+  /// Validates status codes, headers, content-type
+  ///
+  /// ## Payload size validation
+  /// Ensures response size is reasonable
+  ///
+  /// ## Error propagation
+  /// Throws specific network errors for different failure types
   ///
   /// - Parameter url: The URL to fetch data from
   /// - Returns: Raw Data from the network response

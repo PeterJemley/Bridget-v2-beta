@@ -2,20 +2,25 @@
 //  RouteListView.swift
 //  Bridget
 //
-//  Purpose: UI layer for displaying historical bridge opening data with error handling
-//  Dependencies: SwiftUI framework, AppStateModel (via @Bindable)
-//  Integration Points:
-//    - Displays historical bridge opening data from AppStateModel
-//    - Shows loading states during historical data fetch
-//    - Handles error states for network or data issues
-//    - Provides retry functionality for failed historical data loads
-//    - Future: Will display real-time bridge status (if available)
-//  Key Features:
-//    - Error state handling with user-friendly messages for historical data
-//    - Enhanced loading states for historical API calls
-//    - Improved route display with historical bridge opening data
-//    - Retry functionality in error view for historical data
-//    - Reactive UI updates via @Bindable and @Observable
+//  ## Purpose
+//  UI layer for displaying historical bridge opening data with error handling
+//
+//  ## Dependencies
+//  SwiftUI framework, AppStateModel (via @Bindable)
+//
+//  ## Integration Points
+//  Displays historical bridge opening data from AppStateModel
+//  Shows loading states during historical data fetch
+//  Handles error states for network or data issues
+//  Provides retry functionality for failed historical data loads
+//  Future: Will display real-time bridge status (if available)
+//
+//  ## Key Features
+//  Error state handling with user-friendly messages for historical data
+//  Enhanced loading states for historical API calls
+//  Improved route display with historical bridge opening data
+//  Retry functionality in error view for historical data
+//  Reactive UI updates via @Bindable and @Observable
 //
 
 import SwiftUI

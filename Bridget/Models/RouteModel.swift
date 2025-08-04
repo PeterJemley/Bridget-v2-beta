@@ -64,20 +64,28 @@ import Observation
 /// ## Topics
 ///
 /// ### Properties
-/// - ``routeID``
-/// - ``bridges``
-/// - ``score``
+/// - ``RouteModel/routeID``
+/// - ``RouteModel/bridges``
+/// - ``RouteModel/score``
+/// - ``RouteModel/lastScoreUpdate``
+/// - ``RouteModel/scoreVersion``
+/// - ``RouteModel/isScoreStale``
 ///
 /// ### Route Analysis
-/// - ``totalPotentialDelay``
-/// - ``complexity``
-/// - ``totalHistoricalOpenings``
+/// - ``RouteModel/totalPotentialDelay``
+/// - ``RouteModel/complexity``
+/// - ``RouteModel/totalHistoricalOpenings``
 ///
 /// ### Score Management
-/// - ``updateScoreMetadata()``
-/// - ``markScoreAsStale()``
-/// - ``isScoreValid``
-/// - ``scoreAge``
+/// - ``RouteModel/updateScoreMetadata()``
+/// - ``RouteModel/markScoreAsStale()``
+/// - ``RouteModel/isScoreValid``
+/// - ``RouteModel/scoreAge``
+///
+/// ### Codable
+/// - ``RouteModel/init(from:)``
+/// - ``RouteModel/encode(to:)``
+
 @Observable
 class RouteModel: Codable {
   /// The unique identifier for this route.
