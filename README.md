@@ -125,12 +125,12 @@ App
 ```swift
 @Observable
 class BridgeStatusModel {
-    var bridgeID: String
+    var bridgeName: String
     var historicalOpenings: [Date]
     var realTimeDelay: TimeInterval? // computed from ML
 
-    init(bridgeID: String, historicalOpenings: [Date]) {
-        self.bridgeID = bridgeID
+    init(bridgeName: String, historicalOpenings: [Date]) {
+self.bridgeName = bridgeName
         self.historicalOpenings = historicalOpenings
     }
 }

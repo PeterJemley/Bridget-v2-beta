@@ -40,7 +40,8 @@ class BridgeDataService {
   /// 1. **Cache-first approach**: Returns valid cached data if available
   /// 2. **Network fetching**: Uses NetworkClient for retry logic and validation
   /// 3. **Data processing**: Uses BridgeDataProcessor for JSON decoding and validation
-  /// 4. **Graceful degradation**: Falls back to stale cache if all network attempts fail
+  /// 4. **Data sanitization**: Filters out entries with missing IDs/names and duplicates
+  /// 5. **Graceful degradation**: Falls back to stale cache if all network attempts fail
   ///
   /// - Returns: Array of BridgeStatusModel instances with historical opening data
   /// - Throws: NetworkError or BridgeDataError if no data available
@@ -59,12 +60,13 @@ class BridgeDataService {
     do {
       let data = try await fetchFromNetwork()
       let bridges = try dataProcessor.processHistoricalData(data)
+      let cleanedBridges = Self.sanitizeBridgeModels(bridges)
 
       // Update cache metadata and save to cache
-      bridges.forEach { $0.updateCacheMetadata() }
-      cacheService.saveToCache(bridges, for: "historical_bridges")
+      cleanedBridges.forEach { $0.updateCacheMetadata() }
+      cacheService.saveToCache(cleanedBridges, for: "historical_bridges")
 
-      return bridges
+      return cleanedBridges
     } catch {
       // Graceful degradation: return stale cache if network failed
       if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache([BridgeStatusModel].self,
@@ -137,5 +139,19 @@ class BridgeDataService {
 
   func getCacheSize() -> Int64 {
     return cacheService.getCacheSize()
+  }
+
+  // MARK: - Private Helpers
+
+  /// Sanitizes the final bridge array by removing entries with missing IDs/names and eliminating
+  /// duplicates (by bridgeName).
+  private static func sanitizeBridgeModels(_ models: [BridgeStatusModel]) -> [BridgeStatusModel] {
+    var seen = Set<String>()
+    return models.filter { model in
+      guard !model.bridgeName.isEmpty, let id = model.apiBridgeID, !id.isEmpty else { return false }
+      if seen.contains(model.bridgeName) { return false }
+      seen.insert(model.bridgeName)
+      return true
+    }
   }
 }

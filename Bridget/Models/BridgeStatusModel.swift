@@ -29,8 +29,17 @@ import Observation
 class BridgeStatusModel: Codable {
   // MARK: - Bridge Properties
 
-  /// The unique identifier for the bridge.
-  let bridgeID: String
+  /// The human-readable business identifier for the bridge, using descriptive bridge names.
+  ///
+  /// This property stores the bridge name (e.g., "Fremont Bridge", "Ballard Bridge")
+  /// as the primary business identifier. While the API uses numeric IDs (1-10),
+  /// the business layer uses descriptive names for user-facing operations and display.
+  let bridgeName: String
+
+  /// The raw API identifier for the bridge, used for traceability and mapping to API data.
+  ///
+  /// This optional property stores the numeric or string ID used by the API to uniquely identify the bridge.
+  var apiBridgeID: String?
 
   /// The list of past dates and times when the bridge was recorded as open.
   var historicalOpenings: [Date]
@@ -57,14 +66,17 @@ class BridgeStatusModel: Codable {
   /// Creates a new bridge status model with optional historical data and real-time delay.
   ///
   /// - Parameters:
-  ///   - bridgeID: The unique identifier of the bridge.
+  ///   - bridgeName: The human-readable business identifier of the bridge (e.g., "Fremont Bridge").
+  ///   - apiBridgeID: The raw API identifier of the bridge for traceability (e.g., "1").
   ///   - historicalOpenings: An array of dates representing previous opening events.
   ///   - realTimeDelay: An optional time interval indicating real-time delay (in seconds).
-  init(bridgeID: String,
+  init(bridgeName: String,
+       apiBridgeID: String? = nil,
        historicalOpenings: [Date] = [],
        realTimeDelay: TimeInterval? = nil)
   {
-    self.bridgeID = bridgeID
+    self.bridgeName = bridgeName
+    self.apiBridgeID = apiBridgeID
     self.historicalOpenings = historicalOpenings
     self.realTimeDelay = realTimeDelay
     self.lastCacheUpdate = Date()
@@ -75,7 +87,8 @@ class BridgeStatusModel: Codable {
   // MARK: - Codable Implementation
 
   enum CodingKeys: String, CodingKey {
-    case bridgeID
+    case bridgeName
+    case apiBridgeID
     case historicalOpenings
     case realTimeDelay
     case lastCacheUpdate
@@ -93,7 +106,8 @@ class BridgeStatusModel: Codable {
   /// - Throws: `DecodingError` if the data is corrupted or missing required fields.
   required init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    bridgeID = try container.decode(String.self, forKey: .bridgeID)
+    bridgeName = try container.decode(String.self, forKey: .bridgeName)
+    apiBridgeID = try container.decodeIfPresent(String.self, forKey: .apiBridgeID)
     historicalOpenings = try container.decode([Date].self,
                                               forKey: .historicalOpenings)
     realTimeDelay = try container.decodeIfPresent(TimeInterval.self,
@@ -116,7 +130,8 @@ class BridgeStatusModel: Codable {
   /// - Throws: `EncodingError` if the data cannot be encoded.
   func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
-    try container.encode(bridgeID, forKey: .bridgeID)
+    try container.encode(bridgeName, forKey: .bridgeName)
+    try container.encodeIfPresent(apiBridgeID, forKey: .apiBridgeID)
     try container.encode(historicalOpenings, forKey: .historicalOpenings)
     try container.encodeIfPresent(realTimeDelay, forKey: .realTimeDelay)
     try container.encodeIfPresent(lastCacheUpdate, forKey: .lastCacheUpdate)
@@ -185,6 +200,21 @@ class BridgeStatusModel: Codable {
 
     let recentOpenings = historicalOpenings.filter { $0 >= thirtyDaysAgo }
     return Double(recentOpenings.count) / 30.0
+  }
+
+  /// Returns a sanitized array of historical opening dates, filtering out out-of-range or duplicate entries.
+  ///
+  /// - Removes dates more than 10 years in the past or more than 1 year in the future from now.
+  /// - Removes duplicate dates.
+  /// - Returns: An array of unique, in-range opening dates, sorted chronologically.
+  var sanitizedHistoricalOpenings: [Date] {
+    let calendar = Calendar.current
+    let now = Date()
+    let minDate = calendar.date(byAdding: .year, value: -10, to: now) ?? now
+    let maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
+    let filtered = historicalOpenings.filter { $0 >= minDate && $0 <= maxDate }
+    let unique = Array(Set(filtered))
+    return unique.sorted()
   }
 
   // MARK: - Cache Management

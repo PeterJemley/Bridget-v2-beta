@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4813235A2E418C0900BA1774 /* BridgetDocumentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = 481323592E418C0900BA1774 /* BridgetDocumentation.docc */; };
 		484A34912E32E8B100020B84 /* SwiftData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 484A34902E32E8B100020B84 /* SwiftData.framework */; };
 		484A34932E32E8BC00020B84 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 484A34922E32E8BC00020B84 /* MapKit.framework */; };
 		484A34952E32E8C400020B84 /* CoreML.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 484A34942E32E8C400020B84 /* CoreML.framework */; };
@@ -31,6 +32,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		481323592E418C0900BA1774 /* BridgetDocumentation.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = BridgetDocumentation.docc; sourceTree = "<group>"; };
 		484A34602E32E81500020B84 /* Bridget.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Bridget.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		484A346F2E32E81600020B84 /* BridgetTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BridgetTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		484A34792E32E81600020B84 /* BridgetUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BridgetUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -104,6 +106,7 @@
 		484A34572E32E81500020B84 = {
 			isa = PBXGroup;
 			children = (
+				481323592E418C0900BA1774 /* BridgetDocumentation.docc */,
 				484A34622E32E81500020B84 /* Bridget */,
 				484A34722E32E81600020B84 /* BridgetTests */,
 				484A347C2E32E81600020B84 /* BridgetUITests */,
@@ -278,6 +281,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4813235A2E418C0900BA1774 /* BridgetDocumentation.docc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -19,6 +19,52 @@ import Foundation
 
 // MARK: - Network Client
 
+/// A service responsible for handling all network operations with retry logic and validation.
+///
+/// This service provides a robust network layer that implements retry mechanisms,
+/// HTTP response validation, and payload size checking to ensure reliable data fetching.
+///
+/// ## Overview
+///
+/// The `NetworkClient` is designed to handle network requests to external APIs,
+/// particularly the Seattle Open Data API. It implements comprehensive error handling
+/// and validation to ensure data integrity and reliability.
+///
+/// ## Key Features
+///
+/// - **Retry Logic**: Exponential backoff with configurable attempts
+/// - **HTTP Validation**: Status code and content-type validation
+/// - **Payload Size Checking**: Prevents memory issues from large responses
+/// - **Error Classification**: Specific error types for different failure scenarios
+/// - **Thread Safety**: Singleton pattern ensures consistent network state
+///
+/// ## Usage
+///
+/// ```swift
+/// let client = NetworkClient.shared
+///
+/// // Fetch data with automatic retry and validation
+/// let data = try await client.fetchData(from: url)
+/// ```
+///
+/// ## Topics
+///
+/// ### Network Operations
+/// - ``fetchData(from:)``
+///
+/// ### Configuration
+/// - Maximum retry attempts: 3
+/// - Retry delay: 2 seconds (exponential backoff)
+/// - Maximum payload size: 5MB
+///
+/// ## Error Handling
+///
+/// The service throws specific `NetworkError` types:
+/// - `.invalidResponse`: Invalid HTTP response format
+/// - `.httpError(statusCode:)`: Non-200 HTTP status codes
+/// - `.invalidContentType`: Missing or invalid Content-Type header
+/// - `.payloadTooLarge`: Response exceeds 5MB limit
+/// - `.networkError`: General network failures
 class NetworkClient {
   static let shared = NetworkClient()
 

@@ -25,6 +25,42 @@
 
 import SwiftUI
 
+/// A SwiftUI view that displays a list of routes with historical bridge opening data.
+///
+/// This view provides the main interface for users to browse and select routes.
+/// It handles loading states, error conditions, and displays route information
+/// including bridge counts, historical openings, and optimization scores.
+///
+/// ## Overview
+///
+/// The `RouteListView` is the primary navigation interface that shows all available
+/// routes with their associated bridge data. It implements reactive updates using
+/// the Observation framework and provides a smooth user experience with proper
+/// loading and error states.
+///
+/// ## Key Features
+///
+/// - **Reactive Updates**: Automatically updates when route data changes
+/// - **Loading States**: Shows progress indicators during data loading
+/// - **Error Handling**: Displays user-friendly error messages with retry options
+/// - **Route Selection**: Allows users to select and view route details
+/// - **Empty States**: Handles cases where no routes are available
+///
+/// ## Usage
+///
+/// ```swift
+/// RouteListView(appState: appStateModel)
+/// ```
+///
+/// ## Topics
+///
+/// ### View Components
+/// - ``RouteRowView``
+///
+/// ### State Management
+/// - Uses `@Bindable` for reactive updates from `AppStateModel`
+/// - Handles loading, error, and empty states
+/// - Manages route selection state
 struct RouteListView: View {
   @Bindable var appState: AppStateModel
 
@@ -63,6 +99,38 @@ struct RouteListView: View {
   }
 }
 
+/// A SwiftUI view that displays a single route row with bridge information.
+///
+/// This view shows detailed information about a specific route including
+/// its score, bridge count, historical openings, and individual bridge details.
+///
+/// ## Overview
+///
+/// The `RouteRowView` is a reusable component that displays route information
+/// in a compact, readable format. It shows the route's optimization score,
+/// number of bridges, total historical openings, and a list of individual bridges.
+///
+/// ## Key Features
+///
+/// - **Route Information**: Displays route ID, score, and bridge count
+/// - **Historical Data**: Shows total historical openings across all bridges
+/// - **Bridge Details**: Lists individual bridges in the route
+/// - **Selection State**: Visual feedback for selected routes
+/// - **Responsive Layout**: Adapts to different content sizes
+///
+/// ## Usage
+///
+/// ```swift
+/// RouteRowView(route: routeModel, isSelected: true)
+/// ```
+///
+/// ## Topics
+///
+/// ### Display Properties
+/// - Route ID and optimization score
+/// - Bridge count and historical openings
+/// - Individual bridge information
+/// - Selection state visual feedback
 struct RouteRowView: View {
   let route: RouteModel
   let isSelected: Bool
@@ -95,9 +163,9 @@ struct RouteRowView: View {
             .font(.caption)
             .foregroundColor(.secondary)
 
-          ForEach(route.bridges, id: \.bridgeID) { bridge in
+          ForEach(route.bridges, id: \.bridgeName) { bridge in
             HStack {
-              Text("• \(bridge.bridgeID)")
+              Text("• \(bridge.bridgeName)")
                 .font(.caption)
               Spacer()
               Text("\(bridge.totalOpenings) openings")

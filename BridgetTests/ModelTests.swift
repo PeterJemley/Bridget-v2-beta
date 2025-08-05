@@ -27,9 +27,9 @@ import XCTest
 
 final class ModelTests: XCTestCase {
   func testBridgeStatusModelInitialization() {
-    let bridge = BridgeStatusModel(bridgeID: "Test Bridge")
+    let bridge = BridgeStatusModel(bridgeName: "Test Bridge", apiBridgeID: nil)
 
-    XCTAssertEqual(bridge.bridgeID, "Test Bridge")
+    XCTAssertEqual(bridge.bridgeName, "Test Bridge")
     XCTAssertEqual(bridge.historicalOpenings.count, 0)
     XCTAssertNil(bridge.realTimeDelay)
     XCTAssertEqual(bridge.totalOpenings, 0)
@@ -44,9 +44,9 @@ final class ModelTests: XCTestCase {
       calendar.date(byAdding: .hour, value: -3, to: now)!,
     ]
 
-    let bridge = BridgeStatusModel(bridgeID: "Test Bridge", historicalOpenings: openings)
+    let bridge = BridgeStatusModel(bridgeName: "Test Bridge", apiBridgeID: nil, historicalOpenings: openings)
 
-    XCTAssertEqual(bridge.bridgeID, "Test Bridge")
+    XCTAssertEqual(bridge.bridgeName, "Test Bridge")
     XCTAssertEqual(bridge.historicalOpenings.count, 3)
     XCTAssertEqual(bridge.totalOpenings, 3)
 
@@ -57,8 +57,8 @@ final class ModelTests: XCTestCase {
 
   func testRouteModelInitialization() {
     let bridges = [
-      BridgeStatusModel(bridgeID: "Bridge 1"),
-      BridgeStatusModel(bridgeID: "Bridge 2"),
+      BridgeStatusModel(bridgeName: "Bridge 1", apiBridgeID: nil),
+      BridgeStatusModel(bridgeName: "Bridge 2", apiBridgeID: nil),
     ]
 
     let route = RouteModel(routeID: "Test Route", bridges: bridges, score: 0.5)
@@ -74,13 +74,15 @@ final class ModelTests: XCTestCase {
     let calendar = Calendar.current
     let now = Date()
 
-    let bridge1 = BridgeStatusModel(bridgeID: "Bridge 1",
+    let bridge1 = BridgeStatusModel(bridgeName: "Bridge 1",
+                                    apiBridgeID: nil,
                                     historicalOpenings: [
                                       calendar.date(byAdding: .hour, value: -1, to: now)!,
                                       calendar.date(byAdding: .hour, value: -2, to: now)!,
                                     ])
 
-    let bridge2 = BridgeStatusModel(bridgeID: "Bridge 2",
+    let bridge2 = BridgeStatusModel(bridgeName: "Bridge 2",
+                                    apiBridgeID: nil,
                                     historicalOpenings: [
                                       calendar.date(byAdding: .hour, value: -3, to: now)!,
                                     ])
@@ -125,7 +127,7 @@ final class ModelTests: XCTestCase {
     XCTAssertFalse(appState.hasError)
     XCTAssertNil(appState.errorMessage)
 
-    let testError = BridgeDataError.networkError
+    let testError = NetworkError.networkError
     appState.error = testError
 
     XCTAssertTrue(appState.hasError)
@@ -143,7 +145,7 @@ final class ModelTests: XCTestCase {
     XCTAssertFalse(sampleBridges.isEmpty)
 
     for bridge in sampleBridges {
-      XCTAssertFalse(bridge.bridgeID.isEmpty)
+      XCTAssertFalse(bridge.bridgeName.isEmpty)
       XCTAssertGreaterThanOrEqual(bridge.historicalOpenings.count, 0)
     }
   }
@@ -163,9 +165,9 @@ final class ModelTests: XCTestCase {
   }
 
   func testBridgeDataErrorLocalization() {
-    let networkError = BridgeDataError.networkError
+    let networkError = NetworkError.networkError
     let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")), rawData: Data())
-    let invalidURLError = BridgeDataError.invalidURL
+    let invalidURLError = NetworkError.invalidResponse
 
     XCTAssertNotNil(networkError.localizedDescription)
     XCTAssertNotNil(decodingError.localizedDescription)
@@ -363,9 +365,9 @@ final class ModelTests: XCTestCase {
   }
 
   func testUpdatedBridgeDataErrorLocalization() {
-    let networkError = BridgeDataError.networkError
-    let invalidContentTypeError = BridgeDataError.invalidContentType
-    let payloadSizeError = BridgeDataError.payloadSizeError
+    let networkError = NetworkError.networkError
+    let invalidContentTypeError = NetworkError.invalidContentType
+    let payloadSizeError = NetworkError.payloadSizeError
     let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")), rawData: Data())
     let processingError = BridgeDataError.processingError("test error")
 
@@ -434,5 +436,79 @@ final class ModelTests: XCTestCase {
 
     // This would be caught by the service layer, but we can test the concept
     XCTAssertTrue(largeData.count > 5 * 1024 * 1024) // Should be larger than maxAllowedSize
+  }
+
+  /// Tests that BridgeDataProcessor rejects records with out-of-range or invalid data values.
+  ///
+  /// Each invalid case constructs a minimal valid JSON payload with one invalid value:
+  /// 1. Latitude > 90
+  /// 2. Longitude < -180
+  /// 3. Negative minutes open
+  /// 4. Open date older than 10 years ago
+  /// The processor is expected to return an empty array for all these cases.
+  func testBridgeDataProcessorRejectsOutOfRangeValues() throws {
+    let processor = BridgeDataProcessor.shared
+    let validDate = "2025-01-03T10:12:00.000"
+    let validCloseDate = "2025-01-03T10:20:00.000"
+
+    // Case 1: Invalid latitude
+    let invalidLatJSON = """
+    [{
+        "entitytype": "Bridge",
+        "entityname": "Test Bridge",
+        "entityid": "1",
+        "opendatetime": "\(validDate)",
+        "closedatetime": "\(validCloseDate)",
+        "minutesopen": "8",
+        "latitude": "95.0",
+        "longitude": "-122.334465"
+    }]
+    """.data(using: .utf8)!
+    XCTAssertTrue(try processor.processHistoricalData(invalidLatJSON).isEmpty)
+
+    // Case 2: Invalid longitude
+    let invalidLonJSON = """
+    [{
+        "entitytype": "Bridge",
+        "entityname": "Test Bridge",
+        "entityid": "1",
+        "opendatetime": "\(validDate)",
+        "closedatetime": "\(validCloseDate)",
+        "minutesopen": "8",
+        "latitude": "47.542213",
+        "longitude": "-190.0"
+    }]
+    """.data(using: .utf8)!
+    XCTAssertTrue(try processor.processHistoricalData(invalidLonJSON).isEmpty)
+
+    // Case 3: Negative minutesopen
+    let invalidMinutesJSON = """
+    [{
+        "entitytype": "Bridge",
+        "entityname": "Test Bridge",
+        "entityid": "1",
+        "opendatetime": "\(validDate)",
+        "closedatetime": "\(validCloseDate)",
+        "minutesopen": "-5",
+        "latitude": "47.542213",
+        "longitude": "-122.334465"
+    }]
+    """.data(using: .utf8)!
+    XCTAssertTrue(try processor.processHistoricalData(invalidMinutesJSON).isEmpty)
+
+    // Case 4: Out-of-range openDate (15 years ago)
+    let oldDateJSON = """
+    [{
+        "entitytype": "Bridge",
+        "entityname": "Test Bridge",
+        "entityid": "1",
+        "opendatetime": "2010-01-03T10:12:00.000",
+        "closedatetime": "2010-01-03T10:20:00.000",
+        "minutesopen": "8",
+        "latitude": "47.542213",
+        "longitude": "-122.334465"
+    }]
+    """.data(using: .utf8)!
+    XCTAssertTrue(try processor.processHistoricalData(oldDateJSON).isEmpty)
   }
 }

@@ -25,17 +25,23 @@ struct BridgeOpeningRecord: Codable {
   let latitude: String
   let longitude: String
 
-  // Computed properties for parsed values
-  var openDate: Date? {
+  // MARK: - Static Date Formatter
+
+  private static let dateFormatter: DateFormatter = {
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
-    return formatter.date(from: opendatetime)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    return formatter
+  }()
+
+  // MARK: - Computed Properties for Parsed Values
+
+  var openDate: Date? {
+    Self.dateFormatter.date(from: opendatetime)
   }
 
   var closeDate: Date? {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
-    return formatter.date(from: closedatetime)
+    Self.dateFormatter.date(from: closedatetime)
   }
 
   var minutesOpenValue: Int? { Int(minutesopen) }
@@ -162,6 +168,36 @@ class BridgeDataProcessor {
       return false
     }
 
+    // Validate latitude (must be between -90 and 90)
+    guard let latitude = record.latitudeValue,
+          latitude >= -90.0 && latitude <= 90.0
+    else {
+      #if DEBUG
+        print("Skipping record with invalid latitude: \(record.latitude)")
+      #endif
+      return false
+    }
+
+    // Validate longitude (must be between -180 and 180)
+    guard let longitude = record.longitudeValue,
+          longitude >= -180.0 && longitude <= 180.0
+    else {
+      #if DEBUG
+        print("Skipping record with invalid longitude: \(record.longitude)")
+      #endif
+      return false
+    }
+
+    // Validate minutes open (must be non-negative)
+    guard let minutesOpen = record.minutesOpenValue,
+          minutesOpen >= 0
+    else {
+      #if DEBUG
+        print("Skipping record with negative minutes open: \(record.minutesopen)")
+      #endif
+      return false
+    }
+
     return true
   }
 
@@ -178,7 +214,8 @@ class BridgeDataProcessor {
       // Use the first record's entityname as the bridge name
       let bridgeName = records.first?.entityname ?? "Unknown Bridge"
 
-      let bridgeModel = BridgeStatusModel(bridgeID: bridgeName,
+      let bridgeModel = BridgeStatusModel(bridgeName: bridgeName,
+                                          apiBridgeID: records.first?.entityid,
                                           historicalOpenings: openings.sorted())
 
       bridgeModels.append(bridgeModel)
