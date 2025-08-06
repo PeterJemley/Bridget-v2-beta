@@ -5,7 +5,7 @@
 //  Purpose: Processes raw bridge data and transforms it into BridgeStatusModel instances
 //  Dependencies: Foundation (JSONDecoder, DateFormatter), BridgeStatusModel
 //  Integration Points:
-//    - Decodes JSON data from Seattle Open Data API
+//    - Decodes JSON data from Seattle Open Data API using centralized decoder factory
 //    - Validates business rules and data integrity
 //    - Groups records by bridge ID and maps to BridgeStatusModel
 //    - Called by BridgeDataService for data processing
@@ -68,7 +68,7 @@ class BridgeDataProcessor {
   /// Processes raw JSON data and converts it to BridgeStatusModel instances
   ///
   /// This method handles the complete data processing pipeline:
-  /// 1. **JSON Decoding**: Decodes raw JSON data into BridgeOpeningRecord instances
+  /// 1. **JSON Decoding**: Decodes raw JSON data into BridgeOpeningRecord instances using a centralized decoder factory
   /// 2. **Business Validation**: Filters out invalid records based on business rules
   /// 3. **Data Grouping**: Groups records by bridge ID for aggregation
   /// 4. **Model Creation**: Creates BridgeStatusModel instances from grouped data
@@ -77,10 +77,8 @@ class BridgeDataProcessor {
   /// - Returns: Array of BridgeStatusModel instances
   /// - Throws: BridgeDataError for processing failures
   func processHistoricalData(_ data: Data) throws -> [BridgeStatusModel] {
-    // Centralized JSON decoder configuration
-    let decoder = JSONDecoder()
-    decoder.keyDecodingStrategy = .convertFromSnakeCase
-    decoder.dateDecodingStrategy = .iso8601
+    // Centralized JSON decoder configuration via factory
+    let decoder = JSONDecoder.bridgeDecoder()
 
     // Wrap and classify decoding errors for better diagnostics
     let bridgeRecords: [BridgeOpeningRecord]

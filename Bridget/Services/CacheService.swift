@@ -123,11 +123,11 @@ class CacheService {
     }
   }
 
-  /// Loads data from cache with JSON decoding and ISO8601 date parsing.
+  /// Loads data from cache with JSON decoding using the centralized decoder configuration.
   ///
   /// This method reads the cached JSON file from disk and deserializes it
-  /// to the specified type. It uses ISO8601 date decoding for consistent
-  /// date handling across the app.
+  /// to the specified type. It uses the centralized JSONDecoder factory
+  /// `bridgeDecoder()` for consistent date and key decoding strategies.
   ///
   /// - Parameters:
   ///   - type: The type to decode from cache. Must conform to `Codable` protocol.
@@ -145,8 +145,7 @@ class CacheService {
 
     do {
       let data = try Data(contentsOf: cacheURL)
-      let decoder = JSONDecoder()
-      decoder.dateDecodingStrategy = .iso8601
+      let decoder = JSONDecoder.bridgeDecoder()
       return try decoder.decode(type, from: data)
     } catch {
       print("Failed to load cache for key \(key): \(error)")
