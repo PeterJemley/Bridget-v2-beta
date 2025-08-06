@@ -98,6 +98,16 @@ App
 │   ├── NetworkClient.swift (121 LOC - network operations)
 │   ├── CacheService.swift (143 LOC - disk I/O and caching)
 │   ├── BridgeDataProcessor.swift (201 LOC - data processing)
+│   └── JSONDecoder+Bridge.swift (centralized JSON decoding)
+│
+├── Tests/
+│   ├── ModelTests.swift (core model functionality)
+│   └── BridgeDecoderTests.swift (JSON decoding with logging)
+│
+├── Documentation/
+│   ├── Testing_Workflow.md (testing strategy and flag management)
+│   └── Seattle_Route_Optimization_Plan.md (project roadmap)
+```
 │   ├── SampleDataProvider.swift (85 LOC - mock data)
 │   ├── TrafficInferenceService.swift (planned - Core ML + ANE)
 │   └── RouteScoringService.swift (planned - matrix-based scoring)
@@ -383,3 +393,32 @@ The project uses Git hooks that automatically:
 2. Auto-fix SwiftLint violations
 3. Block commits on remaining errors
 4. Re-stage modified files
+
+## Testing
+
+### Running Tests
+```bash
+# Run all tests
+xcodebuild -project Bridget.xcodeproj -scheme Bridget -destination 'platform=iOS Simulator,name=iPhone 16 Pro' test
+
+# Run specific test suite
+xcodebuild -project Bridget.xcodeproj -scheme Bridget -destination 'platform=iOS Simulator,name=iPhone 16 Pro' test -only-testing:BridgetTests/BridgeDecoderTests
+```
+
+### Debug Logging
+For enhanced debugging during development, enable the `TEST_LOGGING` flag:
+
+1. **In Xcode**: Go to BridgetTests target → Build Settings → Other Swift Flags → Add `-DTEST_LOGGING`
+2. **Command Line**: Add `OTHER_SWIFT_FLAGS="-DTEST_LOGGING"` to xcodebuild commands
+
+**When to Enable**:
+- Debugging date parsing issues
+- Investigating JSON decoding failures
+- Working on data processing pipeline
+
+**When to Disable**:
+- Normal test runs (reduces noise)
+- CI/CD pipelines
+- Performance testing
+
+See the [Testing Workflow](doc://com.peterjemley.Bridget/documentation/Bridget/TestingWorkflow) documentation for detailed testing guidelines.

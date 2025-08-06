@@ -342,4 +342,7 @@ The app includes sample data providers that generate realistic mock data for tes
 - <doc:ArchitectureOverview>
 - <doc:DataFlow>
 - <doc:ErrorHandling>
-- <doc:CachingStrategy> 
+- <doc:CachingStrategy>
+
+### Development
+- <doc:TestingWorkflow> 
