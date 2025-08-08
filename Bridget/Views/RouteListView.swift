@@ -25,6 +25,8 @@
 
 import SwiftUI
 
+// MARK: - RouteListView
+
 /// A SwiftUI view that displays a list of routes with historical bridge opening data.
 ///
 /// This view provides the main interface for users to browse and select routes.
@@ -66,30 +68,61 @@ struct RouteListView: View {
 
   var body: some View {
     NavigationView {
-      Group {
-        if appState.isLoading {
-          ProgressView("Loading routes...")
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if appState.routes.isEmpty {
-          VStack {
-            Image(systemName: "map")
-              .font(.system(size: 50))
-              .foregroundColor(.gray)
-            Text("No routes available")
-              .font(.headline)
-              .foregroundColor(.gray)
-            Text("Routes will appear here once data is loaded")
-              .font(.caption)
-              .foregroundColor(.gray)
-              .multilineTextAlignment(.center)
+      VStack(spacing: 0) {
+        if appState.hasValidationFailures {
+          VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+              Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.yellow)
+              Text("Some records were skipped due to data validation errors.")
+                .font(.footnote)
+                .foregroundColor(.secondary)
+            }
+            .padding(.bottom, 2)
+            ForEach(appState.validationFailures.prefix(5), id: \.reason.description) { failure in
+              Text("• \(failure.reason.description)")
+                .font(.caption2)
+                .foregroundColor(.orange)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            }
+            if appState.validationFailures.count > 5 {
+              Text("...and \(appState.validationFailures.count - 5) more")
+                .font(.caption2)
+                .foregroundColor(.secondary)
+            }
           }
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-          List(appState.routes, id: \.routeID) { route in
-            RouteRowView(route: route, isSelected: route.routeID == appState.selectedRouteID)
-              .onTapGesture {
-                appState.selectRoute(withID: route.routeID)
-              }
+          .padding(10)
+          .background(Color.yellow.opacity(0.1))
+          .cornerRadius(10)
+          .padding([.horizontal, .top])
+        }
+
+        Group {
+          if appState.isLoading {
+            ProgressView("Loading routes...")
+              .frame(maxWidth: .infinity, maxHeight: .infinity)
+          } else if appState.routes.isEmpty {
+            VStack {
+              Image(systemName: "map")
+                .font(.system(size: 50))
+                .foregroundColor(.gray)
+              Text("No routes available")
+                .font(.headline)
+                .foregroundColor(.gray)
+              Text("Routes will appear here once data is loaded")
+                .font(.caption)
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+          } else {
+            List(appState.routes, id: \.routeID) { route in
+              RouteRowView(route: route, isSelected: route.routeID == appState.selectedRouteID)
+                .onTapGesture {
+                  appState.selectRoute(withID: route.routeID)
+                }
+            }
           }
         }
       }
@@ -98,6 +131,8 @@ struct RouteListView: View {
     }
   }
 }
+
+// MARK: - RouteRowView
 
 /// A SwiftUI view that displays a single route row with bridge information.
 ///
@@ -182,6 +217,8 @@ struct RouteRowView: View {
     .cornerRadius(8)
   }
 }
+
+// MARK: - Preview
 
 #Preview {
   let appState = AppStateModel()

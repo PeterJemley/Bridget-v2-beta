@@ -58,12 +58,15 @@ import SwiftUI
 /// - Contains `RouteListView` as the main content
 /// - Future: Will integrate navigation and settings views
 struct ContentView: View {
+  // MARK: - Properties
   @Bindable private var appState: AppStateModel
 
+  // MARK: - Initialization
   init() {
     self.appState = AppStateModel()
   }
 
+  // MARK: - View Body
   var body: some View {
     RouteListView(appState: appState)
   }

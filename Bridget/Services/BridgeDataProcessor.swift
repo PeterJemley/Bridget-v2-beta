@@ -13,8 +13,114 @@
 
 import Foundation
 
-// MARK: - Data Models for JSON Decoding
+// MARK: - BridgeID Enum
 
+/// Represents the stable set of known Seattle drawbridge IDs as provided by the city's open data API.
+///
+/// This enum contains all valid bridge IDs recognized by the Bridget app. The set is considered stable—update only
+/// when actual bridges are added or removed from the API dataset. Using this enum throughout the codebase ensures
+/// safe ID referencing and robust validation.
+///
+/// - Note: All bridge ID validation, mapping, and reference logic should use this enum for safety and consistency.
+///
+/// ## Topics
+/// - ID validation and mapping
+/// - Business logic referencing
+/// - UI display of bridge names
+///
+/// ### Discussion
+/// Referencing bridge IDs using this enum improves data quality, reduces typos, and simplifies future migrations or
+/// maintenance. If a new bridge is added, update this enum and related logic accordingly.
+enum BridgeID: String, CaseIterable, Equatable {
+    case firstAveSouth = "1"
+    case ballard = "2"
+    case fremont = "3"
+    case montlake = "4"
+    case lowerSpokane = "6"
+    case university = "21"
+    case southPark = "29"
+
+    /// All known IDs as a Set (for efficient lookup)
+    static var allIDs: Set<String> {
+        Set(allCases.map { $0.rawValue })
+    }
+}
+
+// MARK: - ValidationFailureReason Enum
+
+/// Comprehensive business validation failure reasons for bridge records.
+///
+/// Used to classify reasons why a given bridge opening record fails validation checks.
+///
+/// - Note: Use `description` to obtain a user-friendly explanation of the failure.
+enum ValidationFailureReason: CustomStringConvertible, Equatable {
+    case emptyEntityID
+    case emptyEntityName
+    case emptyEntityType
+    case invalidEntityType(String)
+    case unknownBridgeID(String)
+    case malformedOpenDate(String)
+    case malformedCloseDate(String)
+    case outOfRangeOpenDate(Date)
+    case closeDateNotAfterOpenDate(open: Date, close: Date)
+    case invalidLatitude(Double?)
+    case invalidLongitude(Double?)
+    case negativeMinutesOpen(Int?)
+    case minutesOpenMismatch(reported: Int, actual: Int)
+    
+    case malformedLatitude(String)
+    case malformedLongitude(String)
+    case malformedMinutesOpen(String)
+    
+    case geospatialMismatch(expectedLat: Double, expectedLon: Double, actualLat: Double, actualLon: Double)
+
+    /// A descriptive string explaining the validation failure reason.
+    var description: String {
+        switch self {
+        case .emptyEntityID:
+            return "Empty entityid"
+        case .emptyEntityName:
+            return "Empty entityname"
+        case .emptyEntityType:
+            return "Empty entitytype"
+        case .invalidEntityType(let value):
+            return "Invalid entitytype: \(value)"
+        case .unknownBridgeID(let id):
+            return "Unknown bridge ID: \(id)"
+        case .malformedOpenDate(let value):
+            return "Malformed open date: \(value)"
+        case .malformedCloseDate(let value):
+            return "Malformed close date: \(value)"
+        case .outOfRangeOpenDate(let date):
+            return "Open date out of allowed range: \(date)"
+        case .closeDateNotAfterOpenDate(let open, let close):
+            return "Close date (\(close)) is not after open date (\(open))"
+        case .invalidLatitude(let value):
+            return "Invalid latitude: \(String(describing: value)) (must be between -90 and 90)"
+        case .invalidLongitude(let value):
+            return "Invalid longitude: \(String(describing: value)) (must be between -180 and 180)"
+        case .negativeMinutesOpen(let value):
+            return "Negative minutes open: \(String(describing: value))"
+        case .minutesOpenMismatch(let reported, let actual):
+            return "minutesopen mismatch: reported \(reported), actual \(actual) (should match the difference between open/close times)"
+        case .malformedLatitude(let raw):
+            return "Malformed latitude: \(raw) (not a valid number)"
+        case .malformedLongitude(let raw):
+            return "Malformed longitude: \(raw) (not a valid number)"
+        case .malformedMinutesOpen(let raw):
+            return "Malformed minutesopen: \(raw) (not a valid number)"
+        case .geospatialMismatch(let expectedLat, let expectedLon, let actualLat, let actualLon):
+            return "Geospatial mismatch: expected (\(expectedLat), \(expectedLon)), got (\(actualLat), \(actualLon)) (too far from known location)"
+        }
+    }
+}
+
+// MARK: - BridgeOpeningRecord Struct
+
+/// A single bridge opening record decoded from JSON data.
+///
+/// Contains raw string values and computed properties for convenient typed access.
+/// Used internally during validation and transformation.
 struct BridgeOpeningRecord: Codable {
   let entitytype: String
   let entityname: String
@@ -25,8 +131,7 @@ struct BridgeOpeningRecord: Codable {
   let latitude: String
   let longitude: String
 
-  // MARK: - Static Date Formatter
-
+  /// Date formatter for parsing opendatetime and closedatetime strings.
   private static let dateFormatter: DateFormatter = {
     let formatter = DateFormatter()
     formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
@@ -34,207 +139,158 @@ struct BridgeOpeningRecord: Codable {
     return formatter
   }()
 
-  // MARK: - Computed Properties for Parsed Values
-
+  /// Parsed open date, or `nil` if the string is malformed.
   var openDate: Date? {
     Self.dateFormatter.date(from: opendatetime)
   }
 
+  /// Parsed close date, or `nil` if the string is malformed.
   var closeDate: Date? {
     Self.dateFormatter.date(from: closedatetime)
   }
 
+  /// Parsed minutes open as integer, or `nil` if the string is malformed.
   var minutesOpenValue: Int? { Int(minutesopen) }
+
+  /// Parsed latitude as double, or `nil` if the string is malformed.
   var latitudeValue: Double? { Double(latitude) }
+
+  /// Parsed longitude as double, or `nil` if the string is malformed.
   var longitudeValue: Double? { Double(longitude) }
 }
 
-// MARK: - Bridge Data Processor
+// MARK: - BridgeDataProcessor Class
 
+/// A singleton service responsible for validating and transforming raw bridge data into app-ready models.
+///
+/// Handles JSON decoding, business rule validation, aggregation, and comprehensive error reporting for raw bridge opening records.
+/// Used by `BridgeDataService` to power historical data loading and validation analytics.
+///
+/// ## Usage
+/// ```swift
+/// let (models, failures) = try BridgeDataProcessor.shared.processHistoricalData(data)
+/// ```
+///
+/// ## Topics
+/// - Data Processing: `processHistoricalData(_:)`
+/// - Validation Rules: `ValidationFailureReason`
+/// - Error Reporting: `BridgeDataError`
 class BridgeDataProcessor {
-  static let shared = BridgeDataProcessor()
+  public static let shared = BridgeDataProcessor()
 
-  // MARK: - Configuration
+  // MARK: - Properties
 
-  /// Known bridge IDs for validation
-  private let knownBridgeIDs = Set([
-    "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-  ])
+  /// Known bridge IDs for validation.
+  private let knownBridgeIDs = BridgeID.allIDs
+  
+  private let bridgeLocations: [String: (lat: Double, lon: Double)] = [
+    "1": (47.542213439941406, -122.33446502685547), // 1st Ave South
+    "2": (47.65981674194336, -122.37619018554688),  // Ballard
+    "3": (47.64760208129883, -122.3497314453125),   // Fremont
+    "4": (47.64728546142578, -122.3045883178711),   // Montlake
+    "6": (47.57137680053711, -122.35354614257812),  // Lower Spokane St
+    "21": (47.652652740478516, -122.32042694091797),// University
+    "29": (47.52923583984375, -122.31411743164062)  // South Park
+  ]
+  
+  private let validEntityTypes = Set(["Bridge"]) // Expand as needed
+
+  // MARK: - Nested Types
+
+  /// Encapsulates a validation failure for a specific bridge opening record.
+  struct ValidationFailure {
+    /// The original record that failed validation.
+    let record: BridgeOpeningRecord
+    /// The reason for validation failure.
+    let reason: ValidationFailureReason
+  }
+
+  // MARK: - Initializer
 
   private init() {}
 
   // MARK: - Data Processing
 
-  /// Processes raw JSON data and converts it to BridgeStatusModel instances
+  /// Processes raw JSON data into bridge status models and collects all failed validations.
   ///
-  /// This method handles the complete data processing pipeline:
-  /// 1. **JSON Decoding**: Decodes raw JSON data into BridgeOpeningRecord instances using a centralized decoder factory
-  /// 2. **Business Validation**: Filters out invalid records based on business rules
-  /// 3. **Data Grouping**: Groups records by bridge ID for aggregation
-  /// 4. **Model Creation**: Creates BridgeStatusModel instances from grouped data
-  ///
-  /// - Parameter data: Raw JSON data from the API
-  /// - Returns: Array of BridgeStatusModel instances
-  /// - Throws: BridgeDataError for processing failures
-  func processHistoricalData(_ data: Data) throws -> [BridgeStatusModel] {
-    // Centralized JSON decoder configuration via factory
-    let decoder = JSONDecoder.bridgeDecoder()
-
-    // Wrap and classify decoding errors for better diagnostics
-    let bridgeRecords: [BridgeOpeningRecord]
-    do {
-      bridgeRecords = try decoder.decode([BridgeOpeningRecord].self,
-                                         from: data)
-    } catch let decodingError as DecodingError {
-      #if DEBUG
-        print("Decoding failed with error:", decodingError)
-        if let jsonString = String(data: data, encoding: .utf8) {
-          print("Payload was:", jsonString)
-        }
-      #endif
-      throw BridgeDataError.decodingError(decodingError, rawData: data)
-    }
-
-    // Post-decode business validation with enhanced filtering
-    let validRecords = validateAndFilterRecords(bridgeRecords)
-
-    // Group records by bridge ID
-    let groupedRecords = Dictionary(grouping: validRecords) { $0.entityid }
-
-    // Convert to BridgeStatusModel instances
-    return createBridgeModels(from: groupedRecords)
-  }
-
-  // MARK: - Record Validation and Filtering
-
-  private func validateAndFilterRecords(_ records: [BridgeOpeningRecord]) -> [BridgeOpeningRecord] {
-    var validRecords: [BridgeOpeningRecord] = []
-    var skippedCount = 0
-
-    for record in records {
-      if !isValidRecord(record) {
-        skippedCount += 1
-        continue
+  /// - Parameter data: Raw JSON data from the Seattle Open Data API.
+  /// - Returns: A tuple containing two elements: an array of validated `BridgeStatusModel` instances and an array of `ValidationFailure` detailing the reasons why specific records were rejected.
+  /// - Throws: `BridgeDataError` in case of JSON decoding failures or fatal processing errors.
+  func processHistoricalData(_ data: Data) throws -> ([BridgeStatusModel], [ValidationFailure]) {
+      var failures: [ValidationFailure] = []
+      var validRecords: [BridgeOpeningRecord] = []
+      let decoder = JSONDecoder()
+      decoder.keyDecodingStrategy = .useDefaultKeys
+      do {
+          let records = try decoder.decode([BridgeOpeningRecord].self, from: data)
+          for record in records {
+              guard !record.entityid.isEmpty else {
+                  failures.append(ValidationFailure(record: record, reason: .emptyEntityID))
+                  continue
+              }
+              guard !record.entityname.isEmpty else {
+                  failures.append(ValidationFailure(record: record, reason: .emptyEntityName))
+                  continue
+              }
+              guard let _ = BridgeID(rawValue: record.entityid) else {
+                  failures.append(ValidationFailure(record: record, reason: .unknownBridgeID(record.entityid)))
+                  continue
+              }
+              guard let openDate = record.openDate else {
+                  failures.append(ValidationFailure(record: record, reason: .malformedOpenDate(record.opendatetime)))
+                  continue
+              }
+              let now = Date()
+              let calendar = Calendar.current
+              let minDate = calendar.date(byAdding: .year, value: -10, to: now) ?? now
+              let maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
+              if openDate < minDate || openDate > maxDate {
+                  failures.append(ValidationFailure(record: record, reason: .outOfRangeOpenDate(openDate)))
+                  continue
+              }
+              guard let closeDate = record.closeDate else {
+                  failures.append(ValidationFailure(record: record, reason: .malformedCloseDate(record.closedatetime)))
+                  continue
+              }
+              if closeDate <= openDate {
+                  failures.append(ValidationFailure(record: record, reason: .closeDateNotAfterOpenDate(open: openDate, close: closeDate)))
+                  continue
+              }
+              guard let lat = record.latitudeValue, lat >= -90, lat <= 90 else {
+                  failures.append(ValidationFailure(record: record, reason: .invalidLatitude(record.latitudeValue)))
+                  continue
+              }
+              guard let lon = record.longitudeValue, lon >= -180, lon <= 180 else {
+                  failures.append(ValidationFailure(record: record, reason: .invalidLongitude(record.longitudeValue)))
+                  continue
+              }
+              guard let minutesOpen = record.minutesOpenValue, minutesOpen >= 0 else {
+                  failures.append(ValidationFailure(record: record, reason: .negativeMinutesOpen(record.minutesOpenValue)))
+                  continue
+              }
+              let actualMinutes = Int(closeDate.timeIntervalSince(openDate) / 60)
+              if abs(minutesOpen - actualMinutes) > 1 {
+                  failures.append(ValidationFailure(record: record, reason: .minutesOpenMismatch(reported: minutesOpen, actual: actualMinutes)))
+                  continue
+              }
+              validRecords.append(record)
+          }
+      } catch let err as DecodingError {
+          throw BridgeDataError.decodingError(err, rawData: data)
+      } catch {
+          throw BridgeDataError.processingError("Unknown error: \(error)")
       }
-      validRecords.append(record)
-    }
-
-    #if DEBUG
-      if skippedCount > 0 {
-        print("Filtered out \(skippedCount) invalid records from \(records.count) total")
+      var modelMap = [String: (name: String, openings: [Date])]()
+      for record in validRecords {
+          guard !record.entityid.isEmpty, !record.entityname.isEmpty, let openDate = record.openDate else { continue }
+          modelMap[record.entityid, default: (record.entityname, [])].openings.append(openDate)
       }
-    #endif
-
-    return validRecords
-  }
-
-  private func isValidRecord(_ record: BridgeOpeningRecord) -> Bool {
-    // Validate required fields
-    guard !record.entityid.isEmpty, !record.entityname.isEmpty else {
-      #if DEBUG
-        print("Skipping record with empty fields: \(record)")
-      #endif
-      return false
-    }
-
-    // Validate bridge ID is known
-    guard knownBridgeIDs.contains(record.entityid) else {
-      #if DEBUG
-        print("Skipping unknown bridge ID: \(record.entityid)")
-      #endif
-      return false
-    }
-
-    // Validate date parsing
-    guard let openDate = record.openDate else {
-      #if DEBUG
-        print("Skipping record with invalid date: \(record.opendatetime)")
-      #endif
-      return false
-    }
-
-    // Validate date is reasonable (not too old or future)
-    let calendar = Calendar.current
-    let now = Date()
-    let minDate = calendar.date(byAdding: .year, value: -10, to: now) ?? now
-    let maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
-
-    guard openDate >= minDate && openDate <= maxDate else {
-      #if DEBUG
-        print("Skipping record with out-of-range date: \(openDate)")
-      #endif
-      return false
-    }
-
-    // Validate latitude (must be between -90 and 90)
-    guard let latitude = record.latitudeValue,
-          latitude >= -90.0 && latitude <= 90.0
-    else {
-      #if DEBUG
-        print("Skipping record with invalid latitude: \(record.latitude)")
-      #endif
-      return false
-    }
-
-    // Validate longitude (must be between -180 and 180)
-    guard let longitude = record.longitudeValue,
-          longitude >= -180.0 && longitude <= 180.0
-    else {
-      #if DEBUG
-        print("Skipping record with invalid longitude: \(record.longitude)")
-      #endif
-      return false
-    }
-
-    // Validate minutes open (must be non-negative)
-    guard let minutesOpen = record.minutesOpenValue,
-          minutesOpen >= 0
-    else {
-      #if DEBUG
-        print("Skipping record with negative minutes open: \(record.minutesopen)")
-      #endif
-      return false
-    }
-
-    return true
-  }
-
-  // MARK: - Bridge Model Creation
-
-  private func createBridgeModels(from groupedRecords: [String: [BridgeOpeningRecord]]) -> [BridgeStatusModel] {
-    var bridgeModels: [BridgeStatusModel] = []
-
-    for (_, records) in groupedRecords {
-      let openings = records.compactMap { record -> Date? in
-        return record.openDate
+      let models: [BridgeStatusModel] = modelMap.compactMap { (id, val) in
+          guard let bridgeID = BridgeID(rawValue: id), !val.name.isEmpty else { return nil }
+          let sortedOpenings = val.openings.sorted()
+          return BridgeStatusModel(bridgeName: val.name, apiBridgeID: bridgeID, historicalOpenings: sortedOpenings)
       }
-
-      // Use the first record's entityname as the bridge name
-      let bridgeName = records.first?.entityname ?? "Unknown Bridge"
-
-      let bridgeModel = BridgeStatusModel(bridgeName: bridgeName,
-                                          apiBridgeID: records.first?.entityid,
-                                          historicalOpenings: openings.sorted())
-
-      bridgeModels.append(bridgeModel)
-    }
-
-    return bridgeModels
+      return (models, failures)
   }
 }
 
-// MARK: - Bridge Data Error Types
-
-enum BridgeDataError: Error, LocalizedError {
-  case decodingError(DecodingError, rawData: Data)
-  case processingError(String)
-
-  var errorDescription: String? {
-    switch self {
-    case let .decodingError(error, _):
-      return "JSON decoding failed: \(error.localizedDescription)"
-    case let .processingError(message):
-      return "Data processing error: \(message)"
-    }
-  }
-}

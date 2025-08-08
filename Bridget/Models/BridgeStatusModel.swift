@@ -39,7 +39,7 @@ class BridgeStatusModel: Codable {
   /// The raw API identifier for the bridge, used for traceability and mapping to API data.
   ///
   /// This optional property stores the numeric or string ID used by the API to uniquely identify the bridge.
-  var apiBridgeID: String?
+  var apiBridgeID: BridgeID?
 
   /// The list of past dates and times when the bridge was recorded as open.
   var historicalOpenings: [Date]
@@ -67,11 +67,11 @@ class BridgeStatusModel: Codable {
   ///
   /// - Parameters:
   ///   - bridgeName: The human-readable business identifier of the bridge (e.g., "Fremont Bridge").
-  ///   - apiBridgeID: The raw API identifier of the bridge for traceability (e.g., "1").
+  ///   - apiBridgeID: The raw API identifier of the bridge for traceability (e.g., .fremont).
   ///   - historicalOpenings: An array of dates representing previous opening events.
   ///   - realTimeDelay: An optional time interval indicating real-time delay (in seconds).
   init(bridgeName: String,
-       apiBridgeID: String? = nil,
+       apiBridgeID: BridgeID? = nil,
        historicalOpenings: [Date] = [],
        realTimeDelay: TimeInterval? = nil)
   {
@@ -107,7 +107,12 @@ class BridgeStatusModel: Codable {
   required init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     bridgeName = try container.decode(String.self, forKey: .bridgeName)
-    apiBridgeID = try container.decodeIfPresent(String.self, forKey: .apiBridgeID)
+    let apiBridgeIDString = try container.decodeIfPresent(String.self, forKey: .apiBridgeID)
+    if let rawValue = apiBridgeIDString {
+      apiBridgeID = BridgeID(rawValue: rawValue)
+    } else {
+      apiBridgeID = nil
+    }
     historicalOpenings = try container.decode([Date].self,
                                               forKey: .historicalOpenings)
     realTimeDelay = try container.decodeIfPresent(TimeInterval.self,
@@ -131,7 +136,7 @@ class BridgeStatusModel: Codable {
   func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(bridgeName, forKey: .bridgeName)
-    try container.encodeIfPresent(apiBridgeID, forKey: .apiBridgeID)
+    try container.encodeIfPresent(apiBridgeID?.rawValue, forKey: .apiBridgeID)
     try container.encode(historicalOpenings, forKey: .historicalOpenings)
     try container.encodeIfPresent(realTimeDelay, forKey: .realTimeDelay)
     try container.encodeIfPresent(lastCacheUpdate, forKey: .lastCacheUpdate)

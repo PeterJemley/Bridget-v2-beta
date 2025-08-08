@@ -19,53 +19,25 @@ import Foundation
 
 // MARK: - Network Client
 
-/// A service responsible for handling all network operations with retry logic and validation.
+/// A singleton service for robust network operations with retry logic and validation.
 ///
-/// This service provides a robust network layer that implements retry mechanisms,
-/// HTTP response validation, and payload size checking to ensure reliable data fetching.
-///
-/// ## Overview
-///
-/// The `NetworkClient` is designed to handle network requests to external APIs,
-/// particularly the Seattle Open Data API. It implements comprehensive error handling
-/// and validation to ensure data integrity and reliability.
-///
-/// ## Key Features
-///
-/// - **Retry Logic**: Exponential backoff with configurable attempts
-/// - **HTTP Validation**: Status code and content-type validation
-/// - **Payload Size Checking**: Prevents memory issues from large responses
-/// - **Error Classification**: Specific error types for different failure scenarios
-/// - **Thread Safety**: Singleton pattern ensures consistent network state
+/// Handles API fetching, HTTP response validation, retry logic, and error classification for the Bridget app. Used by `BridgeDataService` for all network requests to the Seattle Open Data API.
 ///
 /// ## Usage
-///
 /// ```swift
-/// let client = NetworkClient.shared
-///
-/// // Fetch data with automatic retry and validation
-/// let data = try await client.fetchData(from: url)
+/// let data = try await NetworkClient.shared.fetchData(from: url)
 /// ```
 ///
 /// ## Topics
-///
-/// ### Network Operations
-/// - ``fetchData(from:)``
-///
-/// ### Configuration
-/// - Maximum retry attempts: 3
-/// - Retry delay: 2 seconds (exponential backoff)
-/// - Maximum payload size: 5MB
-///
-/// ## Error Handling
-///
-/// The service throws specific `NetworkError` types:
-/// - `.invalidResponse`: Invalid HTTP response format
-/// - `.httpError(statusCode:)`: Non-200 HTTP status codes
-/// - `.invalidContentType`: Missing or invalid Content-Type header
-/// - `.payloadTooLarge`: Response exceeds 5MB limit
-/// - `.networkError`: General network failures
+/// - Data Fetching: `fetchData(from:)`
+/// - Error Handling: `NetworkError`
+/// - Retry Logic
+/// - Payload Size Validation
 class NetworkClient {
+  /// Shared singleton instance of `NetworkClient`.
+  ///
+  /// Use this instance to perform all network requests within the app,
+  /// ensuring consistent retry behavior and validation.
   static let shared = NetworkClient()
 
   // MARK: - Configuration
@@ -78,24 +50,26 @@ class NetworkClient {
 
   // MARK: - Network Fetching with Retry
 
-  /// Fetches data from the network with retry logic and validation
+  /// Fetches raw data from the specified URL with built-in retry and validation logic.
   ///
-  /// This method implements a robust network fetching strategy:
-  /// ## Retry with exponential backoff
-  /// Attempts network requests up to 3 times
+  /// This method attempts to fetch data up to 3 times using an exponential backoff strategy
+  /// (2s, 4s, 6s delays) between retries. It validates the HTTP response status code,
+  /// ensures the content type is JSON, and checks the payload size to prevent overly large responses.
   ///
-  /// ## HTTP-level validation
-  /// Validates status codes, headers, content-type
+  /// - Parameter url: The `URL` to fetch data from.
+  /// - Returns: The raw `Data` received from the network response.
+  /// - Throws: A `NetworkError` if the request fails due to invalid response, HTTP errors,
+  ///           invalid content type, payload size issues, or general network errors.
   ///
-  /// ## Payload size validation
-  /// Ensures response size is reasonable
-  ///
-  /// ## Error propagation
-  /// Throws specific network errors for different failure types
-  ///
-  /// - Parameter url: The URL to fetch data from
-  /// - Returns: Raw Data from the network response
-  /// - Throws: NetworkError for various network-related failures
+  /// ## Example
+  /// ```swift
+  /// do {
+  ///   let data = try await NetworkClient.shared.fetchData(from: url)
+  ///   // Use the data
+  /// } catch {
+  ///   print("Failed to fetch data: \(error.localizedDescription)")
+  /// }
+  /// ```
   func fetchData(from url: URL) async throws -> Data {
     var lastError: Error?
 
@@ -162,13 +136,24 @@ class NetworkClient {
 
 // MARK: - Network Error Types
 
+/// Defines errors that can occur during network operations performed by `NetworkClient`.
+///
+/// Used to classify failures for invalid responses, HTTP errors,
+/// content type mismatches, payload size issues, and general network errors.
 enum NetworkError: Error, LocalizedError {
+  /// A general network request failure.
   case networkError
+  /// The response was not a valid HTTP response.
   case invalidResponse
+  /// The HTTP response returned a non-200 status code.
+  /// Associated value is the status code received.
   case httpError(statusCode: Int)
+  /// The Content-Type header was missing or did not indicate JSON.
   case invalidContentType
+  /// The payload size was either empty or exceeded the configured maximum limit.
   case payloadSizeError
 
+  /// A human-readable description of the error.
   var errorDescription: String? {
     switch self {
     case .networkError:

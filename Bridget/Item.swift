@@ -21,6 +21,7 @@
 import Foundation
 import SwiftData
 
+// MARK: - Item Model
 @Model
 final class Item {
   var timestamp: Date

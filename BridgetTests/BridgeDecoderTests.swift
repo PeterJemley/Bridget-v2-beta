@@ -18,13 +18,64 @@
 //  See Apple's documentation for details on MetricKit and os_signpost usage.
 //
 
+// MARK: - Imports
+
 @testable import Bridget
 import Foundation
 import MetricKit
 import os
 import OSLog
 import Testing
-import XCTest
+
+/// Comprehensive business validation failure reasons for bridge records.
+enum ValidationFailureReason: CustomStringConvertible, Equatable {
+    case emptyEntityID
+    case emptyEntityName
+    case unknownBridgeID(String)
+    case malformedOpenDate(String)
+    case outOfRangeOpenDate(Date)
+    case malformedCloseDate(String)
+    case outOfRangeCloseDate(Date)
+    case invalidLatitude(Double?)
+    case invalidLongitude(Double?)
+    case negativeMinutesOpen(Int?)
+    case missingRequiredField(String)
+    case duplicateRecord
+    case other(String)
+
+    var description: String {
+        switch self {
+        case .emptyEntityID:
+            return "Empty entityid"
+        case .emptyEntityName:
+            return "Empty entityname"
+        case .unknownBridgeID(let id):
+            return "Unknown bridge ID: \(id)"
+        case .malformedOpenDate(let value):
+            return "Malformed open date: \(value)"
+        case .outOfRangeOpenDate(let date):
+            return "Open date out of allowed range: \(date)"
+        case .malformedCloseDate(let value):
+            return "Malformed close date: \(value)"
+        case .outOfRangeCloseDate(let date):
+            return "Close date out of allowed range: \(date)"
+        case .invalidLatitude(let value):
+            return "Invalid latitude: \(String(describing: value)) (must be between -90 and 90)"
+        case .invalidLongitude(let value):
+            return "Invalid longitude: \(String(describing: value)) (must be between -180 and 180)"
+        case .negativeMinutesOpen(let value):
+            return "Negative minutes open: \(String(describing: value))"
+        case .missingRequiredField(let name):
+            return "Missing required field: \(name)"
+        case .duplicateRecord:
+            return "Duplicate record detected"
+        case .other(let message):
+            return message
+        }
+    }
+}
+
+// MARK: - MetricKitObserver (Performance Metrics)
 
 /// Minimal MetricKit observer that prints received metric payloads for demonstration.
 ///
@@ -135,6 +186,8 @@ final class MetricKitObserver: NSObject, MXMetricManagerSubscriber {
   }
 }
 
+// MARK: - BridgetMetricsCollector (Custom Metrics)
+
 /// Custom metric collector for Bridget-specific operations
 class BridgetMetricsCollector {
   static let shared = BridgetMetricsCollector()
@@ -179,6 +232,8 @@ class BridgetMetricsCollector {
 }
 
 private let _metricKitObserver = MetricKitObserver()
+
+// MARK: - Date Validation & Reporting Types
 
 /// Reasons for date validation failures in business logic.
 ///
@@ -256,6 +311,8 @@ struct MonitoringDateValidationErrorReporter: DateValidationErrorReporter {
     // Stub: Send to monitoring/logging service
   }
 }
+
+// MARK: - DateValidator (Business Validation)
 
 /// Business validation for date strings.
 ///
@@ -357,10 +414,14 @@ enum DateValidator {
   }
 }
 
+// MARK: - TestError Enum
+
 /// Error type for unexpected test outcomes.
 enum TestError: Error {
   case unexpectedSuccess(String)
 }
+
+// MARK: - BridgeDecoderTests Suite
 
 /// Test suite for verifying the behavior of `JSONDecoder.bridgeDecoder()`
 /// with a focus on date decoding formats, error handling, business validation,
@@ -729,3 +790,4 @@ struct BridgeDecoderTests {
 
    */
 }
+

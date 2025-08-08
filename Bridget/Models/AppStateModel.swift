@@ -33,7 +33,7 @@ import Foundation
 import Observation
 
 /// A global application state container responsible for managing routing data, loading states,
-/// error handling, and user selections within the Bridget app.
+/// error handling, user selections, and validation failures within the Bridget app.
 ///
 /// This model is marked `@Observable` and is the single source of truth for all route data.
 /// It interacts with services like `BridgeDataService` to fetch and cache route data.
@@ -52,6 +52,13 @@ class AppStateModel {
 
   /// The most recent error encountered during data fetching or processing.
   var error: Error?
+
+  // MARK: - Validation Failures
+
+  /// Validation failures encountered during the loading and processing of bridge data.
+  /// These are not fatal errors but indicate issues that may affect data integrity.
+  @ObservationIgnored
+  var validationFailures: [BridgeDataProcessor.ValidationFailure] = []
 
   // MARK: - Cache Metadata (Internal Only)
 
@@ -78,6 +85,7 @@ class AppStateModel {
     self.isLoading = false
     self.selectedRouteID = nil
     self.error = nil
+    self.validationFailures = []
     self.lastDataRefresh = nil
     self.isOfflineMode = false
     self.lastSuccessfulFetch = nil
@@ -93,17 +101,22 @@ class AppStateModel {
   /// Loads historical bridge data asynchronously and updates the application state.
   ///
   /// This method fetches data from the BridgeDataService and handles loading states,
-  /// error handling, and cache management.
+  /// error handling, validation failure propagation, and cache management.
+  ///
+  /// Validation failures encountered during data processing are stored in `validationFailures`
+  /// without disrupting the data load.
   @MainActor
   private func loadData() async {
     isLoading = true
     error = nil
+    validationFailures = []
 
     do {
-      let bridges = try await BridgeDataService.shared.loadHistoricalData()
+      let (bridges, validationFailures) = try await BridgeDataService.shared.loadHistoricalData()
       let routes = BridgeDataService.shared.generateRoutes(from: bridges)
 
       self.routes = routes
+      self.validationFailures = validationFailures
       self.isLoading = false
       self.recordSuccessfulFetch()
     } catch {
@@ -126,7 +139,6 @@ class AppStateModel {
   func refreshData() async {
     // Force refresh by clearing cache metadata
     for route in routes {
-      route.markScoreAsStale()
       route.bridges.forEach { $0.markAsStale() }
     }
 
@@ -156,6 +168,11 @@ class AppStateModel {
   /// The localized description of the current error, if any.
   var errorMessage: String? {
     return error?.localizedDescription
+  }
+
+  /// A Boolean value indicating whether there are any validation failures.
+  var hasValidationFailures: Bool {
+    return !validationFailures.isEmpty
   }
 
   // MARK: - Route Selection
@@ -221,3 +238,4 @@ class AppStateModel {
     return Date().timeIntervalSince(lastRefresh)
   }
 }
+

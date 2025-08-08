@@ -1,3 +1,4 @@
+import Foundation
 //
 //  ModelTests.swift
 //  BridgetTests
@@ -23,18 +24,20 @@
 //
 
 @testable import Bridget
-import XCTest
+import Testing
 
-final class ModelTests: XCTestCase {
+@Suite("Model Tests") struct ModelTests {
+  @Test
   func testBridgeStatusModelInitialization() {
     let bridge = BridgeStatusModel(bridgeName: "Test Bridge", apiBridgeID: nil)
 
-    XCTAssertEqual(bridge.bridgeName, "Test Bridge")
-    XCTAssertEqual(bridge.historicalOpenings.count, 0)
-    XCTAssertNil(bridge.realTimeDelay)
-    XCTAssertEqual(bridge.totalOpenings, 0)
+    #expect(bridge.bridgeName == "Test Bridge")
+    #expect(bridge.historicalOpenings.count == 0)
+    #expect(bridge.realTimeDelay == nil)
+    #expect(bridge.totalOpenings == 0)
   }
 
+  @Test
   func testBridgeStatusModelWithHistoricalData() {
     let calendar = Calendar.current
     let now = Date()
@@ -46,15 +49,15 @@ final class ModelTests: XCTestCase {
 
     let bridge = BridgeStatusModel(bridgeName: "Test Bridge", apiBridgeID: nil, historicalOpenings: openings)
 
-    XCTAssertEqual(bridge.bridgeName, "Test Bridge")
-    XCTAssertEqual(bridge.historicalOpenings.count, 3)
-    XCTAssertEqual(bridge.totalOpenings, 3)
+    #expect(bridge.bridgeName == "Test Bridge")
+    #expect(bridge.historicalOpenings.count == 3)
+    #expect(bridge.totalOpenings == 3)
 
-    // Test opening frequency
     let frequency = bridge.openingFrequency
-    XCTAssertFalse(frequency.isEmpty)
+    #expect(!frequency.isEmpty)
   }
 
+  @Test
   func testRouteModelInitialization() {
     let bridges = [
       BridgeStatusModel(bridgeName: "Bridge 1", apiBridgeID: nil),
@@ -63,13 +66,14 @@ final class ModelTests: XCTestCase {
 
     let route = RouteModel(routeID: "Test Route", bridges: bridges, score: 0.5)
 
-    XCTAssertEqual(route.routeID, "Test Route")
-    XCTAssertEqual(route.bridges.count, 2)
-    XCTAssertEqual(route.score, 0.5)
-    XCTAssertEqual(route.complexity, 2)
-    XCTAssertEqual(route.totalHistoricalOpenings, 0)
+    #expect(route.routeID == "Test Route")
+    #expect(route.bridges.count == 2)
+    #expect(route.score == 0.5)
+    #expect(route.complexity == 2)
+    #expect(route.totalHistoricalOpenings == 0)
   }
 
+  @Test
   func testRouteModelWithHistoricalData() {
     let calendar = Calendar.current
     let now = Date()
@@ -87,97 +91,104 @@ final class ModelTests: XCTestCase {
                                       calendar.date(byAdding: .hour, value: -3, to: now)!,
                                     ])
 
-    let route = RouteModel(routeID: "Test Route", bridges: [bridge1, bridge2])
+    let route = RouteModel(routeID: "Test Route", bridges: [bridge1, bridge2], score: 0.0)
 
-    XCTAssertEqual(route.totalHistoricalOpenings, 3)
-    XCTAssertEqual(route.complexity, 2)
+    #expect(route.totalHistoricalOpenings == 3)
+    #expect(route.complexity == 2)
   }
 
+  @Test
   func testAppStateModelInitialization() {
     let appState = AppStateModel()
 
-    XCTAssertEqual(appState.routes.count, 0)
-    XCTAssertFalse(appState.isLoading)
-    XCTAssertNil(appState.selectedRouteID)
-    XCTAssertNil(appState.error)
-    XCTAssertFalse(appState.hasError)
-    XCTAssertNil(appState.errorMessage)
+    #expect(appState.routes.count == 0)
+    #expect(!appState.isLoading)
+    #expect(appState.selectedRouteID == nil)
+    #expect(appState.error == nil)
+    #expect(!appState.hasError)
+    #expect(appState.errorMessage == nil)
   }
 
+  @Test
   func testAppStateModelRouteSelection() {
     let appState = AppStateModel()
-    let route = RouteModel(routeID: "Test Route")
+    let route = RouteModel(routeID: "Test Route", bridges: [], score: 0.0)
     appState.routes = [route]
 
-    XCTAssertNil(appState.selectedRoute)
+    #expect(appState.selectedRoute == nil)
 
     appState.selectRoute(withID: "Test Route")
-    XCTAssertEqual(appState.selectedRouteID, "Test Route")
-    XCTAssertNotNil(appState.selectedRoute)
-    XCTAssertEqual(appState.selectedRoute?.routeID, "Test Route")
+    #expect(appState.selectedRouteID == "Test Route")
+    #expect(appState.selectedRoute != nil)
+    #expect(appState.selectedRoute?.routeID == "Test Route")
 
     appState.clearSelection()
-    XCTAssertNil(appState.selectedRouteID)
-    XCTAssertNil(appState.selectedRoute)
+    #expect(appState.selectedRouteID == nil)
+    #expect(appState.selectedRoute == nil)
   }
 
+  @Test
   func testAppStateModelErrorHandling() {
     let appState = AppStateModel()
 
-    XCTAssertFalse(appState.hasError)
-    XCTAssertNil(appState.errorMessage)
+    #expect(!appState.hasError)
+    #expect(appState.errorMessage == nil)
 
     let testError = NetworkError.networkError
     appState.error = testError
 
-    XCTAssertTrue(appState.hasError)
-    XCTAssertEqual(appState.errorMessage, testError.localizedDescription)
+    #expect(appState.hasError)
+    #expect(appState.errorMessage == testError.localizedDescription)
 
     appState.clearError()
-    XCTAssertFalse(appState.hasError)
-    XCTAssertNil(appState.errorMessage)
+    #expect(!appState.hasError)
+    #expect(appState.errorMessage == nil)
   }
 
+  @Test
   func testBridgeDataServiceSampleData() {
     let service = BridgeDataService.shared
     let sampleBridges = service.loadSampleData()
 
-    XCTAssertFalse(sampleBridges.isEmpty)
+    #expect(!sampleBridges.isEmpty)
 
     for bridge in sampleBridges {
-      XCTAssertFalse(bridge.bridgeName.isEmpty)
-      XCTAssertGreaterThanOrEqual(bridge.historicalOpenings.count, 0)
+      #expect(!bridge.bridgeName.isEmpty)
+      #expect(bridge.historicalOpenings.count >= 0)
     }
   }
 
+  @Test
   func testBridgeDataServiceRouteGeneration() {
     let service = BridgeDataService.shared
     let sampleBridges = service.loadSampleData()
     let routes = service.generateRoutes(from: sampleBridges)
 
-    XCTAssertFalse(routes.isEmpty)
+    #expect(!routes.isEmpty)
 
     for route in routes {
-      XCTAssertFalse(route.routeID.isEmpty)
-      XCTAssertGreaterThanOrEqual(route.bridges.count, 0)
-      XCTAssertEqual(route.score, 0.0) // Initial score should be 0
+      #expect(!route.routeID.isEmpty)
+      #expect(route.bridges.count >= 0)
+      #expect(route.score == 0.0)
     }
   }
 
+  @Test
   func testBridgeDataErrorLocalization() {
     let networkError = NetworkError.networkError
     let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")), rawData: Data())
     let invalidURLError = NetworkError.invalidResponse
 
-    XCTAssertNotNil(networkError.localizedDescription)
-    XCTAssertNotNil(decodingError.localizedDescription)
-    XCTAssertNotNil(invalidURLError.localizedDescription)
+    #expect(!networkError.localizedDescription.isEmpty)
+    #expect(!decodingError.localizedDescription.isEmpty)
+    #expect(!invalidURLError.localizedDescription.isEmpty)
 
-    XCTAssertFalse(networkError.localizedDescription.isEmpty)
-    XCTAssertFalse(decodingError.localizedDescription.isEmpty)
-    XCTAssertFalse(invalidURLError.localizedDescription.isEmpty)
+    #expect(!networkError.localizedDescription.isEmpty)
+    #expect(!decodingError.localizedDescription.isEmpty)
+    #expect(!invalidURLError.localizedDescription.isEmpty)
   }
 
+  @Test
   func testBridgeOpeningRecordCoding() {
     let record = BridgeOpeningRecord(entitytype: "Bridge",
                                      entityname: "1st Ave South",
@@ -188,13 +199,14 @@ final class ModelTests: XCTestCase {
                                      latitude: "47.542213439941406",
                                      longitude: "-122.33446502685547")
 
-    XCTAssertEqual(record.entityid, "1")
-    XCTAssertEqual(record.entityname, "1st Ave South")
-    XCTAssertEqual(record.opendatetime, "2025-01-03T10:12:00.000")
-    XCTAssertEqual(record.closedatetime, "2025-01-03T10:20:00.000")
-    XCTAssertEqual(record.minutesopen, "8")
+    #expect(record.entityid == "1")
+    #expect(record.entityname == "1st Ave South")
+    #expect(record.opendatetime == "2025-01-03T10:12:00.000")
+    #expect(record.closedatetime == "2025-01-03T10:20:00.000")
+    #expect(record.minutesopen == "8")
   }
 
+  @Test
   func testBridgeOpeningRecordComputedProperties() {
     let record = BridgeOpeningRecord(entitytype: "Bridge",
                                      entityname: "1st Ave South",
@@ -205,14 +217,15 @@ final class ModelTests: XCTestCase {
                                      latitude: "47.542213439941406",
                                      longitude: "-122.33446502685547")
 
-    XCTAssertNotNil(record.openDate)
-    XCTAssertNotNil(record.closeDate)
-    XCTAssertEqual(record.minutesOpenValue, 8)
-    XCTAssertEqual(record.latitudeValue, 47.542213439941406)
-    XCTAssertEqual(record.longitudeValue, -122.33446502685547)
+    #expect(record.openDate != nil)
+    #expect(record.closeDate != nil)
+    #expect(record.minutesOpenValue == 8)
+    #expect(record.latitudeValue == 47.542213439941406)
+    #expect(record.longitudeValue == -122.33446502685547)
   }
 
-  func testBridgeOpeningRecordJSONDecoding() {
+  @Test
+  func testBridgeOpeningRecordJSONDecoding() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -226,20 +239,15 @@ final class ModelTests: XCTestCase {
     }
     """.data(using: .utf8)!
 
-    do {
-      let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
-      XCTAssertEqual(record.entityid, "1")
-      XCTAssertEqual(record.entityname, "1st Ave South")
-      XCTAssertEqual(record.opendatetime, "2025-01-03T10:12:00.000")
-      XCTAssertEqual(record.closedatetime, "2025-01-03T10:20:00.000")
-      XCTAssertEqual(record.minutesopen, "8")
-    } catch {
-      XCTFail("Failed to decode BridgeOpeningRecord: \(error)")
-    }
+    let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    #expect(record.entityid == "1")
+    #expect(record.entityname == "1st Ave South")
+    #expect(record.opendatetime == "2025-01-03T10:12:00.000")
+    #expect(record.closedatetime == "2025-01-03T10:20:00.000")
+    #expect(record.minutesopen == "8")
   }
 
-  // MARK: - Invalid Payload Tests
-
+  @Test
   func testMissingRequiredKeys() {
     let json = """
     {
@@ -249,15 +257,13 @@ final class ModelTests: XCTestCase {
     }
     """.data(using: .utf8)!
 
-    do {
+    #expect(throws: DecodingError.self) {
       _ = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
-      XCTFail("Should have failed to decode record with missing keys")
-    } catch {
-      XCTAssertTrue(error is DecodingError)
     }
   }
 
-  func testExtraUnknownKeys() {
+  @Test
+  func testExtraUnknownKeys() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -272,16 +278,13 @@ final class ModelTests: XCTestCase {
     }
     """.data(using: .utf8)!
 
-    do {
-      let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
-      XCTAssertEqual(record.entityid, "1")
-      XCTAssertEqual(record.entityname, "1st Ave South")
-    } catch {
-      XCTFail("Should have decoded record with extra keys: \(error)")
-    }
+    let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    #expect(record.entityid == "1")
+    #expect(record.entityname == "1st Ave South")
   }
 
-  func testMalformedDateStrings() {
+  @Test
+  func testMalformedDateStrings() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -295,27 +298,21 @@ final class ModelTests: XCTestCase {
     }
     """.data(using: .utf8)!
 
-    do {
-      let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
-      XCTAssertNil(record.openDate, "Should have nil openDate for malformed date")
-      XCTAssertNotNil(record.closeDate, "Should have valid closeDate")
-    } catch {
-      XCTFail("Should have decoded record with malformed date: \(error)")
-    }
+    let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    #expect(record.openDate == nil, "Should have nil openDate for malformed date")
+    #expect(record.closeDate != nil, "Should have valid closeDate")
   }
 
-  func testEmptyArrayPayload() {
+  @Test
+  func testEmptyArrayPayload() throws {
     let json = "[]".data(using: .utf8)!
 
-    do {
-      let records = try JSONDecoder().decode([BridgeOpeningRecord].self, from: json)
-      XCTAssertEqual(records.count, 0)
-    } catch {
-      XCTFail("Should have decoded empty array: \(error)")
-    }
+    let records = try JSONDecoder().decode([BridgeOpeningRecord].self, from: json)
+    #expect(records.count == 0)
   }
 
-  func testEmptyStringValues() {
+  @Test
+  func testEmptyStringValues() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -329,18 +326,15 @@ final class ModelTests: XCTestCase {
     }
     """.data(using: .utf8)!
 
-    do {
-      let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
-      XCTAssertEqual(record.entityid, "")
-      XCTAssertEqual(record.entityname, "")
-      XCTAssertTrue(record.entityid.isEmpty)
-      XCTAssertTrue(record.entityname.isEmpty)
-    } catch {
-      XCTFail("Should have decoded record with empty strings: \(error)")
-    }
+    let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    #expect(record.entityid == "")
+    #expect(record.entityname == "")
+    #expect(record.entityid.isEmpty)
+    #expect(record.entityname.isEmpty)
   }
 
-  func testInvalidNumericValues() {
+  @Test
+  func testInvalidNumericValues() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -354,16 +348,13 @@ final class ModelTests: XCTestCase {
     }
     """.data(using: .utf8)!
 
-    do {
-      let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
-      XCTAssertNil(record.minutesOpenValue)
-      XCTAssertNil(record.latitudeValue)
-      XCTAssertNil(record.longitudeValue)
-    } catch {
-      XCTFail("Should have decoded record with invalid numeric values: \(error)")
-    }
+    let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    #expect(record.minutesOpenValue == nil)
+    #expect(record.latitudeValue == nil)
+    #expect(record.longitudeValue == nil)
   }
 
+  @Test
   func testUpdatedBridgeDataErrorLocalization() {
     let networkError = NetworkError.networkError
     let invalidContentTypeError = NetworkError.invalidContentType
@@ -371,22 +362,15 @@ final class ModelTests: XCTestCase {
     let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")), rawData: Data())
     let processingError = BridgeDataError.processingError("test error")
 
-    XCTAssertNotNil(networkError.localizedDescription)
-    XCTAssertNotNil(invalidContentTypeError.localizedDescription)
-    XCTAssertNotNil(payloadSizeError.localizedDescription)
-    XCTAssertNotNil(decodingError.localizedDescription)
-    XCTAssertNotNil(processingError.localizedDescription)
-
-    XCTAssertFalse(networkError.localizedDescription.isEmpty)
-    XCTAssertFalse(invalidContentTypeError.localizedDescription.isEmpty)
-    XCTAssertFalse(payloadSizeError.localizedDescription.isEmpty)
-    XCTAssertFalse(decodingError.localizedDescription.isEmpty)
-    XCTAssertFalse(processingError.localizedDescription.isEmpty)
+    #expect(!networkError.localizedDescription.isEmpty)
+    #expect(!invalidContentTypeError.localizedDescription.isEmpty)
+    #expect(!payloadSizeError.localizedDescription.isEmpty)
+    #expect(!decodingError.localizedDescription.isEmpty)
+    #expect(!processingError.localizedDescription.isEmpty)
   }
 
-  // MARK: - Enhanced Validation Tests
-
-  func testOutOfRangeDate() {
+  @Test
+  func testOutOfRangeDate() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -400,11 +384,12 @@ final class ModelTests: XCTestCase {
     }
     """.data(using: .utf8)!
 
-    // This should decode successfully but would be filtered out by business logic
-    XCTAssertNoThrow(try JSONDecoder().decode(BridgeOpeningRecord.self, from: json))
+    _ = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    #expect(true)
   }
 
-  func testUnknownBridgeID() {
+  @Test
+  func testUnknownBridgeID() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -418,40 +403,28 @@ final class ModelTests: XCTestCase {
     }
     """.data(using: .utf8)!
 
-    // This should decode successfully but would be filtered out by business logic
-    XCTAssertNoThrow(try JSONDecoder().decode(BridgeOpeningRecord.self, from: json))
+    _ = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    #expect(true)
   }
 
+  @Test
   func test304NoChangeResponse() {
-    // Simulate a 304 Not Modified response with empty data
     let emptyData = Data()
-
-    // This would be caught by the service layer's empty data check
-    XCTAssertTrue(emptyData.isEmpty)
+    #expect(emptyData.isEmpty)
   }
 
+  @Test
   func testOversizedPayload() {
-    // Create a large data blob that exceeds the limit
-    let largeData = Data(repeating: 0, count: 6 * 1024 * 1024) // 6MB
-
-    // This would be caught by the service layer, but we can test the concept
-    XCTAssertTrue(largeData.count > 5 * 1024 * 1024) // Should be larger than maxAllowedSize
+    let largeData = Data(repeating: 0, count: 6 * 1024 * 1024)
+    #expect(largeData.count > 5 * 1024 * 1024)
   }
 
-  /// Tests that BridgeDataProcessor rejects records with out-of-range or invalid data values.
-  ///
-  /// Each invalid case constructs a minimal valid JSON payload with one invalid value:
-  /// 1. Latitude > 90
-  /// 2. Longitude < -180
-  /// 3. Negative minutes open
-  /// 4. Open date older than 10 years ago
-  /// The processor is expected to return an empty array for all these cases.
+  @Test
   func testBridgeDataProcessorRejectsOutOfRangeValues() throws {
     let processor = BridgeDataProcessor.shared
     let validDate = "2025-01-03T10:12:00.000"
     let validCloseDate = "2025-01-03T10:20:00.000"
 
-    // Case 1: Invalid latitude
     let invalidLatJSON = """
     [{
         "entitytype": "Bridge",
@@ -464,9 +437,8 @@ final class ModelTests: XCTestCase {
         "longitude": "-122.334465"
     }]
     """.data(using: .utf8)!
-    XCTAssertTrue(try processor.processHistoricalData(invalidLatJSON).isEmpty)
+    #expect(try processor.processHistoricalData(invalidLatJSON).0.isEmpty)
 
-    // Case 2: Invalid longitude
     let invalidLonJSON = """
     [{
         "entitytype": "Bridge",
@@ -479,9 +451,8 @@ final class ModelTests: XCTestCase {
         "longitude": "-190.0"
     }]
     """.data(using: .utf8)!
-    XCTAssertTrue(try processor.processHistoricalData(invalidLonJSON).isEmpty)
+    #expect(try processor.processHistoricalData(invalidLonJSON).0.isEmpty)
 
-    // Case 3: Negative minutesopen
     let invalidMinutesJSON = """
     [{
         "entitytype": "Bridge",
@@ -494,9 +465,8 @@ final class ModelTests: XCTestCase {
         "longitude": "-122.334465"
     }]
     """.data(using: .utf8)!
-    XCTAssertTrue(try processor.processHistoricalData(invalidMinutesJSON).isEmpty)
+    #expect(try processor.processHistoricalData(invalidMinutesJSON).0.isEmpty)
 
-    // Case 4: Out-of-range openDate (15 years ago)
     let oldDateJSON = """
     [{
         "entitytype": "Bridge",
@@ -509,6 +479,7 @@ final class ModelTests: XCTestCase {
         "longitude": "-122.334465"
     }]
     """.data(using: .utf8)!
-    XCTAssertTrue(try processor.processHistoricalData(oldDateJSON).isEmpty)
+    #expect(try processor.processHistoricalData(oldDateJSON).0.isEmpty)
   }
 }
+

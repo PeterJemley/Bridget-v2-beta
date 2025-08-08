@@ -15,72 +15,65 @@
 //    - Called by BridgeDataService for data persistence
 //
 
+// MARK: - Imports
+
 import Foundation
 
-/// A service responsible for managing disk-based caching operations for bridge data.
+// MARK: - CacheService Class
+
+/// A singleton service for disk-based JSON caching of bridge data.
 ///
-/// This service provides a robust caching layer that handles JSON serialization,
-/// cache expiration, and disk I/O operations. It implements a cache-first strategy
-/// with automatic expiration and size management capabilities.
+/// Handles serialization, expiration, and cleanup of cached data for offline support and performance.
+/// Used by `BridgeDataService` to persist and validate bridge and route models.
 ///
-/// ## Overview
+/// ## Purpose
+/// Provides a robust caching layer that handles JSON serialization, cache expiration,  
+/// and disk I/O operations with a cache-first strategy and automatic expiration.
 ///
-/// The `CacheService` manages persistent caching of bridge data to support offline
-/// functionality and improve app performance. It uses JSON encoding/decoding for
-/// data serialization and implements automatic cache expiration.
+/// ## Integration Points
+/// - Manages disk-based caching for bridge data
+/// - Handles cache expiration and validation
+/// - Provides cache utilities for size management
+/// - Called by BridgeDataService for data persistence
 ///
-/// ## Key Features
-///
-/// - Disk-based Storage: Uses FileManager for persistent cache storage
-/// - JSON Serialization: Automatic encoding/decoding of Codable types
-/// - Cache Expiration: Automatic validation based on file modification time
-/// - Size Management: Cache size calculation and cleanup utilities
-/// - Error Handling: Graceful degradation when cache operations fail
+/// ## Features
+/// - Disk-based Storage: Uses FileManager for persistent cache storage  
+/// - JSON Serialization: Automatic encoding/decoding of Codable types  
+/// - Cache Expiration: Automatic validation based on file modification time  
+/// - Size Management: Cache size calculation and cleanup utilities  
+/// - Error Handling: Silent failure with console logging  
 /// - Thread Safety: Singleton pattern ensures consistent cache state
 ///
 /// ## Usage
-///
-/// - let cacheService = CacheService.shared
-///
-/// - Save data to cache
-///   cacheService.saveToCache(bridges, for: "historical_bridges")
-///
-/// - Load data from cache
-///   if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache(
-///       [BridgeStatusModel].self, for: "historical_bridges") {
-///       // Use cached data
-///   }
-///
-/// - Check cache validity
-///   if cacheService.isCacheValid(for: "historical_bridges") {
-///       // Cache is fresh
-///   }
+/// ```swift
+/// CacheService.shared.saveToCache(data, for: "historical_bridges")
+/// let cached: [BridgeStatusModel]? = CacheService.shared.loadFromCache([BridgeStatusModel].self, for: "historical_bridges")
+/// if CacheService.shared.isCacheValid(for: "historical_bridges") {
+///     // Use valid cache
+/// }
+/// CacheService.shared.clearCache()
+/// let size = CacheService.shared.getCacheSize()
+/// ```
 ///
 /// ## Topics
-///
-/// - ``saveToCache(_:for:)``
-/// - ``loadFromCache(_:for:)``
-/// - ``isCacheValid(for:)``
-/// - ``clearCache()``
-/// - ``getCacheSize()``
-///
-/// ## Cache Configuration
-///
-/// - Cache Directory: `BridgeCache` in app's documents directory
-/// - Expiration Time: 5 minutes (300 seconds)
-/// - File Format: JSON with ISO8601 date encoding
-/// - Error Handling: Silent failure with console logging
+/// - Caching: `saveToCache(_:for:)`, `loadFromCache(_:for:)`, `isCacheValid(for:)`
+/// - Utilities: `clearCache()`, `getCacheSize()`
 class CacheService {
+  /// Shared singleton instance of `CacheService`.
+  ///
+  /// Use this instance to access caching functionality throughout the app.
   static let shared = CacheService()
 
-  // MARK: - Configuration
+  // MARK: - Properties
 
   private let cacheDirectory = "BridgeCache"
   private let cacheExpirationTime: TimeInterval = 300 // 5 minutes
 
+  // MARK: - Initialization
+
   private init() {}
 
-  // MARK: - Cache Directory Management
+  // MARK: - Private Methods
 
   private func getCacheDirectory() -> URL? {
     guard let documentsPath = FileManager.default.urls(for: .documentDirectory,
@@ -97,19 +90,21 @@ class CacheService {
 
   // MARK: - Cache Operations
 
-  /// Saves data to cache with JSON encoding and ISO8601 date formatting.
+  /// Saves the provided data to disk cache using JSON encoding.
   ///
-  /// This method serializes the provided data to JSON and writes it to disk
-  /// in the cache directory. The file is named using the provided key and
-  /// uses ISO8601 date encoding for consistent date handling.
+  /// Encodes the data with an ISO8601 date encoding strategy and writes it
+  /// to a JSON file named by the given key in the cache directory.
   ///
   /// - Parameters:
-  ///   - data: The data to cache. Must conform to `Codable` protocol.
-  ///   - key: The cache key used for file naming and retrieval.
-  ///     Should be descriptive and unique (e.g., "historical_bridges").
+  ///   - data: The data to cache. Must conform to `Codable`.
+  ///   - key: A unique key identifying the cache file (e.g., `"historical_bridges"`).
   ///
-  /// - Note: This method fails silently and logs errors to console.
-  ///   No exceptions are thrown to maintain app stability.
+  /// - Note: This method fails silently and logs errors to the console.
+  ///
+  /// ## Example
+  /// ```swift
+  /// CacheService.shared.saveToCache(bridges, for: "historical_bridges")
+  /// ```
   func saveToCache<T: Codable>(_ data: T, for key: String) {
     guard let cacheURL = getCacheFileURL(for: key) else { return }
 
@@ -123,23 +118,26 @@ class CacheService {
     }
   }
 
-  /// Loads data from cache with JSON decoding using the centralized decoder configuration.
+  /// Loads and decodes cached data from disk.
   ///
-  /// This method reads the cached JSON file from disk and deserializes it
-  /// to the specified type. It uses the centralized JSONDecoder factory
-  /// `bridgeDecoder()` for consistent date and key decoding strategies.
+  /// Reads the JSON file associated with the given key from the cache directory,
+  /// then decodes it to the specified type using the centralized JSON decoder.
   ///
   /// - Parameters:
-  ///   - type: The type to decode from cache. Must conform to `Codable` protocol.
-  ///   - key: The cache key used for file naming and retrieval.
-  ///     Should match the key used when saving the data.
+  ///   - type: The expected data type conforming to `Codable`.
+  ///   - key: The cache key identifying the file to load.
   ///
-  /// - Returns: The decoded data if the cache file exists and can be
-  ///   successfully deserialized, or `nil` if the file doesn't exist,
-  ///   is corrupted, or decoding fails.
+  /// - Returns: An instance of the decoded data if successful, or `nil` if
+  ///   the file does not exist, decoding fails, or an error occurs.
   ///
-  /// - Note: This method fails silently and logs errors to console.
-  ///   No exceptions are thrown to maintain app stability.
+  /// - Note: This method fails silently and logs errors to the console.
+  ///
+  /// ## Example
+  /// ```swift
+  /// if let cachedBridges: [BridgeStatusModel] = CacheService.shared.loadFromCache([BridgeStatusModel].self, for: "historical_bridges") {
+  ///     // Use cached data
+  /// }
+  /// ```
   func loadFromCache<T: Codable>(_ type: T.Type, for key: String) -> T? {
     guard let cacheURL = getCacheFileURL(for: key) else { return nil }
 
@@ -153,21 +151,22 @@ class CacheService {
     }
   }
 
-  /// Checks if cached data is still valid based on file modification time and expiration settings.
+  /// Determines whether the cached data for the given key is still valid.
   ///
-  /// This method validates cache freshness by comparing the file's modification
-  /// timestamp against the configured expiration time (5 minutes). It ensures
-  /// that cached data is not used beyond its intended lifespan.
+  /// Validity is based on the file's last modification date compared against
+  /// the cache expiration time (default 5 minutes).
   ///
-  /// - Parameter key: The cache key to validate. Should match the key used
-  ///   when saving the data.
+  /// - Parameter key: The cache key identifying the file to validate.
   ///
-  /// - Returns: `true` if the cache file exists and is within the expiration
-  ///   time (5 minutes), `false` if the file doesn't exist, is expired,
-  ///   or cannot be accessed.
+  /// - Returns: `true` if the cached file exists and is not expired,
+  ///   otherwise `false`.
   ///
-  /// - Note: This method uses the file system's modification timestamp for
-  ///   accurate cache age calculation.
+  /// ## Example
+  /// ```swift
+  /// if CacheService.shared.isCacheValid(for: "historical_bridges") {
+  ///     // Cache is fresh and usable
+  /// }
+  /// ```
   func isCacheValid(for key: String) -> Bool {
     guard let cacheURL = getCacheFileURL(for: key) else { return false }
 
@@ -187,14 +186,17 @@ class CacheService {
 
   // MARK: - Cache Utilities
 
-  /// Removes all cached data files from the cache directory.
+  /// Clears all cached files from the cache directory.
   ///
-  /// This method deletes all JSON files in the cache directory, effectively
-  /// clearing all cached data. It's useful for freeing up disk space or
-  /// forcing a fresh data load on the next app launch.
+  /// Deletes all files in the cache directory, freeing disk space and forcing
+  /// future data loads to be fresh.
   ///
-  /// - Note: This method fails silently and logs errors to console.
-  ///   No exceptions are thrown to maintain app stability.
+  /// - Note: This method fails silently and logs errors to the console.
+  ///
+  /// ## Example
+  /// ```swift
+  /// CacheService.shared.clearCache()
+  /// ```
   func clearCache() {
     guard let cacheDir = getCacheDirectory() else { return }
 
@@ -209,17 +211,18 @@ class CacheService {
     }
   }
 
-  /// Calculates the total size of all cached data files in bytes.
+  /// Calculates the total size of all cached files in bytes.
   ///
-  /// This method iterates through all files in the cache directory and
-  /// sums their individual file sizes. It's useful for monitoring cache
-  /// usage and implementing cache size limits.
+  /// Iterates over all files in the cache directory summing their sizes.
   ///
-  /// - Returns: The total size of all cache files in bytes, or 0 if the
-  ///   cache directory doesn't exist or cannot be accessed.
+  /// - Returns: The total size of cached data in bytes, or 0 if the cache
+  ///   directory is inaccessible or empty.
   ///
-  /// - Note: This method fails silently and returns 0 if any errors occur
-  ///   during size calculation.
+  /// ## Example
+  /// ```swift
+  /// let cacheSize = CacheService.shared.getCacheSize()
+  /// print("Cache size: \(cacheSize) bytes")
+  /// ```
   func getCacheSize() -> Int64 {
     guard let cacheDir = getCacheDirectory() else { return 0 }
 
@@ -241,3 +244,4 @@ class CacheService {
     }
   }
 }
+
