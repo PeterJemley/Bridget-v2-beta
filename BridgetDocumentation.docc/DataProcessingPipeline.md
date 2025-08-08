@@ -413,11 +413,11 @@ Enhance DocC documentation for all new properties and behaviors.
 ## Implementation Checklist
 
 ### JSON Decoding
-- [ ] Extract decoder configuration
-- [ ] Implement custom date strategy
-- [ ] Add ISO-8601 fallback
-- [ ] Create comprehensive test suite
-- [ ] Update documentation
+- [x] Extract decoder configuration
+- [x] Implement custom date strategy
+- [x] Add ISO-8601 fallback
+- [x] Create comprehensive test suite
+- [x] Update documentation
 
 ### Business Validation
 - [ ] Define validation failure reasons
