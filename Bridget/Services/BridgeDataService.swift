@@ -41,6 +41,7 @@ import Foundation
 /// - Cache Management: `clearCache()`, `getCacheSize()`
 class BridgeDataService {
   static let shared = BridgeDataService()
+
   // MARK: - Service Dependencies
 
   private let networkClient = NetworkClient.shared
@@ -63,7 +64,7 @@ class BridgeDataService {
   /// 4. **Data sanitization**: Filters out entries with missing IDs/names and duplicates.
   /// 5. **Graceful degradation**: Falls back to stale cache if all network attempts fail.
   ///
-  /// - Returns: A tuple containing an array of `BridgeStatusModel` instances with historical opening data 
+  /// - Returns: A tuple containing an array of `BridgeStatusModel` instances with historical opening data
   ///            and an array of `BridgeDataProcessor.ValidationFailure` instances describing invalid records.
   /// - Throws: `NetworkError` or `BridgeDataError` if no data is available.
   ///
@@ -232,4 +233,3 @@ class BridgeDataService {
     }
   }
 }
-

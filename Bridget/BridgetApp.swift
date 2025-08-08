@@ -63,6 +63,7 @@ import SwiftUI
 @main
 struct BridgetApp: App {
   // MARK: - Model Container
+
   var sharedModelContainer: ModelContainer = {
     let schema = Schema([
       Item.self,
@@ -77,6 +78,7 @@ struct BridgetApp: App {
   }()
 
   // MARK: - App Scene
+
   var body: some Scene {
     WindowGroup {
       ContentView()
@@ -84,4 +86,3 @@ struct BridgetApp: App {
     .modelContainer(sharedModelContainer)
   }
 }
-

@@ -27,7 +27,7 @@ import Foundation
 /// Used by `BridgeDataService` to persist and validate bridge and route models.
 ///
 /// ## Purpose
-/// Provides a robust caching layer that handles JSON serialization, cache expiration,  
+/// Provides a robust caching layer that handles JSON serialization, cache expiration,
 /// and disk I/O operations with a cache-first strategy and automatic expiration.
 ///
 /// ## Integration Points
@@ -37,11 +37,11 @@ import Foundation
 /// - Called by BridgeDataService for data persistence
 ///
 /// ## Features
-/// - Disk-based Storage: Uses FileManager for persistent cache storage  
-/// - JSON Serialization: Automatic encoding/decoding of Codable types  
-/// - Cache Expiration: Automatic validation based on file modification time  
-/// - Size Management: Cache size calculation and cleanup utilities  
-/// - Error Handling: Silent failure with console logging  
+/// - Disk-based Storage: Uses FileManager for persistent cache storage
+/// - JSON Serialization: Automatic encoding/decoding of Codable types
+/// - Cache Expiration: Automatic validation based on file modification time
+/// - Size Management: Cache size calculation and cleanup utilities
+/// - Error Handling: Silent failure with console logging
 /// - Thread Safety: Singleton pattern ensures consistent cache state
 ///
 /// ## Usage
@@ -244,4 +244,3 @@ class CacheService {
     }
   }
 }
-

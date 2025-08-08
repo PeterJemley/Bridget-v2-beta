@@ -238,4 +238,3 @@ class AppStateModel {
     return Date().timeIntervalSince(lastRefresh)
   }
 }
-

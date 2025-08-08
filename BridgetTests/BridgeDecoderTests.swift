@@ -29,50 +29,50 @@ import Testing
 
 /// Comprehensive business validation failure reasons for bridge records.
 enum ValidationFailureReason: CustomStringConvertible, Equatable {
-    case emptyEntityID
-    case emptyEntityName
-    case unknownBridgeID(String)
-    case malformedOpenDate(String)
-    case outOfRangeOpenDate(Date)
-    case malformedCloseDate(String)
-    case outOfRangeCloseDate(Date)
-    case invalidLatitude(Double?)
-    case invalidLongitude(Double?)
-    case negativeMinutesOpen(Int?)
-    case missingRequiredField(String)
-    case duplicateRecord
-    case other(String)
+  case emptyEntityID
+  case emptyEntityName
+  case unknownBridgeID(String)
+  case malformedOpenDate(String)
+  case outOfRangeOpenDate(Date)
+  case malformedCloseDate(String)
+  case outOfRangeCloseDate(Date)
+  case invalidLatitude(Double?)
+  case invalidLongitude(Double?)
+  case negativeMinutesOpen(Int?)
+  case missingRequiredField(String)
+  case duplicateRecord
+  case other(String)
 
-    var description: String {
-        switch self {
-        case .emptyEntityID:
-            return "Empty entityid"
-        case .emptyEntityName:
-            return "Empty entityname"
-        case .unknownBridgeID(let id):
-            return "Unknown bridge ID: \(id)"
-        case .malformedOpenDate(let value):
-            return "Malformed open date: \(value)"
-        case .outOfRangeOpenDate(let date):
-            return "Open date out of allowed range: \(date)"
-        case .malformedCloseDate(let value):
-            return "Malformed close date: \(value)"
-        case .outOfRangeCloseDate(let date):
-            return "Close date out of allowed range: \(date)"
-        case .invalidLatitude(let value):
-            return "Invalid latitude: \(String(describing: value)) (must be between -90 and 90)"
-        case .invalidLongitude(let value):
-            return "Invalid longitude: \(String(describing: value)) (must be between -180 and 180)"
-        case .negativeMinutesOpen(let value):
-            return "Negative minutes open: \(String(describing: value))"
-        case .missingRequiredField(let name):
-            return "Missing required field: \(name)"
-        case .duplicateRecord:
-            return "Duplicate record detected"
-        case .other(let message):
-            return message
-        }
+  var description: String {
+    switch self {
+    case .emptyEntityID:
+      return "Empty entityid"
+    case .emptyEntityName:
+      return "Empty entityname"
+    case let .unknownBridgeID(id):
+      return "Unknown bridge ID: \(id)"
+    case let .malformedOpenDate(value):
+      return "Malformed open date: \(value)"
+    case let .outOfRangeOpenDate(date):
+      return "Open date out of allowed range: \(date)"
+    case let .malformedCloseDate(value):
+      return "Malformed close date: \(value)"
+    case let .outOfRangeCloseDate(date):
+      return "Close date out of allowed range: \(date)"
+    case let .invalidLatitude(value):
+      return "Invalid latitude: \(String(describing: value)) (must be between -90 and 90)"
+    case let .invalidLongitude(value):
+      return "Invalid longitude: \(String(describing: value)) (must be between -180 and 180)"
+    case let .negativeMinutesOpen(value):
+      return "Negative minutes open: \(String(describing: value))"
+    case let .missingRequiredField(name):
+      return "Missing required field: \(name)"
+    case .duplicateRecord:
+      return "Duplicate record detected"
+    case let .other(message):
+      return message
     }
+  }
 }
 
 // MARK: - MetricKitObserver (Performance Metrics)
@@ -790,4 +790,3 @@ struct BridgeDecoderTests {
 
    */
 }
-

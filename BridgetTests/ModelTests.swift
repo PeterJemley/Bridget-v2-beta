@@ -1,4 +1,5 @@
 import Foundation
+
 //
 //  ModelTests.swift
 //  BridgetTests
@@ -28,7 +29,7 @@ import Testing
 
 @Suite("Model Tests") struct ModelTests {
   @Test
-  func testBridgeStatusModelInitialization() {
+  func bridgeStatusModelInitialization() {
     let bridge = BridgeStatusModel(bridgeName: "Test Bridge", apiBridgeID: nil)
 
     #expect(bridge.bridgeName == "Test Bridge")
@@ -38,7 +39,7 @@ import Testing
   }
 
   @Test
-  func testBridgeStatusModelWithHistoricalData() {
+  func bridgeStatusModelWithHistoricalData() {
     let calendar = Calendar.current
     let now = Date()
     let openings = [
@@ -58,7 +59,7 @@ import Testing
   }
 
   @Test
-  func testRouteModelInitialization() {
+  func routeModelInitialization() {
     let bridges = [
       BridgeStatusModel(bridgeName: "Bridge 1", apiBridgeID: nil),
       BridgeStatusModel(bridgeName: "Bridge 2", apiBridgeID: nil),
@@ -74,7 +75,7 @@ import Testing
   }
 
   @Test
-  func testRouteModelWithHistoricalData() {
+  func routeModelWithHistoricalData() {
     let calendar = Calendar.current
     let now = Date()
 
@@ -98,7 +99,7 @@ import Testing
   }
 
   @Test
-  func testAppStateModelInitialization() {
+  func appStateModelInitialization() {
     let appState = AppStateModel()
 
     #expect(appState.routes.count == 0)
@@ -110,7 +111,7 @@ import Testing
   }
 
   @Test
-  func testAppStateModelRouteSelection() {
+  func appStateModelRouteSelection() {
     let appState = AppStateModel()
     let route = RouteModel(routeID: "Test Route", bridges: [], score: 0.0)
     appState.routes = [route]
@@ -128,7 +129,7 @@ import Testing
   }
 
   @Test
-  func testAppStateModelErrorHandling() {
+  func appStateModelErrorHandling() {
     let appState = AppStateModel()
 
     #expect(!appState.hasError)
@@ -146,7 +147,7 @@ import Testing
   }
 
   @Test
-  func testBridgeDataServiceSampleData() {
+  func bridgeDataServiceSampleData() {
     let service = BridgeDataService.shared
     let sampleBridges = service.loadSampleData()
 
@@ -159,7 +160,7 @@ import Testing
   }
 
   @Test
-  func testBridgeDataServiceRouteGeneration() {
+  func bridgeDataServiceRouteGeneration() {
     let service = BridgeDataService.shared
     let sampleBridges = service.loadSampleData()
     let routes = service.generateRoutes(from: sampleBridges)
@@ -174,7 +175,7 @@ import Testing
   }
 
   @Test
-  func testBridgeDataErrorLocalization() {
+  func bridgeDataErrorLocalization() {
     let networkError = NetworkError.networkError
     let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")), rawData: Data())
     let invalidURLError = NetworkError.invalidResponse
@@ -189,7 +190,7 @@ import Testing
   }
 
   @Test
-  func testBridgeOpeningRecordCoding() {
+  func bridgeOpeningRecordCoding() {
     let record = BridgeOpeningRecord(entitytype: "Bridge",
                                      entityname: "1st Ave South",
                                      entityid: "1",
@@ -207,7 +208,7 @@ import Testing
   }
 
   @Test
-  func testBridgeOpeningRecordComputedProperties() {
+  func bridgeOpeningRecordComputedProperties() {
     let record = BridgeOpeningRecord(entitytype: "Bridge",
                                      entityname: "1st Ave South",
                                      entityid: "1",
@@ -225,7 +226,7 @@ import Testing
   }
 
   @Test
-  func testBridgeOpeningRecordJSONDecoding() throws {
+  func bridgeOpeningRecordJSONDecoding() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -248,7 +249,7 @@ import Testing
   }
 
   @Test
-  func testMissingRequiredKeys() {
+  func missingRequiredKeys() {
     let json = """
     {
         "entitytype": "Bridge",
@@ -263,7 +264,7 @@ import Testing
   }
 
   @Test
-  func testExtraUnknownKeys() throws {
+  func extraUnknownKeys() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -284,7 +285,7 @@ import Testing
   }
 
   @Test
-  func testMalformedDateStrings() throws {
+  func malformedDateStrings() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -304,7 +305,7 @@ import Testing
   }
 
   @Test
-  func testEmptyArrayPayload() throws {
+  func emptyArrayPayload() throws {
     let json = "[]".data(using: .utf8)!
 
     let records = try JSONDecoder().decode([BridgeOpeningRecord].self, from: json)
@@ -312,7 +313,7 @@ import Testing
   }
 
   @Test
-  func testEmptyStringValues() throws {
+  func emptyStringValues() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -334,7 +335,7 @@ import Testing
   }
 
   @Test
-  func testInvalidNumericValues() throws {
+  func invalidNumericValues() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -355,7 +356,7 @@ import Testing
   }
 
   @Test
-  func testUpdatedBridgeDataErrorLocalization() {
+  func updatedBridgeDataErrorLocalization() {
     let networkError = NetworkError.networkError
     let invalidContentTypeError = NetworkError.invalidContentType
     let payloadSizeError = NetworkError.payloadSizeError
@@ -370,7 +371,7 @@ import Testing
   }
 
   @Test
-  func testOutOfRangeDate() throws {
+  func outOfRangeDate() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -389,7 +390,7 @@ import Testing
   }
 
   @Test
-  func testUnknownBridgeID() throws {
+  func unknownBridgeID() throws {
     let json = """
     {
         "entitytype": "Bridge",
@@ -414,13 +415,13 @@ import Testing
   }
 
   @Test
-  func testOversizedPayload() {
+  func oversizedPayload() {
     let largeData = Data(repeating: 0, count: 6 * 1024 * 1024)
     #expect(largeData.count > 5 * 1024 * 1024)
   }
 
   @Test
-  func testBridgeDataProcessorRejectsOutOfRangeValues() throws {
+  func bridgeDataProcessorRejectsOutOfRangeValues() throws {
     let processor = BridgeDataProcessor.shared
     let validDate = "2025-01-03T10:12:00.000"
     let validCloseDate = "2025-01-03T10:20:00.000"
@@ -482,4 +483,3 @@ import Testing
     #expect(try processor.processHistoricalData(oldDateJSON).0.isEmpty)
   }
 }
-
