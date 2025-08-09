@@ -9,7 +9,7 @@
 //  - SwiftUI framework
 //  - SwiftData framework
 //  - ContentView (main UI)
-//  - Item model (SwiftData schema)
+//  - SwiftData models (BridgeEvent, RoutePreference, TrafficInferenceCache, UserRouteHistory)
 //  ## Integration Points
 //  - Configures SwiftData ModelContainer
 //  - Sets up main ContentView
@@ -52,7 +52,7 @@ import SwiftUI
 /// ## Topics
 ///
 /// ### Configuration
-/// - SwiftData schema setup with `Item` model
+/// - SwiftData schema setup with comprehensive domain models
 /// - ModelContainer configuration with persistence
 /// - Window group setup with model container injection
 ///
@@ -66,7 +66,10 @@ struct BridgetApp: App {
 
   var sharedModelContainer: ModelContainer = {
     let schema = Schema([
-      Item.self,
+      BridgeEvent.self,
+      RoutePreference.self,
+      TrafficInferenceCache.self,
+      UserRouteHistory.self,
     ])
     let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

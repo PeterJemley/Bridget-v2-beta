@@ -129,12 +129,90 @@ class BridgeDataService {
 
   // MARK: - Network Fetching
 
+  /// Fetches all historical bridge data using batched requests with pagination.
+  ///
+  /// This method implements proper pagination to fetch the complete historical dataset:
+  /// 1. Fetches data in 1000-record batches using $offset parameter
+  /// 2. Continues until no more data is returned
+  /// 3. Aggregates all batches into a single dataset
+  /// 4. Returns the complete historical dataset
+  ///
+  /// - Returns: Complete historical data as a single Data object containing JSON array
+  /// - Throws: NetworkError if any batch fails to fetch
   private func fetchFromNetwork() async throws -> Data {
+    let batchSize = 1000
+    var allRecords: [[String: Any]] = []
+    var offset = 0
+    var hasMoreData = true
+
+    #if DEBUG
+      print("Starting batch fetch of historical bridge data...")
+    #endif
+
+    while hasMoreData {
+      #if DEBUG
+        print("Fetching batch starting at offset \(offset)...")
+      #endif
+
+      // Fetch a single batch
+      let batchData = try await fetchBatch(offset: offset, limit: batchSize)
+
+      // Parse the JSON to check if we got any records
+      guard let jsonArray = try JSONSerialization.jsonObject(with: batchData) as? [[String: Any]] else {
+        throw NetworkError.invalidResponse
+      }
+
+      if jsonArray.isEmpty {
+        // No more data available
+        hasMoreData = false
+        #if DEBUG
+          print("No more data found. Completed batch fetching.")
+        #endif
+      } else {
+        // Add records to our collection
+        allRecords.append(contentsOf: jsonArray)
+        offset += batchSize
+
+        #if DEBUG
+          print("Fetched \(jsonArray.count) records (total: \(allRecords.count))")
+        #endif
+
+        // If we got fewer records than requested, we've reached the end
+        if jsonArray.count < batchSize {
+          hasMoreData = false
+          #if DEBUG
+            print("Received partial batch (\(jsonArray.count) < \(batchSize)). Completed batch fetching.")
+          #endif
+        }
+      }
+    }
+
+    #if DEBUG
+      print("Batch fetching completed. Total records: \(allRecords.count)")
+    #endif
+
+    // Convert the aggregated records back to JSON Data
+    guard !allRecords.isEmpty else {
+      throw NetworkError.noData
+    }
+
+    return try JSONSerialization.data(withJSONObject: allRecords, options: [])
+  }
+
+  /// Fetches a single batch of historical bridge data.
+  ///
+  /// - Parameters:
+  ///   - offset: The starting offset for this batch
+  ///   - limit: The maximum number of records to fetch in this batch
+  /// - Returns: JSON data for this batch
+  /// - Throws: NetworkError if the batch fails to fetch
+  private func fetchBatch(offset: Int, limit: Int) async throws -> Data {
     var components = URLComponents(
       string: "https://data.seattle.gov/resource/gm8h-9449.json"
     )!
     components.queryItems = [
-      URLQueryItem(name: "$limit", value: "1000"),
+      URLQueryItem(name: "$limit", value: String(limit)),
+      URLQueryItem(name: "$offset", value: String(offset)),
       URLQueryItem(name: "$order", value: "opendatetime DESC"),
     ]
 

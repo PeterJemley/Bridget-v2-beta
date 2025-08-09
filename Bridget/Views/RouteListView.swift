@@ -23,6 +23,7 @@
 //  Reactive UI updates via @Bindable and @Observable
 //
 
+import SwiftData
 import SwiftUI
 
 // MARK: - RouteListView
@@ -218,9 +219,116 @@ struct RouteRowView: View {
   }
 }
 
-// MARK: - Preview
+// MARK: - Bridge Data Table Utilities
 
-#Preview {
-  let appState = AppStateModel()
-  return RouteListView(appState: appState)
+// 1. List with HStack Rows
+struct BridgeTableListView: View {
+  let bridges: [BridgeStatusModel]
+  var body: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      HStack {
+        Text("Name").bold().frame(minWidth: 80, alignment: .leading)
+        Text("ID").bold().frame(minWidth: 40, alignment: .leading)
+        Text("Openings").bold().frame(minWidth: 60, alignment: .trailing)
+      }
+      .padding(.bottom, 2)
+      Divider()
+      List(bridges, id: \.bridgeName) { bridge in
+        HStack {
+          Text(bridge.bridgeName)
+            .frame(minWidth: 80, alignment: .leading)
+          Text(bridge.apiBridgeID?.rawValue ?? "-")
+            .frame(minWidth: 40, alignment: .leading)
+          Text("\(bridge.totalOpenings)")
+            .frame(minWidth: 60, alignment: .trailing)
+        }
+      }
+      .listStyle(.plain)
+    }
+    .padding()
+  }
+}
+
+// 2. Grid (LazyVGrid)
+struct BridgeTableGridView: View {
+  let bridges: [BridgeStatusModel]
+  private let columns = [
+    GridItem(.flexible(), alignment: .leading),
+    GridItem(.fixed(50), alignment: .leading),
+    GridItem(.fixed(60), alignment: .trailing),
+  ]
+  var body: some View {
+    VStack(alignment: .leading) {
+      LazyVGrid(columns: columns, spacing: 8) {
+        Text("Name").bold()
+        Text("ID").bold()
+        Text("Openings").bold()
+        ForEach(bridges, id: \.bridgeName) { bridge in
+          Text(bridge.bridgeName)
+          Text(bridge.apiBridgeID?.rawValue ?? "-")
+          Text("\(bridge.totalOpenings)")
+        }
+      }
+    }
+    .padding()
+  }
+}
+
+// 3. Sectioned List by Route
+struct SectionedBridgeListView: View {
+  let routes: [RouteModel]
+  var body: some View {
+    List {
+      ForEach(routes, id: \.routeID) { route in
+        Section(header: Text(route.routeID)) {
+          ForEach(route.bridges, id: \.bridgeName) { bridge in
+            HStack {
+              Text(bridge.bridgeName)
+                .frame(minWidth: 80, alignment: .leading)
+              Text(bridge.apiBridgeID?.rawValue ?? "-")
+                .frame(minWidth: 40, alignment: .leading)
+              Text("\(bridge.totalOpenings)")
+                .frame(minWidth: 60, alignment: .trailing)
+            }
+          }
+        }
+      }
+    }
+    .listStyle(.insetGrouped)
+  }
+}
+
+// ========== Utility Previews ========== //
+
+#Preview("BridgeTableListView (Simple Table List)") {
+  let bridges = [
+    BridgeStatusModel(bridgeName: "Ballard", apiBridgeID: BridgeID(rawValue: "1"), historicalOpenings: [Date(), Date().addingTimeInterval(-3600)]),
+    BridgeStatusModel(bridgeName: "Fremont", apiBridgeID: BridgeID(rawValue: "2"), historicalOpenings: [Date()]),
+    BridgeStatusModel(bridgeName: "Spokane St", apiBridgeID: BridgeID(rawValue: "3"), historicalOpenings: [Date(), Date(), Date()]),
+  ]
+  BridgeTableListView(bridges: bridges)
+}
+
+#Preview("BridgeTableGridView (Grid Table)") {
+  let bridges = [
+    BridgeStatusModel(bridgeName: "Ballard", apiBridgeID: BridgeID(rawValue: "1"), historicalOpenings: [Date(), Date().addingTimeInterval(-3600)]),
+    BridgeStatusModel(bridgeName: "Fremont", apiBridgeID: BridgeID(rawValue: "2"), historicalOpenings: [Date()]),
+    BridgeStatusModel(bridgeName: "Spokane St", apiBridgeID: BridgeID(rawValue: "3"), historicalOpenings: [Date(), Date(), Date()]),
+  ]
+  BridgeTableGridView(bridges: bridges)
+}
+
+#Preview("SectionedBridgeListView (Grouped by Route)") {
+  let bridges1 = [
+    BridgeStatusModel(bridgeName: "Ballard", apiBridgeID: BridgeID(rawValue: "1"), historicalOpenings: [Date(), Date().addingTimeInterval(-3600)]),
+    BridgeStatusModel(bridgeName: "Fremont", apiBridgeID: BridgeID(rawValue: "2"), historicalOpenings: [Date()]),
+  ]
+  let bridges2 = [
+    BridgeStatusModel(bridgeName: "Spokane St", apiBridgeID: BridgeID(rawValue: "3"), historicalOpenings: [Date(), Date(), Date()]),
+  ]
+  let routes = [
+    RouteModel(routeID: "North Route", bridges: bridges1, score: 0.91),
+    RouteModel(routeID: "South Route", bridges: bridges2, score: 0.88),
+  ]
+  SectionedBridgeListView(routes: routes)
 }

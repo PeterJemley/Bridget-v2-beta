@@ -60,18 +60,24 @@ import SwiftUI
 struct ContentView: View {
   // MARK: - Properties
 
-  @Bindable private var appState: AppStateModel
-
-  // MARK: - Initialization
-
-  init() {
-    self.appState = AppStateModel()
-  }
+  @Environment(\.modelContext) private var modelContext
+  @State private var appState: AppStateModel?
 
   // MARK: - View Body
 
   var body: some View {
-    RouteListView(appState: appState)
+    Group {
+      if let appState = appState {
+        RouteListView(appState: appState)
+      } else {
+        ProgressView("Initializing...")
+      }
+    }
+    .onAppear {
+      if appState == nil {
+        appState = AppStateModel(modelContext: modelContext)
+      }
+    }
   }
 }
 

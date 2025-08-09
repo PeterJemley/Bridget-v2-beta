@@ -15,9 +15,13 @@ import Foundation
   let defaultParser: DateParser = DefaultDateParser()
 #endif
 
+// MARK: - Date Parsing Protocols
+
 protocol DateParser {
   func parse(_ string: String) -> Date?
 }
+
+// MARK: - Date Parser Implementations
 
 struct DefaultDateParser: DateParser {
   func parse(_ string: String) -> Date? {
@@ -39,6 +43,8 @@ struct LoggingDateParser: DateParser {
     return date
   }
 }
+
+// MARK: - JSONDecoder Extensions
 
 extension JSONDecoder {
   /// Formatter for Seattle Open Data API dates: "yyyy-MM-dd'T'HH:mm:ss.SSS" (UTC, US_POSIX)

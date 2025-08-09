@@ -152,6 +152,8 @@ enum NetworkError: Error, LocalizedError {
   case invalidContentType
   /// The payload size was either empty or exceeded the configured maximum limit.
   case payloadSizeError
+  /// No data was returned from the API after batch fetching.
+  case noData
 
   /// A human-readable description of the error.
   var errorDescription: String? {
@@ -166,6 +168,8 @@ enum NetworkError: Error, LocalizedError {
       return "Invalid content type - expected JSON"
     case .payloadSizeError:
       return "Payload size is invalid (empty or too large)"
+    case .noData:
+      return "No data returned from API"
     }
   }
 }

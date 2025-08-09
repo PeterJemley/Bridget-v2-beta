@@ -28,6 +28,8 @@ import Foundation
 import Testing
 
 @Suite("Model Tests") struct ModelTests {
+  // MARK: - Bridge Model Tests
+
   @Test
   func bridgeStatusModelInitialization() {
     let bridge = BridgeStatusModel(bridgeName: "Test Bridge", apiBridgeID: nil)
@@ -57,6 +59,8 @@ import Testing
     let frequency = bridge.openingFrequency
     #expect(!frequency.isEmpty)
   }
+
+  // MARK: - Route Model Tests
 
   @Test
   func routeModelInitialization() {
@@ -97,6 +101,8 @@ import Testing
     #expect(route.totalHistoricalOpenings == 3)
     #expect(route.complexity == 2)
   }
+
+  // MARK: - App State Model Tests
 
   @Test
   func appStateModelInitialization() {
@@ -146,6 +152,8 @@ import Testing
     #expect(appState.errorMessage == nil)
   }
 
+  // MARK: - Bridge Data Service Tests
+
   @Test
   func bridgeDataServiceSampleData() {
     let service = BridgeDataService.shared
@@ -174,6 +182,8 @@ import Testing
     }
   }
 
+  // MARK: - Error Handling Tests
+
   @Test
   func bridgeDataErrorLocalization() {
     let networkError = NetworkError.networkError
@@ -188,6 +198,8 @@ import Testing
     #expect(!decodingError.localizedDescription.isEmpty)
     #expect(!invalidURLError.localizedDescription.isEmpty)
   }
+
+  // MARK: - JSON Decoding Tests
 
   @Test
   func bridgeOpeningRecordCoding() {
@@ -354,6 +366,8 @@ import Testing
     #expect(record.latitudeValue == nil)
     #expect(record.longitudeValue == nil)
   }
+
+  // MARK: - Edge Case Tests
 
   @Test
   func updatedBridgeDataErrorLocalization() {
