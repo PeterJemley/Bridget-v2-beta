@@ -72,15 +72,21 @@ final class AllSeattleBridgesGeospatialValidationTests {
     #expect(result == nil, "Should accept matching coordinates for South Park")
   }
 
-  // Optionally, add a rejection test for each bridge
+  // Test geospatial mismatch detection
   @Test func test1stAveSouthGeospatialMismatch() {
     let record = testRecord(entityid: "1", lat: "48.0", lon: "-123.0") // Far away
     let result = BridgeDataProcessor.shared.validationFailureReason(for: record)
     switch result {
-    case .geospatialMismatch?:
-      break // Pass: mismatch detected
-    default:
+    case let .geospatialMismatch(expectedLat, expectedLon, actualLat, actualLon):
+      // Pass: mismatch detected with expected coordinates
+      #expect(expectedLat == 47.542213439941406)
+      #expect(expectedLon == -122.33446502685547)
+      #expect(actualLat == 48.0)
+      #expect(actualLon == -123.0)
+    case nil:
       fatalError("Should have failed with .geospatialMismatch for 1st Ave South")
+    default:
+      fatalError("Should have failed with .geospatialMismatch for 1st Ave South, got: \(String(describing: result))")
     }
   }
 }

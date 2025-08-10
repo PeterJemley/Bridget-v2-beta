@@ -209,6 +209,58 @@ class BridgeDataProcessor {
 
   private init() {}
 
+  // MARK: - Validation
+
+  /// Validates a single `BridgeOpeningRecord` and returns the first encountered validation failure reason, or nil if the record is valid.
+  ///
+  /// - Parameter record: The record to validate.
+  /// - Returns: An optional `ValidationFailureReason` indicating why the record is invalid, or nil if it is valid.
+  func validationFailureReason(for record: BridgeOpeningRecord) -> ValidationFailureReason? {
+    guard !record.entityid.isEmpty else {
+      return .emptyEntityID
+    }
+    guard !record.entityname.isEmpty else {
+      return .emptyEntityName
+    }
+    guard let _ = BridgeID(rawValue: record.entityid) else {
+      return .unknownBridgeID(record.entityid)
+    }
+    guard let openDate = record.openDate else {
+      return .malformedOpenDate(record.opendatetime)
+    }
+    let now = Date()
+    let calendar = Calendar.current
+    let minDate = calendar.date(byAdding: .year, value: -10, to: now) ?? now
+    let maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
+    if openDate < minDate || openDate > maxDate {
+      return .outOfRangeOpenDate(openDate)
+    }
+    guard let closeDate = record.closeDate else {
+      return .malformedCloseDate(record.closedatetime)
+    }
+    if closeDate <= openDate {
+      return .closeDateNotAfterOpenDate(open: openDate, close: closeDate)
+    }
+    guard let lat = record.latitudeValue, lat >= -90, lat <= 90 else {
+      return .invalidLatitude(record.latitudeValue)
+    }
+    guard let lon = record.longitudeValue, lon >= -180, lon <= 180 else {
+      return .invalidLongitude(record.longitudeValue)
+    }
+    guard let minutesOpen = record.minutesOpenValue, minutesOpen >= 0 else {
+      return .negativeMinutesOpen(record.minutesOpenValue)
+    }
+    let actualMinutes = Int(closeDate.timeIntervalSince(openDate) / 60)
+    if abs(minutesOpen - actualMinutes) > 1 {
+      return .minutesOpenMismatch(reported: minutesOpen, actual: actualMinutes)
+    }
+    // Geospatial mismatch check (if bridgeLocations applies)
+    if let expected = bridgeLocations[record.entityid], abs(expected.lat - lat) > 0.001 || abs(expected.lon - lon) > 0.001 {
+      return .geospatialMismatch(expectedLat: expected.lat, expectedLon: expected.lon, actualLat: lat, actualLon: lon)
+    }
+    return nil
+  }
+
   // MARK: - Data Processing
 
   /// Processes raw JSON data into bridge status models and collects all failed validations.

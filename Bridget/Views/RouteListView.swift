@@ -23,6 +23,7 @@
 //  Reactive UI updates via @Bindable and @Observable
 //
 
+import Observation
 import SwiftData
 import SwiftUI
 
@@ -67,68 +68,189 @@ import SwiftUI
 struct RouteListView: View {
   @Bindable var appState: AppStateModel
 
+  @State private var routes: [RouteModel] = []
+  @State private var isLoadingRoutes = true
+  @State private var routeLoadError: Error? = nil
+  @State private var selectedRouteID: String? = nil
+
+  var headerView: some View {
+    GeometryReader { geometry in
+      VStack(spacing: 8) {
+        HStack {
+          Image(systemName: "laurel.leading")
+            .font(.system(size: 28, weight: .bold))
+            .foregroundColor(.green)
+          Text("Bridget")
+            .font(.largeTitle.bold())
+            .foregroundColor(.primary)
+          Image(systemName: "laurel.trailing")
+            .font(.system(size: 28, weight: .bold))
+            .foregroundColor(.green)
+        }
+        if #available(iOS 17.0, *) {
+          let message = try? AttributedString(markdown: "Ditch the spanxiety and bridge the gap between *you* and on *time*.")
+          Text(message ?? "Ditch the spanxiety and bridge the gap between you and on time.")
+            .font(.subheadline)
+            .foregroundColor(.secondary)
+            .multilineTextAlignment(.center)
+            .lineLimit(2)
+        } else {
+          HStack(spacing: 0) {
+            Text("Ditch the spanxiety and bridge the gap between ")
+            Text("you").italic()
+            Text(" and on ")
+            Text("time").italic()
+          }
+          .font(.subheadline)
+          .foregroundColor(.secondary)
+          .multilineTextAlignment(.center)
+          .lineLimit(2)
+        }
+        Link(destination: URL(string: "https://data.seattle.gov/Transportation/SDOT-Drawbridge-Status/gm8h-9449/about_data")!) {
+          HStack(spacing: 6) {
+            Image(systemName: "info.circle.fill")
+              .font(.subheadline)
+              .foregroundColor(.blue)
+            Text("Data provided by Seattle Open Data API")
+              .font(.footnote)
+              .foregroundColor(.blue)
+          }
+          .padding(.horizontal, 12)
+          .padding(.vertical, 4)
+          .background(Color(.systemGray5))
+          .clipShape(Capsule())
+        }
+      }
+      .padding(.top, 20)
+      .padding(.bottom, 16)
+      .padding(.horizontal)
+      .padding(.top, geometry.safeAreaInsets.top)
+    }
+  }
+
   var body: some View {
     NavigationView {
       VStack(spacing: 0) {
-        if appState.hasValidationFailures {
-          VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-              Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(.yellow)
-              Text("Some records were skipped due to data validation errors.")
-                .font(.footnote)
-                .foregroundColor(.secondary)
-            }
-            .padding(.bottom, 2)
-            ForEach(appState.validationFailures.prefix(5), id: \.reason.description) { failure in
-              Text("• \(failure.reason.description)")
-                .font(.caption2)
-                .foregroundColor(.orange)
-                .lineLimit(1)
-                .truncationMode(.tail)
-            }
-            if appState.validationFailures.count > 5 {
-              Text("...and \(appState.validationFailures.count - 5) more")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-            }
-          }
-          .padding(10)
-          .background(Color.yellow.opacity(0.1))
-          .cornerRadius(10)
-          .padding([.horizontal, .top])
-        }
+        headerView
+          .background(Color(UIColor.systemBackground))
+          .zIndex(1)
 
-        Group {
-          if appState.isLoading {
-            ProgressView("Loading routes...")
-              .frame(maxWidth: .infinity, maxHeight: .infinity)
-          } else if appState.routes.isEmpty {
-            VStack {
-              Image(systemName: "map")
-                .font(.system(size: 50))
-                .foregroundColor(.gray)
-              Text("No routes available")
-                .font(.headline)
-                .foregroundColor(.gray)
-              Text("Routes will appear here once data is loaded")
-                .font(.caption)
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-          } else {
-            List(appState.routes, id: \.routeID) { route in
-              RouteRowView(route: route, isSelected: route.routeID == appState.selectedRouteID)
-                .onTapGesture {
-                  appState.selectRoute(withID: route.routeID)
+        ScrollView {
+          VStack(spacing: 0) {
+            if !appState.validationFailures.isEmpty {
+              VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                  Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.yellow)
+                  Text("Some records were skipped due to data validation errors.")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
                 }
+                .padding(.bottom, 2)
+                ForEach(appState.validationFailures.prefix(5), id: \.reason.description) { failure in
+                  Text("• \(failure.reason.description)")
+                    .font(.caption2)
+                    .foregroundColor(.orange)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                }
+                if appState.validationFailures.count > 5 {
+                  Text("...and \(appState.validationFailures.count - 5) more")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                }
+              }
+              .padding(10)
+              .background(Color.yellow.opacity(0.1))
+              .cornerRadius(10)
+              .padding([.horizontal, .top])
+            }
+
+            Group {
+              if isLoadingRoutes {
+                ProgressView("Loading routes...")
+                  .frame(maxWidth: .infinity, maxHeight: .infinity)
+              } else if let error = routeLoadError {
+                VStack(spacing: 10) {
+                  Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 40))
+                    .foregroundColor(.red)
+                  Text("Failed to load routes.")
+                    .font(.headline)
+                  Text(error.localizedDescription)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                  Button(action: {
+                    Task {
+                      await loadRoutes()
+                    }
+                  }) {
+                    Text("Retry")
+                      .padding(.horizontal, 20)
+                      .padding(.vertical, 8)
+                      .background(Color.blue)
+                      .foregroundColor(.white)
+                      .cornerRadius(8)
+                  }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
+              } else {
+                if routes.isEmpty {
+                  VStack {
+                    Image(systemName: "map")
+                      .font(.system(size: 50))
+                      .foregroundColor(.gray)
+                    Text("No routes available")
+                      .font(.headline)
+                      .foregroundColor(.gray)
+                    Text("Routes will appear here once data is loaded")
+                      .font(.caption)
+                      .foregroundColor(.gray)
+                      .multilineTextAlignment(.center)
+                  }
+                  .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                  List(routes, id: \.routeID) { route in
+                    RouteRowView(route: route, isSelected: route.routeID == selectedRouteID)
+                      .onTapGesture {
+                        selectedRouteID = route.routeID
+                      }
+                  }
+                }
+              }
             }
           }
+          .padding(.bottom)
         }
       }
-      .navigationTitle("Seattle Routes")
       .navigationBarTitleDisplayMode(.large)
+      .onAppear {
+        guard isLoadingRoutes else { return }
+        Task {
+          await loadRoutes()
+        }
+      }
+    }
+  }
+
+  private func loadRoutes() async {
+    isLoadingRoutes = true
+    routeLoadError = nil
+    do {
+      let (bridges, _) = try await BridgeDataService.shared.loadHistoricalData()
+      let genRoutes = BridgeDataService.shared.generateRoutes(from: bridges)
+      await MainActor.run {
+        self.routes = genRoutes
+        self.isLoadingRoutes = false
+      }
+    } catch {
+      await MainActor.run {
+        self.isLoadingRoutes = false
+        self.routeLoadError = error
+      }
     }
   }
 }

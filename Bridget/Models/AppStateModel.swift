@@ -36,27 +36,23 @@ import Foundation
 import Observation
 import SwiftData
 
-/// A global application state container responsible for managing routing data, loading states,
-/// error handling, user selections, validation failures, and persistence within the Bridget app.
+/// A global application state container responsible for managing persistence,
+/// loading states, error handling, and internal cache metadata within the Bridget app.
 ///
-/// This model is marked `@Observable` and is the single source of truth for all route data.
-/// It interacts with services like `BridgeDataService` to fetch and cache route data and uses
-/// SwiftData's ModelContext for local persistence.
+/// This model is marked `@Observable` and primarily manages persistence and internal state for analytics
+/// and background processing. It no longer exposes any bridge or route data for UI display.
 ///
-/// - Note: This class is intended to be used in SwiftUI views via `@Bindable`.
+/// - Note: UI-related properties and methods have been removed to restrict exposure of bridge and route data.
 @Observable
 class AppStateModel {
   /// SwiftData context for managing persistence of bridge events and other entities.
   let modelContext: ModelContext
 
-  /// The current list of available routes, fetched from a data source or loaded from persistence.
-  var routes: [RouteModel]
+  /// Service responsible for persistence operations on BridgeEvent entities.
+  private let bridgeEventPersistence: BridgeEventPersistenceServiceProtocol
 
   /// A Boolean value indicating whether data is currently being loaded.
   var isLoading: Bool
-
-  /// The identifier of the currently selected route, if any.
-  var selectedRouteID: String?
 
   /// The most recent error encountered during data fetching or processing.
   var error: Error?
@@ -89,45 +85,62 @@ class AppStateModel {
 
   /// Initializes the application state model with default values and starts loading data with persistence.
   ///
-  /// - Parameter modelContext: The SwiftData ModelContext used for local data persistence.
-  init(modelContext: ModelContext) {
+  /// - Parameters:
+  ///   - modelContext: The SwiftData ModelContext used for local data persistence.
+  ///   - bridgeEventPersistence: The persistence service for BridgeEvent entities.
+  ///     Optional. If not provided, a `BridgeEventPersistenceService` will be created with the given `modelContext`.
+  init(modelContext: ModelContext,
+       bridgeEventPersistence: BridgeEventPersistenceServiceProtocol? = nil)
+  {
     self.modelContext = modelContext
-    self.routes = []
+    self.bridgeEventPersistence = bridgeEventPersistence ?? BridgeEventPersistenceService(modelContext: modelContext)
     self.isLoading = false
-    self.selectedRouteID = nil
     self.error = nil
     self.validationFailures = []
     self.lastDataRefresh = nil
     self.isOfflineMode = false
     self.lastSuccessfulFetch = nil
 
-    // Start loading data immediately, leveraging the provided modelContext for persistence.
+    // Start loading data immediately, leveraging the provided persistence service.
     Task {
       await loadData()
     }
   }
 
+  /// Convenience initializer for testing purposes, using an in-memory ModelContext.
+  ///
+  /// This is intended for unit tests and should not be used in production.
+  @MainActor convenience init() {
+    #if DEBUG
+      // Create a lightweight in-memory ModelContainer for SwiftData
+      let schema = Schema([BridgeEvent.self])
+      let modelConfiguration = ModelConfiguration(isStoredInMemoryOnly: true)
+      let container = try! ModelContainer(for: schema, configurations: [modelConfiguration])
+      self.init(modelContext: container.mainContext)
+    #else
+      fatalError("AppStateModel.init() is for test use only. Use the designated initializer.")
+    #endif
+  }
+
   // MARK: - Data Loading
 
-  /// Loads historical bridge data asynchronously and updates the application state.
+  /// Loads historical bridge data asynchronously and updates internal application state.
   ///
-  /// This method first attempts to load persisted bridge events from SwiftData.
-  /// If persisted data exists for all bridges, it uses that data (offline-first).
-  /// Otherwise, it fetches from the BridgeDataService API, persists the results,
-  /// and then reloads from SwiftData to update the in-memory models and UI state.
+  /// This method attempts to load persisted bridge events via the persistence service.
+  /// If persisted data is incomplete or missing, it fetches from the BridgeDataService API and persists the results.
+  /// Validation failures are stored internally.
   ///
-  /// Validation failures encountered during data processing are stored in `validationFailures`
-  /// without disrupting the data load.
+  /// - Note: This method no longer exposes or updates any UI-related route or bridge collections.
   @MainActor
   private func loadData() async {
     isLoading = true
     error = nil
     validationFailures = []
 
-    // Load persisted BridgeEvent entities from SwiftData
+    // Load persisted BridgeEvent entities via persistence service
     var persistedBridgeEvents: [BridgeEvent] = []
     do {
-      persistedBridgeEvents = try modelContext.fetch(FetchDescriptor<BridgeEvent>())
+      persistedBridgeEvents = try bridgeEventPersistence.fetchAllEvents() // fetchAllEvents is sync so no await
     } catch {
       print("Failed to fetch persisted BridgeEvents:", error)
     }
@@ -141,45 +154,45 @@ class AppStateModel {
       let apiBridgeIDs = Set(apiBridges.compactMap { $0.apiBridgeID?.rawValue })
 
       if apiBridgeIDs.isSubset(of: persistedBridgeIDs), !persistedBridgeEvents.isEmpty {
-        // Persisted data is complete or newer, use persisted data for in-memory route list
-        routes = BridgeDataService.shared.generateRoutes(from: bridgeStatusModels(from: persistedBridgeEvents))
+        // Persisted data is complete or newer, no UI update needed here
         isLoading = false
         recordSuccessfulFetch()
       } else {
         // Persisted data incomplete or missing, fallback to API fetch and persist
 
-        // Clear existing persisted bridge events before inserting new ones
-        for event in persistedBridgeEvents {
-          modelContext.delete(event)
-        }
-
-        // Save the deletion before inserting new data
+        // Clear existing persisted bridge events before inserting new ones via persistence service
         do {
-          try modelContext.save()
+          try bridgeEventPersistence.deleteAllEvents()
         } catch {
           print("Failed to clear persisted BridgeEvents before inserting new ones:", error)
         }
 
-        // Persist bridge events fetched from API
-        // Removed insertion of BridgeEvent with only bridgeID and name as per instructions
-
-        // Save context to persist data (no new insertions, so this mainly flushes deletions)
+        // Persist bridge events fetched from API via persistence service
         do {
-          try modelContext.save()
+          let bridgeEvents: [BridgeEvent] = apiBridges.flatMap { model in
+            // TODO: Populate minutesOpen, latitude, longitude with real values if available
+            model.historicalOpenings.map {
+              BridgeEvent(bridgeID: model.apiBridgeID?.rawValue ?? "",
+                          bridgeName: model.bridgeName,
+                          openDateTime: $0,
+                          minutesOpen: 0, // TODO: Provide correct duration
+                          latitude: 0.0,  // TODO: Provide correct latitude
+                          longitude: 0.0  // TODO: Provide correct longitude
+              )
+            }
+          }
+          try bridgeEventPersistence.save(events: bridgeEvents)
         } catch {
           print("Failed to save BridgeEvents to persistence:", error)
         }
 
-        // Reload persisted data to repopulate in-memory models and UI state
-        let reloadedBridgeEvents = try modelContext.fetch(FetchDescriptor<BridgeEvent>())
-        routes = BridgeDataService.shared.generateRoutes(from: bridgeStatusModels(from: reloadedBridgeEvents))
+        // No UI update, just finish loading and update cache metadata
         isLoading = false
         recordSuccessfulFetch()
       }
     } catch {
-      // On API error, fall back to persisted data if available
+      // On API error, fallback to persisted data if available
       if !persistedBridgeEvents.isEmpty {
-        routes = BridgeDataService.shared.generateRoutes(from: bridgeStatusModels(from: persistedBridgeEvents))
         isLoading = false
         markAsOffline()
         print("Using persisted data due to API error:", error)
@@ -190,10 +203,10 @@ class AppStateModel {
         self.markAsOffline()
         print("API Error:", error)
 
-        // Attempt to fetch API data only (without persistence) and generate routes
+        // Attempt to fetch API data only (without persistence)
         do {
-          let (apiBridges, _) = try await BridgeDataService.shared.loadHistoricalData()
-          routes = BridgeDataService.shared.generateRoutes(from: apiBridges)
+          _ = try await BridgeDataService.shared.loadHistoricalData()
+          // No UI update
         } catch {
           print("Failed to load API bridge data fallback:", error)
         }
@@ -203,26 +216,17 @@ class AppStateModel {
 
   // MARK: - Refresh Data
 
-  /// Refreshes all route data by clearing cache metadata and reloading from the network and persistence.
+  /// Refreshes all data by clearing cache metadata and reloading from network and persistence.
   ///
-  /// This method marks all existing routes and bridges as stale before reloading,
-  /// ensuring fresh data is fetched from the API and persisted.
+  /// This method clears persisted bridge events to avoid stale data usage,
+  /// then reloads fresh data asynchronously.
   ///
-  /// After fetching and persisting, the in-memory state is updated from SwiftData.
+  /// - Note: No UI-related data updates are performed.
   @MainActor
   func refreshData() async {
-    // Mark existing bridges as stale to force refresh
-    for route in routes {
-      route.bridges.forEach { $0.markAsStale() }
-    }
-
-    // Clear persisted bridge events to avoid stale data usage
+    // Clear persisted bridge events via persistence service to avoid stale data
     do {
-      let persistedBridgeEvents = try modelContext.fetch(FetchDescriptor<BridgeEvent>())
-      for event in persistedBridgeEvents {
-        modelContext.delete(event)
-      }
-      try modelContext.save()
+      try bridgeEventPersistence.deleteAllEvents()
     } catch {
       print("Failed to clear persisted BridgeEvents during refresh:", error)
     }
@@ -231,49 +235,7 @@ class AppStateModel {
     await loadData()
   }
 
-  // MARK: - Computed Properties
-
-  /// Returns the currently selected `RouteModel`, if one exists.
-  ///
-  /// - Returns: The selected `RouteModel` or `nil` if no selection is made.
-  var selectedRoute: RouteModel? {
-    guard let selectedRouteID = selectedRouteID else { return nil }
-    return routes.first { $0.routeID == selectedRouteID }
-  }
-
-  /// The total number of available routes.
-  var totalRoutes: Int {
-    return routes.count
-  }
-
-  /// A Boolean value indicating whether there is an active error.
-  var hasError: Bool {
-    return error != nil
-  }
-
-  /// The localized description of the current error, if any.
-  var errorMessage: String? {
-    return error?.localizedDescription
-  }
-
-  /// A Boolean value indicating whether there are any validation failures.
-  var hasValidationFailures: Bool {
-    return !validationFailures.isEmpty
-  }
-
-  // MARK: - Route Selection
-
-  /// Selects a route by its identifier.
-  ///
-  /// - Parameter routeID: The identifier of the route to select.
-  func selectRoute(withID routeID: String) {
-    selectedRouteID = routeID
-  }
-
-  /// Clears the current route selection.
-  func clearSelection() {
-    selectedRouteID = nil
-  }
+  // MARK: - Error and Loading State Management
 
   /// Clears the current error state.
   func clearError() {
@@ -283,18 +245,24 @@ class AppStateModel {
   // MARK: - Cache Management
 
   /// Updates the cache metadata with the current timestamp and marks the app as online.
+  ///
+  /// This method is intended for internal use only to track fetch success.
   func updateCacheMetadata() {
     lastDataRefresh = Date()
     isOfflineMode = false
   }
 
   /// Marks the app as being in offline mode.
+  ///
+  /// Internal use only.
   func markAsOffline() {
     isOfflineMode = true
   }
 
   /// Records a successful data fetch by updating the last successful fetch timestamp
   /// and cache metadata.
+  ///
+  /// Internal use only.
   func recordSuccessfulFetch() {
     lastSuccessfulFetch = Date()
     updateCacheMetadata()
@@ -303,6 +271,8 @@ class AppStateModel {
   /// Determines whether the cached data is stale based on the cache expiration time.
   ///
   /// - Returns: `true` if the data is stale; otherwise, `false`.
+  ///
+  /// Internal use only.
   var isDataStale: Bool {
     guard let lastRefresh = lastDataRefresh else { return true }
     let dataAge = Date().timeIntervalSince(lastRefresh)
@@ -312,6 +282,8 @@ class AppStateModel {
   /// Determines whether data should be refreshed based on staleness or offline mode.
   ///
   /// - Returns: `true` if data should be refreshed; otherwise, `false`.
+  ///
+  /// Internal use only.
   var shouldRefreshData: Bool {
     return isDataStale || isOfflineMode
   }
@@ -319,18 +291,10 @@ class AppStateModel {
   /// The age of the cached data in seconds, if available.
   ///
   /// - Returns: The age in seconds or `nil` if no cache timestamp exists.
+  ///
+  /// Internal use only.
   var dataAge: TimeInterval? {
     guard let lastRefresh = lastDataRefresh else { return nil }
     return Date().timeIntervalSince(lastRefresh)
-  }
-
-  /// Converts an array of BridgeEvent to BridgeStatusModel by grouping events for each bridge.
-  private func bridgeStatusModels(from events: [BridgeEvent]) -> [BridgeStatusModel] {
-    let grouped = Dictionary(grouping: events) { $0.bridgeID }
-    return grouped.compactMap { bridgeID, eventsForBridge in
-      guard let bridgeName = eventsForBridge.first?.bridgeName else { return nil }
-      let openings = eventsForBridge.map { $0.openDateTime }
-      return BridgeStatusModel(bridgeName: bridgeName, apiBridgeID: BridgeID(rawValue: bridgeID), historicalOpenings: openings)
-    }
   }
 }

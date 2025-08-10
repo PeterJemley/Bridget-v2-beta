@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 //
 //  ModelTests.swift
@@ -104,52 +105,48 @@ import Testing
 
   // MARK: - App State Model Tests
 
+  @MainActor
   @Test
-  func appStateModelInitialization() {
-    let appState = AppStateModel()
+  func appStateModelInitialization() throws {
+    let modelContainer = try ModelContainer(for: BridgeEvent.self)
+    let modelContext = ModelContext(modelContainer)
+    let appState = AppStateModel(modelContext: modelContext)
 
-    #expect(appState.routes.count == 0)
     #expect(!appState.isLoading)
-    #expect(appState.selectedRouteID == nil)
     #expect(appState.error == nil)
-    #expect(!appState.hasError)
-    #expect(appState.errorMessage == nil)
+    #expect(appState.validationFailures.isEmpty)
   }
 
+  @MainActor
   @Test
-  func appStateModelRouteSelection() {
-    let appState = AppStateModel()
-    let route = RouteModel(routeID: "Test Route", bridges: [], score: 0.0)
-    appState.routes = [route]
+  func appStateModelErrorHandling() throws {
+    let modelContainer = try ModelContainer(for: BridgeEvent.self)
+    let modelContext = ModelContext(modelContainer)
+    let appState = AppStateModel(modelContext: modelContext)
 
-    #expect(appState.selectedRoute == nil)
-
-    appState.selectRoute(withID: "Test Route")
-    #expect(appState.selectedRouteID == "Test Route")
-    #expect(appState.selectedRoute != nil)
-    #expect(appState.selectedRoute?.routeID == "Test Route")
-
-    appState.clearSelection()
-    #expect(appState.selectedRouteID == nil)
-    #expect(appState.selectedRoute == nil)
-  }
-
-  @Test
-  func appStateModelErrorHandling() {
-    let appState = AppStateModel()
-
-    #expect(!appState.hasError)
-    #expect(appState.errorMessage == nil)
+    #expect(appState.error == nil)
 
     let testError = NetworkError.networkError
     appState.error = testError
 
-    #expect(appState.hasError)
-    #expect(appState.errorMessage == testError.localizedDescription)
+    #expect(appState.error != nil)
+    #expect(appState.error is NetworkError)
 
     appState.clearError()
-    #expect(!appState.hasError)
-    #expect(appState.errorMessage == nil)
+    #expect(appState.error == nil)
+  }
+
+  @MainActor
+  @Test
+  func appStateModelValidationFailures() throws {
+    let modelContainer = try ModelContainer(for: BridgeEvent.self)
+    let modelContext = ModelContext(modelContainer)
+    let appState = AppStateModel(modelContext: modelContext)
+
+    #expect(appState.validationFailures.isEmpty)
+
+    // Note: validationFailures are populated during data loading
+    // and are read-only from the UI perspective
   }
 
   // MARK: - Bridge Data Service Tests
