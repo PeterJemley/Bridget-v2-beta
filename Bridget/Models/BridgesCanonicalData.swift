@@ -11,12 +11,12 @@ public struct BridgeCanonicalData {
   public let coordinate: CLLocationCoordinate2D
 
   /// The canonical start coordinate of the bridge crossing.
-  /// Represents an approximate location at one end of the bridge, 
+  /// Represents an approximate location at one end of the bridge,
   /// offset about 50–100 meters from the center coordinate.
   public let startCoordinate: CLLocationCoordinate2D
 
   /// The canonical end coordinate of the bridge crossing.
-  /// Represents an approximate location at the opposite end of the bridge, 
+  /// Represents an approximate location at the opposite end of the bridge,
   /// offset about 50–100 meters from the center coordinate.
   public let endCoordinate: CLLocationCoordinate2D
 
@@ -25,14 +25,13 @@ public struct BridgeCanonicalData {
   // TODO: Validate and refine all bridge crossing times with real baseline travel data (MapKit or user observations)
   public let travelTime: TimeInterval
 
-  public init(
-    id: String,
-    name: String,
-    coordinate: CLLocationCoordinate2D,
-    startCoordinate: CLLocationCoordinate2D,
-    endCoordinate: CLLocationCoordinate2D,
-    travelTime: TimeInterval
-  ) {
+  public init(id: String,
+              name: String,
+              coordinate: CLLocationCoordinate2D,
+              startCoordinate: CLLocationCoordinate2D,
+              endCoordinate: CLLocationCoordinate2D,
+              travelTime: TimeInterval)
+  {
     self.id = id
     self.name = name
     self.coordinate = coordinate
