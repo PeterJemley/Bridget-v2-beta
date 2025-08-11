@@ -311,3 +311,12 @@ class BridgeDataService {
     }
   }
 }
+
+#if DEBUG
+  extension BridgeDataService {
+    /// DEBUG-only internal access to fetchFromNetwork for coordinate verification and testing utilities.
+    func debug_fetchFromNetwork() async throws -> Data {
+      return try await fetchFromNetwork()
+    }
+  }
+#endif

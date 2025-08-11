@@ -33,6 +33,7 @@
 //
 
 import Foundation
+import MapKit
 import Observation
 import SwiftData
 
@@ -82,6 +83,10 @@ class AppStateModel {
   /// The timestamp of the last successful data fetch.
   @ObservationIgnored
   var lastSuccessfulFetch: Date?
+
+  /// Real-time traffic status for each bridge, keyed by bridge ID.
+  @ObservationIgnored
+  var bridgeTrafficStatus: [String: TrafficStatus] = [:]
 
   /// Initializes the application state model with default values and starts loading data with persistence.
   ///
@@ -136,6 +141,11 @@ class AppStateModel {
     isLoading = true
     error = nil
     validationFailures = []
+
+    #if DEBUG
+      // Verify bridge coordinates during development
+      await BridgesCanonicalData.verifyCoordinates()
+    #endif
 
     // Load persisted BridgeEvent entities via persistence service
     var persistedBridgeEvents: [BridgeEvent] = []
@@ -296,5 +306,23 @@ class AppStateModel {
   var dataAge: TimeInterval? {
     guard let lastRefresh = lastDataRefresh else { return nil }
     return Date().timeIntervalSince(lastRefresh)
+  }
+
+  // MARK: - Traffic Data Integration
+
+  /// Fetches real-time traffic data for all bridges and updates traffic status.
+  /// This uses MapKit's traffic layer and region queries for each bridge location.
+  @MainActor
+  func updateTrafficStatusForBridges() async {
+    // TODO: Query MapKit traffic in the vicinity of each bridge using latitude/longitude.
+    // For each bridge, update bridgeTrafficStatus[bridgeID] with current congestion/passability.
+    // For now, this is a stub.
+  }
+
+  /// Infers whether the bridge is currently passable based on traffic data.
+  /// - Parameter bridgeID: The ID of the bridge.
+  /// - Returns: Boolean indicating if the bridge is likely passable.
+  func isBridgePassable(bridgeID: String) -> Bool {
+    return bridgeTrafficStatus[bridgeID]?.isPassable ?? true
   }
 }
