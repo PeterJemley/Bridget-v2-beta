@@ -99,7 +99,11 @@ final class MLPipelineBackgroundManager: ObservableObject {
     BGTaskScheduler.shared.register(forTaskWithIdentifier: dataPopulationTaskID,
                                     using: nil)
     { task in
-      self.handleDataPopulationTask(task as! BGAppRefreshTask)
+      guard let refreshTask = task as? BGAppRefreshTask else {
+        self.logger.error("Expected BGAppRefreshTask but got \(type(of: task))")
+        return
+      }
+      self.handleDataPopulationTask(refreshTask)
     }
   }
 
@@ -107,7 +111,11 @@ final class MLPipelineBackgroundManager: ObservableObject {
     BGTaskScheduler.shared.register(forTaskWithIdentifier: dataExportTaskID,
                                     using: nil)
     { task in
-      self.handleDataExportTask(task as! BGAppRefreshTask)
+      guard let refreshTask = task as? BGAppRefreshTask else {
+        self.logger.error("Expected BGAppRefreshTask but got \(type(of: task))")
+        return
+      }
+      self.handleDataExportTask(refreshTask)
     }
   }
 
@@ -115,7 +123,11 @@ final class MLPipelineBackgroundManager: ObservableObject {
     BGTaskScheduler.shared.register(forTaskWithIdentifier: maintenanceTaskID,
                                     using: nil)
     { task in
-      self.handleMaintenanceTask(task as! BGAppRefreshTask)
+      guard let refreshTask = task as? BGAppRefreshTask else {
+        self.logger.error("Expected BGAppRefreshTask but got \(type(of: task))")
+        return
+      }
+      self.handleMaintenanceTask(refreshTask)
     }
   }
 
@@ -273,50 +285,33 @@ final class MLPipelineBackgroundManager: ObservableObject {
 
   private func executeDataPopulationTask() {
     Task {
-      do {
-        // This would need to be called from a context where we have access to ModelContext
-        // For now, we'll log the attempt
-        logger.info("Data population task executed successfully")
+      // This would need to be called from a context where we have access to ModelContext
+      // For now, we'll log the attempt
+      logger.info("Data population task executed successfully")
 
-        // Update last population date
-        UserDefaults.standard.set(Date(), forKey: lastPopulationDateKey)
-
-      } catch {
-        logger.error("Data population task failed: \(error.localizedDescription)")
-      }
+      // Update last population date
+      UserDefaults.standard.set(Date(), forKey: lastPopulationDateKey)
     }
   }
 
   private func executeDataExportTask() {
     Task {
-      do {
-        // This would need to be called from a context where we have access to ModelContext
-        // For now, we'll log the attempt
-        logger.info("Data export task executed successfully")
+      logger.info("Data export task executed successfully")
 
-        // Update last export date
-        UserDefaults.standard.set(Date(), forKey: lastExportDateKey)
-
-      } catch {
-        logger.error("Data export task failed: \(error.localizedDescription)")
-      }
+      // Update last export date
+      UserDefaults.standard.set(Date(), forKey: lastExportDateKey)
     }
   }
 
   private func executeMaintenanceTask() {
     Task {
-      do {
-        // Clean up old export files
-        cleanupOldExports()
+      // Clean up old export files
+      cleanupOldExports()
 
-        // Check pipeline health
-        checkPipelineHealth()
+      // Check pipeline health
+      checkPipelineHealth()
 
-        logger.info("Maintenance task executed successfully")
-
-      } catch {
-        logger.error("Maintenance task failed: \(error.localizedDescription)")
-      }
+      logger.info("Maintenance task executed successfully")
     }
   }
 
@@ -406,4 +401,3 @@ extension MLPipelineBackgroundManager {
     UserDefaults.standard.object(forKey: lastExportDateKey) as? Date
   }
 }
-

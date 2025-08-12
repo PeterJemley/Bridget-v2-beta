@@ -102,7 +102,8 @@ enum ValidationFailureReason: CustomStringConvertible, Equatable {
     case let .negativeMinutesOpen(value):
       return "Negative minutes open: \(String(describing: value))"
     case let .minutesOpenMismatch(reported, actual):
-      return "minutesopen mismatch: reported \(reported), actual \(actual) (should match the difference between open/close times)"
+      return "minutesopen mismatch: reported \(reported), actual \(actual) " +
+             "(should match the difference between open/close times)"
     case let .malformedLatitude(raw):
       return "Malformed latitude: \(raw) (not a valid number)"
     case let .malformedLongitude(raw):
@@ -110,7 +111,8 @@ enum ValidationFailureReason: CustomStringConvertible, Equatable {
     case let .malformedMinutesOpen(raw):
       return "Malformed minutesopen: \(raw) (not a valid number)"
     case let .geospatialMismatch(expectedLat, expectedLon, actualLat, actualLon):
-      return "Geospatial mismatch: expected (\(expectedLat), \(expectedLon)), got (\(actualLat), \(actualLon)) (too far from known location)"
+      return "Geospatial mismatch: expected (\(expectedLat), \(expectedLon)), " +
+             "got (\(actualLat), \(actualLon)) (too far from known location)"
     }
   }
 }

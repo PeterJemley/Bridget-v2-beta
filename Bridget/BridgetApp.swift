@@ -275,14 +275,16 @@ struct BridgetApp: App {
 
       // Show notifications for stale data if enabled
       if populationAge > 1, notificationManager.isNotificationTypeEnabled(.health) {
+        let body = "Data population is \(populationAge) days old. Consider refreshing data."
         notificationManager.showHealthNotification(title: "Pipeline Health Warning",
-                                                   body: "Data population is \(populationAge) days old. Consider refreshing data.",
+                                                   body: body,
                                                    healthIssue: .dataStale)
       }
 
       if exportAge > 1, notificationManager.isNotificationTypeEnabled(.health) {
+        let body = "Data export is \(exportAge) days old. Consider running export."
         notificationManager.showHealthNotification(title: "Pipeline Health Warning",
-                                                   body: "Data export is \(exportAge) days old. Consider running export.",
+                                                   body: body,
                                                    healthIssue: .exportFailed)
       }
     }
@@ -295,8 +297,10 @@ struct BridgetApp: App {
   /// This notification introduces users to the ML pipeline and explains
   /// what operations will happen automatically in the background.
   private func showWelcomeNotification() {
-    notificationManager.showSuccessNotification(title: "Welcome to Bridget ML Pipeline!",
-                                                body: "Your ML training data pipeline is now active. Data will be collected and exported automatically.",
+    let title = "Welcome to Bridget ML Pipeline!"
+    let body = "Your ML training data pipeline is now active. Data will be collected and exported automatically."
+    notificationManager.showSuccessNotification(title: title,
+                                                body: body,
                                                 operation: .maintenance)
   }
 }

@@ -234,4 +234,3 @@ extension ProbeTickExportTests {
     print("   - \(outputURL.deletingPathExtension().appendingPathExtension("done").lastPathComponent)")
   }
 }
-

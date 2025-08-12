@@ -238,7 +238,8 @@ final class BridgeDataExporter {
     let startPacific = calPacific.startOfDay(for: dayLocal)
     // The next day at midnight Pacific time
     guard let endPacific = calPacific.date(byAdding: .day, value: 1, to: startPacific) else {
-      throw NSError(domain: "BridgeDataExporter", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to compute end of day"])
+      let errorMessage = "Failed to compute end of day"
+      throw NSError(domain: "BridgeDataExporter", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMessage])
     }
 
     // Convert the Pacific local day window to UTC bounds, accounting for DST safely
@@ -292,18 +293,18 @@ final class BridgeDataExporter {
 
     struct Row: Encodable {
       let v: Int            // schema version
-      let ts_utc: String
-      let bridge_id: Int
-      let cross_k: Int
-      let cross_n: Int
-      let via_routable: Int
-      let via_penalty_sec: Int
-      let gate_anom: Double
-      let alternates_total: Int
-      let alternates_avoid_span: Int
-      let free_eta_sec: Int?
-      let via_eta_sec: Int?
-      let open_label: Int
+      let tsUtc: String
+      let bridgeId: Int
+      let crossK: Int
+      let crossN: Int
+      let viaRoutable: Int
+      let viaPenaltySec: Int
+      let gateAnom: Double
+      let alternatesTotal: Int
+      let alternatesAvoidSpan: Int
+      let freeEtaSec: Int?
+      let viaEtaSec: Int?
+      let openLabel: Int
     }
 
     // Prepare a temporary file URL for atomic replacement
@@ -314,7 +315,8 @@ final class BridgeDataExporter {
 
     // Open the temp file for writing
     guard let handle = try? FileHandle(forWritingTo: tempURL) else {
-      throw NSError(domain: "BridgeDataExporter", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to open temp file for writing"])
+      let errorMessage = "Failed to open temp file for writing"
+      throw NSError(domain: "BridgeDataExporter", code: 2, userInfo: [NSLocalizedDescriptionKey: errorMessage])
     }
     try handle.truncate(atOffset: 0)
 
@@ -375,25 +377,25 @@ final class BridgeDataExporter {
       }
 
       let row = Row(v: 1,
-                    ts_utc: iso.string(from: tick.tsUtc),
-                    bridge_id: Int(tick.bridgeId),
-                    cross_k: crossK,
-                    cross_n: crossN,
-                    via_routable: tick.viaRoutable ? 1 : 0,
-                    via_penalty_sec: viaPenalty,
-                    gate_anom: gateAnom,
-                    alternates_total: alternatesTotal,
-                    alternates_avoid_span: alternatesAvoid,
-                    free_eta_sec: tick.freeEtaSec == 0 ? nil : tick.freeEtaSec.map(Int.init),
-                    via_eta_sec: tick.viaEtaSec == 0 ? nil : tick.viaEtaSec.map(Int.init),
-                    open_label: tick.openLabel ? 1 : 0)
+                    tsUtc: iso.string(from: tick.tsUtc),
+                    bridgeId: Int(tick.bridgeId),
+                    crossK: crossK,
+                    crossN: crossN,
+                    viaRoutable: tick.viaRoutable ? 1 : 0,
+                    viaPenaltySec: viaPenalty,
+                    gateAnom: gateAnom,
+                    alternatesTotal: alternatesTotal,
+                    alternatesAvoidSpan: alternatesAvoid,
+                    freeEtaSec: tick.freeEtaSec == 0 ? nil : tick.freeEtaSec.map(Int.init),
+                    viaEtaSec: tick.viaEtaSec == 0 ? nil : tick.viaEtaSec.map(Int.init),
+                    openLabel: tick.openLabel ? 1 : 0)
       var data = try encoder.encode(row)
       data.append(0x0A) // newline
       try handle.write(contentsOf: data)
 
       // Update metrics
       totalRows += 1
-      bridgeCounts[row.bridge_id, default: 0] += 1
+      bridgeCounts[row.bridgeId, default: 0] += 1
       if let minTS = minTimestamp {
         if tick.tsUtc < minTS { minTimestamp = tick.tsUtc }
       } else {
@@ -419,13 +421,13 @@ final class BridgeDataExporter {
 
     // Write sidecar metrics JSON file
     struct Metrics: Encodable {
-      let total_rows: Int
-      let corrected_rows: Int
-      let bridge_counts: [String: Int]
-      let min_ts_utc: String?
-      let max_ts_utc: String?
-      let expected_minutes: Int
-      let missing_minutes_by_bridge: [String: Int]
+      let totalRows: Int
+      let correctedRows: Int
+      let bridgeCounts: [String: Int]
+      let minTsUtc: String?
+      let maxTsUtc: String?
+      let expectedMinutes: Int
+      let missingMinutesByBridge: [String: Int]
     }
 
     // Calculate expected minutes (1440 per day)
@@ -452,13 +454,14 @@ final class BridgeDataExporter {
     }
 
     let metricsURL = url.deletingPathExtension().appendingPathExtension("metrics.json")
-    let metrics = Metrics(total_rows: totalRows,
-                          corrected_rows: correctedRows,
-                          bridge_counts: Dictionary(uniqueKeysWithValues: bridgeCounts.map { (String($0.key), $0.value) }),
-                          min_ts_utc: minTimestamp.map { iso.string(from: $0) },
-                          max_ts_utc: maxTimestamp.map { iso.string(from: $0) },
-                          expected_minutes: expectedMinutes,
-                          missing_minutes_by_bridge: missingMinutesByBridge)
+    let bridgeCountsDict = Dictionary(uniqueKeysWithValues: bridgeCounts.map { (String($0.key), $0.value) })
+    let metrics = Metrics(totalRows: totalRows,
+                          correctedRows: correctedRows,
+                          bridgeCounts: bridgeCountsDict,
+                          minTsUtc: minTimestamp.map { iso.string(from: $0) },
+                          maxTsUtc: maxTimestamp.map { iso.string(from: $0) },
+                          expectedMinutes: expectedMinutes,
+                          missingMinutesByBridge: missingMinutesByBridge)
     let metricsData = try JSONEncoder().encode(metrics)
     try metricsData.write(to: metricsURL, options: .atomic)
 

@@ -390,4 +390,3 @@ extension MLPipelineNotificationManager {
     logger.info("\(type.rawValue) notifications \(enabled ? "enabled" : "disabled")")
   }
 }
-

@@ -344,15 +344,19 @@ struct QuickActionsView: View {
 
         await MainActor.run {
           // Show success notification
-          MLPipelineNotificationManager.shared.showSuccessNotification(title: "Data Population Complete",
-                                                                       body: "Today's ProbeTick data has been populated successfully.",
+          let title = "Data Population Complete"
+          let body = "Today's ProbeTick data has been populated successfully."
+          MLPipelineNotificationManager.shared.showSuccessNotification(title: title,
+                                                                       body: body,
                                                                        operation: .dataPopulation)
         }
       } catch {
         await MainActor.run {
           // Show failure notification
-          MLPipelineNotificationManager.shared.showFailureNotification(title: "Data Population Failed",
-                                                                       body: "Failed to populate today's data.",
+          let title = "Data Population Failed"
+          let body = "Failed to populate today's data."
+          MLPipelineNotificationManager.shared.showFailureNotification(title: title,
+                                                                       body: body,
                                                                        operation: .dataPopulation,
                                                                        error: error)
         }
@@ -379,8 +383,10 @@ struct QuickActionsView: View {
       } catch {
         await MainActor.run {
           // Show failure notification
-          MLPipelineNotificationManager.shared.showFailureNotification(title: "Export Failed",
-                                                                       body: "Failed to export today's data.",
+          let title = "Export Failed"
+          let body = "Failed to export today's data."
+          MLPipelineNotificationManager.shared.showFailureNotification(title: title,
+                                                                       body: body,
                                                                        operation: .dataExport,
                                                                        error: error)
         }

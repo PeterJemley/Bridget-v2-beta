@@ -21,7 +21,9 @@ import Foundation
 
 /// A singleton service for robust network operations with retry logic and validation.
 ///
-/// Handles API fetching, HTTP response validation, retry logic, and error classification for the Bridget app. Used by `BridgeDataService` for all network requests to the Seattle Open Data API.
+/// Handles API fetching, HTTP response validation, retry logic, and error classification 
+/// for the Bridget app. Used by `BridgeDataService` for all network requests to the 
+/// Seattle Open Data API.
 ///
 /// ## Usage
 /// ```swift

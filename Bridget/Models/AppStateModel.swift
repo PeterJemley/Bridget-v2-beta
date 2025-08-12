@@ -120,8 +120,12 @@ class AppStateModel {
       // Create a lightweight in-memory ModelContainer for SwiftData
       let schema = Schema([BridgeEvent.self])
       let modelConfiguration = ModelConfiguration(isStoredInMemoryOnly: true)
-      let container = try! ModelContainer(for: schema, configurations: [modelConfiguration])
-      self.init(modelContext: container.mainContext)
+      do {
+        let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+        self.init(modelContext: container.mainContext)
+      } catch {
+        fatalError("Failed to create test ModelContainer: \(error.localizedDescription)")
+      }
     #else
       fatalError("AppStateModel.init() is for test use only. Use the designated initializer.")
     #endif

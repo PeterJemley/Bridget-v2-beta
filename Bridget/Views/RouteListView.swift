@@ -88,7 +88,9 @@ struct RouteListView: View {
             .foregroundColor(.green)
         }
         if #available(iOS 17.0, *) {
-          let message = try? AttributedString(markdown: "Ditch the spanxiety and bridge the gap between *you* and on *time*.")
+          let message = try? AttributedString(
+            markdown: "Ditch the spanxiety and bridge the gap between *you* and on *time*."
+          )
           Text(message ?? "Ditch the spanxiety and bridge the gap between you and on time.")
             .font(.subheadline)
             .foregroundColor(.secondary)
@@ -106,7 +108,8 @@ struct RouteListView: View {
           .multilineTextAlignment(.center)
           .lineLimit(2)
         }
-        Link(destination: URL(string: "https://data.seattle.gov/Transportation/SDOT-Drawbridge-Status/gm8h-9449/about_data")!) {
+        let dataURL = URL(string: "https://data.seattle.gov/Transportation/SDOT-Drawbridge-Status/gm8h-9449/about_data")!
+        Link(destination: dataURL) {
           HStack(spacing: 6) {
             Image(systemName: "info.circle.fill")
               .font(.subheadline)
@@ -424,29 +427,65 @@ struct SectionedBridgeListView: View {
 
 #Preview("BridgeTableListView (Simple Table List)") {
   let bridges = [
-    BridgeStatusModel(bridgeName: "Ballard", apiBridgeID: BridgeID(rawValue: "1"), historicalOpenings: [Date(), Date().addingTimeInterval(-3600)]),
-    BridgeStatusModel(bridgeName: "Fremont", apiBridgeID: BridgeID(rawValue: "2"), historicalOpenings: [Date()]),
-    BridgeStatusModel(bridgeName: "Spokane St", apiBridgeID: BridgeID(rawValue: "3"), historicalOpenings: [Date(), Date(), Date()]),
+    BridgeStatusModel(
+      bridgeName: "Ballard", 
+      apiBridgeID: BridgeID(rawValue: "1"), 
+      historicalOpenings: [Date(), Date().addingTimeInterval(-3600)]
+    ),
+    BridgeStatusModel(
+      bridgeName: "Fremont", 
+      apiBridgeID: BridgeID(rawValue: "2"), 
+      historicalOpenings: [Date()]
+    ),
+    BridgeStatusModel(
+      bridgeName: "Spokane St", 
+      apiBridgeID: BridgeID(rawValue: "3"), 
+      historicalOpenings: [Date(), Date(), Date()]
+    ),
   ]
   BridgeTableListView(bridges: bridges)
 }
 
 #Preview("BridgeTableGridView (Grid Table)") {
   let bridges = [
-    BridgeStatusModel(bridgeName: "Ballard", apiBridgeID: BridgeID(rawValue: "1"), historicalOpenings: [Date(), Date().addingTimeInterval(-3600)]),
-    BridgeStatusModel(bridgeName: "Fremont", apiBridgeID: BridgeID(rawValue: "2"), historicalOpenings: [Date()]),
-    BridgeStatusModel(bridgeName: "Spokane St", apiBridgeID: BridgeID(rawValue: "3"), historicalOpenings: [Date(), Date(), Date()]),
+    BridgeStatusModel(
+      bridgeName: "Ballard", 
+      apiBridgeID: BridgeID(rawValue: "1"), 
+      historicalOpenings: [Date(), Date().addingTimeInterval(-3600)]
+    ),
+    BridgeStatusModel(
+      bridgeName: "Fremont", 
+      apiBridgeID: BridgeID(rawValue: "2"), 
+      historicalOpenings: [Date()]
+    ),
+    BridgeStatusModel(
+      bridgeName: "Spokane St", 
+      apiBridgeID: BridgeID(rawValue: "3"), 
+      historicalOpenings: [Date(), Date(), Date()]
+    ),
   ]
   BridgeTableGridView(bridges: bridges)
 }
 
 #Preview("SectionedBridgeListView (Grouped by Route)") {
   let bridges1 = [
-    BridgeStatusModel(bridgeName: "Ballard", apiBridgeID: BridgeID(rawValue: "1"), historicalOpenings: [Date(), Date().addingTimeInterval(-3600)]),
-    BridgeStatusModel(bridgeName: "Fremont", apiBridgeID: BridgeID(rawValue: "2"), historicalOpenings: [Date()]),
+    BridgeStatusModel(
+      bridgeName: "Ballard", 
+      apiBridgeID: BridgeID(rawValue: "1"), 
+      historicalOpenings: [Date(), Date().addingTimeInterval(-3600)]
+    ),
+    BridgeStatusModel(
+      bridgeName: "Fremont", 
+      apiBridgeID: BridgeID(rawValue: "2"), 
+      historicalOpenings: [Date()]
+    ),
   ]
   let bridges2 = [
-    BridgeStatusModel(bridgeName: "Spokane St", apiBridgeID: BridgeID(rawValue: "3"), historicalOpenings: [Date(), Date(), Date()]),
+    BridgeStatusModel(
+      bridgeName: "Spokane St", 
+      apiBridgeID: BridgeID(rawValue: "3"), 
+      historicalOpenings: [Date(), Date(), Date()]
+    ),
   ]
   let routes = [
     RouteModel(routeID: "North Route", bridges: bridges1, score: 0.91),
