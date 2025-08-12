@@ -115,363 +115,357 @@ import SwiftData
 /// The exported NDJSON files can be processed directly by the `train_prep.py`
 /// script to generate feature matrices for machine learning models.
 final class BridgeDataExporter {
-    /// The SwiftData context for fetching ProbeTick data
-    let context: ModelContext
-    
-    /// ISO8601 date formatter for UTC timestamps
-    private let iso = ISO8601DateFormatter()
+  /// The SwiftData context for fetching ProbeTick data
+  let context: ModelContext
 
-    /// Creates a new BridgeDataExporter instance
-    /// - Parameter context: The SwiftData ModelContext for data access
-    init(context: ModelContext) {
-        self.context = context
-        iso.formatOptions = [.withInternetDateTime, .withColonSeparatorInTime, .withColonSeparatorInTimeZone]
-        iso.timeZone = TimeZone(secondsFromGMT: 0)
+  /// ISO8601 date formatter for UTC timestamps
+  private let iso = ISO8601DateFormatter()
+
+  /// Creates a new BridgeDataExporter instance
+  /// - Parameter context: The SwiftData ModelContext for data access
+  init(context: ModelContext) {
+    self.context = context
+    iso.formatOptions = [.withInternetDateTime, .withColonSeparatorInTime, .withColonSeparatorInTimeZone]
+    iso.timeZone = TimeZone(secondsFromGMT: 0)
+  }
+
+  /// Exports all valid ProbeTick records for the specified local day as NDJSON.
+  ///
+  /// This method exports daily bridge probe data in NDJSON format for ML training
+  /// and analytics. It handles timezone conversion, data deduplication, validation,
+  /// and atomic file operations to ensure data integrity.
+  ///
+  /// ## Process Overview
+  ///
+  /// 1. **Time Zone Conversion**: Converts local day to UTC bounds with DST awareness
+  /// 2. **Data Fetching**: Retrieves ProbeTick records within the UTC window
+  /// 3. **Deduplication**: Removes duplicates per bridge per minute, keeping latest
+  /// 4. **Validation**: Applies clamping rules and counts corrections
+  /// 5. **Export**: Streams data to temporary NDJSON file
+  /// 6. **Atomic Replacement**: Replaces target file atomically
+  /// 7. **Metrics**: Generates sidecar files with export statistics
+  /// 8. **Completion**: Writes `.done` marker file
+  ///
+  /// ## Time Zone Handling
+  ///
+  /// The method uses Pacific timezone (PST/PDT) for local day calculations:
+  /// - Converts local midnight to UTC bounds
+  /// - Handles DST transitions automatically
+  /// - Ensures consistent day boundaries regardless of DST state
+  ///
+  /// ## Deduplication Strategy
+  ///
+  /// Records are deduplicated by:
+  /// - **Bridge ID**: Unique identifier for each bridge
+  /// - **Minute Timestamp**: Floored to minute precision
+  /// - **Latest Record**: Keeps the most recent record per group
+  ///
+  /// ## Validation Rules
+  ///
+  /// The following validation is applied during export:
+  /// - **`via_penalty_sec`**: Clipped to [0, 900] seconds
+  /// - **`gate_anom`**: Clipped to [1, 8] ratio
+  /// - **`cross_k`**: Must be ≤ `cross_n`
+  /// - **Data Quality**: Only exports records with `isValid = true`
+  ///
+  /// ## Output Structure
+  ///
+  /// The export creates three files:
+  ///
+  /// 1. **Main Data File**: `minutes_YYYY-MM-DD.ndjson`
+  ///    - One JSON object per line
+  ///    - Includes schema version `v: 1`
+  ///    - Sorted by timestamp, then bridge ID
+  ///
+  /// 2. **Metrics File**: `minutes_YYYY-MM-DD.metrics.json`
+  ///    - Export statistics and validation counts
+  ///    - Per-bridge data summaries
+  ///    - Missing minute analysis
+  ///
+  /// 3. **Completion Marker**: `.done`
+  ///    - Zero-byte file indicating successful export
+  ///    - Used for downstream coordination
+  ///
+  /// ## Performance Notes
+  ///
+  /// - **Memory Efficient**: Streams data to avoid memory issues
+  /// - **Atomic Operations**: Uses temporary file + replacement for integrity
+  /// - **Validation**: Processes validation inline during export
+  /// - **Large Datasets**: Handles full days of data efficiently
+  ///
+  /// ## Error Conditions
+  ///
+  /// The method throws errors for:
+  /// - Invalid date calculations or timezone issues
+  /// - File system permission or space problems
+  /// - Data encoding or validation failures
+  /// - Insufficient ProbeTick data for the target day
+  ///
+  /// ## Example Usage
+  ///
+  /// ```swift
+  /// let exporter = BridgeDataExporter(context: modelContext)
+  /// let today = Calendar.current.startOfDay(for: Date())
+  /// let outputURL = URL(fileURLWithPath: "/path/to/output/minutes_2025-01-27.ndjson")
+  ///
+  /// do {
+  ///     try await exporter.exportDailyNDJSON(for: today, to: outputURL)
+  ///     print("✅ Successfully exported today's data")
+  /// } catch {
+  ///     print("❌ Export failed: \(error)")
+  /// }
+  /// ```
+  ///
+  /// ## Integration Notes
+  ///
+  /// - **ML Pipeline**: Designed to work with Python `train_prep.py`
+  /// - **Data Quality**: Exports only validated ProbeTick records
+  /// - **File Format**: NDJSON for easy ML processing
+  /// - **Atomicity**: Ensures data integrity for downstream consumers
+  ///
+  /// - Parameters:
+  ///   - dayLocal: The day (midnight local time) to export (e.g., for 2025-08-11)
+  ///   - url: Output file URL for NDJSON
+  /// - Throws: Any error reading, encoding, writing NDJSON, or file operations
+  func exportDailyNDJSON(for dayLocal: Date, to url: URL) async throws {
+    // Define the Pacific timezone (PST/PDT) for DST-aware calculations
+    let pacific = TimeZone(identifier: "America/Los_Angeles")!
+    let cal = Calendar(identifier: .gregorian)
+    var calPacific = cal
+    calPacific.timeZone = pacific
+
+    // Get the start of the local day in Pacific timezone (midnight Pacific time)
+    let startPacific = calPacific.startOfDay(for: dayLocal)
+    // The next day at midnight Pacific time
+    guard let endPacific = calPacific.date(byAdding: .day, value: 1, to: startPacific) else {
+      throw NSError(domain: "BridgeDataExporter", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to compute end of day"])
     }
 
-    /// Exports all valid ProbeTick records for the specified local day as NDJSON.
-    ///
-    /// This method exports daily bridge probe data in NDJSON format for ML training
-    /// and analytics. It handles timezone conversion, data deduplication, validation,
-    /// and atomic file operations to ensure data integrity.
-    ///
-    /// ## Process Overview
-    ///
-    /// 1. **Time Zone Conversion**: Converts local day to UTC bounds with DST awareness
-    /// 2. **Data Fetching**: Retrieves ProbeTick records within the UTC window
-    /// 3. **Deduplication**: Removes duplicates per bridge per minute, keeping latest
-    /// 4. **Validation**: Applies clamping rules and counts corrections
-    /// 5. **Export**: Streams data to temporary NDJSON file
-    /// 6. **Atomic Replacement**: Replaces target file atomically
-    /// 7. **Metrics**: Generates sidecar files with export statistics
-    /// 8. **Completion**: Writes `.done` marker file
-    ///
-    /// ## Time Zone Handling
-    ///
-    /// The method uses Pacific timezone (PST/PDT) for local day calculations:
-    /// - Converts local midnight to UTC bounds
-    /// - Handles DST transitions automatically
-    /// - Ensures consistent day boundaries regardless of DST state
-    ///
-    /// ## Deduplication Strategy
-    ///
-    /// Records are deduplicated by:
-    /// - **Bridge ID**: Unique identifier for each bridge
-    /// - **Minute Timestamp**: Floored to minute precision
-    /// - **Latest Record**: Keeps the most recent record per group
-    ///
-    /// ## Validation Rules
-    ///
-    /// The following validation is applied during export:
-    /// - **`via_penalty_sec`**: Clipped to [0, 900] seconds
-    /// - **`gate_anom`**: Clipped to [1, 8] ratio
-    /// - **`cross_k`**: Must be ≤ `cross_n`
-    /// - **Data Quality**: Only exports records with `isValid = true`
-    ///
-    /// ## Output Structure
-    ///
-    /// The export creates three files:
-    ///
-    /// 1. **Main Data File**: `minutes_YYYY-MM-DD.ndjson`
-    ///    - One JSON object per line
-    ///    - Includes schema version `v: 1`
-    ///    - Sorted by timestamp, then bridge ID
-    ///
-    /// 2. **Metrics File**: `minutes_YYYY-MM-DD.metrics.json`
-    ///    - Export statistics and validation counts
-    ///    - Per-bridge data summaries
-    ///    - Missing minute analysis
-    ///
-    /// 3. **Completion Marker**: `.done`
-    ///    - Zero-byte file indicating successful export
-    ///    - Used for downstream coordination
-    ///
-    /// ## Performance Notes
-    ///
-    /// - **Memory Efficient**: Streams data to avoid memory issues
-    /// - **Atomic Operations**: Uses temporary file + replacement for integrity
-    /// - **Validation**: Processes validation inline during export
-    /// - **Large Datasets**: Handles full days of data efficiently
-    ///
-    /// ## Error Conditions
-    ///
-    /// The method throws errors for:
-    /// - Invalid date calculations or timezone issues
-    /// - File system permission or space problems
-    /// - Data encoding or validation failures
-    /// - Insufficient ProbeTick data for the target day
-    ///
-    /// ## Example Usage
-    ///
-    /// ```swift
-    /// let exporter = BridgeDataExporter(context: modelContext)
-    /// let today = Calendar.current.startOfDay(for: Date())
-    /// let outputURL = URL(fileURLWithPath: "/path/to/output/minutes_2025-01-27.ndjson")
-    ///
-    /// do {
-    ///     try await exporter.exportDailyNDJSON(for: today, to: outputURL)
-    ///     print("✅ Successfully exported today's data")
-    /// } catch {
-    ///     print("❌ Export failed: \(error)")
-    /// }
-    /// ```
-    ///
-    /// ## Integration Notes
-    ///
-    /// - **ML Pipeline**: Designed to work with Python `train_prep.py`
-    /// - **Data Quality**: Exports only validated ProbeTick records
-    /// - **File Format**: NDJSON for easy ML processing
-    /// - **Atomicity**: Ensures data integrity for downstream consumers
-    ///
-    /// - Parameters:
-    ///   - dayLocal: The day (midnight local time) to export (e.g., for 2025-08-11)
-    ///   - url: Output file URL for NDJSON
-    /// - Throws: Any error reading, encoding, writing NDJSON, or file operations
-    func exportDailyNDJSON(for dayLocal: Date, to url: URL) async throws {
-        // Define the Pacific timezone (PST/PDT) for DST-aware calculations
-        let pacific = TimeZone(identifier: "America/Los_Angeles")!
-        let cal = Calendar(identifier: .gregorian)
-        var calPacific = cal
-        calPacific.timeZone = pacific
+    // Convert the Pacific local day window to UTC bounds, accounting for DST safely
+    let startUTC = startPacific.addingTimeInterval(-TimeInterval(pacific.secondsFromGMT(for: startPacific)))
+    let endUTC = endPacific.addingTimeInterval(-TimeInterval(pacific.secondsFromGMT(for: endPacific)))
 
-        // Get the start of the local day in Pacific timezone (midnight Pacific time)
-        let startPacific = calPacific.startOfDay(for: dayLocal)
-        // The next day at midnight Pacific time
-        guard let endPacific = calPacific.date(byAdding: .day, value: 1, to: startPacific) else {
-            throw NSError(domain: "BridgeDataExporter", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to compute end of day"])
+    // Fetch all ProbeTick within the UTC window that are valid
+    let fetchDescriptor = FetchDescriptor<ProbeTick>(predicate: #Predicate {
+      $0.tsUtc >= startUTC && $0.tsUtc < endUTC && $0.isValid
+    },
+    sortBy: [SortDescriptor(\.tsUtc), SortDescriptor(\.bridgeId)])
+    let ticks = try context.fetch(fetchDescriptor)
+
+    // Deduplicate ticks by (bridgeId, floored minute of tsUtc), keeping the latest (max tsUtc) for each group
+    // Key: (bridgeId, minuteTimestamp)
+    var latestTicks: [String: ProbeTick] = [:]
+
+    for tick in ticks {
+      // Floor timestamp to minute (UTC)
+      let ts = tick.tsUtc
+      let flooredTimestamp = ts.timeIntervalSince1970 - (ts.timeIntervalSince1970.truncatingRemainder(dividingBy: 60))
+
+      let key = "\(tick.bridgeId)-\(Int(flooredTimestamp))"
+
+      if let existing = latestTicks[key] {
+        if existing.tsUtc < tick.tsUtc {
+          latestTicks[key] = tick
         }
-
-        // Convert the Pacific local day window to UTC bounds, accounting for DST safely
-        let startUTC = startPacific.addingTimeInterval(-TimeInterval(pacific.secondsFromGMT(for: startPacific)))
-        let endUTC = endPacific.addingTimeInterval(-TimeInterval(pacific.secondsFromGMT(for: endPacific)))
-
-        // Fetch all ProbeTick within the UTC window that are valid
-        let fetchDescriptor = FetchDescriptor<ProbeTick>(
-            predicate: #Predicate {
-                $0.tsUtc >= startUTC && $0.tsUtc < endUTC && $0.isValid
-            },
-            sortBy: [SortDescriptor(\.tsUtc), SortDescriptor(\.bridgeId)]
-        )
-        let ticks = try context.fetch(fetchDescriptor)
-
-        // Deduplicate ticks by (bridgeId, floored minute of tsUtc), keeping the latest (max tsUtc) for each group
-        // Key: (bridgeId, minuteTimestamp)
-        var latestTicks: [String: ProbeTick] = [:]
-
-        for tick in ticks {
-            // Floor timestamp to minute (UTC)
-            let ts = tick.tsUtc
-            let flooredTimestamp = ts.timeIntervalSince1970 - (ts.timeIntervalSince1970.truncatingRemainder(dividingBy: 60))
-
-            let key = "\(tick.bridgeId)-\(Int(flooredTimestamp))"
-
-            if let existing = latestTicks[key] {
-                if existing.tsUtc < tick.tsUtc {
-                    latestTicks[key] = tick
-                }
-            } else {
-                latestTicks[key] = tick
-            }
-        }
-
-        // Sort deduplicated ticks by timestamp ascending, then bridgeId ascending for consistency
-        let dedupedTicks = latestTicks.values.sorted {
-            if $0.tsUtc != $1.tsUtc {
-                return $0.tsUtc < $1.tsUtc
-            }
-            return $0.bridgeId < $1.bridgeId
-        }
-
-        // Ensure bridge_map.json exists in output directory, write if missing
-        // Since BridgesCanonicalData is removed, skip writing bridge_map.json here.
-        // If needed, bridge_map.json must be provided externally.
-        let outputDirectory = url.deletingLastPathComponent()
-        let bridgeMapURL = outputDirectory.appendingPathComponent("bridge_map.json")
-
-        // Prepare JSONEncoder for NDJSON output
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.withoutEscapingSlashes]
-
-        struct Row: Encodable {
-            let v: Int            // schema version
-            let ts_utc: String
-            let bridge_id: Int
-            let cross_k: Int
-            let cross_n: Int
-            let via_routable: Int
-            let via_penalty_sec: Int
-            let gate_anom: Double
-            let alternates_total: Int
-            let alternates_avoid_span: Int
-            let free_eta_sec: Int?
-            let via_eta_sec: Int?
-            let open_label: Int
-        }
-
-        // Prepare a temporary file URL for atomic replacement
-        let tempURL = outputDirectory.appendingPathComponent(UUID().uuidString + ".ndjson.tmp")
-
-        // Ensure the temp file is created empty
-        FileManager.default.createFile(atPath: tempURL.path, contents: nil)
-
-        // Open the temp file for writing
-        guard let handle = try? FileHandle(forWritingTo: tempURL) else {
-            throw NSError(domain: "BridgeDataExporter", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to open temp file for writing"])
-        }
-        try handle.truncate(atOffset: 0)
-
-        // Metrics collection
-        var totalRows = 0
-        var correctedRows = 0
-        var bridgeCounts: [Int: Int] = [:]
-        var minTimestamp: Date? = nil
-        var maxTimestamp: Date? = nil
-
-        for tick in dedupedTicks {
-            var crossK = Int(tick.crossK)
-            var crossN = Int(tick.crossN)
-            var viaPenalty = Int(tick.viaPenaltySec)
-            var gateAnom = tick.gateAnom
-            var alternatesTotal = Int(tick.alternatesTotal)
-            var alternatesAvoid = Int(tick.alternatesAvoid)
-
-            var hadCorrection = false
-
-            // Clamp and validate fields, count corrections
-            if crossK < 0 {
-                crossK = 0
-                hadCorrection = true
-            }
-            if crossN < crossK {
-                crossN = crossK
-                hadCorrection = true
-            }
-            if viaPenalty < 0 {
-                viaPenalty = 0
-                hadCorrection = true
-            } else if viaPenalty > 900 {
-                viaPenalty = 900
-                hadCorrection = true
-            }
-            if gateAnom < 1.0 {
-                gateAnom = 1.0
-                hadCorrection = true
-            } else if gateAnom > 8.0 {
-                gateAnom = 8.0
-                hadCorrection = true
-            }
-            if alternatesTotal < 1 {
-                alternatesTotal = 1
-                hadCorrection = true
-            }
-            if alternatesAvoid < 0 {
-                alternatesAvoid = 0
-                hadCorrection = true
-            } else if alternatesAvoid > alternatesTotal {
-                alternatesAvoid = alternatesTotal
-                hadCorrection = true
-            }
-
-            if hadCorrection {
-                correctedRows += 1
-            }
-
-            let row = Row(
-                v: 1,
-                ts_utc: iso.string(from: tick.tsUtc),
-                bridge_id: Int(tick.bridgeId),
-                cross_k: crossK,
-                cross_n: crossN,
-                via_routable: tick.viaRoutable ? 1 : 0,
-                via_penalty_sec: viaPenalty,
-                gate_anom: gateAnom,
-                alternates_total: alternatesTotal,
-                alternates_avoid_span: alternatesAvoid,
-                free_eta_sec: (tick.freeEtaSec == 0 ? nil : tick.freeEtaSec.map(Int.init)),
-                via_eta_sec: (tick.viaEtaSec == 0 ? nil : tick.viaEtaSec.map(Int.init)),
-                open_label: tick.openLabel ? 1 : 0
-            )
-            var data = try encoder.encode(row)
-            data.append(0x0A) // newline
-            try handle.write(contentsOf: data)
-
-            // Update metrics
-            totalRows += 1
-            bridgeCounts[row.bridge_id, default: 0] += 1
-            if let minTS = minTimestamp {
-                if tick.tsUtc < minTS { minTimestamp = tick.tsUtc }
-            } else {
-                minTimestamp = tick.tsUtc
-            }
-            if let maxTS = maxTimestamp {
-                if tick.tsUtc > maxTS { maxTimestamp = tick.tsUtc }
-            } else {
-                maxTimestamp = tick.tsUtc
-            }
-        }
-
-        try handle.close()
-
-        // Atomically replace the destination file with the temp file
-        do {
-            let _ = try FileManager.default.replaceItemAt(url, withItemAt: tempURL)
-        } catch {
-            // Cleanup temp file on failure
-            try? FileManager.default.removeItem(at: tempURL)
-            throw error
-        }
-
-        // Write sidecar metrics JSON file
-        struct Metrics: Encodable {
-            let total_rows: Int
-            let corrected_rows: Int
-            let bridge_counts: [String: Int]
-            let min_ts_utc: String?
-            let max_ts_utc: String?
-            let expected_minutes: Int
-            let missing_minutes_by_bridge: [String: Int]
-        }
-
-        // Calculate expected minutes (1440 per day)
-        let expectedMinutes = 1440
-
-        // Calculate missing minutes by bridge
-        var missingMinutesByBridge: [String: Int] = [:]
-        for (bridgeId, actualCount) in bridgeCounts {
-            let missing = expectedMinutes - actualCount
-            missingMinutesByBridge[String(bridgeId)] = missing > 0 ? missing : 0
-        }
-
-        // Also include bridges with zero counts but present in bridge_map
-        if FileManager.default.fileExists(atPath: bridgeMapURL.path) {
-            if let data = try? Data(contentsOf: bridgeMapURL),
-               let bridgeMap = try? JSONDecoder().decode([String: String].self, from: data) {
-                for bridgeIdStr in bridgeMap.keys {
-                    if bridgeCounts[Int(bridgeIdStr) ?? -1] == nil {
-                        missingMinutesByBridge[bridgeIdStr] = expectedMinutes
-                    }
-                }
-            }
-        }
-
-        let metricsURL = url.deletingPathExtension().appendingPathExtension("metrics.json")
-        let metrics = Metrics(
-            total_rows: totalRows,
-            corrected_rows: correctedRows,
-            bridge_counts: Dictionary(uniqueKeysWithValues: bridgeCounts.map { (String($0.key), $0.value) }),
-            min_ts_utc: minTimestamp.map { iso.string(from: $0) },
-            max_ts_utc: maxTimestamp.map { iso.string(from: $0) },
-            expected_minutes: expectedMinutes,
-            missing_minutes_by_bridge: missingMinutesByBridge
-        )
-        let metricsData = try JSONEncoder().encode(metrics)
-        try metricsData.write(to: metricsURL, options: .atomic)
-
-        // Write zero-byte .done marker file after atomic replacement for downstream coordination
-        let doneURL = url.deletingPathExtension().appendingPathExtension("done")
-        FileManager.default.createFile(atPath: doneURL.path, contents: nil)
-        
-        // Note: gzip compression can be added here on the NDJSON file stream if needed in the future.
+      } else {
+        latestTicks[key] = tick
+      }
     }
+
+    // Sort deduplicated ticks by timestamp ascending, then bridgeId ascending for consistency
+    let dedupedTicks = latestTicks.values.sorted {
+      if $0.tsUtc != $1.tsUtc {
+        return $0.tsUtc < $1.tsUtc
+      }
+      return $0.bridgeId < $1.bridgeId
+    }
+
+    // Ensure bridge_map.json exists in output directory, write if missing
+    // Since BridgesCanonicalData is removed, skip writing bridge_map.json here.
+    // If needed, bridge_map.json must be provided externally.
+    let outputDirectory = url.deletingLastPathComponent()
+    let bridgeMapURL = outputDirectory.appendingPathComponent("bridge_map.json")
+
+    // Prepare JSONEncoder for NDJSON output
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = [.withoutEscapingSlashes]
+
+    struct Row: Encodable {
+      let v: Int            // schema version
+      let ts_utc: String
+      let bridge_id: Int
+      let cross_k: Int
+      let cross_n: Int
+      let via_routable: Int
+      let via_penalty_sec: Int
+      let gate_anom: Double
+      let alternates_total: Int
+      let alternates_avoid_span: Int
+      let free_eta_sec: Int?
+      let via_eta_sec: Int?
+      let open_label: Int
+    }
+
+    // Prepare a temporary file URL for atomic replacement
+    let tempURL = outputDirectory.appendingPathComponent(UUID().uuidString + ".ndjson.tmp")
+
+    // Ensure the temp file is created empty
+    FileManager.default.createFile(atPath: tempURL.path, contents: nil)
+
+    // Open the temp file for writing
+    guard let handle = try? FileHandle(forWritingTo: tempURL) else {
+      throw NSError(domain: "BridgeDataExporter", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to open temp file for writing"])
+    }
+    try handle.truncate(atOffset: 0)
+
+    // Metrics collection
+    var totalRows = 0
+    var correctedRows = 0
+    var bridgeCounts: [Int: Int] = [:]
+    var minTimestamp: Date? = nil
+    var maxTimestamp: Date? = nil
+
+    for tick in dedupedTicks {
+      var crossK = Int(tick.crossK)
+      var crossN = Int(tick.crossN)
+      var viaPenalty = Int(tick.viaPenaltySec)
+      var gateAnom = tick.gateAnom
+      var alternatesTotal = Int(tick.alternatesTotal)
+      var alternatesAvoid = Int(tick.alternatesAvoid)
+
+      var hadCorrection = false
+
+      // Clamp and validate fields, count corrections
+      if crossK < 0 {
+        crossK = 0
+        hadCorrection = true
+      }
+      if crossN < crossK {
+        crossN = crossK
+        hadCorrection = true
+      }
+      if viaPenalty < 0 {
+        viaPenalty = 0
+        hadCorrection = true
+      } else if viaPenalty > 900 {
+        viaPenalty = 900
+        hadCorrection = true
+      }
+      if gateAnom < 1.0 {
+        gateAnom = 1.0
+        hadCorrection = true
+      } else if gateAnom > 8.0 {
+        gateAnom = 8.0
+        hadCorrection = true
+      }
+      if alternatesTotal < 1 {
+        alternatesTotal = 1
+        hadCorrection = true
+      }
+      if alternatesAvoid < 0 {
+        alternatesAvoid = 0
+        hadCorrection = true
+      } else if alternatesAvoid > alternatesTotal {
+        alternatesAvoid = alternatesTotal
+        hadCorrection = true
+      }
+
+      if hadCorrection {
+        correctedRows += 1
+      }
+
+      let row = Row(v: 1,
+                    ts_utc: iso.string(from: tick.tsUtc),
+                    bridge_id: Int(tick.bridgeId),
+                    cross_k: crossK,
+                    cross_n: crossN,
+                    via_routable: tick.viaRoutable ? 1 : 0,
+                    via_penalty_sec: viaPenalty,
+                    gate_anom: gateAnom,
+                    alternates_total: alternatesTotal,
+                    alternates_avoid_span: alternatesAvoid,
+                    free_eta_sec: tick.freeEtaSec == 0 ? nil : tick.freeEtaSec.map(Int.init),
+                    via_eta_sec: tick.viaEtaSec == 0 ? nil : tick.viaEtaSec.map(Int.init),
+                    open_label: tick.openLabel ? 1 : 0)
+      var data = try encoder.encode(row)
+      data.append(0x0A) // newline
+      try handle.write(contentsOf: data)
+
+      // Update metrics
+      totalRows += 1
+      bridgeCounts[row.bridge_id, default: 0] += 1
+      if let minTS = minTimestamp {
+        if tick.tsUtc < minTS { minTimestamp = tick.tsUtc }
+      } else {
+        minTimestamp = tick.tsUtc
+      }
+      if let maxTS = maxTimestamp {
+        if tick.tsUtc > maxTS { maxTimestamp = tick.tsUtc }
+      } else {
+        maxTimestamp = tick.tsUtc
+      }
+    }
+
+    try handle.close()
+
+    // Atomically replace the destination file with the temp file
+    do {
+      _ = try FileManager.default.replaceItemAt(url, withItemAt: tempURL)
+    } catch {
+      // Cleanup temp file on failure
+      try? FileManager.default.removeItem(at: tempURL)
+      throw error
+    }
+
+    // Write sidecar metrics JSON file
+    struct Metrics: Encodable {
+      let total_rows: Int
+      let corrected_rows: Int
+      let bridge_counts: [String: Int]
+      let min_ts_utc: String?
+      let max_ts_utc: String?
+      let expected_minutes: Int
+      let missing_minutes_by_bridge: [String: Int]
+    }
+
+    // Calculate expected minutes (1440 per day)
+    let expectedMinutes = 1440
+
+    // Calculate missing minutes by bridge
+    var missingMinutesByBridge: [String: Int] = [:]
+    for (bridgeId, actualCount) in bridgeCounts {
+      let missing = expectedMinutes - actualCount
+      missingMinutesByBridge[String(bridgeId)] = missing > 0 ? missing : 0
+    }
+
+    // Also include bridges with zero counts but present in bridge_map
+    if FileManager.default.fileExists(atPath: bridgeMapURL.path) {
+      if let data = try? Data(contentsOf: bridgeMapURL),
+         let bridgeMap = try? JSONDecoder().decode([String: String].self, from: data)
+      {
+        for bridgeIdStr in bridgeMap.keys {
+          if bridgeCounts[Int(bridgeIdStr) ?? -1] == nil {
+            missingMinutesByBridge[bridgeIdStr] = expectedMinutes
+          }
+        }
+      }
+    }
+
+    let metricsURL = url.deletingPathExtension().appendingPathExtension("metrics.json")
+    let metrics = Metrics(total_rows: totalRows,
+                          corrected_rows: correctedRows,
+                          bridge_counts: Dictionary(uniqueKeysWithValues: bridgeCounts.map { (String($0.key), $0.value) }),
+                          min_ts_utc: minTimestamp.map { iso.string(from: $0) },
+                          max_ts_utc: maxTimestamp.map { iso.string(from: $0) },
+                          expected_minutes: expectedMinutes,
+                          missing_minutes_by_bridge: missingMinutesByBridge)
+    let metricsData = try JSONEncoder().encode(metrics)
+    try metricsData.write(to: metricsURL, options: .atomic)
+
+    // Write zero-byte .done marker file after atomic replacement for downstream coordination
+    let doneURL = url.deletingPathExtension().appendingPathExtension("done")
+    FileManager.default.createFile(atPath: doneURL.path, contents: nil)
+
+    // Note: gzip compression can be added here on the NDJSON file stream if needed in the future.
+  }
 }
-

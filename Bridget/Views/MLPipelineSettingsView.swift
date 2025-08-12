@@ -1,53 +1,71 @@
 //
-//  MLPipelineSettingsView.swift
+//  MLPipelineSettingsView.swift (fixed)
 //  Bridget
 //
-//  Purpose: Integrated settings and management interface for the ML Training Data Pipeline
+//  Purpose: Integrated settings & management interface for the ML Training Data Pipeline
+//  Notes:
+//  - Uses NavigationStack (iOS 16+), @AppStorage for settings, and safer paths.
+//  - Shows a ShareLink for the last export, which helps on real devices.
+//  - Hides "Downloads" on iOS (keeps on macOS).
 //
 
-import SwiftUI
-import SwiftData
 import OSLog
+import SwiftData
+import SwiftUI
 
-/// Integrated settings and management interface for the ML Training Data Pipeline.
-///
-/// This view provides a user-friendly interface for:
-/// - Monitoring pipeline status and data availability
-/// - Manually triggering data population and exports
-/// - Viewing export history and statistics
-/// - Configuring automated data collection
-/// - Managing export destinations and schedules
-///
-/// ## Integration Points
-///
-/// - **ProbeTickDataService**: For data population and management
-/// - **BridgeDataExporter**: For NDJSON export operations
-/// - **SwiftData**: For data persistence and querying
-/// - **UserDefaults**: For configuration and preferences
-///
-/// ## Usage
-///
-/// This view is typically presented as a sheet or navigation destination
-/// from the main app settings or admin panel.
-struct MLPipelineSettingsView: View {
+public struct MLPipelineSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    
+
+    // Persisted settings
+    @AppStorage("MLExportDestination") private var exportDestination: String = "Documents"
+    @AppStorage("MLAutoExportEnabled") private var autoExportEnabled: Bool = false
+    @AppStorage("MLAutoExportTime") private var autoExportTime: String = "01:00" // "HH:mm"
+    @AppStorage("MLLastExportDate") private var lastExportDate: Double = 0 // timeIntervalSince1970
+
+    // UI state
     @State private var isExporting = false
-    @State private var exportProgress = 0.0
-    @State private var exportStatus = ""
+    @State private var exportProgress: Double = 0
+    @State private var exportStatus: String = ""
     @State private var showingExportSheet = false
     @State private var selectedDate = Date()
-    @State private var exportDestination = UserDefaults.standard.string(forKey: "MLExportDestination") ?? "Documents"
-    @State private var autoExportEnabled = UserDefaults.standard.bool(forKey: "MLAutoExportEnabled")
-    @State private var autoExportTime = UserDefaults.standard.string(forKey: "MLAutoExportTime") ?? "01:00"
-    
+    @State private var lastExportURL: URL?
+    @State private var showingTimePicker = false
+    @State private var tempTime = Date()
+
     private let logger = Logger(subsystem: "Bridget", category: "MLPipeline")
-    
-    var body: some View {
-        NavigationView {
+
+    // MARK: - Computed
+
+    private var destinationOptions: [String] {
+        #if os(iOS)
+        return ["Documents"]
+        #else
+        return ["Documents", "Downloads"]
+        #endif
+    }
+
+    private var lastExportText: String {
+        guard lastExportDate > 0 else { return "Never" }
+        let date = Date(timeIntervalSince1970: lastExportDate)
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+
+    private var dataAvailabilityText: String {
+        "Today: Available • Last Week: Available • Historical: Partial"
+    }
+    private var dataAvailabilityIcon: String { "checkmark.circle.fill" }
+    private var dataAvailabilityColor: Color { .green }
+
+    // MARK: - View
+
+    public var body: some View {
+        NavigationStack {
             List {
-                // Pipeline Status Section
+                // Pipeline Status
                 Section("Pipeline Status") {
                     PipelineStatusRow(
                         title: "Data Availability",
@@ -55,14 +73,14 @@ struct MLPipelineSettingsView: View {
                         icon: dataAvailabilityIcon,
                         color: dataAvailabilityColor
                     )
-                    
+
                     PipelineStatusRow(
                         title: "Last Export",
                         subtitle: lastExportText,
                         icon: "doc.text",
                         color: .blue
                     )
-                    
+
                     PipelineStatusRow(
                         title: "Export Destination",
                         subtitle: exportDestination,
@@ -70,107 +88,91 @@ struct MLPipelineSettingsView: View {
                         color: .green
                     )
                 }
-                .padding(.vertical, 6)
-                .listSectionSeparator(.visible)
-                .listSectionSeparatorTint(.gray.opacity(0.3))
-                .headerProminence(.increased)
-                
-                // Data Management Section
+
+                // Data Management
                 Section("Data Management") {
                     Button(action: populateTodayData) {
                         Label("Populate Today's Data", systemImage: "calendar.badge.plus")
                     }
                     .disabled(isExporting)
-                    
+
                     Button(action: populateLastWeekData) {
                         Label("Populate Last Week's Data", systemImage: "calendar.badge.clock")
                     }
                     .disabled(isExporting)
-                    
+
                     Button(action: populateHistoricalData) {
-                        Label("Populate Historical Data", systemImage: "calendar.badge.exclamationmark")
+                        Label("Populate Historical Data",
+                              systemImage: "calendar.badge.exclamationmark")
                     }
                     .disabled(isExporting)
                 }
-                .padding(.vertical, 6)
-                .listSectionSeparator(.visible)
-                .listSectionSeparatorTint(.gray.opacity(0.3))
-                .headerProminence(.increased)
-                
-                // Export Section
+
+                // Export Operations
                 Section("Export Operations") {
                     Button(action: { showingExportSheet = true }) {
-                        Label("Export Today's Data", systemImage: "square.and.arrow.up")
+                        Label("Export Day as NDJSON",
+                              systemImage: "square.and.arrow.up")
                     }
                     .disabled(isExporting)
-                    
+
                     if isExporting {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Exporting...")
-                                .font(.headline)
+                            Text("Exporting…").font(.headline)
                             Text(exportStatus)
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                             ProgressView(value: exportProgress)
-                                .progressViewStyle(LinearProgressViewStyle())
+                                .progressViewStyle(.linear)
                         }
                         .padding(.vertical, 6)
                     }
+
+                    if let url = lastExportURL {
+                        ShareLink(item: url) {
+                            Label("Share Last Export",
+                                  systemImage: "square.and.arrow.up.on.square")
+                        }
+                    }
                 }
-                .padding(.vertical, 6)
-                .listSectionSeparator(.visible)
-                .listSectionSeparatorTint(.gray.opacity(0.3))
-                .headerProminence(.increased)
-                
-                // Automation Section
+
+                // Automation
                 Section("Automation") {
                     Toggle("Enable Daily Auto-Export", isOn: $autoExportEnabled)
-                        .padding(.vertical, 2)
-                        .onChange(of: autoExportEnabled) { _, newValue in
-                            UserDefaults.standard.set(newValue, forKey: "MLAutoExportEnabled")
+                        .onChange(of: autoExportEnabled) { _, _ in
                             updateAutoExportSchedule()
                         }
-                    
+
                     if autoExportEnabled {
                         HStack {
                             Text("Export Time")
                             Spacer()
-                            Text(autoExportTime)
-                                .foregroundColor(.secondary)
+                            Text(autoExportTime).foregroundStyle(.secondary)
                         }
                         .contentShape(Rectangle())
-                        .padding(.vertical, 2)
-                        .onTapGesture {
-                            showTimePicker()
-                        }
+                        .onTapGesture { prepareTimePicker() }
                     }
                 }
-                .padding(.vertical, 6)
-                .listSectionSeparator(.visible)
-                .listSectionSeparatorTint(.gray.opacity(0.3))
-                .headerProminence(.increased)
-                
-                // Information Section
+
+                // Information
                 Section("Information") {
-                    NavigationLink("Export History", destination: ExportHistoryView())
-                    NavigationLink("Pipeline Documentation", destination: PipelineDocumentationView())
-                    NavigationLink("Troubleshooting", destination: PipelineTroubleshootingView())
+                    NavigationLink("Export History") {
+                        ExportHistoryView()
+                    }
+                    NavigationLink("Pipeline Documentation") {
+                        PipelineDocumentationView()
+                    }
+                    NavigationLink("Troubleshooting") {
+                        PipelineTroubleshootingView()
+                    }
                 }
-                .padding(.vertical, 6)
-                .listSectionSeparator(.visible)
-                .listSectionSeparatorTint(.gray.opacity(0.3))
-                .headerProminence(.increased)
             }
             .navigationTitle("ML Pipeline")
-            .navigationBarTitleDisplayMode(.large)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") { dismiss() }
                 }
-                
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button(action: refreshStatus) {
                         Image(systemName: "arrow.clockwise")
                     }
@@ -181,48 +183,56 @@ struct MLPipelineSettingsView: View {
             ExportConfigurationSheet(
                 selectedDate: $selectedDate,
                 exportDestination: $exportDestination,
+                destinations: destinationOptions,
                 onExport: performExport
             )
         }
-        .onAppear {
-            refreshStatus()
+        .sheet(isPresented: $showingTimePicker) {
+            NavigationStack {
+                VStack(spacing: 16) {
+                    DatePicker("Time", selection: $tempTime, displayedComponents: .hourAndMinute)
+                        .datePickerStyle(.wheel)
+                        .labelsHidden()
+                        .padding(.vertical, 12)
+
+                    Button("Save") {
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "HH:mm"
+                        autoExportTime = formatter.string(from: tempTime)
+                        showingTimePicker = false
+                        updateAutoExportSchedule()
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding()
+                .navigationTitle("Auto-Export Time")
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Cancel") { showingTimePicker = false }
+                    }
+                }
+            }
+            .presentationDetents([.fraction(0.4)])
         }
+        .onAppear(perform: refreshStatus)
     }
-    
-    // MARK: - Computed Properties
-    
-    private var dataAvailabilityText: String {
-        // This would query the actual data availability
-        return "Today: Available • Last Week: Available • Historical: Partial"
-    }
-    
-    private var dataAvailabilityIcon: String {
-        return "checkmark.circle.fill"
-    }
-    
-    private var dataAvailabilityColor: Color {
-        return .green
-    }
-    
-    private var lastExportText: String {
-        let lastExport = UserDefaults.standard.object(forKey: "MLLastExportDate") as? Date
-        if let lastExport = lastExport {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            formatter.timeStyle = .short
-            return formatter.string(from: lastExport)
-        }
-        return "Never"
-    }
-    
+
     // MARK: - Actions
-    
+
+    private func prepareTimePicker() {
+        // Parse autoExportTime "HH:mm" -> Date
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        tempTime = formatter.date(from: autoExportTime)
+            ?? Calendar.current.date(bySettingHour: 1, minute: 0, second: 0, of: Date())!
+        showingTimePicker = true
+    }
+
     private func populateTodayData() {
         Task {
             do {
                 let service = ProbeTickDataService(context: modelContext)
                 try await service.populateTodayProbeTicks()
-                
                 await MainActor.run {
                     logger.info("Successfully populated today's ProbeTick data")
                     refreshStatus()
@@ -234,13 +244,12 @@ struct MLPipelineSettingsView: View {
             }
         }
     }
-    
+
     private func populateLastWeekData() {
         Task {
             do {
                 let service = ProbeTickDataService(context: modelContext)
                 try await service.populateLastWeekProbeTicks()
-                
                 await MainActor.run {
                     logger.info("Successfully populated last week's ProbeTick data")
                     refreshStatus()
@@ -252,15 +261,13 @@ struct MLPipelineSettingsView: View {
             }
         }
     }
-    
+
     private func populateHistoricalData() {
         Task {
             do {
                 let service = ProbeTickDataService(context: modelContext)
                 let startDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-                let endDate = Date()
-                try await service.populateHistoricalProbeTicks(from: startDate, to: endDate)
-                
+                try await service.populateHistoricalProbeTicks(from: startDate, to: Date())
                 await MainActor.run {
                     logger.info("Successfully populated historical ProbeTick data")
                     refreshStatus()
@@ -272,18 +279,18 @@ struct MLPipelineSettingsView: View {
             }
         }
     }
-    
+
     private func performExport(for date: Date, to destination: String) {
         Task {
             await MainActor.run {
                 isExporting = true
-                exportProgress = 0.0
-                exportStatus = "Preparing export..."
+                exportProgress = 0
+                exportStatus = "Preparing…"
             }
-            
+
             do {
                 let exporter = BridgeDataExporter(context: modelContext)
-                
+
                 // Determine export path
                 let exportPath = getExportPath(for: destination)
                 let formatter = DateFormatter()
@@ -291,129 +298,122 @@ struct MLPipelineSettingsView: View {
                 let dateString = formatter.string(from: date)
                 let fileName = "minutes_\(dateString).ndjson"
                 let outputURL = exportPath.appendingPathComponent(fileName)
-                
+
                 await MainActor.run {
-                    exportStatus = "Exporting data for \(dateString)..."
-                    exportProgress = 0.3
+                    exportStatus = "Exporting \(dateString)…"
+                    exportProgress = 0.4
                 }
-                
+
                 try await exporter.exportDailyNDJSON(for: date, to: outputURL)
-                
+
                 await MainActor.run {
-                    exportStatus = "Export completed successfully!"
+                    exportStatus = "Export completed"
                     exportProgress = 1.0
-                    
-                    // Update last export date
-                    UserDefaults.standard.set(Date(), forKey: "MLLastExportDate")
-                    
-                    // Save export destination
-                    UserDefaults.standard.set(destination, forKey: "MLExportDestination")
-                    
+                    lastExportDate = Date().timeIntervalSince1970
+                    lastExportURL = outputURL
                     logger.info("Successfully exported data for \(dateString) to \(outputURL.path)")
                 }
-                
-                // Reset after a delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+
+                // Let the progress bar reach 100% before resetting
+                try? await Task.sleep(nanoseconds: 800_000_000)
+                await MainActor.run {
                     isExporting = false
-                    exportProgress = 0.0
+                    exportProgress = 0
                     exportStatus = ""
                 }
-                
             } catch {
                 await MainActor.run {
                     exportStatus = "Export failed: \(error.localizedDescription)"
-                    exportProgress = 0.0
+                    exportProgress = 0
                     logger.error("Export failed: \(error.localizedDescription)")
                 }
-                
-                // Reset after a delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                try? await Task.sleep(nanoseconds: 800_000_000)
+                await MainActor.run {
                     isExporting = false
                     exportStatus = ""
                 }
             }
         }
     }
-    
+
     private func refreshStatus() {
-        // This would refresh the UI with current data availability
-        // For now, we'll just trigger a UI update
+        // Hook up to your availability checks when ready
     }
-    
+
     private func updateAutoExportSchedule() {
-        // This would update the system's auto-export schedule
-        // Implementation depends on your background task strategy
+        // Wire this into background task scheduling
     }
-    
-    private func showTimePicker() {
-        // This would show a time picker for auto-export time
-        // Implementation depends on your UI preferences
-    }
-    
+
     private func getExportPath(for destination: String) -> URL {
         switch destination {
         case "Documents":
-            return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+                ?? URL.documentsDirectory()
         case "Downloads":
-            return FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+            #if os(macOS)
+            return FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first
+                ?? URL.documentsDirectory()
+            #else
+            // iOS: no sandboxed Downloads; fall back to Documents
+            return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+                ?? URL.documentsDirectory()
+            #endif
         default:
-            return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+            return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+                ?? URL.documentsDirectory()
         }
+    }
+}
+
+private extension URL {
+    static func documentsDirectory() -> URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
     }
 }
 
 // MARK: - Supporting Views
 
-struct PipelineStatusRow: View {
+public struct PipelineStatusRow: View {
     let title: String
     let subtitle: String
     let icon: String
     let color: Color
-    
-    var body: some View {
+
+    public var body: some View {
         HStack {
             Image(systemName: icon)
-                .foregroundColor(color)
+                .foregroundStyle(color)
                 .frame(width: 24)
-            
+
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.headline)
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                Text(title).font(.headline)
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
             }
-            
+
             Spacer()
         }
         .padding(.vertical, 2)
     }
 }
 
-struct ExportConfigurationSheet: View {
+public struct ExportConfigurationSheet: View {
     @Binding var selectedDate: Date
     @Binding var exportDestination: String
+    let destinations: [String]
     let onExport: (Date, String) -> Void
-    
+
     @Environment(\.dismiss) private var dismiss
-    
-    private let destinations = ["Documents", "Downloads"]
-    
-    var body: some View {
-        NavigationView {
+
+    public var body: some View {
+        NavigationStack {
             Form {
                 Section("Export Configuration") {
                     DatePicker("Export Date", selection: $selectedDate, displayedComponents: .date)
-                        .padding(.vertical, 4)
-                    
                     Picker("Export Destination", selection: $exportDestination) {
-                        ForEach(destinations, id: \.self) { destination in
-                            Text(destination).tag(destination)
-                        }
+                        ForEach(destinations, id: \.self) { Text($0).tag($0) }
                     }
-                    .padding(.vertical, 4)
                 }
-                
+
                 Section {
                     Button("Start Export") {
                         onExport(selectedDate, exportDestination)
@@ -421,40 +421,37 @@ struct ExportConfigurationSheet: View {
                     }
                     .frame(maxWidth: .infinity)
                     .buttonStyle(.borderedProminent)
-                    .padding(.vertical, 8)
                 }
             }
             .navigationTitle("Export Configuration")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cancel") { dismiss() }
                 }
             }
         }
     }
 }
 
-// MARK: - Placeholder Views (to be implemented)
+// MARK: - Placeholder Views
 
-struct ExportHistoryView: View {
-    var body: some View {
+public struct ExportHistoryView: View {
+    public var body: some View {
         Text("Export History")
             .navigationTitle("Export History")
     }
 }
 
-struct PipelineDocumentationView: View {
-    var body: some View {
+public struct PipelineDocumentationView: View {
+    public var body: some View {
         Text("Pipeline Documentation")
             .navigationTitle("Documentation")
     }
 }
 
-struct PipelineTroubleshootingView: View {
-    var body: some View {
+public struct PipelineTroubleshootingView: View {
+    public var body: some View {
         Text("Troubleshooting")
             .navigationTitle("Troubleshooting")
     }
