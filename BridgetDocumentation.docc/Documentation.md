@@ -40,6 +40,19 @@ Bridget collects and reports all business validation failures encountered during
 - [ ] Schedule twice-daily fetches
 - [ ] Add basic cache management UI (settings/preferences)
 
+### Phase 2.5: ML Training Data Pipeline ✅ **COMPLETED**
+- [x] **ProbeTick Data Model**: SwiftData model for per-minute bridge snapshots
+- [x] **Data Population Service**: Converts BridgeEvent data to ProbeTick records
+- [x] **Daily Export System**: NDJSON export with validation and metrics
+- [x] **Feature Engineering**: 14 standardized ML features with proper validation
+- [x] **Python Processing**: Scripts for ML dataset creation and train/validation splits
+- [x] **Complete Testing**: End-to-end pipeline validation with comprehensive test suite
+- [x] **Documentation**: Full DocC documentation with examples and troubleshooting
+
+**See**: 
+- <doc:MLTrainingDataPipelineOverview> - High-level overview and quick start
+- <doc:MLTrainingDataPipeline> - Complete detailed documentation
+
 ### Phase 3: HTTP Caching Optimization **BACKLOGGED**
 - [ ] HTTP conditional GET with ETag/If-None-Match headers
 - [ ] 304 "Not Modified" response handling

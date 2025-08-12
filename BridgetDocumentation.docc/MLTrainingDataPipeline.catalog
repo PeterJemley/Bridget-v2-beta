@@ -1,0 +1,138 @@
+{
+  "documents": [
+    {
+      "path": "MLTrainingDataPipeline.md",
+      "title": "ML Training Data Pipeline",
+      "role": "article",
+      "abstract": "A comprehensive guide to generating machine learning training data from the Bridget app's bridge monitoring system.",
+      "kind": "documentation",
+      "sections": [
+        {
+          "title": "Overview",
+          "abstract": "Learn about the three main components of the ML training data pipeline."
+        },
+        {
+          "title": "Quick Start", 
+          "abstract": "Get up and running quickly with the basic export and processing commands."
+        },
+        {
+          "title": "Complete Workflow",
+          "abstract": "Step-by-step guide through the entire data pipeline from population to feature engineering."
+        },
+        {
+          "title": "Feature Schema",
+          "abstract": "Detailed breakdown of the 14 ML features and their specifications."
+        },
+        {
+          "title": "Output Files",
+          "abstract": "Understanding what files are generated and their purposes."
+        },
+        {
+          "title": "Data Validation",
+          "abstract": "How the pipeline ensures data quality and completeness."
+        },
+        {
+          "title": "Integration Points",
+          "abstract": "How to integrate the pipeline into your app and set up automated workflows."
+        },
+        {
+          "title": "Testing",
+          "abstract": "How to verify the pipeline is working correctly."
+        },
+        {
+          "title": "Troubleshooting",
+          "abstract": "Common issues and how to resolve them."
+        },
+        {
+          "title": "Next Steps",
+          "abstract": "What to do after generating training data."
+        },
+        {
+          "title": "Architecture Notes",
+          "abstract": "Technical details about the implementation choices."
+        }
+      ]
+    }
+  ],
+  "references": {
+    "ProbeTickDataService": {
+      "title": "ProbeTickDataService",
+      "url": "Bridget/Services/ProbeTickDataService.swift",
+      "abstract": "Service for populating and managing ProbeTick data for ML training and analytics."
+    },
+    "BridgeDataExporter": {
+      "title": "BridgeDataExporter", 
+      "url": "Bridget/Models/BridgeDataExporter.swift",
+      "abstract": "Handles exporting daily probe data as NDJSON for ML and analytics."
+    },
+    "ProbeTick": {
+      "title": "ProbeTick",
+      "url": "Bridget/Models/ProbeTick.swift", 
+      "abstract": "SwiftData model for bridge probe tick: one row per bridge per minute."
+    },
+    "LiftFeatures": {
+      "title": "LiftFeatures",
+      "url": "Bridget/Models/BridgeTopologyModels.swift",
+      "abstract": "Feature vector for ML prediction with 14 standardized features."
+    },
+    "ProbeTickExportTests": {
+      "title": "ProbeTickExportTests",
+      "url": "BridgetTests/ProbeTickExportTests.swift",
+      "abstract": "Test suite for the complete ProbeTick data pipeline and export functionality."
+    },
+    "run_exporter.swift": {
+      "title": "run_exporter.swift",
+      "url": "Scripts/run_exporter.swift",
+      "abstract": "Swift script that demonstrates how to run the BridgeDataExporter for today's data."
+    },
+    "train_prep.py": {
+      "title": "train_prep.py",
+      "url": "Scripts/train_prep.py",
+      "abstract": "Python script that processes NDJSON exports and creates ML training datasets."
+    }
+  },
+  "tutorials": [
+    {
+      "title": "Export Today's Data",
+      "abstract": "Learn how to export today's bridge data for ML training.",
+      "path": "MLTrainingDataPipeline.md#run-the-exporter-for-today"
+    },
+    {
+      "title": "Process with Python",
+      "abstract": "Convert exported NDJSON data into ML-ready training datasets.",
+      "path": "MLTrainingDataPipeline.md#process-with-python"
+    },
+    {
+      "title": "Integrate into Your App",
+      "abstract": "Add the ML training pipeline to your Bridget app.",
+      "path": "MLTrainingDataPipeline.md#in-your-app"
+    },
+    {
+      "title": "Set Up Automated Workflows",
+      "abstract": "Configure scheduled daily exports and processing.",
+      "path": "MLTrainingDataPipeline.md#scheduled-execution"
+    }
+  ],
+  "articles": [
+    {
+      "title": "Feature Engineering Guide",
+      "abstract": "Understanding the 14 ML features and how they're computed.",
+      "path": "MLTrainingDataPipeline.md#feature-schema"
+    },
+    {
+      "title": "Data Validation & Quality",
+      "abstract": "How the pipeline ensures data quality and reports validation metrics.",
+      "path": "MLTrainingDataPipeline.md#data-validation"
+    },
+    {
+      "title": "Testing the Pipeline",
+      "abstract": "Verifying that the complete pipeline works correctly.",
+      "path": "MLTrainingDataPipeline.md#testing"
+    },
+    {
+      "title": "Troubleshooting Guide",
+      "abstract": "Common issues and their solutions.",
+      "path": "MLTrainingDataPipeline.md#troubleshooting"
+    }
+  ]
+}
