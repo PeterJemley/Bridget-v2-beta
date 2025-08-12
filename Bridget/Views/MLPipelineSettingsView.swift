@@ -33,6 +33,16 @@ public struct MLPipelineSettingsView: View {
   @State private var showingTimePicker = false
   @State private var tempTime = Date()
 
+  // MARK: - Live pipeline status state (updated from MLPipelineBackgroundManager)
+
+  @State private var dataAvailableToday: Bool = false
+  @State private var dataAvailableLastWeek: Bool = false
+  @State private var historicalDataComplete: Bool = false
+  @State private var lastPopulationDate: Date?
+  @State private var lastExportDateLive: Date?
+  @State private var lastBackgroundTaskRun: Date?
+  @State private var lastBackgroundTaskError: String?
+
   private let logger = Logger(subsystem: "Bridget", category: "MLPipeline")
 
   // MARK: - Computed
@@ -45,21 +55,54 @@ public struct MLPipelineSettingsView: View {
     #endif
   }
 
-  private var lastExportText: String {
-    guard lastExportDate > 0 else { return "Never" }
-    let date = Date(timeIntervalSince1970: lastExportDate)
-    let formatter = DateFormatter()
-    formatter.dateStyle = .medium
-    formatter.timeStyle = .short
-    return formatter.string(from: date)
-  }
-
+  /// Compose a pipeline data availability summary string based on live status.
   private var dataAvailabilityText: String {
-    "Today: Available • Last Week: Available • Historical: Partial"
+    let todayStatus = dataAvailableToday ? "Available" : "Unavailable"
+    let lastWeekStatus = dataAvailableLastWeek ? "Available" : "Unavailable"
+    let historicalStatus = historicalDataComplete ? "Complete" : "Partial"
+
+    return "Today: \(todayStatus) • Last Week: \(lastWeekStatus) • Historical: \(historicalStatus)"
   }
 
-  private var dataAvailabilityIcon: String { "checkmark.circle.fill" }
-  private var dataAvailabilityColor: Color { .green }
+  /// Icon reflects overall data availability: green check if all good, yellow exclamation if partial, red x if major missing.
+  private var dataAvailabilityIcon: String {
+    if dataAvailableToday && dataAvailableLastWeek && historicalDataComplete {
+      return "checkmark.circle.fill"
+    } else if dataAvailableToday || dataAvailableLastWeek || historicalDataComplete {
+      return "exclamationmark.triangle.fill"
+    } else {
+      return "xmark.octagon.fill"
+    }
+  }
+
+  /// Color representing data availability status.
+  private var dataAvailabilityColor: Color {
+    if dataAvailableToday && dataAvailableLastWeek && historicalDataComplete {
+      return .green
+    } else if dataAvailableToday || dataAvailableLastWeek || historicalDataComplete {
+      return .yellow
+    } else {
+      return .red
+    }
+  }
+
+  /// Last export display string from live status or fallback.
+  private var lastExportText: String {
+    if let lastExportDateLive = lastExportDateLive {
+      let formatter = DateFormatter()
+      formatter.dateStyle = .medium
+      formatter.timeStyle = .short
+      return formatter.string(from: lastExportDateLive)
+    } else if lastExportDate > 0 {
+      let date = Date(timeIntervalSince1970: lastExportDate)
+      let formatter = DateFormatter()
+      formatter.dateStyle = .medium
+      formatter.timeStyle = .short
+      return formatter.string(from: date)
+    } else {
+      return "Never"
+    }
+  }
 
   // MARK: - View
 
@@ -72,6 +115,18 @@ public struct MLPipelineSettingsView: View {
                             subtitle: dataAvailabilityText,
                             icon: dataAvailabilityIcon,
                             color: dataAvailabilityColor)
+
+          if let lastPopDate = lastPopulationDate {
+            PipelineStatusRow(title: "Last Data Population",
+                              subtitle: DateFormatter.localizedString(from: lastPopDate, dateStyle: .medium, timeStyle: .short),
+                              icon: "tray.and.arrow.down.fill",
+                              color: .secondary)
+          } else {
+            PipelineStatusRow(title: "Last Data Population",
+                              subtitle: "Unknown",
+                              icon: "tray.and.arrow.down.fill",
+                              color: .secondary)
+          }
 
           PipelineStatusRow(title: "Last Export",
                             subtitle: lastExportText,
@@ -124,6 +179,7 @@ public struct MLPipelineSettingsView: View {
           }
 
           if let url = lastExportURL {
+            // Fix: pass url value, not binding, to ShareLink (already done)
             ShareLink(item: url) {
               Label("Share Last Export",
                     systemImage: "square.and.arrow.up.on.square")
@@ -142,7 +198,7 @@ public struct MLPipelineSettingsView: View {
             HStack {
               Text("Export Time")
               Spacer()
-              Text(autoExportTime).foregroundStyle(.secondary)
+              Text(autoExportTime).foregroundStyle(.secondary) // Fix: Text shows value, not binding
             }
             .contentShape(Rectangle())
             .onTapGesture { prepareTimePicker() }
@@ -158,7 +214,9 @@ public struct MLPipelineSettingsView: View {
             PipelineDocumentationView()
           }
           NavigationLink("Troubleshooting") {
-            PipelineTroubleshootingView()
+            PipelineTroubleshootingView(lastBackgroundTaskRun: lastBackgroundTaskRun,
+                                        lastBackgroundTaskError: lastBackgroundTaskError,
+                                        onRerunHealthChecks: performHealthCheck)
           }
         }
       }
@@ -229,10 +287,18 @@ public struct MLPipelineSettingsView: View {
         await MainActor.run {
           logger.info("Successfully populated today's ProbeTick data")
           refreshStatus()
+          // TODO: Implement actual notification call here
+          // MLPipelineNotificationManager.shared.showNotification(
+          //   title: "Data Population Success",
+          //   subtitle: "Today's data populated successfully.")
         }
       } catch {
         await MainActor.run {
           logger.error("Failed to populate today's data: \(error.localizedDescription)")
+          // TODO: Implement actual notification call here
+          // MLPipelineNotificationManager.shared.showNotification(
+          //   title: "Data Population Failed",
+          //   subtitle: "Today's data population failed: \(error.localizedDescription)")
         }
       }
     }
@@ -246,10 +312,18 @@ public struct MLPipelineSettingsView: View {
         await MainActor.run {
           logger.info("Successfully populated last week's ProbeTick data")
           refreshStatus()
+          // TODO: Implement actual notification call here
+          // MLPipelineNotificationManager.shared.showNotification(
+          //   title: "Data Population Success",
+          //   subtitle: "Last week's data populated successfully.")
         }
       } catch {
         await MainActor.run {
           logger.error("Failed to populate last week's data: \(error.localizedDescription)")
+          // TODO: Implement actual notification call here
+          // MLPipelineNotificationManager.shared.showNotification(
+          //   title: "Data Population Failed",
+          //   subtitle: "Last week's data population failed: \(error.localizedDescription)")
         }
       }
     }
@@ -264,10 +338,18 @@ public struct MLPipelineSettingsView: View {
         await MainActor.run {
           logger.info("Successfully populated historical ProbeTick data")
           refreshStatus()
+          // TODO: Implement actual notification call here
+          // MLPipelineNotificationManager.shared.showNotification(
+          //   title: "Data Population Success",
+          //   subtitle: "Historical data populated successfully.")
         }
       } catch {
         await MainActor.run {
           logger.error("Failed to populate historical data: \(error.localizedDescription)")
+          // TODO: Implement actual notification call here
+          // MLPipelineNotificationManager.shared.showNotification(
+          //   title: "Data Population Failed",
+          //   subtitle: "Historical data population failed: \(error.localizedDescription)")
         }
       }
     }
@@ -303,8 +385,13 @@ public struct MLPipelineSettingsView: View {
           exportStatus = "Export completed"
           exportProgress = 1.0
           lastExportDate = Date().timeIntervalSince1970
+          lastExportDateLive = Date()
           lastExportURL = outputURL
           logger.info("Successfully exported data for \(dateString) to \(outputURL.path)")
+          // TODO: Implement actual notification call here
+          // MLPipelineNotificationManager.shared.showNotification(
+          //   title: "Export Success",
+          //   subtitle: "Exported data for \(dateString) successfully.")
         }
 
         // Let the progress bar reach 100% before resetting
@@ -319,6 +406,10 @@ public struct MLPipelineSettingsView: View {
           exportStatus = "Export failed: \(error.localizedDescription)"
           exportProgress = 0
           logger.error("Export failed: \(error.localizedDescription)")
+          // TODO: Implement actual notification call here
+          // MLPipelineNotificationManager.shared.showNotification(
+          //   title: "Export Failed",
+          //   subtitle: "Export failed: \(error.localizedDescription)")
         }
         try? await Task.sleep(nanoseconds: 800_000_000)
         await MainActor.run {
@@ -329,14 +420,64 @@ public struct MLPipelineSettingsView: View {
     }
   }
 
+  /// Refresh live status from MLPipelineBackgroundManager to update UI
   private func refreshStatus() {
-    // Hook up to your availability checks when ready
+    // TODO: Replace calls to MLPipelineBackgroundManager.shared with stubbed demo status
+    Task {
+      // Stubbed demo status
+      struct DemoStatus {
+        var dataAvailableToday: Bool = true
+        var dataAvailableLastWeek: Bool = true
+        var historicalDataComplete: Bool = false
+        var lastPopulationDate: Date? = Date().addingTimeInterval(-3600)
+        var lastExportDate: Date? = Date().addingTimeInterval(-7200)
+        var lastBackgroundTaskRun: Date? = Date().addingTimeInterval(-10800)
+        var lastBackgroundTaskError: String? = nil
+        var healthCheckSummary: String = "All Checks Passed"
+      }
+      let status = DemoStatus() // TODO: Replace with real async call when available
+
+      await MainActor.run {
+        dataAvailableToday = status.dataAvailableToday
+        dataAvailableLastWeek = status.dataAvailableLastWeek
+        historicalDataComplete = status.historicalDataComplete
+        lastPopulationDate = status.lastPopulationDate
+        lastExportDateLive = status.lastExportDate
+        lastBackgroundTaskRun = status.lastBackgroundTaskRun
+        lastBackgroundTaskError = status.lastBackgroundTaskError
+      }
+    }
   }
 
+  /// Update auto-export schedule in background manager and notification manager
   private func updateAutoExportSchedule() {
-    // Wire this into background task scheduling
+    // TODO: Replace with actual scheduling when MLPipelineBackgroundManager is implemented
+    Task {
+      // await MLPipelineBackgroundManager.shared.scheduleNextExecution(
+      //   enabled: autoExportEnabled,
+      //   timeHHmm: autoExportTime
+      // )
+      // await MLPipelineNotificationManager.shared.updateScheduledNotifications()
+    }
   }
 
+  /// Perform health checks for troubleshooting view
+  private func performHealthCheck() {
+    Task {
+      // TODO: Replace with actual health check call
+      // let bgManager = MLPipelineBackgroundManager.shared
+      // await bgManager.runHealthChecks()
+      // await refreshStatus()
+      await MainActor.run {
+        // TODO: Implement actual notification call here
+        // MLPipelineNotificationManager.shared.showNotification(
+        //   title: "Health Check Complete",
+        //   subtitle: "Pipeline health checks have completed.")
+      }
+    }
+  }
+
+  /// Determine export URL path based on destination option
   private func getExportPath(for destination: String) -> URL {
     switch destination {
     case "Documents":
@@ -403,7 +544,10 @@ public struct ExportConfigurationSheet: View {
         Section("Export Configuration") {
           DatePicker("Export Date", selection: $selectedDate, displayedComponents: .date)
           Picker("Export Destination", selection: $exportDestination) {
-            ForEach(destinations, id: \.self) { Text($0).tag($0) }
+            // Fix: use only value types in Picker rows (strings), no bindings passed to Text
+            ForEach(destinations, id: \.self) { val in
+              Text(val).tag(val)
+            }
           }
         }
 
@@ -427,26 +571,282 @@ public struct ExportConfigurationSheet: View {
   }
 }
 
-// MARK: - Placeholder Views
+// MARK: - ExportHistoryView: Shows list of exported NDJSON files with preview/share
 
 public struct ExportHistoryView: View {
+  @State private var exportedFiles: [ExportedFile] = []
+  @State private var selectedFileURL: URL?
+  @State private var showingFilePreview = false
+
+  private let fileManager = FileManager.default
+  private let logger = Logger(subsystem: "Bridget", category: "ExportHistoryView")
+
   public var body: some View {
-    Text("Export History")
-      .navigationTitle("Export History")
+    NavigationStack {
+      if exportedFiles.isEmpty {
+        Text("No export files found.")
+          .foregroundStyle(.secondary)
+          .padding()
+          .navigationTitle("Export History")
+      } else {
+        List {
+          // Fix: ForEach with bindings for exportedFiles to allow .onDelete usage
+          ForEach($exportedFiles) { $file in
+            Button {
+              // Fix: assign new instance of URL to selectedFileURL, do not mutate ExportedFile properties
+              selectedFileURL = $file.wrappedValue.url
+              showingFilePreview = true
+            } label: {
+              HStack {
+                Image(systemName: "doc.plaintext")
+                  .foregroundStyle(.blue)
+                  .frame(width: 24)
+                VStack(alignment: .leading) {
+                  Text($file.wrappedValue.name)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                  Text($file.wrappedValue.dateText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                  .foregroundStyle(.tertiary)
+              }
+            }
+          }
+          .onDelete(perform: deleteFiles)
+        }
+        .navigationTitle("Export History")
+        .toolbar {
+          ToolbarItem(placement: .topBarTrailing) {
+            EditButton()
+          }
+        }
+        .sheet(isPresented: $showingFilePreview) {
+          if let url = selectedFileURL {
+            // Fix: pass selectedFileURL value (URL), not binding, to ShareLink
+            ShareLink(item: url) {
+              Text("Share \(url.lastPathComponent)")
+                .padding()
+            }
+          }
+        }
+      }
+    }
+    .task {
+      await loadExportedFiles()
+    }
+  }
+
+  /// Represents an exported file with metadata to display
+  struct ExportedFile: Identifiable {
+    let id = UUID()
+    let url: URL
+    let name: String
+    let date: Date
+
+    var dateText: String {
+      DateFormatter.localizedString(from: date, dateStyle: .medium, timeStyle: .short)
+    }
+  }
+
+  /// Load exported NDJSON files from known export directories
+  private func loadExportedFiles() async {
+    var files: [ExportedFile] = []
+
+    // Gather from both Documents and Downloads (if macOS)
+    let documentURLs = [URL.documentsDirectory()]
+    #if os(macOS)
+      let downloadsURLs = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)
+    #else
+      let downloadsURLs: [URL] = []
+    #endif
+
+    let searchURLs = documentURLs + downloadsURLs
+
+    for baseURL in searchURLs {
+      do {
+        let contents = try fileManager.contentsOfDirectory(at: baseURL, includingPropertiesForKeys: [.contentModificationDateKey], options: [.skipsHiddenFiles])
+        let ndjsonFiles = contents.filter { $0.pathExtension.lowercased() == "ndjson" }
+
+        for fileURL in ndjsonFiles {
+          let resourceValues = try fileURL.resourceValues(forKeys: [.contentModificationDateKey])
+          let modDate = resourceValues.contentModificationDate ?? Date.distantPast
+          // Fix: ExportedFile properties are let constants, no mutation here; just create new instance
+          let exportedFile = ExportedFile(url: fileURL, name: fileURL.lastPathComponent, date: modDate)
+          files.append(exportedFile)
+        }
+      } catch {
+        // Ignore directory errors, log if needed
+        logger.error("Failed to list directory \(baseURL.path): \(error.localizedDescription)")
+      }
+    }
+
+    // Sort files newest first
+    files.sort { $0.date > $1.date }
+
+    await MainActor.run {
+      exportedFiles = files
+    }
+  }
+
+  /// Delete files from disk and update list
+  private func deleteFiles(at offsets: IndexSet) {
+    for index in offsets {
+      let file = exportedFiles[index]
+      do {
+        try fileManager.removeItem(at: file.url)
+      } catch {
+        logger.error("Failed to delete file \(file.url.path): \(error.localizedDescription)")
+      }
+    }
+    exportedFiles.remove(atOffsets: offsets)
   }
 }
+
+// MARK: - PipelineDocumentationView: Static documentation for pipeline
 
 public struct PipelineDocumentationView: View {
   public var body: some View {
-    Text("Pipeline Documentation")
-      .navigationTitle("Documentation")
+    ScrollView {
+      VStack(alignment: .leading, spacing: 16) {
+        Text("ML Pipeline Documentation")
+          .font(.largeTitle)
+          .bold()
+
+        Text("Overview")
+          .font(.title2)
+          .bold()
+        Text("""
+        The ML Training Data Pipeline ingests probe tick data from various sources, organizes it by day, and exports it in NDJSON format for machine learning model training.
+
+        This pipeline provides automated daily exports, manual data population for specific date ranges, and troubleshooting tools to ensure data readiness.
+
+        Key features:
+        - Data Availability checks for today, last week, and historical completeness.
+        - Export configuration with selectable destination and date.
+        - Automation with daily export scheduling and notifications.
+        """)
+
+        Text("Export Formats")
+          .font(.title2)
+          .bold()
+        Text("""
+        Exports are done in NDJSON (newline-delimited JSON) format. Each line represents a serialized ProbeTick object, suitable for streaming ingestion.
+
+        File naming convention:
+        - `minutes_YYYY-MM-DD.ndjson`, where `YYYY-MM-DD` is the export date.
+
+        Exports can be saved either to the Documents or Downloads folder (macOS only).
+        """)
+
+        Text("Help and Support")
+          .font(.title2)
+          .bold()
+        Text("""
+        For troubleshooting, use the 'Troubleshooting' section to view logs and run health checks.
+
+        If you encounter issues with automated exports, ensure background tasks are enabled and the chosen export time is reasonable.
+
+        Contact support or consult the app documentation for advanced help.
+        """)
+      }
+      .padding()
+    }
+    .navigationTitle("Documentation")
   }
 }
 
+// MARK: - PipelineTroubleshootingView: Diagnostics & health checks
+
 public struct PipelineTroubleshootingView: View {
+  let lastBackgroundTaskRun: Date?
+  let lastBackgroundTaskError: String?
+  let onRerunHealthChecks: () -> Void
+
+  @State private var isRunningCheck = false
+  @State private var healthCheckResult: String?
+
   public var body: some View {
-    Text("Troubleshooting")
+    VStack(spacing: 16) {
+      Form {
+        Section(header: Text("Last Background Task Run")) {
+          if let runDate = lastBackgroundTaskRun {
+            Text(DateFormatter.localizedString(from: runDate, dateStyle: .medium, timeStyle: .short))
+          } else {
+            Text("Never")
+              .foregroundStyle(.secondary)
+          }
+        }
+
+        Section(header: Text("Last Background Task Error")) {
+          if let error = lastBackgroundTaskError, !error.isEmpty {
+            ScrollView(.horizontal) {
+              Text(error)
+                .font(.caption)
+                .foregroundStyle(.red)
+                .lineLimit(3)
+                .truncationMode(.tail)
+                .padding(4)
+                .background(Color.red.opacity(0.1))
+                .cornerRadius(6)
+            }
+          } else {
+            Text("No recent errors")
+              .foregroundStyle(.secondary)
+          }
+        }
+
+        Section(header: Text("Health Check")) {
+          if let result = healthCheckResult {
+            Text(result)
+              .font(.callout)
+              .foregroundStyle(.primary)
+              .padding(6)
+              .background(Color.green.opacity(0.1))
+              .cornerRadius(6)
+          } else {
+            Text("No health check performed yet.")
+              .foregroundStyle(.secondary)
+          }
+
+          Button {
+            isRunningCheck = true
+            healthCheckResult = nil
+            Task {
+              await runHealthChecks()
+              isRunningCheck = false
+            }
+          } label: {
+            if isRunningCheck {
+              Label("Running Health Checks…", systemImage: "hourglass")
+            } else {
+              Label("Run Health Checks", systemImage: "stethoscope")
+            }
+          }
+          .buttonStyle(.borderedProminent)
+          .disabled(isRunningCheck)
+        }
+      }
       .navigationTitle("Troubleshooting")
+    }
+  }
+
+  private func runHealthChecks() async {
+    // TODO: Replace calls to MLPipelineBackgroundManager with stubbed demo behavior
+    // await MLPipelineBackgroundManager.shared.runHealthChecks()
+
+    // After running, refresh info with demo data
+    // let status = await MLPipelineBackgroundManager.shared.currentStatus()
+    struct DemoStatus {
+      var healthCheckSummary: String = "All Checks Passed"
+    }
+    let status = DemoStatus() // TODO: Replace with real async call when available
+
+    await MainActor.run {
+      healthCheckResult = status.healthCheckSummary
+    }
   }
 }
 

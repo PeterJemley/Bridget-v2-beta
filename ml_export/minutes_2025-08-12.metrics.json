@@ -1,0 +1,15 @@
+{
+  "bridge_counts" : {
+    "1" : 2880,
+    "3" : 2880,
+    "2" : 2880
+  },
+  "total_rows" : 8640,
+  "expected_minutes" : 1440,
+  "corrected_rows" : 0,
+  "max_ts_utc" : "2025-08-13T06:59:00Z",
+  "min_ts_utc" : "2025-08-12T07:00:00Z",
+  "missing_minutes_by_bridge" : {
+
+  }
+}
