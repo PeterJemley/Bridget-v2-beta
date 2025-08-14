@@ -132,6 +132,12 @@ final class ProbeTickDataService {
     // Generate ProbeTick records for each minute in the date range
     let calendar = Calendar.current
     var currentDate = startDate
+    var batchCount = 0
+    let batchSize = 50 // Reduced batch size for better performance
+    let totalMinutes = calendar.dateComponents([.minute], from: startDate, to: endDate).minute ?? 0
+    var processedMinutes = 0
+
+    print("🔄 [INFO] Starting data population: \(totalMinutes) minutes to process")
 
     while currentDate < endDate {
       for (bridgeID, bridgeEvents) in eventsByBridge {
@@ -141,14 +147,33 @@ final class ProbeTickDataService {
 
         if let tick = tick {
           context.insert(tick)
+          batchCount += 1
+          
+          // Save in smaller batches for better performance
+          if batchCount >= batchSize {
+            try context.save()
+            batchCount = 0
+          }
         }
       }
 
       // Move to next minute
       currentDate = calendar.date(byAdding: .minute, value: 1, to: currentDate) ?? currentDate
+      processedMinutes += 1
+      
+      // Progress logging every 100 minutes
+      if processedMinutes % 100 == 0 {
+        let progress = Double(processedMinutes) / Double(totalMinutes) * 100
+        print("🔄 [INFO] Data population progress: \(Int(progress))% (\(processedMinutes)/\(totalMinutes) minutes)")
+      }
     }
 
-    try context.save()
+    // Save any remaining items
+    if batchCount > 0 {
+      try context.save()
+    }
+    
+    print("✅ [INFO] Data population completed: \(processedMinutes) minutes processed")
   }
 
   /// Populates ProbeTick data for today from existing BridgeEvent data.
@@ -233,14 +258,26 @@ final class ProbeTickDataService {
     let (alternatesTotal, alternatesAvoid) = calculateAlternateMetrics(at: timestamp, from: events)
     let openLabel = activeEvent != nil
 
+    // Validate bridgeID conversion
+    guard let bridgeIdInt = Int16(bridgeID), bridgeIdInt > 0 else {
+      print("⚠️ [WARNING] Invalid bridgeID: \(bridgeID), skipping tick creation")
+      return nil
+    }
+    
+    // Validate and clamp values to prevent crashes
+    let clampedViaPenaltySec = min(max(viaPenaltySec, 0), 900) // Clamp to [0, 900]
+    let clampedGateAnom = min(max(gateAnom, 1.0), 8.0) // Clamp to [1, 8]
+    let clampedCrossK = max(crossK, 0)
+    let clampedCrossN = max(crossN, 1) // Ensure we don't have zero
+    
     // Create the ProbeTick record
     let tick = ProbeTick(tsUtc: timestamp,
-                         bridgeId: Int16(bridgeID) ?? 0,
-                         crossK: Int16(crossK),
-                         crossN: Int16(crossN),
+                         bridgeId: bridgeIdInt,
+                         crossK: Int16(clampedCrossK),
+                         crossN: Int16(clampedCrossN),
                          viaRoutable: viaRoutable,
-                         viaPenaltySec: Int32(viaPenaltySec),
-                         gateAnom: gateAnom,
+                         viaPenaltySec: Int32(clampedViaPenaltySec),
+                         gateAnom: clampedGateAnom,
                          alternatesTotal: Int16(alternatesTotal),
                          alternatesAvoid: Int16(alternatesAvoid),
                          freeEtaSec: nil, // TODO: Implement real-time ETA calculation

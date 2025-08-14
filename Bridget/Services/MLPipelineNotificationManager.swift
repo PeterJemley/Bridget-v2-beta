@@ -36,7 +36,8 @@ import UserNotifications
 ///
 /// The notification manager is typically used by other pipeline components
 /// to provide user feedback about operation status and results.
-final class MLPipelineNotificationManager: ObservableObject {
+@Observable
+final class MLPipelineNotificationManager {
   static let shared = MLPipelineNotificationManager()
 
   private let logger = Logger(subsystem: "Bridget", category: "MLPipelineNotifications")

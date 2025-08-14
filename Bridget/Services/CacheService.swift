@@ -81,7 +81,19 @@ class CacheService {
     else {
       return nil
     }
-    return documentsPath.appendingPathComponent(cacheDirectory)
+    let cacheURL = documentsPath.appendingPathComponent(cacheDirectory)
+    
+    // Create cache directory if it doesn't exist
+    if !FileManager.default.fileExists(atPath: cacheURL.path) {
+      do {
+        try FileManager.default.createDirectory(at: cacheURL, withIntermediateDirectories: true)
+      } catch {
+        print("Failed to create cache directory: \(error)")
+        return nil
+      }
+    }
+    
+    return cacheURL
   }
 
   private func getCacheFileURL(for key: String) -> URL? {
@@ -109,6 +121,9 @@ class CacheService {
     guard let cacheURL = getCacheFileURL(for: key) else { return }
 
     do {
+      // Ensure cache directory exists
+      _ = getCacheDirectory()
+      
       let encoder = JSONEncoder()
       encoder.dateEncodingStrategy = .iso8601
       let data = try encoder.encode(data)

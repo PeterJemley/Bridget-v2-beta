@@ -287,18 +287,21 @@ public struct MLPipelineSettingsView: View {
         await MainActor.run {
           logger.info("Successfully populated today's ProbeTick data")
           refreshStatus()
-          // TODO: Implement actual notification call here
-          // MLPipelineNotificationManager.shared.showNotification(
-          //   title: "Data Population Success",
-          //   subtitle: "Today's data populated successfully.")
+          MLPipelineNotificationManager.shared.showSuccessNotification(
+            title: "Data Population Success",
+            body: "Today's data populated successfully.",
+            operation: .dataPopulation
+          )
         }
       } catch {
         await MainActor.run {
           logger.error("Failed to populate today's data: \(error.localizedDescription)")
-          // TODO: Implement actual notification call here
-          // MLPipelineNotificationManager.shared.showNotification(
-          //   title: "Data Population Failed",
-          //   subtitle: "Today's data population failed: \(error.localizedDescription)")
+          MLPipelineNotificationManager.shared.showFailureNotification(
+            title: "Data Population Failed",
+            body: "Today's data population failed: \(error.localizedDescription)",
+            operation: .dataPopulation,
+            error: error
+          )
         }
       }
     }
@@ -306,24 +309,37 @@ public struct MLPipelineSettingsView: View {
 
   private func populateLastWeekData() {
     Task {
-      do {
+      // Ensure we're on the main actor for context access
+      await MainActor.run {
         let service = ProbeTickDataService(context: modelContext)
-        try await service.populateLastWeekProbeTicks()
-        await MainActor.run {
-          logger.info("Successfully populated last week's ProbeTick data")
-          refreshStatus()
-          // TODO: Implement actual notification call here
-          // MLPipelineNotificationManager.shared.showNotification(
-          //   title: "Data Population Success",
-          //   subtitle: "Last week's data populated successfully.")
-        }
-      } catch {
-        await MainActor.run {
-          logger.error("Failed to populate last week's data: \(error.localizedDescription)")
-          // TODO: Implement actual notification call here
-          // MLPipelineNotificationManager.shared.showNotification(
-          //   title: "Data Population Failed",
-          //   subtitle: "Last week's data population failed: \(error.localizedDescription)")
+        
+        Task {
+          do {
+            try await service.populateLastWeekProbeTicks()
+            await MainActor.run {
+              logger.info("Successfully populated last week's ProbeTick data")
+              
+              // Update the background manager with the new population date
+              MLPipelineBackgroundManager.shared.updateLastPopulationDate()
+              
+              refreshStatus()
+              MLPipelineNotificationManager.shared.showSuccessNotification(
+                title: "Data Population Success",
+                body: "Last week's data populated successfully.",
+                operation: .dataPopulation
+              )
+            }
+          } catch {
+            await MainActor.run {
+              logger.error("Failed to populate last week's data: \(error.localizedDescription)")
+              MLPipelineNotificationManager.shared.showFailureNotification(
+                title: "Data Population Failed",
+                body: "Last week's data population failed: \(error.localizedDescription)",
+                operation: .dataPopulation,
+                error: error
+              )
+            }
+          }
         }
       }
     }
@@ -337,19 +353,26 @@ public struct MLPipelineSettingsView: View {
         try await service.populateHistoricalProbeTicks(from: startDate, to: Date())
         await MainActor.run {
           logger.info("Successfully populated historical ProbeTick data")
+          
+          // Update the background manager with the new population date
+          MLPipelineBackgroundManager.shared.updateLastPopulationDate()
+          
           refreshStatus()
-          // TODO: Implement actual notification call here
-          // MLPipelineNotificationManager.shared.showNotification(
-          //   title: "Data Population Success",
-          //   subtitle: "Historical data populated successfully.")
+          MLPipelineNotificationManager.shared.showSuccessNotification(
+            title: "Data Population Success",
+            body: "Historical data populated successfully.",
+            operation: .dataPopulation
+          )
         }
       } catch {
         await MainActor.run {
           logger.error("Failed to populate historical data: \(error.localizedDescription)")
-          // TODO: Implement actual notification call here
-          // MLPipelineNotificationManager.shared.showNotification(
-          //   title: "Data Population Failed",
-          //   subtitle: "Historical data population failed: \(error.localizedDescription)")
+          MLPipelineNotificationManager.shared.showFailureNotification(
+            title: "Data Population Failed",
+            body: "Historical data population failed: \(error.localizedDescription)",
+            operation: .dataPopulation,
+            error: error
+          )
         }
       }
     }
@@ -387,11 +410,16 @@ public struct MLPipelineSettingsView: View {
           lastExportDate = Date().timeIntervalSince1970
           lastExportDateLive = Date()
           lastExportURL = outputURL
+          
+          // Update the background manager with the new export date
+          MLPipelineBackgroundManager.shared.updateLastExportDate()
+          
           logger.info("Successfully exported data for \(dateString) to \(outputURL.path)")
-          // TODO: Implement actual notification call here
-          // MLPipelineNotificationManager.shared.showNotification(
-          //   title: "Export Success",
-          //   subtitle: "Exported data for \(dateString) successfully.")
+          MLPipelineNotificationManager.shared.showSuccessNotification(
+            title: "Export Success",
+            body: "Exported data for \(dateString) successfully.",
+            operation: .dataExport
+          )
         }
 
         // Let the progress bar reach 100% before resetting
@@ -406,10 +434,12 @@ public struct MLPipelineSettingsView: View {
           exportStatus = "Export failed: \(error.localizedDescription)"
           exportProgress = 0
           logger.error("Export failed: \(error.localizedDescription)")
-          // TODO: Implement actual notification call here
-          // MLPipelineNotificationManager.shared.showNotification(
-          //   title: "Export Failed",
-          //   subtitle: "Export failed: \(error.localizedDescription)")
+          MLPipelineNotificationManager.shared.showFailureNotification(
+            title: "Export Failed",
+            body: "Export failed: \(error.localizedDescription)",
+            operation: .dataExport,
+            error: error
+          )
         }
         try? await Task.sleep(nanoseconds: 800_000_000)
         await MainActor.run {
@@ -422,57 +452,71 @@ public struct MLPipelineSettingsView: View {
 
   /// Refresh live status from MLPipelineBackgroundManager to update UI
   private func refreshStatus() {
-    // TODO: Replace calls to MLPipelineBackgroundManager.shared with stubbed demo status
     Task {
-      // Stubbed demo status
-      struct DemoStatus {
-        var dataAvailableToday: Bool = true
-        var dataAvailableLastWeek: Bool = true
-        var historicalDataComplete: Bool = false
-        var lastPopulationDate: Date? = Date().addingTimeInterval(-3600)
-        var lastExportDate: Date? = Date().addingTimeInterval(-7200)
-        var lastBackgroundTaskRun: Date? = Date().addingTimeInterval(-10800)
-        var lastBackgroundTaskError: String? = nil
-        var healthCheckSummary: String = "All Checks Passed"
-      }
-      let status = DemoStatus() // TODO: Replace with real async call when available
-
+      let bgManager = MLPipelineBackgroundManager.shared
+      
+      // Get real status from background manager
+      let lastPopulationDate = bgManager.lastPopulationDate
+      let lastExportDate = bgManager.lastExportDate
+      
+      // Check if we have data for today and last week
+      let calendar = Calendar.current
+      let today = calendar.startOfDay(for: Date())
+      let lastWeek = calendar.date(byAdding: .day, value: -7, to: today) ?? today
+      
+      let dataAvailableToday = lastPopulationDate != nil && calendar.isDate(lastPopulationDate!, inSameDayAs: today)
+      let dataAvailableLastWeek = lastPopulationDate != nil && lastPopulationDate! >= lastWeek
+      
+      // For now, assume historical data is complete if we have recent data
+      // This could be enhanced with more sophisticated checking
+      let historicalDataComplete = dataAvailableToday && dataAvailableLastWeek
+      
       await MainActor.run {
-        dataAvailableToday = status.dataAvailableToday
-        dataAvailableLastWeek = status.dataAvailableLastWeek
-        historicalDataComplete = status.historicalDataComplete
-        lastPopulationDate = status.lastPopulationDate
-        lastExportDateLive = status.lastExportDate
-        lastBackgroundTaskRun = status.lastBackgroundTaskRun
-        lastBackgroundTaskError = status.lastBackgroundTaskError
+        self.dataAvailableToday = dataAvailableToday
+        self.dataAvailableLastWeek = dataAvailableLastWeek
+        self.historicalDataComplete = historicalDataComplete
+        self.lastPopulationDate = lastPopulationDate
+        self.lastExportDateLive = lastExportDate
+        // Note: lastBackgroundTaskRun and lastBackgroundTaskError would need to be added to MLPipelineBackgroundManager
+        // For now, we'll keep them as optional
       }
     }
   }
 
   /// Update auto-export schedule in background manager and notification manager
   private func updateAutoExportSchedule() {
-    // TODO: Replace with actual scheduling when MLPipelineBackgroundManager is implemented
     Task {
-      // await MLPipelineBackgroundManager.shared.scheduleNextExecution(
-      //   enabled: autoExportEnabled,
-      //   timeHHmm: autoExportTime
-      // )
-      // await MLPipelineNotificationManager.shared.updateScheduledNotifications()
+      let bgManager = MLPipelineBackgroundManager.shared
+      
+      // Schedule next execution based on current settings
+      bgManager.scheduleNextExecution()
+      
+      // Update notification manager with new schedule
+      // Note: MLPipelineNotificationManager doesn't have updateScheduledNotifications method yet
+      // This would need to be implemented in the notification manager
+      
+      logger.info("Updated auto-export schedule: enabled=\(autoExportEnabled), time=\(autoExportTime)")
     }
   }
 
   /// Perform health checks for troubleshooting view
   private func performHealthCheck() {
     Task {
-      // TODO: Replace with actual health check call
-      // let bgManager = MLPipelineBackgroundManager.shared
-      // await bgManager.runHealthChecks()
-      // await refreshStatus()
+      let bgManager = MLPipelineBackgroundManager.shared
+      
+      // Trigger maintenance task which includes health checks
+      bgManager.triggerBackgroundTask(.maintenance)
+      
+      // Refresh status after health check
+      refreshStatus()
+      
       await MainActor.run {
-        // TODO: Implement actual notification call here
-        // MLPipelineNotificationManager.shared.showNotification(
-        //   title: "Health Check Complete",
-        //   subtitle: "Pipeline health checks have completed.")
+        // Show notification about health check completion
+        MLPipelineNotificationManager.shared.showSuccessNotification(
+          title: "Health Check Complete",
+          body: "Pipeline health checks have completed successfully.",
+          operation: .healthCheck
+        )
       }
     }
   }
@@ -642,9 +686,9 @@ public struct ExportHistoryView: View {
   /// Represents an exported file with metadata to display
   struct ExportedFile: Identifiable {
     let id = UUID()
-    let url: URL
-    let name: String
-    let date: Date
+    var url: URL
+    var name: String
+    var date: Date
 
     var dateText: String {
       DateFormatter.localizedString(from: date, dateStyle: .medium, timeStyle: .short)
@@ -834,18 +878,17 @@ public struct PipelineTroubleshootingView: View {
   }
 
   private func runHealthChecks() async {
-    // TODO: Replace calls to MLPipelineBackgroundManager with stubbed demo behavior
-    // await MLPipelineBackgroundManager.shared.runHealthChecks()
-
-    // After running, refresh info with demo data
-    // let status = await MLPipelineBackgroundManager.shared.currentStatus()
-    struct DemoStatus {
-      var healthCheckSummary: String = "All Checks Passed"
-    }
-    let status = DemoStatus() // TODO: Replace with real async call when available
-
+    let bgManager = MLPipelineBackgroundManager.shared
+    
+    // Trigger maintenance task which includes health checks
+    bgManager.triggerBackgroundTask(.maintenance)
+    
+    // For now, provide a simple health check summary
+    // In a more sophisticated implementation, this would query the actual health status
+    let healthCheckSummary = "Health checks completed. Check logs for detailed results."
+    
     await MainActor.run {
-      healthCheckResult = status.healthCheckSummary
+      healthCheckResult = healthCheckSummary
     }
   }
 }

@@ -36,7 +36,8 @@ import SwiftData
 ///
 /// The manager is typically initialized in the app delegate or main app file
 /// and handles background task registration and execution automatically.
-final class MLPipelineBackgroundManager: ObservableObject {
+@Observable
+final class MLPipelineBackgroundManager {
   static let shared = MLPipelineBackgroundManager()
 
   // Background task identifiers
@@ -51,6 +52,7 @@ final class MLPipelineBackgroundManager: ObservableObject {
   private let autoExportTimeKey = "MLAutoExportTime"
   private let lastPopulationDateKey = "MLLastPopulationDate"
   private let lastExportDateKey = "MLLastExportDate"
+  private let recentActivitiesKey = "MLRecentActivities"
 
   private init() {}
 
@@ -399,5 +401,88 @@ extension MLPipelineBackgroundManager {
   /// Convenience method to get the last export date
   var lastExportDate: Date? {
     UserDefaults.standard.object(forKey: lastExportDateKey) as? Date
+  }
+
+  /// Updates the last population date to the current time
+  func updateLastPopulationDate() {
+    UserDefaults.standard.set(Date(), forKey: lastPopulationDateKey)
+    logger.info("Updated last population date to \(Date())")
+  }
+
+  /// Updates the last export date to the current time
+  func updateLastExportDate() {
+    UserDefaults.standard.set(Date(), forKey: lastExportDateKey)
+    logger.info("Updated last export date to \(Date())")
+  }
+
+  /// Adds a new activity to the recent activities list
+  /// - Parameters:
+  ///   - title: The activity title
+  ///   - description: The activity description
+  ///   - type: The type of activity
+  func addActivity(title: String, description: String, type: ActivityType) {
+    let activity = PipelineActivity(
+      title: title,
+      description: description,
+      type: type,
+      timestamp: Date()
+    )
+    
+    var activities = getRecentActivities()
+    activities.insert(activity, at: 0) // Add to beginning
+    
+    // Keep only the last 10 activities
+    if activities.count > 10 {
+      activities = Array(activities.prefix(10))
+    }
+    
+    saveRecentActivities(activities)
+    logger.info("Added new activity: \(title)")
+  }
+
+  /// Gets the recent activities list
+  func getRecentActivities() -> [PipelineActivity] {
+    guard let data = UserDefaults.standard.data(forKey: recentActivitiesKey),
+          let activities = try? JSONDecoder().decode([PipelineActivity].self, from: data)
+    else {
+      return []
+    }
+    return activities
+  }
+
+  /// Saves the recent activities list
+  private func saveRecentActivities(_ activities: [PipelineActivity]) {
+    if let data = try? JSONEncoder().encode(activities) {
+      UserDefaults.standard.set(data, forKey: recentActivitiesKey)
+    }
+  }
+}
+
+// MARK: - Activity Types
+
+/// Types of pipeline activities
+enum ActivityType: String, Codable {
+  case dataPopulation = "data_population"
+  case dataExport = "data_export"
+  case maintenance = "maintenance"
+  case error = "error"
+}
+
+// MARK: - Pipeline Activity Model
+
+/// Represents a pipeline activity
+struct PipelineActivity: Codable, Identifiable {
+  let id: UUID
+  let title: String
+  let description: String
+  let type: ActivityType
+  let timestamp: Date
+  
+  init(title: String, description: String, type: ActivityType, timestamp: Date) {
+    self.id = UUID()
+    self.title = title
+    self.description = description
+    self.type = type
+    self.timestamp = timestamp
   }
 }

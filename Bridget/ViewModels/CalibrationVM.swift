@@ -20,7 +20,7 @@ struct CrossRouteQuality {
 }
 
 @Observable
-final class CalibrationVM: ObservableObject {
+final class CalibrationVM {
   enum RowState { case pending, running, success, error(String) }
 
   struct Row: Identifiable {

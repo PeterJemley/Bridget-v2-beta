@@ -10,5 +10,11 @@
 		<string>processing</string>
 		<string>fetch</string>
 	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.bridget.mlpipeline.datapopulation</string>
+		<string>com.bridget.mlpipeline.dataexport</string>
+		<string>com.bridget.mlpipeline.maintenance</string>
+	</array>
 </dict>
 </plist>
