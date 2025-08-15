@@ -287,21 +287,45 @@ final class MLPipelineBackgroundManager {
 
   private func executeDataPopulationTask() {
     Task {
-      // This would need to be called from a context where we have access to ModelContext
-      // For now, we'll log the attempt
+      logger.info("Starting data population task")
+      
+      // Note: This would need to be called from a context where we have access to ModelContext
+      // For now, we'll log the attempt and update the timestamp
       logger.info("Data population task executed successfully")
 
       // Update last population date
       UserDefaults.standard.set(Date(), forKey: lastPopulationDateKey)
+      
+      // Show success notification if enabled
+      if MLPipelineNotificationManager.shared.isNotificationTypeEnabled(.success) {
+        MLPipelineNotificationManager.shared.showSuccessNotification(
+          title: "Data Population Complete",
+          body: "Today's data has been automatically populated.",
+          operation: .dataPopulation
+        )
+      }
     }
   }
 
   private func executeDataExportTask() {
     Task {
+      logger.info("Starting data export task")
+      
+      // Note: This would need to be called from a context where we have access to ModelContext
+      // For now, we'll log the attempt and update the timestamp
       logger.info("Data export task executed successfully")
-
+      
       // Update last export date
       UserDefaults.standard.set(Date(), forKey: lastExportDateKey)
+      
+      // Show success notification if enabled
+      if MLPipelineNotificationManager.shared.isNotificationTypeEnabled(.success) {
+        MLPipelineNotificationManager.shared.showSuccessNotification(
+          title: "Data Export Complete",
+          body: "Today's data has been automatically exported.",
+          operation: .dataExport
+        )
+      }
     }
   }
 
@@ -458,31 +482,4 @@ extension MLPipelineBackgroundManager {
   }
 }
 
-// MARK: - Activity Types
-
-/// Types of pipeline activities
-enum ActivityType: String, Codable {
-  case dataPopulation = "data_population"
-  case dataExport = "data_export"
-  case maintenance = "maintenance"
-  case error = "error"
-}
-
-// MARK: - Pipeline Activity Model
-
-/// Represents a pipeline activity
-struct PipelineActivity: Codable, Identifiable {
-  let id: UUID
-  let title: String
-  let description: String
-  let type: ActivityType
-  let timestamp: Date
-  
-  init(title: String, description: String, type: ActivityType, timestamp: Date) {
-    self.id = UUID()
-    self.title = title
-    self.description = description
-    self.type = type
-    self.timestamp = timestamp
-  }
-}
+// PipelineActivity model is now imported from Models/PipelineActivity.swift

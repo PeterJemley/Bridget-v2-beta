@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct RouteListView: View {
-  @EnvironmentObject var appState: AppState
+  @Bindable var appState: AppState
 
   var body: some View {
     VStack {
@@ -44,9 +44,10 @@ struct RouteListView: View {
 }
 
 // Assuming types used here for context
-final class AppState: ObservableObject {
-  @Published var validationFailures: [ValidationFailure] = []
-  @Published var routes: [Route] = []
+@Observable
+final class AppState {
+  var validationFailures: [ValidationFailure] = []
+  var routes: [Route] = []
 
   var hasValidationFailures: Bool {
     !validationFailures.isEmpty

@@ -171,8 +171,11 @@ struct RouteListView: View {
 
             Group {
               if isLoadingRoutes {
-                ProgressView("Loading routes...")
-                  .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack {
+                  Spacer()
+                  Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
               } else if let error = routeLoadError {
                 VStack(spacing: 10) {
                   Image(systemName: "exclamationmark.triangle.fill")
