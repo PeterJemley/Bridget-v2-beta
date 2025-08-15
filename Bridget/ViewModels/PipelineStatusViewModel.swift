@@ -3,93 +3,93 @@ import SwiftData
 
 @Observable
 final class PipelineStatusViewModel {
-    private let backgroundManager: MLPipelineBackgroundManager
-    private let modelContext: ModelContext
+  private let backgroundManager: MLPipelineBackgroundManager
+  private let modelContext: ModelContext
 
-    // Observable properties for UI
-    var isPipelineHealthy: Bool = false
-    var dataAvailabilityStatus: String = "Checking..."
-    var populationStatus: String = "Never"
-    var exportStatus: String = "Never"
+  // Observable properties for UI
+  var isPipelineHealthy: Bool = false
+  var dataAvailabilityStatus: String = "Checking..."
+  var populationStatus: String = "Never"
+  var exportStatus: String = "Never"
 
-    init(backgroundManager: MLPipelineBackgroundManager = .shared, modelContext: ModelContext) {
-        self.backgroundManager = backgroundManager
-        self.modelContext = modelContext
-        refreshStatus()
+  init(backgroundManager: MLPipelineBackgroundManager = .shared, modelContext: ModelContext) {
+    self.backgroundManager = backgroundManager
+    self.modelContext = modelContext
+    refreshStatus()
+  }
+
+  func refreshStatus() {
+    // Pipeline health: based on recent activity
+    let calendar = Calendar.current
+    let today = calendar.startOfDay(for: Date())
+    let lastPopulation = backgroundManager.lastPopulationDate
+    let lastExport = backgroundManager.lastExportDate
+
+    // Update isPipelineHealthy
+    if let lastPopulation, let lastExport {
+      let populationAge = calendar.dateComponents([.day], from: lastPopulation, to: today).day ?? 999
+      let exportAge = calendar.dateComponents([.day], from: lastExport, to: today).day ?? 999
+      isPipelineHealthy = (populationAge <= 1 && exportAge <= 1)
+    } else {
+      isPipelineHealthy = false
     }
 
-    func refreshStatus() {
-        // Pipeline health: based on recent activity
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let lastPopulation = backgroundManager.lastPopulationDate
-        let lastExport = backgroundManager.lastExportDate
+    // Update population and export status
+    populationStatus = getStatusString(for: lastPopulation)
+    exportStatus = getStatusString(for: lastExport)
 
-        // Update isPipelineHealthy
-        if let lastPopulation, let lastExport {
-            let populationAge = calendar.dateComponents([.day], from: lastPopulation, to: today).day ?? 999
-            let exportAge = calendar.dateComponents([.day], from: lastExport, to: today).day ?? 999
-            isPipelineHealthy = (populationAge <= 1 && exportAge <= 1)
-        } else {
-            isPipelineHealthy = false
-        }
+    // Update data availability status asynchronously
+    updateDataAvailabilityStatus()
+  }
 
-        // Update population and export status
-        populationStatus = getStatusString(for: lastPopulation)
-        exportStatus = getStatusString(for: lastExport)
+  private func getStatusString(for date: Date?) -> String {
+    guard let date else { return "Never" }
+    let calendar = Calendar.current
+    let today = calendar.startOfDay(for: Date())
+    let age = calendar.dateComponents([.day], from: date, to: today).day ?? 999
+    if age == 0 { return "Today" }
+    if age == 1 { return "Yesterday" }
+    return "\(age) days ago"
+  }
 
-        // Update data availability status asynchronously
-        updateDataAvailabilityStatus()
-    }
+  private func updateDataAvailabilityStatus() {
+    Task {
+      do {
+        let descriptor = FetchDescriptor<ProbeTick>()
+        let count = try modelContext.fetchCount(descriptor)
+        await MainActor.run {
+          if count > 0 {
+            // Get the most recent tick
+            var recentDescriptor = FetchDescriptor<ProbeTick>(
+              sortBy: [SortDescriptor(\.tsUtc, order: .reverse)]
+            )
+            recentDescriptor.fetchLimit = 1
 
-    private func getStatusString(for date: Date?) -> String {
-        guard let date else { return "Never" }
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let age = calendar.dateComponents([.day], from: date, to: today).day ?? 999
-        if age == 0 { return "Today" }
-        if age == 1 { return "Yesterday" }
-        return "\(age) days ago"
-    }
-
-    private func updateDataAvailabilityStatus() {
-        Task {
-            do {
-                let descriptor = FetchDescriptor<ProbeTick>()
-                let count = try modelContext.fetchCount(descriptor)
-                await MainActor.run {
-                    if count > 0 {
-                        // Get the most recent tick
-                        var recentDescriptor = FetchDescriptor<ProbeTick>(
-                            sortBy: [SortDescriptor(\.tsUtc, order: .reverse)]
-                        )
-                        recentDescriptor.fetchLimit = 1
-
-                        if let recentTick = try? modelContext.fetch(recentDescriptor).first {
-                            let calendar = Calendar.current
-                            let today = calendar.startOfDay(for: Date())
-                            let age = calendar.dateComponents([.day], from: recentTick.tsUtc, to: today).day ?? 999
-                            if age == 0 {
-                                dataAvailabilityStatus = "Available (Today) - \(count) records"
-                            } else if age == 1 {
-                                dataAvailabilityStatus = "Available (Yesterday) - \(count) records"
-                            } else if age <= 7 {
-                                dataAvailabilityStatus = "Available (\(age) days ago) - \(count) records"
-                            } else {
-                                dataAvailabilityStatus = "Stale (\(age) days old) - \(count) records"
-                            }
-                        } else {
-                            dataAvailabilityStatus = "Available - \(count) records"
-                        }
-                    } else {
-                        dataAvailabilityStatus = "No Data"
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    dataAvailabilityStatus = "Error checking data"
-                }
+            if let recentTick = try? modelContext.fetch(recentDescriptor).first {
+              let calendar = Calendar.current
+              let today = calendar.startOfDay(for: Date())
+              let age = calendar.dateComponents([.day], from: recentTick.tsUtc, to: today).day ?? 999
+              if age == 0 {
+                dataAvailabilityStatus = "Available (Today) - \(count) records"
+              } else if age == 1 {
+                dataAvailabilityStatus = "Available (Yesterday) - \(count) records"
+              } else if age <= 7 {
+                dataAvailabilityStatus = "Available (\(age) days ago) - \(count) records"
+              } else {
+                dataAvailabilityStatus = "Stale (\(age) days old) - \(count) records"
+              }
+            } else {
+              dataAvailabilityStatus = "Available - \(count) records"
             }
+          } else {
+            dataAvailabilityStatus = "No Data"
+          }
         }
+      } catch {
+        await MainActor.run {
+          dataAvailabilityStatus = "Error checking data"
+        }
+      }
     }
+  }
 }

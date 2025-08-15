@@ -82,7 +82,7 @@ class CacheService {
       return nil
     }
     let cacheURL = documentsPath.appendingPathComponent(cacheDirectory)
-    
+
     // Create cache directory if it doesn't exist
     if !FileManager.default.fileExists(atPath: cacheURL.path) {
       do {
@@ -92,7 +92,7 @@ class CacheService {
         return nil
       }
     }
-    
+
     return cacheURL
   }
 
@@ -123,7 +123,7 @@ class CacheService {
     do {
       // Ensure cache directory exists
       _ = getCacheDirectory()
-      
+
       let encoder = JSONEncoder()
       encoder.dateEncodingStrategy = .iso8601
       let data = try encoder.encode(data)

@@ -44,32 +44,32 @@ struct AppLifecycleObserver: View {
       .task {
         // Set up notification observers using async/await instead of Combine
         let center = NotificationCenter.default
-        
+
         // Create async sequences for each notification
         let didBecomeActive = center.notifications(named: UIApplication.didBecomeActiveNotification)
         let willResignActive = center.notifications(named: UIApplication.willResignActiveNotification)
         let didEnterBackground = center.notifications(named: UIApplication.didEnterBackgroundNotification)
         let willEnterForeground = center.notifications(named: UIApplication.willEnterForegroundNotification)
-        
+
         // Observe notifications concurrently using separate tasks
         Task {
           for await _ in didBecomeActive {
             onDidBecomeActive()
           }
         }
-        
+
         Task {
           for await _ in willResignActive {
             onWillResignActive()
           }
         }
-        
+
         Task {
           for await _ in didEnterBackground {
             onDidEnterBackground()
           }
         }
-        
+
         Task {
           for await _ in willEnterForeground {
             onWillEnterForeground()

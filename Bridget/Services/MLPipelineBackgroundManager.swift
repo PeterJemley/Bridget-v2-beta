@@ -288,21 +288,19 @@ final class MLPipelineBackgroundManager {
   private func executeDataPopulationTask() {
     Task {
       logger.info("Starting data population task")
-      
+
       // Note: This would need to be called from a context where we have access to ModelContext
       // For now, we'll log the attempt and update the timestamp
       logger.info("Data population task executed successfully")
 
       // Update last population date
       UserDefaults.standard.set(Date(), forKey: lastPopulationDateKey)
-      
+
       // Show success notification if enabled
       if MLPipelineNotificationManager.shared.isNotificationTypeEnabled(.success) {
-        MLPipelineNotificationManager.shared.showSuccessNotification(
-          title: "Data Population Complete",
-          body: "Today's data has been automatically populated.",
-          operation: .dataPopulation
-        )
+        MLPipelineNotificationManager.shared.showSuccessNotification(title: "Data Population Complete",
+                                                                     body: "Today's data has been automatically populated.",
+                                                                     operation: .dataPopulation)
       }
     }
   }
@@ -310,21 +308,19 @@ final class MLPipelineBackgroundManager {
   private func executeDataExportTask() {
     Task {
       logger.info("Starting data export task")
-      
+
       // Note: This would need to be called from a context where we have access to ModelContext
       // For now, we'll log the attempt and update the timestamp
       logger.info("Data export task executed successfully")
-      
+
       // Update last export date
       UserDefaults.standard.set(Date(), forKey: lastExportDateKey)
-      
+
       // Show success notification if enabled
       if MLPipelineNotificationManager.shared.isNotificationTypeEnabled(.success) {
-        MLPipelineNotificationManager.shared.showSuccessNotification(
-          title: "Data Export Complete",
-          body: "Today's data has been automatically exported.",
-          operation: .dataExport
-        )
+        MLPipelineNotificationManager.shared.showSuccessNotification(title: "Data Export Complete",
+                                                                     body: "Today's data has been automatically exported.",
+                                                                     operation: .dataExport)
       }
     }
   }
@@ -445,21 +441,19 @@ extension MLPipelineBackgroundManager {
   ///   - description: The activity description
   ///   - type: The type of activity
   func addActivity(title: String, description: String, type: ActivityType) {
-    let activity = PipelineActivity(
-      title: title,
-      description: description,
-      type: type,
-      timestamp: Date()
-    )
-    
+    let activity = PipelineActivity(title: title,
+                                    description: description,
+                                    type: type,
+                                    timestamp: Date())
+
     var activities = getRecentActivities()
     activities.insert(activity, at: 0) // Add to beginning
-    
+
     // Keep only the last 10 activities
     if activities.count > 10 {
       activities = Array(activities.prefix(10))
     }
-    
+
     saveRecentActivities(activities)
     logger.info("Added new activity: \(title)")
   }

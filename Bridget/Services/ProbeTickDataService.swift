@@ -148,7 +148,7 @@ final class ProbeTickDataService {
         if let tick = tick {
           context.insert(tick)
           batchCount += 1
-          
+
           // Save in smaller batches for better performance
           if batchCount >= batchSize {
             try context.save()
@@ -160,7 +160,7 @@ final class ProbeTickDataService {
       // Move to next minute
       currentDate = calendar.date(byAdding: .minute, value: 1, to: currentDate) ?? currentDate
       processedMinutes += 1
-      
+
       // Progress logging every 100 minutes
       if processedMinutes % 100 == 0 {
         let progress = Double(processedMinutes) / Double(totalMinutes) * 100
@@ -172,7 +172,7 @@ final class ProbeTickDataService {
     if batchCount > 0 {
       try context.save()
     }
-    
+
     print("✅ [INFO] Data population completed: \(processedMinutes) minutes processed")
   }
 
@@ -263,13 +263,13 @@ final class ProbeTickDataService {
       print("⚠️ [WARNING] Invalid bridgeID: \(bridgeID), skipping tick creation")
       return nil
     }
-    
+
     // Validate and clamp values to prevent crashes
     let clampedViaPenaltySec = min(max(viaPenaltySec, 0), 900) // Clamp to [0, 900]
     let clampedGateAnom = min(max(gateAnom, 1.0), 8.0) // Clamp to [1, 8]
     let clampedCrossK = max(crossK, 0)
     let clampedCrossN = max(crossN, 1) // Ensure we don't have zero
-    
+
     // Create the ProbeTick record
     let tick = ProbeTick(tsUtc: timestamp,
                          bridgeId: bridgeIdInt,
