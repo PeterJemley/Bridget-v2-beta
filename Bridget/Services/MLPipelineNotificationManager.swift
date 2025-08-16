@@ -42,13 +42,11 @@ final class MLPipelineNotificationManager {
 
   private let logger = Logger(subsystem: "Bridget", category: "MLPipelineNotifications")
 
-  // Notification categories
   private let successCategoryID = "MLPipelineSuccess"
   private let failureCategoryID = "MLPipelineFailure"
   private let progressCategoryID = "MLPipelineProgress"
   private let healthCategoryID = "MLPipelineHealth"
 
-  // UserDefaults keys
   private let notificationsEnabledKey = "MLPipelineNotificationsEnabled"
   private let successNotificationsKey = "MLPipelineSuccessNotifications"
   private let failureNotificationsKey = "MLPipelineFailureNotifications"
@@ -60,13 +58,6 @@ final class MLPipelineNotificationManager {
     requestNotificationPermissions()
   }
 
-  // MARK: - Public Interface
-
-  /// Shows a success notification for completed pipeline operations.
-  /// - Parameters:
-  ///   - title: The notification title
-  ///   - body: The notification body text
-  ///   - operation: The type of operation that succeeded
   func showSuccessNotification(title: String, body: String, operation: PipelineOperation) {
     guard isNotificationTypeEnabled(.success) else { return }
 
@@ -77,12 +68,14 @@ final class MLPipelineNotificationManager {
     content.categoryIdentifier = successCategoryID
     content.userInfo = [
       "operation": operation.rawValue,
-      "timestamp": Date().timeIntervalSince1970,
+      "timestamp": Date().timeIntervalSince1970
     ]
 
-    let request = UNNotificationRequest(identifier: "success-\(operation.rawValue)-\(Date().timeIntervalSince1970)",
-                                        content: content,
-                                        trigger: nil)
+    let request = UNNotificationRequest(
+      identifier: "success-\(operation.rawValue)-\(Date().timeIntervalSince1970)",
+      content: content,
+      trigger: nil
+    )
 
     UNUserNotificationCenter.current().add(request) { error in
       if let error = error {
@@ -93,12 +86,6 @@ final class MLPipelineNotificationManager {
     }
   }
 
-  /// Shows a failure notification for failed pipeline operations.
-  /// - Parameters:
-  ///   - title: The notification title
-  ///   - body: The notification body text
-  ///   - operation: The type of operation that failed
-  ///   - error: The error that caused the failure
   func showFailureNotification(title: String, body: String, operation: PipelineOperation, error: Error) {
     guard isNotificationTypeEnabled(.failure) else { return }
 
@@ -110,12 +97,14 @@ final class MLPipelineNotificationManager {
     content.userInfo = [
       "operation": operation.rawValue,
       "error": error.localizedDescription,
-      "timestamp": Date().timeIntervalSince1970,
+      "timestamp": Date().timeIntervalSince1970
     ]
 
-    let request = UNNotificationRequest(identifier: "failure-\(operation.rawValue)-\(Date().timeIntervalSince1970)",
-                                        content: content,
-                                        trigger: nil)
+    let request = UNNotificationRequest(
+      identifier: "failure-\(operation.rawValue)-\(Date().timeIntervalSince1970)",
+      content: content,
+      trigger: nil
+    )
 
     UNUserNotificationCenter.current().add(request) { error in
       if let error = error {
@@ -126,29 +115,25 @@ final class MLPipelineNotificationManager {
     }
   }
 
-  /// Shows a progress notification for long-running operations.
-  /// - Parameters:
-  ///   - title: The notification title
-  ///   - body: The notification body text
-  ///   - operation: The type of operation in progress
-  ///   - progress: The progress value (0.0 to 1.0)
   func showProgressNotification(title: String, body: String, operation: PipelineOperation, progress: Double) {
     guard isNotificationTypeEnabled(.progress) else { return }
 
     let content = UNMutableNotificationContent()
     content.title = title
     content.body = body
-    content.sound = nil // No sound for progress notifications
+    content.sound = nil
     content.categoryIdentifier = progressCategoryID
     content.userInfo = [
       "operation": operation.rawValue,
       "progress": progress,
-      "timestamp": Date().timeIntervalSince1970,
+      "timestamp": Date().timeIntervalSince1970
     ]
 
-    let request = UNNotificationRequest(identifier: "progress-\(operation.rawValue)-\(Date().timeIntervalSince1970)",
-                                        content: content,
-                                        trigger: nil)
+    let request = UNNotificationRequest(
+      identifier: "progress-\(operation.rawValue)-\(Date().timeIntervalSince1970)",
+      content: content,
+      trigger: nil
+    )
 
     UNUserNotificationCenter.current().add(request) { error in
       if let error = error {
@@ -159,11 +144,6 @@ final class MLPipelineNotificationManager {
     }
   }
 
-  /// Shows a health notification for pipeline health warnings.
-  /// - Parameters:
-  ///   - title: The notification title
-  ///   - body: The notification body text
-  ///   - healthIssue: The type of health issue detected
   func showHealthNotification(title: String, body: String, healthIssue: PipelineHealthIssue) {
     guard isNotificationTypeEnabled(.health) else { return }
 
@@ -174,12 +154,14 @@ final class MLPipelineNotificationManager {
     content.categoryIdentifier = healthCategoryID
     content.userInfo = [
       "healthIssue": healthIssue.rawValue,
-      "timestamp": Date().timeIntervalSince1970,
+      "timestamp": Date().timeIntervalSince1970
     ]
 
-    let request = UNNotificationRequest(identifier: "health-\(healthIssue.rawValue)-\(Date().timeIntervalSince1970)",
-                                        content: content,
-                                        trigger: nil)
+    let request = UNNotificationRequest(
+      identifier: "health-\(healthIssue.rawValue)-\(Date().timeIntervalSince1970)",
+      content: content,
+      trigger: nil
+    )
 
     UNUserNotificationCenter.current().add(request) { error in
       if let error = error {
@@ -190,12 +172,6 @@ final class MLPipelineNotificationManager {
     }
   }
 
-  /// Schedules a notification for upcoming scheduled operations.
-  /// - Parameters:
-  ///   - title: The notification title
-  ///   - body: The notification body text
-  ///   - operation: The type of operation scheduled
-  ///   - scheduledTime: When the operation is scheduled to run
   func scheduleOperationNotification(title: String, body: String, operation: PipelineOperation, scheduledTime: Date) {
     guard isNotificationTypeEnabled(.progress) else { return }
 
@@ -207,15 +183,19 @@ final class MLPipelineNotificationManager {
     content.userInfo = [
       "operation": operation.rawValue,
       "scheduledTime": scheduledTime.timeIntervalSince1970,
-      "timestamp": Date().timeIntervalSince1970,
+      "timestamp": Date().timeIntervalSince1970
     ]
 
-    let trigger = UNTimeIntervalNotificationTrigger(timeInterval: scheduledTime.timeIntervalSinceNow,
-                                                    repeats: false)
+    let trigger = UNTimeIntervalNotificationTrigger(
+      timeInterval: scheduledTime.timeIntervalSinceNow,
+      repeats: false
+    )
 
-    let request = UNNotificationRequest(identifier: "scheduled-\(operation.rawValue)-\(scheduledTime.timeIntervalSince1970)",
-                                        content: content,
-                                        trigger: trigger)
+    let request = UNNotificationRequest(
+      identifier: "scheduled-\(operation.rawValue)-\(scheduledTime.timeIntervalSince1970)",
+      content: content,
+      trigger: trigger
+    )
 
     UNUserNotificationCenter.current().add(request) { error in
       if let error = error {
@@ -226,8 +206,6 @@ final class MLPipelineNotificationManager {
     }
   }
 
-  /// Cancels all pending notifications for a specific operation.
-  /// - Parameter operation: The operation whose notifications should be cancelled
   func cancelNotifications(for operation: PipelineOperation) {
     let center = UNUserNotificationCenter.current()
 
@@ -243,7 +221,6 @@ final class MLPipelineNotificationManager {
     }
   }
 
-  /// Cancels all pending ML pipeline notifications.
   func cancelAllNotifications() {
     let center = UNUserNotificationCenter.current()
 
@@ -263,56 +240,62 @@ final class MLPipelineNotificationManager {
     }
   }
 
-  // MARK: - Private Methods
-
   private func setupNotificationCategories() {
-    let successCategory = UNNotificationCategory(identifier: successCategoryID,
-                                                 actions: [
-                                                   UNNotificationAction(identifier: "viewDetails",
-                                                                        title: "View Details",
-                                                                        options: [.foreground]),
-                                                 ],
-                                                 intentIdentifiers: [],
-                                                 options: [])
+    let successCategory = UNNotificationCategory(
+      identifier: successCategoryID,
+      actions: [
+        UNNotificationAction(identifier: "viewDetails",
+                             title: "View Details",
+                             options: [.foreground])
+      ],
+      intentIdentifiers: [],
+      options: []
+    )
 
-    let failureCategory = UNNotificationCategory(identifier: failureCategoryID,
-                                                 actions: [
-                                                   UNNotificationAction(identifier: "retry",
-                                                                        title: "Retry",
-                                                                        options: [.foreground]),
-                                                   UNNotificationAction(identifier: "viewDetails",
-                                                                        title: "View Details",
-                                                                        options: [.foreground]),
-                                                 ],
-                                                 intentIdentifiers: [],
-                                                 options: [])
+    let failureCategory = UNNotificationCategory(
+      identifier: failureCategoryID,
+      actions: [
+        UNNotificationAction(identifier: "retry",
+                             title: "Retry",
+                             options: [.foreground]),
+        UNNotificationAction(identifier: "viewDetails",
+                             title: "View Details",
+                             options: [.foreground])
+      ],
+      intentIdentifiers: [],
+      options: []
+    )
 
-    let progressCategory = UNNotificationCategory(identifier: progressCategoryID,
-                                                  actions: [
-                                                    UNNotificationAction(identifier: "cancel",
-                                                                         title: "Cancel",
-                                                                         options: [.destructive]),
-                                                  ],
-                                                  intentIdentifiers: [],
-                                                  options: [])
+    let progressCategory = UNNotificationCategory(
+      identifier: progressCategoryID,
+      actions: [
+        UNNotificationAction(identifier: "cancel",
+                             title: "Cancel",
+                             options: [.destructive])
+      ],
+      intentIdentifiers: [],
+      options: []
+    )
 
-    let healthCategory = UNNotificationCategory(identifier: healthCategoryID,
-                                                actions: [
-                                                  UNNotificationAction(identifier: "acknowledge",
-                                                                       title: "Acknowledge",
-                                                                       options: []),
-                                                  UNNotificationAction(identifier: "viewDetails",
-                                                                       title: "View Details",
-                                                                       options: [.foreground]),
-                                                ],
-                                                intentIdentifiers: [],
-                                                options: [])
+    let healthCategory = UNNotificationCategory(
+      identifier: healthCategoryID,
+      actions: [
+        UNNotificationAction(identifier: "acknowledge",
+                             title: "Acknowledge",
+                             options: []),
+        UNNotificationAction(identifier: "viewDetails",
+                             title: "View Details",
+                             options: [.foreground])
+      ],
+      intentIdentifiers: [],
+      options: []
+    )
 
     UNUserNotificationCenter.current().setNotificationCategories([
       successCategory,
       failureCategory,
       progressCategory,
-      healthCategory,
+      healthCategory
     ])
 
     logger.info("ML pipeline notification categories configured")
@@ -348,8 +331,6 @@ final class MLPipelineNotificationManager {
   }
 }
 
-// MARK: - Supporting Types
-
 enum PipelineOperation: String, CaseIterable {
   case dataPopulation = "Data Population"
   case dataExport = "Data Export"
@@ -371,23 +352,19 @@ enum NotificationType: String, CaseIterable {
   case health = "Health"
 }
 
-// MARK: - Extensions
-
 extension MLPipelineNotificationManager {
-  /// Convenience method to check if notifications are enabled
   var isNotificationsEnabled: Bool {
     UserDefaults.standard.bool(forKey: notificationsEnabledKey)
   }
 
-  /// Convenience method to enable/disable notifications
   func setNotificationsEnabled(_ enabled: Bool) {
     UserDefaults.standard.set(enabled, forKey: notificationsEnabledKey)
     logger.info("Notifications \(enabled ? "enabled" : "disabled")")
   }
 
-  /// Convenience method to enable/disable a specific notification type
   func setNotificationTypeEnabled(_ type: NotificationType, enabled: Bool) {
     UserDefaults.standard.set(enabled, forKey: "MLPipeline\(type.rawValue)Notifications")
     logger.info("\(type.rawValue) notifications \(enabled ? "enabled" : "disabled")")
   }
 }
+

@@ -1,7 +1,6 @@
 import SwiftData
 import SwiftUI
 
-/// The main content view with a home screen approach focused on user functionality.
 struct ContentView: View {
   @Environment(\.modelContext) private var modelContext
   @State private var appState: AppStateModel?
@@ -15,7 +14,6 @@ struct ContentView: View {
     NavigationStack {
       ScrollView {
         VStack(spacing: 24) {
-          // Header
           VStack(spacing: 8) {
             Text("Bridget")
               .font(.largeTitle)
@@ -26,11 +24,9 @@ struct ContentView: View {
           }
           .padding(.top, 20)
 
-          // Main Action Buttons
           VStack(spacing: 16) {
-            // Find Route - Primary Action
             NavigationLink {
-              if let appState {
+              if let appState = appState {
                 RouteListView(appState: appState)
               }
             } label: {
@@ -54,7 +50,6 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
 
-            // Bridge Status
             Button {
               showingBridgeStatus = true
             } label: {
@@ -79,7 +74,6 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
 
-            // Traffic Alerts
             Button {
               showingTrafficAlerts = true
             } label: {
@@ -104,7 +98,6 @@ struct ContentView: View {
             }
             .buttonStyle(.plain)
 
-            // My Routes
             Button {
               showingMyRoutes = true
             } label: {
@@ -131,7 +124,6 @@ struct ContentView: View {
           }
           .padding(.horizontal)
 
-          // Settings Button (Smaller, less prominent)
           Button {
             showingSettings = true
           } label: {
@@ -174,7 +166,6 @@ struct ContentView: View {
       }
     }
     .onAppear {
-      // Initialize view models in background
       if appState == nil {
         appState = AppStateModel(modelContext: modelContext)
       }
@@ -193,7 +184,7 @@ struct ContentView: View {
         RoutePreference.self,
         TrafficInferenceCache.self,
         UserRouteHistory.self,
-        ProbeTick.self,
+        ProbeTick.self
       ], inMemory: true)
   }
 #endif
