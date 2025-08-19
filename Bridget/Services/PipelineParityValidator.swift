@@ -1026,7 +1026,7 @@ enum ParityGate {
   /// - Throws: Validation errors or file reading errors
   static func run(baselineURL: URL, current: CurrentOutput, sample: GoldenSample) async throws -> PipelineParityValidator.ParityValidationResult {
     let baselineData = try Data(contentsOf: baselineURL)
-    let baseline = try JSONDecoder().decode(BaselineMetrics.self, from: baselineData)
+    let baseline = try JSONDecoder.bridgeDecoder().decode(BaselineMetrics.self, from: baselineData)
 
     let validator = PipelineParityValidator(config: .default)
 

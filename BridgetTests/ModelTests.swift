@@ -249,7 +249,7 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(record.entityid == "1")
     #expect(record.entityname == "1st Ave South")
     #expect(record.opendatetime == "2025-01-03T10:12:00.000")
@@ -268,7 +268,7 @@ import Testing
     """.data(using: .utf8)!
 
     #expect(throws: DecodingError.self) {
-      _ = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+      _ = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     }
   }
 
@@ -288,7 +288,7 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(record.entityid == "1")
     #expect(record.entityname == "1st Ave South")
   }
@@ -308,7 +308,7 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(record.openDate == nil, "Should have nil openDate for malformed date")
     #expect(record.closeDate != nil, "Should have valid closeDate")
   }
@@ -317,7 +317,7 @@ import Testing
   func emptyArrayPayload() throws {
     let json = "[]".data(using: .utf8)!
 
-    let records = try JSONDecoder().decode([BridgeOpeningRecord].self, from: json)
+    let records = try JSONDecoder.bridgeDecoder().decode([BridgeOpeningRecord].self, from: json)
     #expect(records.count == 0)
   }
 
@@ -336,7 +336,7 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(record.entityid == "")
     #expect(record.entityname == "")
     #expect(record.entityid.isEmpty)
@@ -358,7 +358,7 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    let record = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(record.minutesOpenValue == nil)
     #expect(record.latitudeValue == nil)
     #expect(record.longitudeValue == nil)
@@ -396,7 +396,7 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    _ = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    _ = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(true)
   }
 
@@ -415,7 +415,7 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    _ = try JSONDecoder().decode(BridgeOpeningRecord.self, from: json)
+    _ = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(true)
   }
 

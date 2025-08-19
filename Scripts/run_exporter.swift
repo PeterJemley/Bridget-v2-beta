@@ -234,8 +234,7 @@ class SimpleBridgeDataExporter {
 
   /// Exports ProbeTick data to NDJSON format
   func exportToNDJSON(ticks: [SimpleProbeTick], to url: URL) throws {
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = [.withoutEscapingSlashes]
+    let encoder = JSONEncoder.bridgeEncoder(outputFormatting: [.withoutEscapingSlashes])
 
     // Create output directory if it doesn't exist
     let outputDirectory = url.deletingLastPathComponent()
