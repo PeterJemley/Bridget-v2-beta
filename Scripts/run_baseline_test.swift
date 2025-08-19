@@ -33,8 +33,8 @@ print()
 
 // Check if we're running in the right environment
 guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-    print("❌ Error: Could not access Documents directory")
-    exit(1)
+  print("❌ Error: Could not access Documents directory")
+  exit(1)
 }
 
 print("📁 Documents directory: \(documentsPath.path)")
@@ -54,11 +54,11 @@ print()
 // Create test output directory
 let testOutputDir = documentsPath.appendingPathComponent("baseline_test_\(testDateString)")
 do {
-    try FileManager.default.createDirectory(at: testOutputDir, withIntermediateDirectories: true)
-    print("📁 Created test output directory: \(testOutputDir.path)")
+  try FileManager.default.createDirectory(at: testOutputDir, withIntermediateDirectories: true)
+  print("📁 Created test output directory: \(testOutputDir.path)")
 } catch {
-    print("❌ Error creating test directory: \(error)")
-    exit(1)
+  print("❌ Error creating test directory: \(error)")
+  exit(1)
 }
 
 // Simulate pipeline steps with timing
@@ -111,10 +111,10 @@ print("📈 Processing Rate: \(String(format: "%.1f", 8640.0 / totalTime)) recor
 print()
 
 print("📋 Step-by-Step Breakdown:")
-print("   • Data Ingestion: \(String(format: "%.3f", ingestionTime))s (\(String(format: "%.1f", ingestionTime/totalTime*100))%)")
-print("   • Data Processing: \(String(format: "%.3f", processingTime))s (\(String(format: "%.1f", processingTime/totalTime*100))%)")
-print("   • Data Export: \(String(format: "%.3f", exportTime))s (\(String(format: "%.1f", exportTime/totalTime*100))%)")
-print("   • Metrics Generation: \(String(format: "%.3f", metricsTime))s (\(String(format: "%.1f", metricsTime/totalTime*100))%)")
+print("   • Data Ingestion: \(String(format: "%.3f", ingestionTime))s (\(String(format: "%.1f", ingestionTime / totalTime * 100))%)")
+print("   • Data Processing: \(String(format: "%.3f", processingTime))s (\(String(format: "%.1f", processingTime / totalTime * 100))%)")
+print("   • Data Export: \(String(format: "%.3f", exportTime))s (\(String(format: "%.1f", exportTime / totalTime * 100))%)")
+print("   • Metrics Generation: \(String(format: "%.3f", metricsTime))s (\(String(format: "%.1f", metricsTime / totalTime * 100))%)")
 print()
 
 // Generate baseline report
@@ -134,25 +134,25 @@ Test Duration: \(testDurationMinutes) minutes
 
 ### 1. Data Ingestion
 - **Duration**: \(String(format: "%.3f", ingestionTime))s
-- **Percentage**: \(String(format: "%.1f", ingestionTime/totalTime*100))%
+- **Percentage**: \(String(format: "%.1f", ingestionTime / totalTime * 100))%
 - **Description**: API fetch and JSON decoding simulation
 - **Performance**: \(ingestionTime < 1.0 ? "Good" : "Needs attention")
 
 ### 2. Data Processing
 - **Duration**: \(String(format: "%.3f", processingTime))s
-- **Percentage**: \(String(format: "%.1f", processingTime/totalTime*100))%
+- **Percentage**: \(String(format: "%.1f", processingTime / totalTime * 100))%
 - **Description**: Data transformation and validation simulation
 - **Performance**: \(processingTime < 2.0 ? "Good" : "Needs attention")
 
 ### 3. Data Export
 - **Duration**: \(String(format: "%.3f", exportTime))s
-- **Percentage**: \(String(format: "%.1f", exportTime/totalTime*100))%
+- **Percentage**: \(String(format: "%.1f", exportTime / totalTime * 100))%
 - **Description**: NDJSON generation and file I/O simulation
 - **Performance**: \(exportTime < 1.0 ? "Good" : "Needs attention")
 
 ### 4. Metrics Generation
 - **Duration**: \(String(format: "%.3f", metricsTime))s
-- **Percentage**: \(String(format: "%.1f", metricsTime/totalTime*100))%
+- **Percentage**: \(String(format: "%.1f", metricsTime / totalTime * 100))%
 - **Description**: Performance metrics collection simulation
 - **Performance**: \(metricsTime < 0.5 ? "Good" : "Needs attention")
 
@@ -161,7 +161,7 @@ Test Duration: \(testDurationMinutes) minutes
 ### Bottleneck Identification
 - **Primary Bottleneck**: \(processingTime > ingestionTime && processingTime > exportTime ? "Data Processing" : ingestionTime > exportTime ? "Data Ingestion" : "Data Export")
 - **Bottleneck Time**: \(String(format: "%.3f", max(ingestionTime, processingTime, exportTime)))s
-- **Bottleneck Percentage**: \(String(format: "%.1f", max(ingestionTime, processingTime, exportTime)/totalTime*100))%
+- **Bottleneck Percentage**: \(String(format: "%.1f", max(ingestionTime, processingTime, exportTime) / totalTime * 100))%
 
 ### Efficiency Metrics
 - **Records per Second**: \(String(format: "%.1f", 8640.0 / totalTime))
@@ -195,10 +195,10 @@ This report establishes the baseline performance characteristics for the Bridget
 // Save baseline report
 let reportURL = testOutputDir.appendingPathComponent("baseline_report.md")
 do {
-    try report.write(to: reportURL, atomically: true, encoding: .utf8)
-    print("📄 Baseline report saved to: \(reportURL.path)")
+  try report.write(to: reportURL, atomically: true, encoding: .utf8)
+  print("📄 Baseline report saved to: \(reportURL.path)")
 } catch {
-    print("❌ Error saving baseline report: \(error)")
+  print("❌ Error saving baseline report: \(error)")
 }
 
 // Create sample NDJSON file for testing
@@ -210,10 +210,10 @@ let sampleNDJSON = """
 
 let sampleURL = testOutputDir.appendingPathComponent("sample_baseline.ndjson")
 do {
-    try sampleNDJSON.write(to: sampleURL, atomically: true, encoding: .utf8)
-    print("📄 Sample NDJSON created: \(sampleURL.path)")
+  try sampleNDJSON.write(to: sampleURL, atomically: true, encoding: .utf8)
+  print("📄 Sample NDJSON created: \(sampleURL.path)")
 } catch {
-    print("❌ Error creating sample NDJSON: \(error)")
+  print("❌ Error creating sample NDJSON: \(error)")
 }
 
 print("\n✅ Baseline test completed successfully!")

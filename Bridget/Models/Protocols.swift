@@ -71,7 +71,7 @@ public protocol BridgeEventPersistenceServiceProtocol: AnyObject {
   func loadEvent(withID id: String) throws -> Data?
   func deleteEvent(withID id: String) throws
   func fetchAllEventIDs() throws -> [String]
-  
+
   // BridgeEvent-specific methods
   func save(events: [BridgeEvent]) throws
   func fetchAllEvents() throws -> [BridgeEvent]
@@ -88,19 +88,19 @@ public protocol EnhancedPipelineProgressDelegate: AnyObject, Sendable {
   func pipelineDidUpdateStageProgress(_ stage: PipelineStage, progress: Double)
   func pipelineDidCompleteStage(_ stage: PipelineStage)
   func pipelineDidFailStage(_ stage: PipelineStage, error: Error)
-  
+
   // Checkpointing
   func pipelineDidCreateCheckpoint(_ stage: PipelineStage, at path: String)
   func pipelineDidResumeFromCheckpoint(_ stage: PipelineStage, at path: String)
-  
+
   // Validation gates
   func pipelineDidEvaluateDataQualityGate(_ result: DataValidationResult) -> Bool
   func pipelineDidEvaluateModelPerformanceGate(_ metrics: ModelPerformanceMetrics) -> Bool
-  
+
   // Performance metrics
   func pipelineDidUpdateMetrics(_ metrics: PipelineMetrics)
   func pipelineDidExportMetrics(to path: String)
-  
+
   // Overall pipeline
   func pipelineDidComplete(_ models: [Int: String])
   func pipelineDidFail(_ error: Error)
@@ -130,13 +130,14 @@ public struct PipelineMetrics: Codable {
   public var errorCounts: [PipelineStage: Int]
   public var validationRates: [PipelineStage: Double]
   public let timestamp: Date
-  
+
   public init(stageDurations: [PipelineStage: TimeInterval] = [:],
               memoryUsage: [PipelineStage: Int] = [:],
               recordCounts: [PipelineStage: Int] = [:],
               errorCounts: [PipelineStage: Int] = [:],
               validationRates: [PipelineStage: Double] = [:],
-              timestamp: Date = Date()) {
+              timestamp: Date = Date())
+  {
     self.stageDurations = stageDurations
     self.memoryUsage = memoryUsage
     self.recordCounts = recordCounts
@@ -154,13 +155,14 @@ public struct ModelPerformanceMetrics: Codable {
   public let precision: Double
   public let recall: Double
   public let confusionMatrix: [[Int]]
-  
+
   public init(accuracy: Double,
               loss: Double,
               f1Score: Double,
               precision: Double,
               recall: Double,
-              confusionMatrix: [[Int]]) {
+              confusionMatrix: [[Int]])
+  {
     self.accuracy = accuracy
     self.loss = loss
     self.f1Score = f1Score

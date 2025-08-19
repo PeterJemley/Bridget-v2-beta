@@ -113,12 +113,3 @@ struct SavedRouteCard: View {
 #Preview {
   MyRoutesView()
 }
-
-
-
-
-
-
-
-
-

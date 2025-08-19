@@ -121,7 +121,8 @@ public struct FeatureVector {
               detour_frac: Double,
               current_speed: Double,
               normal_speed: Double,
-              target: Int) {
+              target: Int)
+  {
     self.bridge_id = bridge_id
     self.horizon_min = horizon_min
     self.min_sin = min_sin
@@ -152,7 +153,7 @@ public struct FeatureVector {
       min_sin, min_cos, dow_sin, dow_cos,
       open_5m, open_30m, detour_delta, cross_rate,
       via_routable, via_penalty, gate_anom, detour_frac,
-      current_speed, normal_speed
+      current_speed, normal_speed,
     ]
 
     let array = try MLMultiArray(shape: [1, NSNumber(value: features.count)], dataType: .double)
@@ -182,7 +183,7 @@ public struct FeatureVector {
     "min_sin", "min_cos", "dow_sin", "dow_cos",
     "open_5m", "open_30m", "detour_delta", "cross_rate",
     "via_routable", "via_penalty", "gate_anom", "detour_frac",
-    "current_speed", "normal_speed"
+    "current_speed", "normal_speed",
   ]
 }
 
@@ -220,21 +221,19 @@ public struct DataValidationResult {
   public var invalidCrossRatios: Int = 0
   public var recordsPerBridge: [Int: Int] = [:]
   public var isValid: Bool = false
-  
+
   // Enhanced validation tracking
   public var errors: [String] = []
   public var warnings: [String] = []
   public var timestampRange: (first: Date?, last: Date?) = (nil, nil)
   public var horizonCoverage: [Int: Int] = [:]
-  public var dataQualityMetrics: DataQualityMetrics = DataQualityMetrics(
-    dataCompleteness: 0.0,
-    timestampValidity: 0.0,
-    bridgeIDValidity: 0.0,
-    speedDataValidity: 0.0,
-    duplicateCount: 0,
-    missingFieldsCount: 0
-  )
-  
+  public var dataQualityMetrics: DataQualityMetrics = .init(dataCompleteness: 0.0,
+                                                            timestampValidity: 0.0,
+                                                            bridgeIDValidity: 0.0,
+                                                            speedDataValidity: 0.0,
+                                                            duplicateCount: 0,
+                                                            missingFieldsCount: 0)
+
   public init(totalRecords: Int = 0,
               bridgeCount: Int = 0,
               invalidBridgeIds: Int = 0,
@@ -246,14 +245,13 @@ public struct DataValidationResult {
               warnings: [String] = [],
               timestampRange: (first: Date?, last: Date?) = (nil, nil),
               horizonCoverage: [Int: Int] = [:],
-              dataQualityMetrics: DataQualityMetrics = DataQualityMetrics(
-                dataCompleteness: 0.0,
-                timestampValidity: 0.0,
-                bridgeIDValidity: 0.0,
-                speedDataValidity: 0.0,
-                duplicateCount: 0,
-                missingFieldsCount: 0
-              )) {
+              dataQualityMetrics: DataQualityMetrics = DataQualityMetrics(dataCompleteness: 0.0,
+                                                                          timestampValidity: 0.0,
+                                                                          bridgeIDValidity: 0.0,
+                                                                          speedDataValidity: 0.0,
+                                                                          duplicateCount: 0,
+                                                                          missingFieldsCount: 0))
+  {
     self.totalRecords = totalRecords
     self.bridgeCount = bridgeCount
     self.invalidBridgeIds = invalidBridgeIds
@@ -267,11 +265,11 @@ public struct DataValidationResult {
     self.horizonCoverage = horizonCoverage
     self.dataQualityMetrics = dataQualityMetrics
   }
-  
+
   public var validRecordCount: Int {
     totalRecords - invalidBridgeIds - invalidOpenLabels - invalidCrossRatios
   }
-  
+
   public var validationRate: Double {
     totalRecords > 0 ? Double(validRecordCount) / Double(totalRecords) : 0.0
   }
@@ -288,7 +286,7 @@ public struct DataValidationResult {
     - Valid: \(isValid ? "Yes" : "No")
     """
   }
-  
+
   public var detailedSummary: String {
     """
     Detailed Validation Summary:
@@ -321,7 +319,8 @@ public struct ModelValidationResult {
   public init(modelPath: String = "",
               modelDescription: MLModelDescription? = nil,
               samplePrediction: MLFeatureProvider? = nil,
-              isValid: Bool = false) {
+              isValid: Bool = false)
+  {
     self.modelPath = modelPath
     self.modelDescription = modelDescription
     self.samplePrediction = samplePrediction
@@ -383,10 +382,11 @@ public struct FeatureEngineeringConfiguration {
   public let horizons: [Int]
   public let deterministicSeed: UInt64
   public let enableProgressReporting: Bool
-  
+
   public init(horizons: [Int] = defaultHorizons,
               deterministicSeed: UInt64 = 42,
-              enableProgressReporting: Bool = true) {
+              enableProgressReporting: Bool = true)
+  {
     self.horizons = horizons
     self.deterministicSeed = deterministicSeed
     self.enableProgressReporting = enableProgressReporting
@@ -401,31 +401,31 @@ public struct EnhancedPipelineConfig: Codable {
   public let inputPath: String
   public let outputDirectory: String
   public let trainingConfig: TrainingConfig
-  
+
   // Parallelization settings
   public let enableParallelization: Bool
   public let maxConcurrentHorizons: Int
   public let batchSize: Int
-  
+
   // Retry and recovery settings
   public let maxRetryAttempts: Int
   public let retryBackoffMultiplier: Double
   public let enableCheckpointing: Bool
   public let checkpointDirectory: String?
-  
+
   // Validation gates
   public let dataQualityThresholds: DataQualityThresholds
   public let modelPerformanceThresholds: ModelPerformanceThresholds
-  
+
   // Monitoring and logging
   public let enableDetailedLogging: Bool
   public let enableMetricsExport: Bool
   public let metricsExportPath: String?
-  
+
   // Performance tuning
   public let enableProgressReporting: Bool
   public let memoryOptimizationLevel: MemoryOptimizationLevel
-  
+
   public init(inputPath: String = "minutes_2025-01-27.ndjson",
               outputDirectory: String = FileManager.default.currentDirectoryPath,
               trainingConfig: TrainingConfig = .production,
@@ -442,7 +442,8 @@ public struct EnhancedPipelineConfig: Codable {
               enableMetricsExport: Bool = false,
               metricsExportPath: String? = nil,
               enableProgressReporting: Bool = true,
-              memoryOptimizationLevel: MemoryOptimizationLevel = .balanced) {
+              memoryOptimizationLevel: MemoryOptimizationLevel = .balanced)
+  {
     self.inputPath = inputPath
     self.outputDirectory = outputDirectory
     self.trainingConfig = trainingConfig
@@ -461,13 +462,13 @@ public struct EnhancedPipelineConfig: Codable {
     self.enableProgressReporting = enableProgressReporting
     self.memoryOptimizationLevel = memoryOptimizationLevel
   }
-  
+
   /// Load configuration from JSON file
   public static func load(from path: String) throws -> EnhancedPipelineConfig {
     let data = try Data(contentsOf: URL(fileURLWithPath: path))
     return try JSONDecoder.bridgeDecoder().decode(EnhancedPipelineConfig.self, from: data)
   }
-  
+
   /// Save configuration to JSON file
   public func save(to path: String) throws {
     let data = try JSONEncoder.bridgeEncoder().encode(self)
@@ -481,18 +482,17 @@ public struct DataQualityThresholds: Codable {
   public let minValidationRate: Double
   public let maxInvalidRecordRate: Double
   public let minDataVolume: Int
-  
-  public static let `default` = DataQualityThresholds(
-    maxNaNRate: 0.05,
-    minValidationRate: 0.95,
-    maxInvalidRecordRate: 0.02,
-    minDataVolume: 1000
-  )
-  
+
+  public static let `default` = DataQualityThresholds(maxNaNRate: 0.05,
+                                                      minValidationRate: 0.95,
+                                                      maxInvalidRecordRate: 0.02,
+                                                      minDataVolume: 1000)
+
   public init(maxNaNRate: Double = 0.05,
               minValidationRate: Double = 0.95,
               maxInvalidRecordRate: Double = 0.02,
-              minDataVolume: Int = 1000) {
+              minDataVolume: Int = 1000)
+  {
     self.maxNaNRate = maxNaNRate
     self.minValidationRate = minValidationRate
     self.maxInvalidRecordRate = maxInvalidRecordRate
@@ -505,16 +505,15 @@ public struct ModelPerformanceThresholds: Codable {
   public let minAccuracy: Double
   public let maxLoss: Double
   public let minF1Score: Double
-  
-  public static let `default` = ModelPerformanceThresholds(
-    minAccuracy: 0.75,
-    maxLoss: 0.5,
-    minF1Score: 0.70
-  )
-  
+
+  public static let `default` = ModelPerformanceThresholds(minAccuracy: 0.75,
+                                                           maxLoss: 0.5,
+                                                           minF1Score: 0.70)
+
   public init(minAccuracy: Double = 0.75,
               maxLoss: Double = 0.5,
-              minF1Score: Double = 0.70) {
+              minF1Score: Double = 0.70)
+  {
     self.minAccuracy = minAccuracy
     self.maxLoss = maxLoss
     self.minF1Score = minF1Score
@@ -523,10 +522,10 @@ public struct ModelPerformanceThresholds: Codable {
 
 /// Memory optimization levels
 public enum MemoryOptimizationLevel: String, Codable, CaseIterable {
-  case minimal = "minimal"      // Fastest, highest memory usage
-  case balanced = "balanced"    // Balanced performance/memory
-  case aggressive = "aggressive" // Slowest, lowest memory usage
-  
+  case minimal      // Fastest, highest memory usage
+  case balanced    // Balanced performance/memory
+  case aggressive // Slowest, lowest memory usage
+
   public var batchSizeMultiplier: Double {
     switch self {
     case .minimal: return 2.0
@@ -546,7 +545,7 @@ public struct PipelineExecutionState: Codable {
   public var stageProgress: Double
   public var error: String?
   public var metadata: [String: String]
-  
+
   public init(pipelineId: String,
               startTime: Date = Date(),
               lastCheckpoint: Date? = nil,
@@ -554,7 +553,8 @@ public struct PipelineExecutionState: Codable {
               currentStage: PipelineStage? = nil,
               stageProgress: Double = 0.0,
               error: String? = nil,
-              metadata: [String: String] = [:]) {
+              metadata: [String: String] = [:])
+  {
     self.pipelineId = pipelineId
     self.startTime = startTime
     self.lastCheckpoint = lastCheckpoint
@@ -575,7 +575,7 @@ public enum PipelineStage: String, Codable, CaseIterable {
   case modelTraining = "model_training"
   case modelValidation = "model_validation"
   case artifactExport = "artifact_export"
-  
+
   public var displayName: String {
     switch self {
     case .dataLoading: return "Data Loading"
@@ -588,4 +588,3 @@ public enum PipelineStage: String, Codable, CaseIterable {
     }
   }
 }
-

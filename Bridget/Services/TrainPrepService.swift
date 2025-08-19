@@ -70,6 +70,7 @@ public struct TrainPrepConfiguration {
 }
 
 // MARK: - Progress Reporting
+
 // TrainPrepProgressDelegate protocol moved to Protocols.swift
 
 // MARK: - Main Service
@@ -88,14 +89,12 @@ public class TrainPrepService {
 
     // Initialize performance monitoring
     let trainingBudget = configuration.trainingConfig.getPerformanceBudget()
-    let performanceMonitor = PerformanceMonitoringService(budget: PerformanceBudget(
-      parseTimeMs: trainingBudget.parseTimeMs,
-      featureEngineeringTimeMs: trainingBudget.featureEngineeringTimeMs,
-      mlMultiArrayConversionTimeMs: trainingBudget.mlMultiArrayConversionTimeMs,
-      trainingTimeMs: trainingBudget.trainingTimeMs,
-      validationTimeMs: trainingBudget.validationTimeMs,
-      peakMemoryMB: trainingBudget.peakMemoryMB
-    ))
+    let performanceMonitor = PerformanceMonitoringService(budget: PerformanceBudget(parseTimeMs: trainingBudget.parseTimeMs,
+                                                                                    featureEngineeringTimeMs: trainingBudget.featureEngineeringTimeMs,
+                                                                                    mlMultiArrayConversionTimeMs: trainingBudget.mlMultiArrayConversionTimeMs,
+                                                                                    trainingTimeMs: trainingBudget.trainingTimeMs,
+                                                                                    validationTimeMs: trainingBudget.validationTimeMs,
+                                                                                    peakMemoryMB: trainingBudget.peakMemoryMB))
 
     do {
       // Parse NDJSON data
@@ -106,12 +105,10 @@ public class TrainPrepService {
 
       // Feature engineering
       let featureService = FeatureEngineeringService(
-        configuration: FeatureEngineeringConfiguration(
-          horizons: configuration.trainingConfig.horizons,
-          deterministicSeed: configuration.trainingConfig.deterministicSeed
-        )
+        configuration: FeatureEngineeringConfiguration(horizons: configuration.trainingConfig.horizons,
+                                                       deterministicSeed: configuration.trainingConfig.deterministicSeed)
       )
-      
+
       let allFeatures = try await measurePerformanceAsync("featureEngineering", monitor: performanceMonitor) {
         try featureService.generateFeatures(from: ticks)
       }
@@ -122,7 +119,7 @@ public class TrainPrepService {
           try featureService.convertToMLMultiArrays(allFeatures[idx])
         }
         progressDelegate?.trainPrepDidProcessHorizon(horizon, featureCount: inputs.count)
-        
+
         // Store MLMultiArrays for Core ML training
         let modelPath = "\(configuration.outputDirectory)/model_horizon_\(horizon).mlmodel"
         progressDelegate?.trainPrepDidSaveHorizon(horizon, to: modelPath)
@@ -250,6 +247,7 @@ public extension TrainPrepService {
 }
 
 // MARK: - Data Validation Result
+
 // DataValidationResult struct moved to MLTypes.swift
 
 // MARK: - Integration Test Methods
@@ -413,12 +411,15 @@ public extension TrainPrepService {
 }
 
 // MARK: - Core ML Training Progress Delegate
+
 // CoreMLTrainingProgressDelegate protocol moved to Protocols.swift
 
 // MARK: - Model Validation Result
+
 // ModelValidationResult struct moved to MLTypes.swift
 
 // MARK: - Core ML Error Types
+
 // CoreMLError enum moved to MLTypes.swift
 
 // MARK: - Private Helper Methods
@@ -556,4 +557,3 @@ extension MLModelConfiguration {
     return self
   }
 }
-

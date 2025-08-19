@@ -38,9 +38,9 @@ class BridgeEventPersistenceService: BridgeEventPersistenceServiceProtocol {
     }
     try modelContext.save()
   }
-  
+
   // MARK: - BridgeEventPersistenceServiceProtocol Implementation
-  
+
   /// Save event data with the specified ID
   func saveEvent(_ event: Data, withID id: String) throws {
     // For now, this is a placeholder implementation
@@ -48,7 +48,7 @@ class BridgeEventPersistenceService: BridgeEventPersistenceServiceProtocol {
     // associated with the given ID
     print("Saving event with ID: \(id), data size: \(event.count) bytes")
   }
-  
+
   /// Load event data with the specified ID
   func loadEvent(withID id: String) throws -> Data? {
     // For now, this is a placeholder implementation
@@ -57,7 +57,7 @@ class BridgeEventPersistenceService: BridgeEventPersistenceServiceProtocol {
     print("Loading event with ID: \(id)")
     return nil
   }
-  
+
   /// Delete event data with the specified ID
   func deleteEvent(withID id: String) throws {
     // For now, this is a placeholder implementation
@@ -65,8 +65,8 @@ class BridgeEventPersistenceService: BridgeEventPersistenceServiceProtocol {
     // associated with the given ID
     print("Deleting event with ID: \(id)")
   }
-  
-    /// Fetch all event IDs
+
+  /// Fetch all event IDs
   func fetchAllEventIDs() throws -> [String] {
     // For now, this is a placeholder implementation
     // In a real implementation, you would return all stored event IDs

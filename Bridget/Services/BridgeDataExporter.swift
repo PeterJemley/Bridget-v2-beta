@@ -33,15 +33,14 @@ func clamp(_ value: Double, to range: ClosedRange<Double>) -> Double {
 /// Validates and clamps ProbeTick fields according to the business rules.
 /// - Parameter tick: The ProbeTick instance to validate.
 /// - Returns: A tuple containing the clamped/validated field values and a Bool indicating if any correction was applied.
-func validateAndClampFields(from tick: ProbeTick) -> (
-  crossK: Int,
-  crossN: Int,
-  viaPenaltySec: Int,
-  gateAnom: Double,
-  alternatesTotal: Int,
-  alternatesAvoid: Int,
-  hadCorrection: Bool
-) {
+func validateAndClampFields(from tick: ProbeTick) -> (crossK: Int,
+                                                      crossN: Int,
+                                                      viaPenaltySec: Int,
+                                                      gateAnom: Double,
+                                                      alternatesTotal: Int,
+                                                      alternatesAvoid: Int,
+                                                      hadCorrection: Bool)
+{
   var crossK = Int(tick.crossK)
   var crossN = Int(tick.crossN)
   var viaPenalty = Int(tick.viaPenaltySec)
@@ -134,21 +133,19 @@ func makeNDJSONRows(from ticks: [ProbeTick], isoFormatter: ISO8601DateFormatter)
   for tick in ticks {
     let (crossK, crossN, viaPenalty, gateAnom, alternatesTotal, alternatesAvoid, _) = validateAndClampFields(from: tick)
 
-    let row = NDJSONRow(
-      v: 1,
-      tsUtc: isoFormatter.string(from: tick.tsUtc),
-      bridgeId: Int(tick.bridgeId),
-      crossK: crossK,
-      crossN: crossN,
-      viaRoutable: tick.viaRoutable ? 1 : 0,
-      viaPenaltySec: viaPenalty,
-      gateAnom: gateAnom,
-      alternatesTotal: alternatesTotal,
-      alternatesAvoidSpan: alternatesAvoid,
-      freeEtaSec: tick.freeEtaSec == 0 ? nil : tick.freeEtaSec.map(Int.init),
-      viaEtaSec: tick.viaEtaSec == 0 ? nil : tick.viaEtaSec.map(Int.init),
-      openLabel: tick.openLabel ? 1 : 0
-    )
+    let row = NDJSONRow(v: 1,
+                        tsUtc: isoFormatter.string(from: tick.tsUtc),
+                        bridgeId: Int(tick.bridgeId),
+                        crossK: crossK,
+                        crossN: crossN,
+                        viaRoutable: tick.viaRoutable ? 1 : 0,
+                        viaPenaltySec: viaPenalty,
+                        gateAnom: gateAnom,
+                        alternatesTotal: alternatesTotal,
+                        alternatesAvoidSpan: alternatesAvoid,
+                        freeEtaSec: tick.freeEtaSec == 0 ? nil : tick.freeEtaSec.map(Int.init),
+                        viaEtaSec: tick.viaEtaSec == 0 ? nil : tick.viaEtaSec.map(Int.init),
+                        openLabel: tick.openLabel ? 1 : 0)
 
     let data = try encoder.encode(row)
     guard var jsonString = String(data: data, encoding: .utf8) else {

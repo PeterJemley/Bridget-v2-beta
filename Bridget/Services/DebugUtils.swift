@@ -5,8 +5,8 @@ import Foundation
 
 #if DEBUG
 
-import CoreLocation
+  import CoreLocation
 
-// BridgeCoordinateVerifier moved to BridgeCoordinateVerifier.swift
+  // BridgeCoordinateVerifier moved to BridgeCoordinateVerifier.swift
 
 #endif

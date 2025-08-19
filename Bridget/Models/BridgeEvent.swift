@@ -178,4 +178,3 @@ extension BridgeEvent {
                        isValidated: isValidated)
   }
 }
-

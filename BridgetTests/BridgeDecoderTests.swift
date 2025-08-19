@@ -554,4 +554,3 @@ struct BridgeDecoderTests {
 
    */
 }
-

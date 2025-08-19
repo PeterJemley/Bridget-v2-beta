@@ -234,4 +234,3 @@ class BridgeDataProcessor {
     return (models, failures)
   }
 }
-
