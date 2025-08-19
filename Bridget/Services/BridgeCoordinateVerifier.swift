@@ -30,7 +30,7 @@ import Foundation
       do {
         // Fetch coordinates from Seattle API using DEBUG-only access
         let data = try await BridgeDataService.shared.debug_fetchFromNetwork()
-        let records = try JSONDecoder().decode([BridgeOpeningRecord].self, from: data)
+        let records = try JSONDecoder.bridgeDecoder().decode([BridgeOpeningRecord].self, from: data)
 
         // Group by bridge ID and get unique coordinates
         let apiCoordinates = Dictionary(grouping: records) { $0.entityid }

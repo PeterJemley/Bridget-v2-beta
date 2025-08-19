@@ -98,6 +98,14 @@ graph TD
 
 ### 3. Cache-First Strategy
 **Decision**: Implement cache-first data access with network fallback
+
+## Project Planning & Implementation
+
+**For detailed project planning, implementation phases, and progress tracking, see:**
+- **Project Roadmap**: `Documentation/Seattle_Route_Optimization_Plan.md` - Complete implementation roadmap and architectural decisions
+- **Current Status**: `Documentation/refinements-integration-summary.md` - Latest refinements and integration status
+
+This document focuses on technical architecture reference. Project planning and implementation tracking is maintained in the `Documentation/` folder.
 **Rationale**:
 - Improved user experience with faster data access
 - Offline support for reliability

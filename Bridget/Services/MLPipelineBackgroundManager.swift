@@ -461,7 +461,7 @@ extension MLPipelineBackgroundManager {
   /// Gets the recent activities list
   func getRecentActivities() -> [PipelineActivity] {
     guard let data = UserDefaults.standard.data(forKey: recentActivitiesKey),
-          let activities = try? JSONDecoder().decode([PipelineActivity].self, from: data)
+          let activities = try? JSONDecoder.bridgeDecoder().decode([PipelineActivity].self, from: data)
     else {
       return []
     }
@@ -470,7 +470,7 @@ extension MLPipelineBackgroundManager {
 
   /// Saves the recent activities list
   private func saveRecentActivities(_ activities: [PipelineActivity]) {
-    if let data = try? JSONEncoder().encode(activities) {
+    if let data = try? JSONEncoder.bridgeEncoder().encode(activities) {
       UserDefaults.standard.set(data, forKey: recentActivitiesKey)
     }
   }

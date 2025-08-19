@@ -1,0 +1,11 @@
+{
+  "expected_minutes" : 1440,
+  "sample_type" : "DST Boundary",
+  "bridges" : 3,
+  "missing_minutes" : 0,
+  "file_size_mb" : 0.86399999999999999,
+  "description" : "Daylight Saving Time transition day with timezone handling, potential data anomalies, normal weekday patterns",
+  "collection_date" : "2025-08-16T21:33:24Z",
+  "total_rows" : 4320,
+  "validation_failures" : 0
+}

@@ -1,0 +1,31 @@
+{
+  "inputPath": "minutes_2025-01-27.ndjson",
+  "outputDirectory": "/Users/peterjemley/Developer/Bridget/output",
+  "trainingConfig": {
+    "horizons": [0, 3, 6, 9, 12],
+    "deterministicSeed": 42
+  },
+  "enableParallelization": true,
+  "maxConcurrentHorizons": 4,
+  "batchSize": 1000,
+  "maxRetryAttempts": 3,
+  "retryBackoffMultiplier": 2.0,
+  "enableCheckpointing": true,
+  "checkpointDirectory": "/Users/peterjemley/Developer/Bridget/checkpoints",
+  "dataQualityThresholds": {
+    "maxNaNRate": 0.05,
+    "minValidationRate": 0.95,
+    "maxInvalidRecordRate": 0.02,
+    "minDataVolume": 1000
+  },
+  "modelPerformanceThresholds": {
+    "minAccuracy": 0.75,
+    "maxLoss": 0.5,
+    "minF1Score": 0.70
+  },
+  "enableDetailedLogging": true,
+  "enableMetricsExport": true,
+  "metricsExportPath": "/Users/peterjemley/Developer/Bridget/metrics/pipeline_metrics.json",
+  "enableProgressReporting": true,
+  "memoryOptimizationLevel": "balanced"
+}

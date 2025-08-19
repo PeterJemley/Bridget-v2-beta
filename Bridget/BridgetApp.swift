@@ -61,7 +61,7 @@ struct BridgetApp: App {
       RoutePreference.self,
       TrafficInferenceCache.self,
       UserRouteHistory.self,
-      ProbeTick.self
+      ProbeTick.self,
     ])
     let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -82,12 +82,10 @@ struct BridgetApp: App {
     WindowGroup {
       VStack {
         ContentView()
-        AppLifecycleObserver(
-          onDidBecomeActive: handleAppDidBecomeActive,
-          onWillResignActive: handleAppWillResignActive,
-          onDidEnterBackground: handleAppDidEnterBackground,
-          onWillEnterForeground: handleAppWillEnterForeground
-        )
+        AppLifecycleObserver(onDidBecomeActive: handleAppDidBecomeActive,
+                             onWillResignActive: handleAppWillResignActive,
+                             onDidEnterBackground: handleAppDidEnterBackground,
+                             onWillEnterForeground: handleAppWillEnterForeground)
       }
       .task { initializeMLPipeline() }
     }
@@ -129,12 +127,10 @@ struct BridgetApp: App {
     backgroundManager.scheduleNextExecution()
 
     if notificationManager.isNotificationsEnabled {
-      notificationManager.showProgressNotification(
-        title: "ML Pipeline Active",
-        body: "Pipeline operations will continue in the background",
-        operation: .maintenance,
-        progress: 1.0
-      )
+      notificationManager.showProgressNotification(title: "ML Pipeline Active",
+                                                   body: "Pipeline operations will continue in the background",
+                                                   operation: .maintenance,
+                                                   progress: 1.0)
     }
   }
 
@@ -156,20 +152,16 @@ struct BridgetApp: App {
 
       if populationAge > 1, notificationManager.isNotificationTypeEnabled(.health) {
         let body = "Data population is \(populationAge) days old. Consider refreshing data."
-        notificationManager.showHealthNotification(
-          title: "Pipeline Health Warning",
-          body: body,
-          healthIssue: .dataStale
-        )
+        notificationManager.showHealthNotification(title: "Pipeline Health Warning",
+                                                   body: body,
+                                                   healthIssue: .dataStale)
       }
 
       if exportAge > 1, notificationManager.isNotificationTypeEnabled(.health) {
         let body = "Data export is \(exportAge) days old. Consider running export."
-        notificationManager.showHealthNotification(
-          title: "Pipeline Health Warning",
-          body: body,
-          healthIssue: .exportFailed
-        )
+        notificationManager.showHealthNotification(title: "Pipeline Health Warning",
+                                                   body: body,
+                                                   healthIssue: .exportFailed)
       }
     }
   }
@@ -177,10 +169,8 @@ struct BridgetApp: App {
   private func showWelcomeNotification() {
     let title = "Welcome to Bridget ML Pipeline!"
     let body = "Your ML training data pipeline is now active. Data will be collected and exported automatically."
-    notificationManager.showSuccessNotification(
-      title: title,
-      body: body,
-      operation: .maintenance
-    )
+    notificationManager.showSuccessNotification(title: title,
+                                                body: body,
+                                                operation: .maintenance)
   }
 }

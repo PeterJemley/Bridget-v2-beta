@@ -53,7 +53,7 @@ import SwiftData
 /// )
 /// ```
 @Model
-final class BridgeEvent {
+public final class BridgeEvent {
   // MARK: - Core Properties
 
   /// The API bridge identifier (e.g., "1", "2", "3")
@@ -178,3 +178,4 @@ extension BridgeEvent {
                        isValidated: isValidated)
   }
 }
+

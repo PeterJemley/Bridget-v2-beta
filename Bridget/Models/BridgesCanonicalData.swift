@@ -104,7 +104,7 @@ public enum BridgesCanonicalData {
                                                                 longitude: -122.314117),
                         endCoordinate: CLLocationCoordinate2D(latitude: 47.528836,
                                                               longitude: -122.314117),
-                        travelTime: 45)
+                        travelTime: 45),
   ]
 
   /// Lookup by ID
@@ -118,9 +118,9 @@ public enum BridgesCanonicalData {
   }
 
   #if DEBUG
-  /// DEBUG-only method to verify coordinates against API data.
-  public static func verifyCoordinates() async {
-    await BridgeCoordinateVerifier.verifyCoordinates()
-  }
+    /// DEBUG-only method to verify coordinates against API data.
+    public static func verifyCoordinates() async {
+      await BridgeCoordinateVerifier.verifyCoordinates()
+    }
   #endif
 }

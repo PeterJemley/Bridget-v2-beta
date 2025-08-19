@@ -184,7 +184,7 @@ struct ContentView: View {
         RoutePreference.self,
         TrafficInferenceCache.self,
         UserRouteHistory.self,
-        ProbeTick.self
+        ProbeTick.self,
       ], inMemory: true)
   }
 #endif

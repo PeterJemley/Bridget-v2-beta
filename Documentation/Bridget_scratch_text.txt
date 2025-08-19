@@ -1,0 +1,47 @@
+	•	Protocols.swift Creation: Create a new file named Protocols.swift to house all progress, status, and error reporting delegate protocols for the ML pipeline.
+	•	MLTypes.swift Creation: Create a new file named MLTypes.swift to house all shared, foundational types, error enums, and “shape” constants used throughout the ML pipeline.
+	•	Stabilize Shapes: Write constants for feature dimension, target dimension, and horizon list in MLTypes.swift.
+	•	File Organization: Move progress and status delegate protocols to `Protocols.swift`, and foundational structs/enums to `MLTypes.swift`.
+	•	Code Usage Update: Replace references in other modules with imports of `Protocols.swift` and `MLTypes.swift`, and replace duplicated literal constants with shared constants.
+	•	Documentation: Add documentation to `Protocols.swift` and `MLTypes.swift` to indicate that updates to shapes/horizons should be reflected throughout the pipeline.
+	•	Training Progress Delegate Protocol: Defines methods for reporting training progress, completion, failure, pipeline start, data processing, training start, training completion, and pipeline completion.
+	•	Feature Engineering Progress Delegate Protocol: Defines methods for reporting feature engineering start, horizon processing, completion, and failure.
+	•	ML Constants: Specifies the feature dimension as 12 and the target dimension as 1.
+	•	Default Horizons: An array of integers representing default horizon values: [0, 3, 6, 9, 12].
+	•	Data Models: Includes `FeatureVector`, `ModelValidationResult`, `CoreMLError`, `DataValidationResult`, and `ProbeTickRaw`.
+	•	Model Validation Result: Provides information about the validation of a trained model.
+
+
+
+After reviewing the latest version of PipelineParityValidatorTests.swift􀰓, here’s what I found:
+
+⸻
+
+Compliance with Apple Testing Framework
+
+• Test Structure:
+All tests are contained in an @Suite with the name "Pipeline Parity Validator Tests".
+
+• Assertion Style:
+Most assertions use #expect(...), which is the correct approach for the Apple Testing framework.
+
+• Test Discovery:
+All tests meant for execution are annotated with @Test and have descriptive names.
+Functions not intended as tests (helpers, setup, etc.) are not annotated.
+
+• No XCTest Remnants:
+The file does not import or use XCTest or its assertion methods.
+
+• Async/Throws Support:
+Functions are properly marked with async throws as needed, matching their behavior.
+
+⸻
+
+Verdict
+
+Your PipelineParityValidatorTests.swift􀰓 file is fully compliant with the Apple Testing framework and ready for use.
+All tests will be properly discovered and executed by the Swift Testing runner, and the assertion style is modern and consistent.
+
+⸻
+
+If you’d like to validate a specific test, review test output, or want advice on best practices for Apple Testing, let me know! Otherwise, you’re good to go.

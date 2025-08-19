@@ -182,7 +182,7 @@ struct MLPipelineTabView: View {
           GridItem(.flexible()),
           GridItem(.flexible()),
         ], spacing: 8) {
-          ForEach([0, 3, 6, 9, 12], id: \.self) { horizon in
+          ForEach(defaultHorizons, id: \.self) { horizon in
             Button(action: {
               startSingleHorizonTraining(horizon: horizon)
             }) {

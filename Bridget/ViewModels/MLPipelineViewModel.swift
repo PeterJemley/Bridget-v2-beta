@@ -82,11 +82,10 @@ final class MLPipelineViewModel: CoreMLTrainingProgressDelegate {
 
   // MARK: - Core ML Training Methods
 
-  func startTrainingPipeline(
-    ndjsonPath: String,
-    outputDirectory: String,
-    horizons: [Int] = [0, 3, 6, 9, 12]
-  ) {
+  func startTrainingPipeline(ndjsonPath: String,
+                             outputDirectory: String,
+                             horizons: [Int] = defaultHorizons)
+  {
     isTraining = true
     trainingProgress = 0.0
     trainingStatus = "Starting training pipeline..."
@@ -95,13 +94,11 @@ final class MLPipelineViewModel: CoreMLTrainingProgressDelegate {
     Task.detached { [weak self] in
       guard let self = self else { return }
       do {
-        let models = try await TrainPrepService.createTrainingPipeline(
-          ndjsonPath: ndjsonPath,
-          outputDirectory: outputDirectory,
-          horizons: horizons,
-          modelConfiguration: nil,
-          progressDelegate: self
-        )
+        let models = try await TrainPrepService.createTrainingPipeline(ndjsonPath: ndjsonPath,
+                                                                       outputDirectory: outputDirectory,
+                                                                       horizons: horizons,
+                                                                       modelConfiguration: nil,
+                                                                       progressDelegate: self)
 
         await MainActor.run {
           self.trainedModels = models
@@ -120,11 +117,10 @@ final class MLPipelineViewModel: CoreMLTrainingProgressDelegate {
     }
   }
 
-  func startSingleHorizonTraining(
-    csvPath: String,
-    horizon: Int,
-    outputDirectory: String
-  ) {
+  func startSingleHorizonTraining(csvPath: String,
+                                  horizon: Int,
+                                  outputDirectory: String)
+  {
     isTraining = true
     trainingProgress = 0.0
     trainingStatus = "Training model for \(horizon)-minute horizon..."
@@ -133,13 +129,11 @@ final class MLPipelineViewModel: CoreMLTrainingProgressDelegate {
     Task.detached { [weak self] in
       guard let self = self else { return }
       do {
-        let modelPath = try await TrainPrepService.trainCoreMLModel(
-          csvPath: csvPath,
-          modelName: "BridgeLiftPredictor_horizon_\(horizon)",
-          outputDirectory: outputDirectory,
-          configuration: nil,
-          progressDelegate: self
-        )
+        let modelPath = try await TrainPrepService.trainCoreMLModel(csvPath: csvPath,
+                                                                    modelName: "BridgeLiftPredictor_horizon_\(horizon)",
+                                                                    outputDirectory: outputDirectory,
+                                                                    configuration: nil,
+                                                                    progressDelegate: self)
 
         await MainActor.run {
           self.trainedModels[horizon] = modelPath
@@ -237,4 +231,3 @@ extension MLPipelineViewModel {
     }
   }
 }
-

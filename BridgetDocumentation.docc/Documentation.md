@@ -8,151 +8,28 @@ Bridget is a route optimization app that helps users navigate Seattle's drawbrid
 
 ## Implementation Status
 
-### Phase 1: Historical Data Integration ✅ **COMPLETED**
-- [x] Successfully integrated with Seattle Open Data API: `https://data.seattle.gov/resource/gm8h-9449.json`
-- [x] **Historical bridge opening data only** - no real-time bridge status available
-- [x] Implemented proper JSON decoding for historical bridge opening records
-- [x] Fixed date parsing to handle actual API format (`yyyy-MM-dd'T'HH:mm:ss.SSS`)
-- [x] All tests passing with historical data
-- [x] Cache infrastructure prepared for Phase 2
+**For detailed implementation status, project phases, and progress tracking, see:**
+- **Project Planning**: `Documentation/Seattle_Route_Optimization_Plan.md` - Complete implementation roadmap and status
+- **Current Progress**: `Documentation/refinements-integration-summary.md` - Latest refinements integration status
 
-### Phase 1.5: Data Validation & Error Handling ✅ **COMPLETED**
-- [x] Enhanced API response validation with Content-Type and payload size checks
-- [x] Implemented comprehensive error classification with detailed diagnostics
-- [x] Added business logic validation (bridge ID verification, date range filtering)
-- [x] Centralized JSON decoder configuration with key/date strategies
-- [x] Added debug logging for validation failures and skipped records
-- [x] Comprehensive unit test coverage for all validation branches
-- [x] Graceful degradation with detailed error context for production debugging
+### Quick Status Overview
+- **Phase 1**: ✅ Historical Data Integration - COMPLETED
+- **Phase 1.5**: ✅ Data Validation & Error Handling - COMPLETED  
+- **Phase 2**: 🔄 Offline Caching - IN PROGRESS
+- **Phase 2.5**: ✅ ML Training Data Pipeline - COMPLETED
+- **Phase 3**: ⏸️ HTTP Caching Optimization - BACKLOGGED
 
 ## Business Validation and Data Quality
 
 Bridget collects and reports all business validation failures encountered during data processing. See the validation documentation for details on validation failure reasons, their propagation, and API usage.
 
-### Phase 2: Offline Caching **IN PROGRESS**
-- [x] Cache metadata fields implemented with `@ObservationIgnored`
-- [x] Cache serialization/deserialization ready
-- [x] Retry logic with exponential backoff implemented
-- [x] Cache-first strategy implemented
-- [ ] Complete offline caching infrastructure
-- [ ] Implement offline mode detection
-- [ ] Implement background refresh
-- [ ] Schedule twice-daily fetches
-- [ ] Add basic cache management UI (settings/preferences)
-
-### Phase 2.5: ML Training Data Pipeline ✅ **COMPLETED**
-- [x] **ProbeTick Data Model**: SwiftData model for per-minute bridge snapshots
-- [x] **Data Population Service**: Converts BridgeEvent data to ProbeTick records
-- [x] **Daily Export System**: NDJSON export with validation and metrics
-- [x] **Feature Engineering**: 14 standardized ML features with proper validation
-- [x] **Python Processing**: Scripts for ML dataset creation and train/validation splits
-- [x] **Complete Testing**: End-to-end pipeline validation with comprehensive test suite
-- [x] **Documentation**: Full DocC documentation with examples and troubleshooting
-
-**See**: 
-- <doc:MLTrainingDataPipelineOverview> - High-level overview and quick start
-- <doc:MLTrainingDataPipeline> - Complete detailed documentation
-
-### Phase 3: HTTP Caching Optimization **BACKLOGGED**
-- [ ] HTTP conditional GET with ETag/If-None-Match headers
-- [ ] 304 "Not Modified" response handling
-- [ ] UserDefaults ETag storage
-- [ ] Bandwidth optimization for frequent polling scenarios
-
 ## Detailed Implementation Checklist
 
-### Phase 1: Historical Data Integration ✅
+**For complete implementation details and checklists, see:**
+- **Project Planning**: `Documentation/Seattle_Route_Optimization_Plan.md` - Comprehensive implementation checklists for all phases
+- **Current Status**: `Documentation/refinements-integration-summary.md` - Latest refinements and integration status
 
-- [x] **Implement historical API integration**
-  - [x] Connect to Seattle Open Data API (historical data only)
-  - [x] Implement proper JSON decoding for historical records
-  - [x] Handle API response format
-  - [x] Fix date parsing for actual API format
-  - [x] Remove fallback to sample data
-  - [x] Test with historical data
-
-- [x] **Error handling for network issues**
-  - [x] Implement retry logic
-  - [x] Handle network timeouts
-  - [x] Provide user-friendly error messages
-
-- [x] **Data validation**
-  - [x] Validate API response structure
-  - [x] Handle missing or malformed data
-  - [x] Test edge cases
-
-### Phase 1.5: Data Validation & Error Handling ✅
-
-- [x] **Enhanced API response validation**
-  - [x] Content-Type header validation with debug logging
-  - [x] Payload size validation (5MB limit for safety)
-  - [x] HTTP status code validation
-  - [x] Empty response handling
-
-- [x] **Comprehensive error classification**
-  - [x] Enhanced BridgeDataError enum with associated context
-  - [x] LocalizedError conformance for user-friendly messages
-  - [x] Detailed error descriptions for debugging
-  - [x] Raw data preservation for error analysis
-
-- [x] **Business logic validation**
-  - [x] Known bridge ID validation with graceful filtering
-  - [x] Date range validation (10 years back, 1 year forward)
-  - [x] Required field validation with detailed logging
-  - [x] Skipped record counting and reporting
-
-- [x] **Centralized JSON processing**
-  - [x] Key decoding strategy for flexible JSON handling
-  - [x] Date decoding strategy for automatic parsing
-  - [x] Error context preservation for debugging
-  - [x] Comprehensive unit test coverage
-
-### Phase 2: Offline Caching **IN PROGRESS**
-
-- [x] **Cache infrastructure setup**
-  - [x] Cache metadata fields with `@ObservationIgnored`
-  - [x] Cache serialization/deserialization
-  - [x] Retry logic with exponential backoff
-  - [x] Cache-first strategy implementation
-
-- [ ] **Complete offline caching infrastructure**
-  - [ ] Implement offline mode detection
-  - [ ] Implement background refresh
-  - [ ] Schedule twice-daily fetches
-  - [ ] Add basic cache management UI (settings/preferences)
-
-- [ ] **Cache management features**
-  - [ ] Cache size monitoring and cleanup
-  - [ ] Cache expiration policies
-  - [ ] Cache invalidation strategies
-  - [ ] Cache performance metrics
-
-### Phase 3: HTTP Caching Optimization **BACKLOGGED**
-
-- [ ] **HTTP conditional requests**
-  - [ ] ETag/If-None-Match header support
-  - [ ] 304 "Not Modified" response handling
-  - [ ] UserDefaults ETag storage
-  - [ ] Bandwidth optimization
-
-- [ ] **Advanced caching features**
-  - [ ] Request batching and optimization
-  - [ ] Response compression
-  - [ ] Connection pooling
-  - [ ] Cache warming strategies
-
-### Phase 4: UI/UX Improvements **PLANNED**
-
-- [ ] **Loading states and user feedback**
-  - [ ] Add ProgressView during data loading
-  - [ ] Add skeleton placeholders for route list items
-  - [ ] Surface errors with standard SwiftUI .alert and retry button
-  - [ ] Basic loading states for cache operations
-
-- [ ] **Enhanced user experience**
-  - [ ] Pull-to-refresh functionality
-  - [ ] Offline indicators
-  - [ ] Error recovery options
+This document focuses on API reference and technical documentation. Project planning and implementation tracking is maintained in the `Documentation/` folder.
   - [ ] User preferences and settings
 
 ### Phase 5: Advanced Features **FUTURE**

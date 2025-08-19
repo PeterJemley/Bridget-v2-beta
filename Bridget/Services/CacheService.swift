@@ -124,8 +124,7 @@ class CacheService {
       // Ensure cache directory exists
       _ = getCacheDirectory()
 
-      let encoder = JSONEncoder()
-      encoder.dateEncodingStrategy = .iso8601
+      let encoder = JSONEncoder.bridgeEncoder(dateEncodingStrategy: .iso8601)
       let data = try encoder.encode(data)
       try data.write(to: cacheURL)
     } catch {

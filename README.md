@@ -394,6 +394,27 @@ The project uses Git hooks that automatically:
 3. Block commits on remaining errors
 4. Re-stage modified files
 
+## Project Status & Refactoring Progress
+
+The Bridget project is currently undergoing a comprehensive ML pipeline refactoring to improve modularity, testability, and maintainability. See [Documentation/refactoring-status.md](Documentation/refactoring-status.md) for detailed progress tracking.
+
+### ✅ Completed Refactoring Items
+
+1. **Protocols & Types Carve-Out** - Centralized all ML pipeline protocols and shared types
+2. **Feature Engineering Module** - Pure, stateless feature generation with comprehensive testing
+3. **Data Validation Module** - Comprehensive data quality assurance with actionable feedback
+
+### 🔄 Next Phase
+
+- **Core ML Training Module** - Extract training logic while maintaining interface compatibility
+
+### 🎯 Architecture Goals
+
+- **Separation of Concerns**: Each module has a single, focused responsibility
+- **Testability**: Comprehensive unit tests for all extracted functionality  
+- **Maintainability**: Clear interfaces and centralized type definitions
+- **Extensibility**: Easy to add new validation rules or feature engineering steps
+
 ## Testing
 
 ### Running Tests

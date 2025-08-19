@@ -48,74 +48,7 @@ enum BridgeID: String, CaseIterable, Equatable {
 
 // MARK: - ValidationFailureReason Enum
 
-/// Comprehensive business validation failure reasons for bridge records.
-///
-/// Used to classify reasons why a given bridge opening record fails validation checks.
-///
-/// - Note: Use `description` to obtain a user-friendly explanation of the failure.
-enum ValidationFailureReason: CustomStringConvertible, Equatable {
-  case emptyEntityID
-  case emptyEntityName
-  case emptyEntityType
-  case invalidEntityType(String)
-  case unknownBridgeID(String)
-  case malformedOpenDate(String)
-  case malformedCloseDate(String)
-  case outOfRangeOpenDate(Date)
-  case closeDateNotAfterOpenDate(open: Date, close: Date)
-  case invalidLatitude(Double?)
-  case invalidLongitude(Double?)
-  case negativeMinutesOpen(Int?)
-  case minutesOpenMismatch(reported: Int, actual: Int)
-
-  case malformedLatitude(String)
-  case malformedLongitude(String)
-  case malformedMinutesOpen(String)
-
-  case geospatialMismatch(expectedLat: Double, expectedLon: Double, actualLat: Double, actualLon: Double)
-
-  /// A descriptive string explaining the validation failure reason.
-  var description: String {
-    switch self {
-    case .emptyEntityID:
-      return "Empty entityid"
-    case .emptyEntityName:
-      return "Empty entityname"
-    case .emptyEntityType:
-      return "Empty entitytype"
-    case let .invalidEntityType(value):
-      return "Invalid entitytype: \(value)"
-    case let .unknownBridgeID(id):
-      return "Unknown bridge ID: \(id)"
-    case let .malformedOpenDate(value):
-      return "Malformed open date: \(value)"
-    case let .malformedCloseDate(value):
-      return "Malformed close date: \(value)"
-    case let .outOfRangeOpenDate(date):
-      return "Open date out of allowed range: \(date)"
-    case let .closeDateNotAfterOpenDate(open, close):
-      return "Close date (\(close)) is not after open date (\(open))"
-    case let .invalidLatitude(value):
-      return "Invalid latitude: \(String(describing: value)) (must be between -90 and 90)"
-    case let .invalidLongitude(value):
-      return "Invalid longitude: \(String(describing: value)) (must be between -180 and 180)"
-    case let .negativeMinutesOpen(value):
-      return "Negative minutes open: \(String(describing: value))"
-    case let .minutesOpenMismatch(reported, actual):
-      return "minutesopen mismatch: reported \(reported), actual \(actual) " +
-        "(should match the difference between open/close times)"
-    case let .malformedLatitude(raw):
-      return "Malformed latitude: \(raw) (not a valid number)"
-    case let .malformedLongitude(raw):
-      return "Malformed longitude: \(raw) (not a valid number)"
-    case let .malformedMinutesOpen(raw):
-      return "Malformed minutesopen: \(raw) (not a valid number)"
-    case let .geospatialMismatch(expectedLat, expectedLon, actualLat, actualLon):
-      return "Geospatial mismatch: expected (\(expectedLat), \(expectedLon)), " +
-        "got (\(actualLat), \(actualLon)) (too far from known location)"
-    }
-  }
-}
+// ValidationFailureReason enum moved to ValidationTypes.swift
 
 // MARK: - BridgeOpeningRecord Struct
 
@@ -273,58 +206,12 @@ class BridgeDataProcessor {
   func processHistoricalData(_ data: Data) throws -> ([BridgeStatusModel], [ValidationFailure]) {
     var failures: [ValidationFailure] = []
     var validRecords: [BridgeOpeningRecord] = []
-    let decoder = JSONDecoder()
-    decoder.keyDecodingStrategy = .useDefaultKeys
+    let decoder = JSONDecoder.bridgeDecoder()
     do {
       let records = try decoder.decode([BridgeOpeningRecord].self, from: data)
       for record in records {
-        guard !record.entityid.isEmpty else {
-          failures.append(ValidationFailure(record: record, reason: .emptyEntityID))
-          continue
-        }
-        guard !record.entityname.isEmpty else {
-          failures.append(ValidationFailure(record: record, reason: .emptyEntityName))
-          continue
-        }
-        guard let _ = BridgeID(rawValue: record.entityid) else {
-          failures.append(ValidationFailure(record: record, reason: .unknownBridgeID(record.entityid)))
-          continue
-        }
-        guard let openDate = record.openDate else {
-          failures.append(ValidationFailure(record: record, reason: .malformedOpenDate(record.opendatetime)))
-          continue
-        }
-        let now = Date()
-        let calendar = Calendar.current
-        let minDate = calendar.date(byAdding: .year, value: -10, to: now) ?? now
-        let maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
-        if openDate < minDate || openDate > maxDate {
-          failures.append(ValidationFailure(record: record, reason: .outOfRangeOpenDate(openDate)))
-          continue
-        }
-        guard let closeDate = record.closeDate else {
-          failures.append(ValidationFailure(record: record, reason: .malformedCloseDate(record.closedatetime)))
-          continue
-        }
-        if closeDate <= openDate {
-          failures.append(ValidationFailure(record: record, reason: .closeDateNotAfterOpenDate(open: openDate, close: closeDate)))
-          continue
-        }
-        guard let lat = record.latitudeValue, lat >= -90, lat <= 90 else {
-          failures.append(ValidationFailure(record: record, reason: .invalidLatitude(record.latitudeValue)))
-          continue
-        }
-        guard let lon = record.longitudeValue, lon >= -180, lon <= 180 else {
-          failures.append(ValidationFailure(record: record, reason: .invalidLongitude(record.longitudeValue)))
-          continue
-        }
-        guard let minutesOpen = record.minutesOpenValue, minutesOpen >= 0 else {
-          failures.append(ValidationFailure(record: record, reason: .negativeMinutesOpen(record.minutesOpenValue)))
-          continue
-        }
-        let actualMinutes = Int(closeDate.timeIntervalSince(openDate) / 60)
-        if abs(minutesOpen - actualMinutes) > 1 {
-          failures.append(ValidationFailure(record: record, reason: .minutesOpenMismatch(reported: minutesOpen, actual: actualMinutes)))
+        if let reason = validationFailureReason(for: record) {
+          failures.append(ValidationFailure(record: record, reason: reason))
           continue
         }
         validRecords.append(record)
@@ -347,3 +234,4 @@ class BridgeDataProcessor {
     return (models, failures)
   }
 }
+
