@@ -464,7 +464,7 @@ public class EnhancedTrainPrepService {
     var result: [ProbeTickRaw] = []
 
     for (i, line) in data.split(separator: "\n").enumerated() {
-      guard !line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
+      if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
 
       if let decoded = try? JSONDecoder.bridgeDecoder().decode(ProbeTickRaw.self, from: Data(line.utf8)) {
         result.append(decoded)
@@ -501,19 +501,13 @@ public enum PipelineError: LocalizedError {
 
 extension RecoveryService {
   func createCheckpoint(stage: PipelineStage, state: PipelineExecutionState) throws {
-    let checkpointURL = URL(fileURLWithPath: checkpointDirectory).appendingPathComponent("checkpoint_\(stage.rawValue).json")
-    let encoder = JSONEncoder.bridgeEncoder(outputFormatting: .prettyPrinted)
-    let data = try encoder.encode(state)
-    try data.write(to: checkpointURL)
+    _ = try createCheckpoint(state, for: stage, id: "pipeline_state")
   }
 
   func loadCheckpoint(stage: PipelineStage) throws -> PipelineExecutionState {
-    let checkpointURL = URL(fileURLWithPath: checkpointDirectory).appendingPathComponent("checkpoint_\(stage.rawValue).json")
-    guard FileManager.default.fileExists(atPath: checkpointURL.path) else {
+    guard let state = try loadCheckpoint(PipelineExecutionState.self, for: stage, id: "pipeline_state") else {
       throw PipelineError.checkpointNotFound(stage)
     }
-    let data = try Data(contentsOf: checkpointURL)
-    let decoder = JSONDecoder.bridgeDecoder()
-    return try decoder.decode(PipelineExecutionState.self, from: data)
+    return state
   }
 }

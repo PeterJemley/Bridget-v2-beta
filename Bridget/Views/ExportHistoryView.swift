@@ -6,7 +6,7 @@ public struct ExportHistoryView: View {
   @State private var selectedFileURL: URL?
   @State private var showingFilePreview = false
 
-  private let fileManager = FileManager.default
+
   private let logger = Logger(subsystem: "Bridget", category: "ExportHistoryView")
 
   public var body: some View {
@@ -69,19 +69,17 @@ public struct ExportHistoryView: View {
     var files: [ExportedFile] = []
 
     // Gather from both Documents and Downloads (if macOS)
-    let documentURLs = [FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!]
-    #if os(macOS)
-      let downloadsURLs = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)
-    #else
-      let downloadsURLs: [URL] = []
-    #endif
+    do {
+      let documentURLs = [try FileManagerUtils.documentsDirectory()]
+      let downloadsURLs = FileManagerUtils.downloadsDirectory() != nil ? [FileManagerUtils.downloadsDirectory()!] : []
+      
+      let searchURLs = documentURLs + downloadsURLs
 
-    let searchURLs = documentURLs + downloadsURLs
-
-    for baseURL in searchURLs {
-      do {
-        let contents = try fileManager.contentsOfDirectory(at: baseURL, includingPropertiesForKeys: [.contentModificationDateKey], options: [.skipsHiddenFiles])
-        let ndjsonFiles = contents.filter { $0.pathExtension.lowercased() == "ndjson" }
+      for baseURL in searchURLs {
+        do {
+          let contents = try FileManagerUtils.enumerateFiles(in: baseURL, 
+                                                             properties: [.contentModificationDateKey])
+          let ndjsonFiles = contents.filter { $0.pathExtension.lowercased() == "ndjson" }
 
         for fileURL in ndjsonFiles {
           let resourceValues = try fileURL.resourceValues(forKeys: [.contentModificationDateKey])
@@ -92,6 +90,9 @@ public struct ExportHistoryView: View {
       } catch {
         logger.error("Failed to list directory \(baseURL.path): \(error.localizedDescription)")
       }
+    }
+    } catch {
+      logger.error("Failed to access directories: \(error.localizedDescription)")
     }
 
     // Sort files newest first
@@ -107,7 +108,7 @@ public struct ExportHistoryView: View {
     for index in offsets {
       let file = exportedFiles[index]
       do {
-        try fileManager.removeItem(at: file.url)
+        try FileManagerUtils.removeFile(at: file.url)
       } catch {
         logger.error("Failed to delete file \(file.url.path): \(error.localizedDescription)")
       }

@@ -278,7 +278,7 @@ public class RecoveryService {
   public func loadCheckpoint<T: Codable>(_ type: T.Type, for stage: PipelineStage, id: String) throws -> T? {
     let checkpointPath = "\(checkpointDirectory)/\(stage.rawValue)_\(id).checkpoint"
 
-    guard FileManager.default.fileExists(atPath: checkpointPath) else {
+    guard FileManagerUtils.fileExists(at: checkpointPath) else {
       logger.debug("No checkpoint found for stage \(stage.rawValue) at \(checkpointPath)")
       return nil
     }
@@ -302,7 +302,7 @@ public class RecoveryService {
     let checkpointPath = "\(checkpointDirectory)/\(stage.rawValue)_\(id).checkpoint"
 
     do {
-      try FileManager.default.removeItem(atPath: checkpointPath)
+      try FileManagerUtils.removeFile(at: checkpointPath)
       logger.info("Deleted checkpoint for stage \(stage.rawValue) at \(checkpointPath)")
     } catch {
       logger.error("Failed to delete checkpoint for stage \(stage.rawValue): \(error.localizedDescription)")
@@ -313,8 +313,10 @@ public class RecoveryService {
   /// List available checkpoints
   public func listCheckpoints() -> [String] {
     do {
-      let contents = try FileManager.default.contentsOfDirectory(atPath: checkpointDirectory)
-      return contents.filter { $0.hasSuffix(".checkpoint") }
+      let files = try FileManagerUtils.enumerateFiles(at: checkpointDirectory) { url in
+        url.lastPathComponent.hasSuffix(".checkpoint")
+      }
+      return files.map { $0.lastPathComponent }
     } catch {
       logger.error("Failed to list checkpoints: \(error.localizedDescription)")
       return []
@@ -323,33 +325,21 @@ public class RecoveryService {
 
   /// Clean up old checkpoints
   public func cleanupOldCheckpoints(olderThan age: TimeInterval) throws {
-    let contents = try FileManager.default.contentsOfDirectory(atPath: checkpointDirectory)
-    let now = Date()
-
-    for item in contents where item.hasSuffix(".checkpoint") {
-      let itemPath = "\(checkpointDirectory)/\(item)"
-      let attributes = try FileManager.default.attributesOfItem(atPath: itemPath)
-
-      if let creationDate = attributes[.creationDate] as? Date,
-         now.timeIntervalSince(creationDate) > age
-      {
-        try FileManager.default.removeItem(atPath: itemPath)
-        logger.info("Cleaned up old checkpoint: \(item)")
-      }
+    let cutoffDate = Date().addingTimeInterval(-age)
+    try FileManagerUtils.removeOldFiles(in: URL(fileURLWithPath: checkpointDirectory), 
+                                        olderThan: cutoffDate) { url in
+      url.lastPathComponent.hasSuffix(".checkpoint")
     }
   }
 
   // MARK: - Private Methods
 
   private func createCheckpointDirectoryIfNeeded() {
-    if !FileManager.default.fileExists(atPath: checkpointDirectory) {
-      do {
-        try FileManager.default.createDirectory(atPath: checkpointDirectory,
-                                                withIntermediateDirectories: true)
-        logger.info("Created checkpoint directory: \(self.checkpointDirectory)")
-      } catch {
-        logger.error("Failed to create checkpoint directory: \(error.localizedDescription)")
-      }
+    do {
+      try FileManagerUtils.ensureDirectoryExists(at: checkpointDirectory)
+      logger.info("Created checkpoint directory: \(self.checkpointDirectory)")
+    } catch {
+      logger.error("Failed to create checkpoint directory: \(error.localizedDescription)")
     }
   }
 }

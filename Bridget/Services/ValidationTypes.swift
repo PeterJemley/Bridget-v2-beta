@@ -3,6 +3,61 @@
 
 import Foundation
 
+/// A single bridge opening record decoded from JSON data.
+///
+/// Contains raw string values and computed properties for convenient typed access.
+/// Used internally during validation and transformation.
+public struct BridgeOpeningRecord: Codable, Equatable {
+  public let entitytype: String
+  public let entityname: String
+  public let entityid: String
+  public let opendatetime: String
+  public let closedatetime: String
+  public let minutesopen: String
+  public let latitude: String
+  public let longitude: String
+
+  /// Date formatter for parsing opendatetime and closedatetime strings.
+  private static let dateFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    return formatter
+  }()
+
+  /// Parsed open date, or `nil` if the string is malformed.
+  public var openDate: Date? {
+    Self.dateFormatter.date(from: opendatetime)
+  }
+
+  /// Parsed close date, or `nil` if the string is malformed.
+  public var closeDate: Date? {
+    Self.dateFormatter.date(from: closedatetime)
+  }
+
+  /// Parsed minutes open as integer, or `nil` if the string is malformed.
+  public var minutesOpenValue: Int? { Int(minutesopen) }
+
+  /// Parsed latitude as double, or `nil` if the string is malformed.
+  public var latitudeValue: Double? { Double(latitude) }
+
+  /// Parsed longitude as double, or `nil` if the string is malformed.
+  public var longitudeValue: Double? { Double(longitude) }
+}
+
+/// A validation failure containing the record that failed validation and the reason.
+public struct ValidationFailure: Equatable {
+  /// The record that failed validation.
+  public let record: BridgeOpeningRecord
+  /// The reason for validation failure.
+  public let reason: ValidationFailureReason
+  
+  public init(record: BridgeOpeningRecord, reason: ValidationFailureReason) {
+    self.record = record
+    self.reason = reason
+  }
+}
+
 /// Comprehensive business validation failure reasons for bridge records.
 public enum ValidationFailureReason: CustomStringConvertible, Equatable {
   case emptyEntityID

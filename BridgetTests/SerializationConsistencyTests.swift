@@ -55,9 +55,8 @@ struct SerializationConsistencyTests {
     let model = SampleModel(id: 4, name: "CustomDate", date: sampleDate, snake_case_field: "custom")
     let encoder = JSONEncoder.bridgeEncoder(dateEncodingStrategy: .millisecondsSince1970)
     let data = try encoder.encode(model)
-    // decode with matching strategy
-    let decoder = JSONDecoder()
-    decoder.dateDecodingStrategy = .millisecondsSince1970
+    // Uses factory with custom date strategy for policy compliance
+    let decoder = JSONDecoder.bridgeDecoder(dateDecodingStrategy: .millisecondsSince1970)
     let decoded = try decoder.decode(SampleModel.self, from: data)
     #expect(model == decoded)
   }
@@ -76,3 +75,4 @@ struct SerializationConsistencyTests {
     }
   }
 }
+

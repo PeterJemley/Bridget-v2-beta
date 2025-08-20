@@ -63,7 +63,7 @@ class AppStateModel {
   /// Validation failures encountered during the loading and processing of bridge data.
   /// These are not fatal errors but indicate issues that may affect data integrity.
   @ObservationIgnored
-  var validationFailures: [BridgeDataProcessor.ValidationFailure] = []
+  var validationFailures: [ValidationFailure] = []
 
   // MARK: - Cache Metadata (Internal Only)
 

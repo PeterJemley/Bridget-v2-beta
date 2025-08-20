@@ -340,31 +340,25 @@ final class MLPipelineBackgroundManager {
   // MARK: - Maintenance Operations
 
   private func cleanupOldExports() {
-    let fileManager = FileManager.default
-    let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-    let downloadsPath = fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+    do {
+      let documentsPath = try FileManagerUtils.documentsDirectory()
+      let downloadsPath = FileManagerUtils.downloadsDirectory()
+      
+      let paths = [documentsPath] + (downloadsPath != nil ? [downloadsPath!] : [])
+      let calendar = Calendar.current
+      let cutoffDate = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date()
 
-    let paths = [documentsPath, downloadsPath]
-    let calendar = Calendar.current
-    let cutoffDate = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date()
-
-    for path in paths {
-      do {
-        let files = try fileManager.contentsOfDirectory(at: path, includingPropertiesForKeys: [.creationDateKey])
-
-        for file in files {
-          if file.lastPathComponent.hasPrefix("minutes_"), file.lastPathComponent.hasSuffix(".ndjson") {
-            if let creationDate = try file.resourceValues(forKeys: [.creationDateKey]).creationDate,
-               creationDate < cutoffDate
-            {
-              try fileManager.removeItem(at: file)
-              logger.info("Cleaned up old export file: \(file.lastPathComponent)")
-            }
+      for path in paths {
+        do {
+          try FileManagerUtils.removeOldFiles(in: path, olderThan: cutoffDate) { file in
+            file.lastPathComponent.hasPrefix("minutes_") && file.lastPathComponent.hasSuffix(".ndjson")
           }
+        } catch {
+          logger.error("Failed to cleanup old exports in \(path.path): \(error.localizedDescription)")
         }
-      } catch {
-        logger.error("Failed to cleanup old exports in \(path.path): \(error.localizedDescription)")
       }
+    } catch {
+      logger.error("Failed to access directories for cleanup: \(error.localizedDescription)")
     }
   }
 

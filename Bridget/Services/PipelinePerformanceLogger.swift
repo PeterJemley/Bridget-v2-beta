@@ -240,7 +240,13 @@ final class PipelinePerformanceLogger: NSObject {
   }
 
   private func saveReport(_ report: String) {
-    let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    let documentsPath: URL
+    do {
+      documentsPath = try FileManagerUtils.documentsDirectory()
+    } catch {
+      self.logger.error("Failed to access Documents directory: \(error.localizedDescription)")
+      return
+    }
     let reportURL = documentsPath.appendingPathComponent("pipeline_performance_\(Date().timeIntervalSince1970).md")
 
     do {

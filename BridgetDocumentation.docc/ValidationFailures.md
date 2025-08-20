@@ -284,3 +284,41 @@ public class BridgeDataProcessor {
     }
 }
 
+# Validation Failures
+
+This document describes how validation failures are handled in the Bridget application.
+
+## Overview
+
+Validation failures occur when bridge opening records don't meet the required business rules. The application uses a centralized validation system to ensure consistency and maintainability.
+
+## Validation Architecture
+
+### Centralized Validation Utilities
+
+The application now uses a centralized validation system to eliminate code duplication and ensure consistent validation patterns:
+
+- **`ValidationUtils`**: Reusable utility functions for common validation patterns
+- **`BridgeRecordValidator`**: Business-specific validation logic for bridge records
+- **`ValidationTypes`**: Shared data structures for validation results
+
+### Key Components
+
+#### ValidationUtils
+Provides reusable functions for common validation patterns:
+- String validation (empty checks, trimming)
+- Collection validation (emptiness checks)
+- Range validation (bounds checking)
+- Optional validation (nil checks)
+- Date validation (format and range checks)
+
+#### BridgeRecordValidator
+Encapsulates all business-specific validation rules for `BridgeOpeningRecord` instances:
+- Entity ID validation
+- Entity name validation
+- Date format validation
+- Coordinate validation
+- Business rule enforcement
+
+## Validation Failure Types
+

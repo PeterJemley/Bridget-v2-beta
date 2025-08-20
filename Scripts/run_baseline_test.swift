@@ -32,8 +32,11 @@ print("==================================================")
 print()
 
 // Check if we're running in the right environment
-guard let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-  print("❌ Error: Could not access Documents directory")
+let documentsPath: URL
+do {
+  documentsPath = try FileManagerUtils.documentsDirectory()
+} catch {
+  print("❌ Error: Could not access Documents directory: \(error)")
   exit(1)
 }
 
@@ -54,7 +57,7 @@ print()
 // Create test output directory
 let testOutputDir = documentsPath.appendingPathComponent("baseline_test_\(testDateString)")
 do {
-  try FileManager.default.createDirectory(at: testOutputDir, withIntermediateDirectories: true)
+  try FileManagerUtils.ensureDirectoryExists(testOutputDir)
   print("📁 Created test output directory: \(testOutputDir.path)")
 } catch {
   print("❌ Error creating test directory: \(error)")

@@ -264,7 +264,7 @@ public enum EnhancedPipelineDemo {
 
     do {
       // Example 1: Run with JSON configuration
-      if FileManager.default.fileExists(atPath: "config/enhanced_pipeline.json") {
+      if FileManagerUtils.fileExists(at: "config/enhanced_pipeline.json") {
         try await EnhancedPipelineExample.runWithJSONConfig(configPath: "config/enhanced_pipeline.json")
       }
 

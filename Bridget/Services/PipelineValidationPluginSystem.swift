@@ -127,7 +127,7 @@ public class PipelineValidationPluginManager {
   /// - Parameter ticks: Array of probe ticks to validate
   /// - Returns: Combined validation results and statistics artifacts
   public func validateAll(ticks: [ProbeTickRaw]) -> (results: [String: DataValidationResult], artifacts: [String: BridgeDataStatistics]) {
-    guard pluginsEnabled else {
+    if !pluginsEnabled {
       logger.info("Plugins disabled, skipping validation")
       return ([:], [:])
     }
@@ -159,7 +159,7 @@ public class PipelineValidationPluginManager {
   /// - Parameter features: Array of feature vectors to validate
   /// - Returns: Combined validation results and statistics artifacts
   public func validateAll(features: [FeatureVector]) -> (results: [String: DataValidationResult], artifacts: [String: BridgeDataStatistics]) {
-    guard pluginsEnabled else {
+    if !pluginsEnabled {
       logger.info("Plugins disabled, skipping validation")
       return ([:], [:])
     }
@@ -191,7 +191,7 @@ public class PipelineValidationPluginManager {
   /// - Parameter metrics: Model performance metrics to validate
   /// - Returns: Combined validation results
   public func validateAll(metrics: ModelPerformanceMetrics) -> [String: DataValidationResult] {
-    guard pluginsEnabled else {
+    if !pluginsEnabled {
       logger.info("Plugins disabled, skipping validation")
       return [:]
     }
@@ -321,8 +321,10 @@ public struct ValidatorSummary {
   public let lastResult: DataValidationResult?
 
   public var status: String {
-    guard let result = lastResult else { return "Not Run" }
-    return result.isValid ? "Passed" : "Failed"
+    if lastResult == nil {
+      return "Not Run"
+    }
+    return lastResult!.isValid ? "Passed" : "Failed"
   }
 
   public var errorCount: Int {
@@ -424,7 +426,8 @@ public class DetourDeltaRangeValidator: PipelineValidator {
     let total = ticks.count
 
     let outOfRange = ticks.filter { tick in
-      guard let detourDelta = tick.detour_delta else { return false }
+      if tick.detour_delta == nil { return false }
+      let detourDelta = tick.detour_delta!
       return detourDelta < minDetourDelta || detourDelta > maxDetourDelta
     }
 

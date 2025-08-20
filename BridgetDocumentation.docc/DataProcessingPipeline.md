@@ -11,6 +11,8 @@ This document outlines the next phase of development for the data processing pip
 3. **Data Grouping** - Flexible, reusable grouping logic
 4. **Model Creation** - Enhanced aggregates and error handling
 
+> **Note**: For file operations within the data processing pipeline, use the centralized `FileManagerUtils` utility to ensure consistent error handling and eliminate code duplication. See [FileManagerUtils](FileManagerUtils.md) for usage examples and best practices.
+
 ## JSON Decoding Enhancements
 
 ### 1. Extract Decoder Configuration
@@ -127,6 +129,20 @@ Enhance DocC documentation to explain implementation choices and supported forma
 - Provide usage examples
 
 ## Business Validation Enhancements
+
+### Centralized Validation System
+
+The application now uses a centralized validation system to eliminate code duplication and ensure consistent validation patterns:
+
+- **`ValidationUtils`**: Reusable utility functions for common validation patterns
+- **`BridgeRecordValidator`**: Business-specific validation logic for bridge records  
+- **`ValidationTypes`**: Shared data structures for validation results
+
+#### Benefits
+- **Consistency**: All validation follows the same patterns and error handling
+- **Maintainability**: Business rules are defined in one place
+- **Reusability**: Common validation patterns can be shared across services
+- **Testability**: Validation logic can be tested independently
 
 ### 1. Define Validation Failure Reasons
 

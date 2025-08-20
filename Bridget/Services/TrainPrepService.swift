@@ -33,7 +33,7 @@ func loadNDJSON(from path: String) throws -> [ProbeTickRaw] {
   let data = try String(contentsOf: url, encoding: .utf8)
   var result = [ProbeTickRaw]()
   for (i, line) in data.split(separator: "\n").enumerated() {
-    guard !line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
+    if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
     if let decoded = try? JSONDecoder.bridgeDecoder().decode(ProbeTickRaw.self, from: Data(line.utf8)) {
       result.append(decoded)
     } else {
@@ -58,7 +58,7 @@ public struct TrainPrepConfiguration {
   let enableProgressReporting: Bool
 
   init(inputPath: String = "minutes_2025-01-27.ndjson",
-       outputDirectory: String = FileManager.default.currentDirectoryPath,
+       outputDirectory: String = FileManagerUtils.temporaryDirectory().path,
        trainingConfig: TrainingConfig = .production,
        enableProgressReporting: Bool = true)
   {
@@ -148,7 +148,7 @@ func processTrainingData(inputPath: String,
                          progressDelegate: TrainPrepProgressDelegate? = nil) async throws
 {
   let config = TrainPrepConfiguration(inputPath: inputPath,
-                                      outputDirectory: outputDirectory ?? FileManager.default.currentDirectoryPath,
+                                      outputDirectory: outputDirectory ?? FileManagerUtils.temporaryDirectory().path,
                                       trainingConfig: trainingConfig)
 
   let service = TrainPrepService(configuration: config, progressDelegate: progressDelegate)
@@ -187,7 +187,7 @@ public extension TrainPrepService {
     }
   }
 
-  static func processTodayData(exportBaseDirectory: String = FileManager.default.currentDirectoryPath,
+  static func processTodayData(exportBaseDirectory: String = FileManagerUtils.temporaryDirectory().path,
                                trainingConfig: TrainingConfig = .production,
                                progressDelegate: TrainPrepProgressDelegate? = nil) async throws -> [String]
   {
@@ -197,7 +197,7 @@ public extension TrainPrepService {
 
     let ndjsonPath = "\(exportBaseDirectory)/minutes_\(today).ndjson"
 
-    guard FileManager.default.fileExists(atPath: ndjsonPath) else {
+    guard FileManagerUtils.fileExists(at: ndjsonPath) else {
       throw NSError(domain: "TrainPrepService",
                     code: 404,
                     userInfo: [NSLocalizedDescriptionKey: "NDJSON file not found: \(ndjsonPath)"])

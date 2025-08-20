@@ -1,10 +1,30 @@
 # Error Handling
 
+This document describes the error handling patterns and strategies used in the Bridget application.
+
 ## Overview
 
-Bridget implements a comprehensive error handling system that provides detailed error classification, graceful degradation, and user-friendly error recovery. The system is designed to handle errors at multiple levels while maintaining a smooth user experience.
+The application uses a comprehensive error handling strategy that includes centralized validation utilities, consistent error types, and standardized error reporting patterns.
 
-## Error Classification System
+## Error Handling Architecture
+
+### Centralized Validation System
+
+The application now uses a centralized validation system that provides consistent error handling:
+
+- **`ValidationUtils`**: Reusable validation functions with standardized error patterns
+- **`BridgeRecordValidator`**: Business-specific validation with structured error reporting
+- **`ValidationTypes`**: Shared error types and failure structures
+
+#### Benefits
+- **Consistent Error Types**: All validation errors follow the same structure
+- **Standardized Reporting**: Unified error reporting and logging patterns
+- **Better Debugging**: Structured error information for easier troubleshooting
+- **Maintainable Code**: Centralized error handling reduces duplication
+
+> **Note**: For file system operations, use the centralized `FileManagerUtils` utility which provides consistent `FileManagerError` types and standardized error handling patterns. See [FileManagerUtils](FileManagerUtils.md) for error handling examples and best practices.
+
+## Error Types
 
 ### NetworkError Types
 

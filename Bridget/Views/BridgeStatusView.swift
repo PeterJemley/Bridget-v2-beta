@@ -81,3 +81,5 @@ struct BridgeStatusCard: View {
 #Preview {
   BridgeStatusView()
 }
+
+

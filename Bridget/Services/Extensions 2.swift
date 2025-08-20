@@ -61,7 +61,7 @@ public extension Array {
   ///
   /// - Note: If `size` is less than or equal to zero, the method returns an empty array.
   func chunked(into size: Int) -> [[Element]] {
-    guard size > 0 else { return [] }
+    if size <= 0 { return [] }
     return stride(from: 0, to: count, by: size).map { i in
       Array(self[i ..< Swift.min(i + size, count)])
     }

@@ -3,10 +3,10 @@
 //  Bridget
 //
 //  Purpose: Processes raw bridge data and transforms it into BridgeStatusModel instances
-//  Dependencies: Foundation (JSONDecoder, DateFormatter), BridgeStatusModel
+//  Dependencies: Foundation (JSONDecoder, DateFormatter), BridgeStatusModel, ValidationUtils, BridgeRecordValidator
 //  Integration Points:
 //    - Decodes JSON data from Seattle Open Data API using centralized decoder factory
-//    - Validates business rules and data integrity
+//    - Validates business rules and data integrity via BridgeRecordValidator
 //    - Groups records by bridge ID and maps to BridgeStatusModel
 //    - Called by BridgeDataService for data processing
 //
@@ -50,55 +50,13 @@ enum BridgeID: String, CaseIterable, Equatable {
 
 // ValidationFailureReason enum moved to ValidationTypes.swift
 
-// MARK: - BridgeOpeningRecord Struct
 
-/// A single bridge opening record decoded from JSON data.
-///
-/// Contains raw string values and computed properties for convenient typed access.
-/// Used internally during validation and transformation.
-struct BridgeOpeningRecord: Codable {
-  let entitytype: String
-  let entityname: String
-  let entityid: String
-  let opendatetime: String
-  let closedatetime: String
-  let minutesopen: String
-  let latitude: String
-  let longitude: String
-
-  /// Date formatter for parsing opendatetime and closedatetime strings.
-  private static let dateFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
-    formatter.locale = Locale(identifier: "en_US_POSIX")
-    return formatter
-  }()
-
-  /// Parsed open date, or `nil` if the string is malformed.
-  var openDate: Date? {
-    Self.dateFormatter.date(from: opendatetime)
-  }
-
-  /// Parsed close date, or `nil` if the string is malformed.
-  var closeDate: Date? {
-    Self.dateFormatter.date(from: closedatetime)
-  }
-
-  /// Parsed minutes open as integer, or `nil` if the string is malformed.
-  var minutesOpenValue: Int? { Int(minutesopen) }
-
-  /// Parsed latitude as double, or `nil` if the string is malformed.
-  var latitudeValue: Double? { Double(latitude) }
-
-  /// Parsed longitude as double, or `nil` if the string is malformed.
-  var longitudeValue: Double? { Double(longitude) }
-}
 
 // MARK: - BridgeDataProcessor Class
 
 /// A singleton service responsible for validating and transforming raw bridge data into app-ready models.
 ///
-/// Handles JSON decoding, business rule validation, aggregation, and comprehensive error reporting for raw bridge opening records.
+/// Handles JSON decoding, business rule validation (via `BridgeRecordValidator`), aggregation, and comprehensive error reporting for raw bridge opening records.
 /// Used by `BridgeDataService` to power historical data loading and validation analytics.
 ///
 /// ## Usage
@@ -110,6 +68,7 @@ struct BridgeOpeningRecord: Codable {
 /// - Data Processing: `processHistoricalData(_:)`
 /// - Validation Rules: `ValidationFailureReason`
 /// - Error Reporting: `BridgeDataError`
+/// - Validation Delegation: Utilizes `BridgeRecordValidator` and `ValidationUtils`
 class BridgeDataProcessor {
   static let shared = BridgeDataProcessor()
 
@@ -130,70 +89,22 @@ class BridgeDataProcessor {
 
   private let validEntityTypes = Set(["Bridge"]) // Expand as needed
 
-  // MARK: - Nested Types
-
-  /// Encapsulates a validation failure for a specific bridge opening record.
-  struct ValidationFailure {
-    /// The original record that failed validation.
-    let record: BridgeOpeningRecord
-    /// The reason for validation failure.
-    let reason: ValidationFailureReason
-  }
+  private let validator: BridgeRecordValidator
 
   // MARK: - Initializer
 
-  private init() {}
-
-  // MARK: - Validation
-
-  /// Validates a single `BridgeOpeningRecord` and returns the first encountered validation failure reason, or nil if the record is valid.
-  ///
-  /// - Parameter record: The record to validate.
-  /// - Returns: An optional `ValidationFailureReason` indicating why the record is invalid, or nil if it is valid.
-  func validationFailureReason(for record: BridgeOpeningRecord) -> ValidationFailureReason? {
-    guard !record.entityid.isEmpty else {
-      return .emptyEntityID
-    }
-    guard !record.entityname.isEmpty else {
-      return .emptyEntityName
-    }
-    guard let _ = BridgeID(rawValue: record.entityid) else {
-      return .unknownBridgeID(record.entityid)
-    }
-    guard let openDate = record.openDate else {
-      return .malformedOpenDate(record.opendatetime)
-    }
+  private init() {
     let now = Date()
     let calendar = Calendar.current
     let minDate = calendar.date(byAdding: .year, value: -10, to: now) ?? now
     let maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
-    if openDate < minDate || openDate > maxDate {
-      return .outOfRangeOpenDate(openDate)
-    }
-    guard let closeDate = record.closeDate else {
-      return .malformedCloseDate(record.closedatetime)
-    }
-    if closeDate <= openDate {
-      return .closeDateNotAfterOpenDate(open: openDate, close: closeDate)
-    }
-    guard let lat = record.latitudeValue, lat >= -90, lat <= 90 else {
-      return .invalidLatitude(record.latitudeValue)
-    }
-    guard let lon = record.longitudeValue, lon >= -180, lon <= 180 else {
-      return .invalidLongitude(record.longitudeValue)
-    }
-    guard let minutesOpen = record.minutesOpenValue, minutesOpen >= 0 else {
-      return .negativeMinutesOpen(record.minutesOpenValue)
-    }
-    let actualMinutes = Int(closeDate.timeIntervalSince(openDate) / 60)
-    if abs(minutesOpen - actualMinutes) > 1 {
-      return .minutesOpenMismatch(reported: minutesOpen, actual: actualMinutes)
-    }
-    // Geospatial mismatch check (if bridgeLocations applies)
-    if let expected = bridgeLocations[record.entityid], abs(expected.lat - lat) > 0.001 || abs(expected.lon - lon) > 0.001 {
-      return .geospatialMismatch(expectedLat: expected.lat, expectedLon: expected.lon, actualLat: lat, actualLon: lon)
-    }
-    return nil
+    validator = BridgeRecordValidator(
+      knownBridgeIDs: knownBridgeIDs,
+      bridgeLocations: bridgeLocations,
+      validEntityTypes: validEntityTypes,
+      minDate: minDate,
+      maxDate: maxDate
+    )
   }
 
   // MARK: - Data Processing
@@ -210,7 +121,7 @@ class BridgeDataProcessor {
     do {
       let records = try decoder.decode([BridgeOpeningRecord].self, from: data)
       for record in records {
-        if let reason = validationFailureReason(for: record) {
+        if let reason = validator.validationFailure(for: record) {
           failures.append(ValidationFailure(record: record, reason: reason))
           continue
         }
@@ -223,13 +134,16 @@ class BridgeDataProcessor {
     }
     var modelMap = [String: (name: String, openings: [Date])]()
     for record in validRecords {
-      guard !record.entityid.isEmpty, !record.entityname.isEmpty, let openDate = record.openDate else { continue }
-      modelMap[record.entityid, default: (record.entityname, [])].openings.append(openDate)
+      if isNotEmpty(record.entityid) && isNotEmpty(record.entityname) && record.openDate != nil {
+        modelMap[record.entityid, default: (record.entityname, [])].openings.append(record.openDate!)
+      }
     }
     let models: [BridgeStatusModel] = modelMap.compactMap { id, val in
-      guard let bridgeID = BridgeID(rawValue: id), !val.name.isEmpty else { return nil }
-      let sortedOpenings = val.openings.sorted()
-      return BridgeStatusModel(bridgeName: val.name, apiBridgeID: bridgeID, historicalOpenings: sortedOpenings)
+      if let bridgeID = BridgeID(rawValue: id), isNotEmpty(val.name) {
+        let sortedOpenings = val.openings.sorted()
+        return BridgeStatusModel(bridgeName: val.name, apiBridgeID: bridgeID, historicalOpenings: sortedOpenings)
+      }
+      return nil
     }
     return (models, failures)
   }

@@ -43,7 +43,7 @@ public class DataValidationService {
   public func validate(ticks: [ProbeTickRaw]) -> DataValidationResult {
     var result = DataValidationResult()
 
-    guard !ticks.isEmpty else {
+    if !isNotEmpty(ticks) {
       result.errors.append("No probe tick data provided")
       result.isValid = false
       return result
@@ -100,7 +100,7 @@ public class DataValidationService {
   public func validate(features: [FeatureVector]) -> DataValidationResult {
     var result = DataValidationResult()
 
-    guard !features.isEmpty else {
+    if !isNotEmpty(features) {
       result.errors.append("No feature vectors provided")
       result.isValid = false
       return result
@@ -538,7 +538,7 @@ public class DataValidationService {
   /// Aggregates multiple data quality metrics into a single result
   private func aggregateDataQualityMetrics(_ metrics: [DataQualityMetrics]) -> DataQualityMetrics {
     let totalMetrics = metrics.count
-    guard totalMetrics > 0 else {
+    if !isInRange(totalMetrics, 1...Int.max) {
       return DataQualityMetrics(dataCompleteness: 0.0,
                                 timestampValidity: 0.0,
                                 bridgeIDValidity: 0.0,

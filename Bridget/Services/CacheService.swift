@@ -76,24 +76,18 @@ class CacheService {
   // MARK: - Private Methods
 
   private func getCacheDirectory() -> URL? {
-    guard let documentsPath = FileManager.default.urls(for: .documentDirectory,
-                                                       in: .userDomainMask).first
-    else {
+    do {
+      let documentsPath = try FileManagerUtils.documentsDirectory()
+      let cacheURL = documentsPath.appendingPathComponent(cacheDirectory)
+      
+      // Create cache directory if it doesn't exist
+      try FileManagerUtils.ensureDirectoryExists(cacheURL)
+      
+      return cacheURL
+    } catch {
+      print("Failed to create cache directory: \(error)")
       return nil
     }
-    let cacheURL = documentsPath.appendingPathComponent(cacheDirectory)
-
-    // Create cache directory if it doesn't exist
-    if !FileManager.default.fileExists(atPath: cacheURL.path) {
-      do {
-        try FileManager.default.createDirectory(at: cacheURL, withIntermediateDirectories: true)
-      } catch {
-        print("Failed to create cache directory: \(error)")
-        return nil
-      }
-    }
-
-    return cacheURL
   }
 
   private func getCacheFileURL(for key: String) -> URL? {
@@ -185,9 +179,7 @@ class CacheService {
     guard let cacheURL = getCacheFileURL(for: key) else { return false }
 
     do {
-      let attributes = try FileManager.default.attributesOfItem(
-        atPath: cacheURL.path
-      )
+      let attributes = try FileManagerUtils.attributesOfItem(at: cacheURL)
       guard let modificationDate = attributes[.modificationDate] as? Date
       else { return false }
 
@@ -215,10 +207,9 @@ class CacheService {
     guard let cacheDir = getCacheDirectory() else { return }
 
     do {
-      let fileURLs = try FileManager.default.contentsOfDirectory(at: cacheDir,
-                                                                 includingPropertiesForKeys: nil)
+      let fileURLs = try FileManagerUtils.enumerateFiles(in: cacheDir)
       for fileURL in fileURLs {
-        try FileManager.default.removeItem(at: fileURL)
+        try FileManagerUtils.removeFile(at: fileURL)
       }
     } catch {
       print("Failed to clear cache: \(error)")
@@ -241,18 +232,7 @@ class CacheService {
     guard let cacheDir = getCacheDirectory() else { return 0 }
 
     do {
-      let fileURLs = try FileManager.default.contentsOfDirectory(at: cacheDir,
-                                                                 includingPropertiesForKeys: [.fileSizeKey])
-      return fileURLs.reduce(0) { total, fileURL in
-        do {
-          let attributes = try FileManager.default.attributesOfItem(
-            atPath: fileURL.path
-          )
-          return total + (attributes[.size] as? Int64 ?? 0)
-        } catch {
-          return total
-        }
-      }
+      return try FileManagerUtils.calculateDirectorySize(in: cacheDir)
     } catch {
       return 0
     }

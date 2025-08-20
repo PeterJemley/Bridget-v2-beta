@@ -243,10 +243,7 @@ class GoldenSampleCollector {
 
   /// Creates output directory if it doesn't exist
   private func createOutputDirectory() throws {
-    let fileManager = FileManager.default
-    if !fileManager.fileExists(atPath: outputDir) {
-      try fileManager.createDirectory(atPath: outputDir, withIntermediateDirectories: true)
-    }
+    try FileManagerUtils.ensureDirectoryExists(at: outputDir)
   }
 
   /// Formats date for filename

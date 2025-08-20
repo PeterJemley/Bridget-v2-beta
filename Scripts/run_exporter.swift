@@ -238,13 +238,10 @@ class SimpleBridgeDataExporter {
 
     // Create output directory if it doesn't exist
     let outputDirectory = url.deletingLastPathComponent()
-    try FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
+    try FileManagerUtils.ensureDirectoryExists(outputDirectory)
 
     // Prepare a temporary file for atomic replacement
-    let tempURL = outputDirectory.appendingPathComponent(UUID().uuidString + ".ndjson.tmp")
-
-    // Create the temp file first
-    FileManager.default.createFile(atPath: tempURL.path, contents: nil)
+    let tempURL = try FileManagerUtils.createTemporaryFile(in: outputDirectory, prefix: "export", extension: "ndjson.tmp")
 
     // Write NDJSON data
     var totalRows = 0
@@ -334,7 +331,7 @@ class SimpleBridgeDataExporter {
     try handle.close()
 
     // Atomically replace the destination file
-    try FileManager.default.replaceItemAt(url, withItemAt: tempURL)
+    try FileManagerUtils.atomicReplaceItem(at: url, with: tempURL)
 
     // Write metrics file
     let metrics: [String: Any] = [
@@ -353,7 +350,7 @@ class SimpleBridgeDataExporter {
 
     // Write .done marker file
     let doneURL = url.deletingPathExtension().appendingPathExtension("done")
-    FileManager.default.createFile(atPath: doneURL.path, contents: nil)
+    try FileManagerUtils.createMarkerFile(at: doneURL)
 
     print("✅ Export complete!")
     print("📊 Files generated:")
@@ -371,7 +368,7 @@ func main() {
   let arguments = CommandLine.arguments
 
   // Parse command line arguments
-  var outputDir = FileManager.default.currentDirectoryPath + "/ml_export"
+  var outputDir = FileManagerUtils.temporaryDirectory().appendingPathComponent("ml_export").path
 
   for i in 0 ..< arguments.count {
     if arguments[i] == "--output-dir", i + 1 < arguments.count {

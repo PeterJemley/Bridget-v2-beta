@@ -78,7 +78,7 @@ class BridgeDataService {
   ///   // Handle errors appropriately
   /// }
   /// ```
-  func loadHistoricalData() async throws -> ([BridgeStatusModel], [BridgeDataProcessor.ValidationFailure]) {
+  func loadHistoricalData() async throws -> ([BridgeStatusModel], [ValidationFailure]) {
     // Check cache first - return valid cached data if available
     if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache([BridgeStatusModel].self,
                                                                            for: "historical_bridges"),
@@ -192,7 +192,7 @@ class BridgeDataService {
     #endif
 
     // Convert the aggregated records back to JSON Data
-    guard !allRecords.isEmpty else {
+    if allRecords.isEmpty {
       throw NetworkError.noData
     }
 
@@ -304,7 +304,7 @@ class BridgeDataService {
   private static func sanitizeBridgeModels(_ models: [BridgeStatusModel]) -> [BridgeStatusModel] {
     var seen = Set<String>()
     return models.filter { model in
-      guard !model.bridgeName.isEmpty, model.apiBridgeID != nil else { return false }
+      if model.bridgeName.isEmpty || model.apiBridgeID == nil { return false }
       if seen.contains(model.bridgeName) { return false }
       seen.insert(model.bridgeName)
       return true

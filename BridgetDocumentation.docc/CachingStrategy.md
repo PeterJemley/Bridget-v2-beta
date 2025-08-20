@@ -46,7 +46,7 @@ graph TD
 
 #### 2. Disk Cache (L2 Cache)
 **Purpose**: Persistent storage for offline access and data persistence
-**Storage**: UserDefaults, Core Data, or file system
+**Storage**: UserDefaults, Core Data, or file system (using `FileManagerUtils` for consistent file operations)
 **Characteristics**:
 - **Speed**: Millisecond access times
 - **Persistence**: Survives app restarts

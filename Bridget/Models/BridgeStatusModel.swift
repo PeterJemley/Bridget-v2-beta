@@ -196,7 +196,7 @@ class BridgeStatusModel: Codable {
   /// - Returns: The average openings per day as a Double. Returns 0.0 if no
   ///   historical openings exist or if no openings occurred in the last 30 days.
   var averageOpeningsPerDay: Double {
-    guard !historicalOpenings.isEmpty else { return 0.0 }
+    if historicalOpenings.isEmpty { return 0.0 }
 
     let calendar = Calendar.current
     let now = Date()

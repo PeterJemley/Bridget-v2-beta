@@ -439,10 +439,7 @@ final class BridgeDataExporter {
     let bridgeMapURL = outputDirectory.appendingPathComponent("bridge_map.json")
 
     // Prepare a temporary file URL for atomic replacement
-    let tempURL = outputDirectory.appendingPathComponent(UUID().uuidString + ".ndjson.tmp")
-
-    // Ensure the temp file is created empty
-    FileManager.default.createFile(atPath: tempURL.path, contents: nil)
+    let tempURL = try FileManagerUtils.createTemporaryFile(in: outputDirectory, prefix: "export", extension: "ndjson.tmp")
 
     // Open the temp file for writing
     guard let handle = try? FileHandle(forWritingTo: tempURL) else {
@@ -491,10 +488,10 @@ final class BridgeDataExporter {
 
     // Atomically replace the destination file with the temp file
     do {
-      _ = try FileManager.default.replaceItemAt(url, withItemAt: tempURL)
+      try FileManagerUtils.atomicReplaceItem(at: url, with: tempURL)
     } catch {
       // Cleanup temp file on failure
-      try? FileManager.default.removeItem(at: tempURL)
+      try? FileManagerUtils.removeFile(at: tempURL)
       throw error
     }
 
@@ -520,7 +517,7 @@ final class BridgeDataExporter {
     }
 
     // Also include bridges with zero counts but present in bridge_map
-    if FileManager.default.fileExists(atPath: bridgeMapURL.path) {
+    if FileManagerUtils.fileExists(at: bridgeMapURL) {
       if let data = try? Data(contentsOf: bridgeMapURL),
          let bridgeMap = try? JSONDecoder.bridgeDecoder().decode([String: String].self, from: data)
       {
@@ -546,7 +543,7 @@ final class BridgeDataExporter {
 
     // Write zero-byte .done marker file after atomic replacement for downstream coordination
     let doneURL = url.deletingPathExtension().appendingPathExtension("done")
-    FileManager.default.createFile(atPath: doneURL.path, contents: nil)
+    try FileManagerUtils.createMarkerFile(at: doneURL)
 
     // Note: gzip compression can be added here on the NDJSON file stream if needed in the future.
   }

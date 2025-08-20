@@ -130,7 +130,7 @@ class NetworkClient {
   // MARK: - Payload Size Validation
 
   private func validatePayloadSize(_ data: Data) throws {
-    guard !data.isEmpty, data.count < maxAllowedSize else {
+    if data.isEmpty || data.count >= maxAllowedSize {
       throw NetworkError.payloadSizeError
     }
   }

@@ -269,7 +269,7 @@ struct MLPipelineTabView: View {
     // For demo purposes, use a sample path
     // In production, this would come from BridgeDataExporter
     let sampleNDJSONPath = "/path/to/sample_data.ndjson"
-    let outputDirectory = FileManager.default.temporaryDirectory.path
+    let outputDirectory = FileManagerUtils.temporaryDirectory().path
 
     viewModel.startTrainingPipeline(ndjsonPath: sampleNDJSONPath,
                                     outputDirectory: outputDirectory)
@@ -279,7 +279,7 @@ struct MLPipelineTabView: View {
     // For demo purposes, use a sample CSV path
     // In production, this would come from TrainPrepService
     let sampleCSVPath = "/path/to/training_data_horizon_\(horizon).csv"
-    let outputDirectory = FileManager.default.temporaryDirectory.path
+    let outputDirectory = FileManagerUtils.temporaryDirectory().path
 
     viewModel.startSingleHorizonTraining(csvPath: sampleCSVPath,
                                          horizon: horizon,

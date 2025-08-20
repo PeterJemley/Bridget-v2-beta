@@ -1,4 +1,30 @@
-# Seattle Route Optimization App - Engineering Plan
+# Bridget
+
+A SwiftUI application for monitoring bridge openings in Seattle.
+
+## Recent Refactoring Work
+
+### ✅ Guard Statement Patterns Refactoring (Completed)
+
+The application has been refactored to eliminate code duplication in validation patterns. This work included:
+
+- **Created `ValidationUtils.swift`**: Reusable utility functions for common validation patterns
+- **Created `BridgeRecordValidator.swift`**: Centralized business-specific validation logic
+- **Created `ValidationTypes.swift`**: Shared data structures for validation results
+- **Refactored 10+ services**: Updated validation patterns across the codebase
+- **Improved maintainability**: Reduced duplication and standardized validation logic
+
+### ✅ File Manager Operations Refactoring (Completed)
+
+File system operations have been centralized to eliminate duplication:
+
+- **Created `FileManagerUtils.swift`**: Centralized utility for all file operations
+- **Standardized error handling**: Consistent `FileManagerError` types across the application
+- **Refactored 15+ files**: Updated to use the centralized utility
+- **Added comprehensive testing**: Full test coverage for file operations
+- **Improved documentation**: Complete documentation with usage examples
+
+## Features
 
 ## Core Engineering Requirements Synopsis
 

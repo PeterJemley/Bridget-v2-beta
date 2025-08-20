@@ -427,7 +427,7 @@ public struct EnhancedPipelineConfig: Codable {
   public let memoryOptimizationLevel: MemoryOptimizationLevel
 
   public init(inputPath: String = "minutes_2025-01-27.ndjson",
-              outputDirectory: String = FileManager.default.currentDirectoryPath,
+              outputDirectory: String = FileManagerUtils.temporaryDirectory().path,
               trainingConfig: TrainingConfig = .production,
               enableParallelization: Bool = true,
               maxConcurrentHorizons: Int = 4,
