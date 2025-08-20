@@ -538,7 +538,7 @@ public class DataValidationService {
   /// Aggregates multiple data quality metrics into a single result
   private func aggregateDataQualityMetrics(_ metrics: [DataQualityMetrics]) -> DataQualityMetrics {
     let totalMetrics = metrics.count
-    if !isInRange(totalMetrics, 1...Int.max) {
+    if !isInRange(totalMetrics, 1 ... Int.max) {
       return DataQualityMetrics(dataCompleteness: 0.0,
                                 timestampValidity: 0.0,
                                 bridgeIDValidity: 0.0,

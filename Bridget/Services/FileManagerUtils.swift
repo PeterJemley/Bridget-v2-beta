@@ -37,7 +37,7 @@ public enum FileManagerError: LocalizedError {
   case fileNotFound(URL)
   case permissionDenied(URL)
   case diskFull(URL)
-  
+
   public var errorDescription: String? {
     switch self {
     case let .directoryCreationFailed(url, error):
@@ -67,12 +67,12 @@ public enum FileManagerError: LocalizedError {
 // MARK: - FileManagerUtils
 
 /// Centralized utility for file system operations with consistent error handling
-public struct FileManagerUtils {
+public enum FileManagerUtils {
   private static let logger = Logger(subsystem: "com.peterjemley.Bridget", category: "FileManagerUtils")
   private static let fileManager = FileManager.default
-  
+
   // MARK: - Directory Operations
-  
+
   /// Ensures a directory exists, creating it if necessary
   /// - Parameter url: The directory URL to ensure exists
   /// - Throws: `FileManagerError` if directory creation fails
@@ -80,7 +80,7 @@ public struct FileManagerUtils {
     guard url.hasDirectoryPath else {
       throw FileManagerError.invalidDirectory(url)
     }
-    
+
     do {
       if !fileManager.fileExists(atPath: url.path) {
         try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
@@ -91,7 +91,7 @@ public struct FileManagerUtils {
       throw FileManagerError.directoryCreationFailed(url, error)
     }
   }
-  
+
   /// Creates a directory at the specified path, ensuring intermediate directories exist
   /// - Parameter path: The directory path to create
   /// - Throws: `FileManagerError` if directory creation fails
@@ -99,9 +99,9 @@ public struct FileManagerUtils {
     let url = URL(fileURLWithPath: path)
     try ensureDirectoryExists(url)
   }
-  
+
   // MARK: - File Replacement Operations
-  
+
   /// Atomically replaces a file with a temporary file
   /// - Parameters:
   ///   - destination: The destination URL where the file should be placed
@@ -116,7 +116,7 @@ public struct FileManagerUtils {
       throw FileManagerError.fileReplacementFailed(destination, error)
     }
   }
-  
+
   /// Creates a temporary file for atomic replacement operations
   /// - Parameters:
   ///   - directory: The directory where the temporary file should be created
@@ -128,7 +128,7 @@ public struct FileManagerUtils {
     let filename = "\(prefix)_\(UUID().uuidString)"
     let tempURL = directory.appendingPathComponent(filename)
     let finalURL = `extension` != nil ? tempURL.appendingPathExtension(`extension`!) : tempURL
-    
+
     let created = fileManager.createFile(atPath: finalURL.path, contents: nil)
     if created {
       logger.debug("Created temporary file: \(finalURL.path)")
@@ -138,7 +138,7 @@ public struct FileManagerUtils {
       throw FileManagerError.fileReplacementFailed(finalURL, NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: nil))
     }
   }
-  
+
   /// Creates a marker file (zero-byte file) for coordination purposes
   /// - Parameter url: The URL where the marker file should be created
   /// - Throws: `FileManagerError` if file creation fails
@@ -151,9 +151,9 @@ public struct FileManagerUtils {
       throw FileManagerError.fileReplacementFailed(url, NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: nil))
     }
   }
-  
+
   // MARK: - File Enumeration Operations
-  
+
   /// Enumerates files in a directory with optional filtering
   /// - Parameters:
   ///   - directory: The directory to enumerate
@@ -161,9 +161,10 @@ public struct FileManagerUtils {
   ///   - properties: Optional array of URL resource keys to fetch
   /// - Returns: Array of file URLs that match the filter
   /// - Throws: `FileManagerError` if enumeration fails
-  public static func enumerateFiles(in directory: URL, 
-                                   filter: ((URL) -> Bool)? = nil,
-                                   properties: [URLResourceKey]? = nil) throws -> [URL] {
+  public static func enumerateFiles(in directory: URL,
+                                    filter: ((URL) -> Bool)? = nil,
+                                    properties: [URLResourceKey]? = nil) throws -> [URL]
+  {
     do {
       let files = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: properties)
       let filteredFiles = filter != nil ? files.filter(filter!) : files
@@ -174,7 +175,7 @@ public struct FileManagerUtils {
       throw FileManagerError.fileEnumerationFailed(directory, error)
     }
   }
-  
+
   /// Enumerates files in a directory by path string
   /// - Parameters:
   ///   - path: The directory path to enumerate
@@ -183,14 +184,15 @@ public struct FileManagerUtils {
   /// - Returns: Array of file URLs that match the filter
   /// - Throws: `FileManagerError` if enumeration fails
   public static func enumerateFiles(at path: String,
-                                   filter: ((URL) -> Bool)? = nil,
-                                   properties: [URLResourceKey]? = nil) throws -> [URL] {
+                                    filter: ((URL) -> Bool)? = nil,
+                                    properties: [URLResourceKey]? = nil) throws -> [URL]
+  {
     let url = URL(fileURLWithPath: path)
     return try enumerateFiles(in: url, filter: filter, properties: properties)
   }
-  
+
   // MARK: - File Removal Operations
-  
+
   /// Removes a file at the specified URL
   /// - Parameter url: The URL of the file to remove
   /// - Throws: `FileManagerError` if removal fails
@@ -203,7 +205,7 @@ public struct FileManagerUtils {
       throw FileManagerError.fileRemovalFailed(url, error)
     }
   }
-  
+
   /// Removes a file at the specified path
   /// - Parameter path: The path of the file to remove
   /// - Throws: `FileManagerError` if removal fails
@@ -211,26 +213,28 @@ public struct FileManagerUtils {
     let url = URL(fileURLWithPath: path)
     try removeFile(at: url)
   }
-  
+
   /// Removes old files based on creation date
   /// - Parameters:
   ///   - directory: The directory to search for old files
   ///   - olderThan: The cutoff date - files older than this will be removed
   ///   - filter: Optional closure to filter which files to consider for removal
   /// - Throws: `FileManagerError` if any operation fails
-  public static func removeOldFiles(in directory: URL, 
-                                   olderThan cutoffDate: Date,
-                                   filter: ((URL) -> Bool)? = nil) throws {
-    let files = try enumerateFiles(in: directory, 
-                                  filter: filter,
-                                  properties: [.creationDateKey])
-    
+  public static func removeOldFiles(in directory: URL,
+                                    olderThan cutoffDate: Date,
+                                    filter: ((URL) -> Bool)? = nil) throws
+  {
+    let files = try enumerateFiles(in: directory,
+                                   filter: filter,
+                                   properties: [.creationDateKey])
+
     var removedCount = 0
     for file in files {
       do {
         let attributes = try fileManager.attributesOfItem(atPath: file.path)
         if let creationDate = attributes[.creationDate] as? Date,
-           creationDate < cutoffDate {
+           creationDate < cutoffDate
+        {
           try removeFile(at: file)
           removedCount += 1
         }
@@ -239,12 +243,12 @@ public struct FileManagerUtils {
         // Continue with other files
       }
     }
-    
+
     if removedCount > 0 {
       logger.info("Removed \(removedCount) old files from \(directory.path)")
     }
   }
-  
+
   /// Removes files matching a specific pattern
   /// - Parameters:
   ///   - directory: The directory to search
@@ -255,26 +259,26 @@ public struct FileManagerUtils {
       let filename = url.lastPathComponent
       return filename.range(of: pattern, options: .regularExpression) != nil
     }
-    
+
     let files = try enumerateFiles(in: directory, filter: filter)
     for file in files {
       try removeFile(at: file)
     }
-    
+
     if !files.isEmpty {
       logger.info("Removed \(files.count) files matching pattern '\(pattern)' from \(directory.path)")
     }
   }
-  
+
   // MARK: - File Information Operations
-  
+
   /// Checks if a file exists at the specified URL
   /// - Parameter url: The URL to check
   /// - Returns: `true` if the file exists, `false` otherwise
   public static func fileExists(at url: URL) -> Bool {
     return fileManager.fileExists(atPath: url.path)
   }
-  
+
   /// Checks if a file exists at the specified path
   /// - Parameter path: The path to check
   /// - Returns: `true` if the file exists, `false` otherwise
@@ -282,7 +286,7 @@ public struct FileManagerUtils {
     let url = URL(fileURLWithPath: path)
     return fileExists(at: url)
   }
-  
+
   /// Gets file attributes
   /// - Parameter url: The URL of the file
   /// - Returns: Dictionary of file attributes
@@ -295,7 +299,7 @@ public struct FileManagerUtils {
       throw FileManagerError.fileAttributesFailed(url, error)
     }
   }
-  
+
   /// Gets file attributes by path
   /// - Parameter path: The path of the file
   /// - Returns: Dictionary of file attributes
@@ -304,9 +308,9 @@ public struct FileManagerUtils {
     let url = URL(fileURLWithPath: path)
     return try attributesOfItem(at: url)
   }
-  
+
   // MARK: - Utility Operations
-  
+
   /// Calculates the total size of all files in a directory
   /// - Parameters:
   ///   - directory: The directory to calculate size for
@@ -315,7 +319,7 @@ public struct FileManagerUtils {
   /// - Throws: `FileManagerError` if any operation fails
   public static func calculateDirectorySize(in directory: URL, filter: ((URL) -> Bool)? = nil) throws -> Int64 {
     let files = try enumerateFiles(in: directory, filter: filter, properties: [.fileSizeKey])
-    
+
     var totalSize: Int64 = 0
     for file in files {
       do {
@@ -326,10 +330,10 @@ public struct FileManagerUtils {
         // Continue with other files
       }
     }
-    
+
     return totalSize
   }
-  
+
   /// Gets the system documents directory URL
   /// - Returns: The documents directory URL
   /// - Throws: `FileManagerError` if the directory is not accessible
@@ -339,21 +343,20 @@ public struct FileManagerUtils {
     }
     return documentsPath
   }
-  
+
   /// Gets the system downloads directory URL (macOS only)
   /// - Returns: The downloads directory URL, or nil if not available
   public static func downloadsDirectory() -> URL? {
     #if os(macOS)
-    return fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first
+      return fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first
     #else
-    return nil
+      return nil
     #endif
   }
-  
+
   /// Gets the system temporary directory URL
   /// - Returns: The temporary directory URL
   public static func temporaryDirectory() -> URL {
     return fileManager.temporaryDirectory
   }
 }
-

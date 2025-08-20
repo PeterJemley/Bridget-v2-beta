@@ -343,7 +343,7 @@ final class MLPipelineBackgroundManager {
     do {
       let documentsPath = try FileManagerUtils.documentsDirectory()
       let downloadsPath = FileManagerUtils.downloadsDirectory()
-      
+
       let paths = [documentsPath] + (downloadsPath != nil ? [downloadsPath!] : [])
       let calendar = Calendar.current
       let cutoffDate = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date()

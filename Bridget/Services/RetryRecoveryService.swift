@@ -326,8 +326,9 @@ public class RecoveryService {
   /// Clean up old checkpoints
   public func cleanupOldCheckpoints(olderThan age: TimeInterval) throws {
     let cutoffDate = Date().addingTimeInterval(-age)
-    try FileManagerUtils.removeOldFiles(in: URL(fileURLWithPath: checkpointDirectory), 
-                                        olderThan: cutoffDate) { url in
+    try FileManagerUtils.removeOldFiles(in: URL(fileURLWithPath: checkpointDirectory),
+                                        olderThan: cutoffDate)
+    { url in
       url.lastPathComponent.hasSuffix(".checkpoint")
     }
   }

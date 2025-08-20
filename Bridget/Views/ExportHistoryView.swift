@@ -6,7 +6,6 @@ public struct ExportHistoryView: View {
   @State private var selectedFileURL: URL?
   @State private var showingFilePreview = false
 
-
   private let logger = Logger(subsystem: "Bridget", category: "ExportHistoryView")
 
   public var body: some View {
@@ -70,27 +69,27 @@ public struct ExportHistoryView: View {
 
     // Gather from both Documents and Downloads (if macOS)
     do {
-      let documentURLs = [try FileManagerUtils.documentsDirectory()]
+      let documentURLs = try [FileManagerUtils.documentsDirectory()]
       let downloadsURLs = FileManagerUtils.downloadsDirectory() != nil ? [FileManagerUtils.downloadsDirectory()!] : []
-      
+
       let searchURLs = documentURLs + downloadsURLs
 
       for baseURL in searchURLs {
         do {
-          let contents = try FileManagerUtils.enumerateFiles(in: baseURL, 
+          let contents = try FileManagerUtils.enumerateFiles(in: baseURL,
                                                              properties: [.contentModificationDateKey])
           let ndjsonFiles = contents.filter { $0.pathExtension.lowercased() == "ndjson" }
 
-        for fileURL in ndjsonFiles {
-          let resourceValues = try fileURL.resourceValues(forKeys: [.contentModificationDateKey])
-          let modDate = resourceValues.contentModificationDate ?? Date.distantPast
-          let exportedFile = ExportedFile(url: fileURL, name: fileURL.lastPathComponent, date: modDate)
-          files.append(exportedFile)
+          for fileURL in ndjsonFiles {
+            let resourceValues = try fileURL.resourceValues(forKeys: [.contentModificationDateKey])
+            let modDate = resourceValues.contentModificationDate ?? Date.distantPast
+            let exportedFile = ExportedFile(url: fileURL, name: fileURL.lastPathComponent, date: modDate)
+            files.append(exportedFile)
+          }
+        } catch {
+          logger.error("Failed to list directory \(baseURL.path): \(error.localizedDescription)")
         }
-      } catch {
-        logger.error("Failed to list directory \(baseURL.path): \(error.localizedDescription)")
       }
-    }
     } catch {
       logger.error("Failed to access directories: \(error.localizedDescription)")
     }

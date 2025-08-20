@@ -51,7 +51,7 @@ public struct ValidationFailure: Equatable {
   public let record: BridgeOpeningRecord
   /// The reason for validation failure.
   public let reason: ValidationFailureReason
-  
+
   public init(record: BridgeOpeningRecord, reason: ValidationFailureReason) {
     self.record = record
     self.reason = reason

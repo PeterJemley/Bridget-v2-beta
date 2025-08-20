@@ -111,5 +111,3 @@ struct TrafficAlertCard: View {
 #Preview {
   TrafficAlertsView()
 }
-
-

@@ -50,8 +50,6 @@ enum BridgeID: String, CaseIterable, Equatable {
 
 // ValidationFailureReason enum moved to ValidationTypes.swift
 
-
-
 // MARK: - BridgeDataProcessor Class
 
 /// A singleton service responsible for validating and transforming raw bridge data into app-ready models.
@@ -98,13 +96,11 @@ class BridgeDataProcessor {
     let calendar = Calendar.current
     let minDate = calendar.date(byAdding: .year, value: -10, to: now) ?? now
     let maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
-    validator = BridgeRecordValidator(
-      knownBridgeIDs: knownBridgeIDs,
-      bridgeLocations: bridgeLocations,
-      validEntityTypes: validEntityTypes,
-      minDate: minDate,
-      maxDate: maxDate
-    )
+    validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
+                                      bridgeLocations: bridgeLocations,
+                                      validEntityTypes: validEntityTypes,
+                                      minDate: minDate,
+                                      maxDate: maxDate)
   }
 
   // MARK: - Data Processing
@@ -134,7 +130,7 @@ class BridgeDataProcessor {
     }
     var modelMap = [String: (name: String, openings: [Date])]()
     for record in validRecords {
-      if isNotEmpty(record.entityid) && isNotEmpty(record.entityname) && record.openDate != nil {
+      if isNotEmpty(record.entityid), isNotEmpty(record.entityname), record.openDate != nil {
         modelMap[record.entityid, default: (record.entityname, [])].openings.append(record.openDate!)
       }
     }

@@ -79,10 +79,10 @@ class CacheService {
     do {
       let documentsPath = try FileManagerUtils.documentsDirectory()
       let cacheURL = documentsPath.appendingPathComponent(cacheDirectory)
-      
+
       // Create cache directory if it doesn't exist
       try FileManagerUtils.ensureDirectoryExists(cacheURL)
-      
+
       return cacheURL
     } catch {
       print("Failed to create cache directory: \(error)")
