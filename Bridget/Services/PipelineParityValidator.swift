@@ -297,7 +297,6 @@ class PipelineParityValidator {
     if isParity {
       logger.info("✅ Parity validation passed - outputs maintain consistency")
     } else {
-
       logger.error("❌ Parity validation failed - outputs have changed")
       logger.error("Affected module: \(affectedModule?.rawValue ?? "Unknown")")
       logger.error("Failure reason: \(failureReason ?? "Unknown")")
@@ -373,7 +372,7 @@ class PipelineParityValidator {
       if baselineCount > 0 || currentCount > 0 {
         // Use baseline-relative percentage change for intuitive results
         let relativeDelta = Double(abs(currentCount - baselineCount)) / max(Double(baselineCount), config.epsilon)
-        
+
         if relativeDelta > self.config.countTolerancePct {
           changes.append(OutputChange(changeType: .count,
                                       affectedField: "bridge_\(bridgeId)_records",
@@ -499,8 +498,8 @@ class PipelineParityValidator {
     let baselineTime = baseline.pipelineTime
     let currentTime = current.pipelineTime
     let difference = abs(currentTime - baselineTime)
-    let _ = difference / baselineTime // Calculate relative change for potential future use
-    
+    _ = difference / baselineTime // Calculate relative change for potential future use
+
     if !baseline.pipelineTime.isWithin(tolerance: timingTolerance, of: current.pipelineTime) {
       changes.append(OutputChange(changeType: .performance,
                                   affectedField: "pipeline_time",

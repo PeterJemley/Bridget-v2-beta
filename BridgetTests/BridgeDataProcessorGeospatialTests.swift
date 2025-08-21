@@ -1,6 +1,6 @@
 @testable import Bridget
-import Testing
 import Foundation
+import Testing
 
 final class AllSeattleBridgesGeospatialValidationTests {
   /// Known bridge IDs for validation
@@ -33,91 +33,77 @@ final class AllSeattleBridgesGeospatialValidationTests {
   // Test for each bridge with valid coordinates
   @Test func test1stAveSouth() {
     let record = testRecord(entityid: "1", lat: "47.542213439941406", lon: "-122.33446502685547")
-    let validator = BridgeRecordValidator(
-      knownBridgeIDs: knownBridgeIDs,
-      bridgeLocations: bridgeLocations,
-      validEntityTypes: Set(["Bridge"]),
-      minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-      maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
-    )
+    let validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
+                                          bridgeLocations: bridgeLocations,
+                                          validEntityTypes: Set(["Bridge"]),
+                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     #expect(result == nil, "Should accept matching coordinates for 1st Ave South")
   }
 
   @Test func ballard() {
     let record = testRecord(entityid: "2", lat: "47.65981674194336", lon: "-122.37619018554688")
-    let validator = BridgeRecordValidator(
-      knownBridgeIDs: knownBridgeIDs,
-      bridgeLocations: bridgeLocations,
-      validEntityTypes: Set(["Bridge"]),
-      minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-      maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
-    )
+    let validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
+                                          bridgeLocations: bridgeLocations,
+                                          validEntityTypes: Set(["Bridge"]),
+                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     #expect(result == nil, "Should accept matching coordinates for Ballard")
   }
 
   @Test func fremont() {
     let record = testRecord(entityid: "3", lat: "47.64760208129883", lon: "-122.3497314453125")
-    let validator = BridgeRecordValidator(
-      knownBridgeIDs: knownBridgeIDs,
-      bridgeLocations: bridgeLocations,
-      validEntityTypes: Set(["Bridge"]),
-      minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-      maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
-    )
+    let validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
+                                          bridgeLocations: bridgeLocations,
+                                          validEntityTypes: Set(["Bridge"]),
+                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     #expect(result == nil, "Should accept matching coordinates for Fremont")
   }
 
   @Test func montlake() {
     let record = testRecord(entityid: "4", lat: "47.64728546142578", lon: "-122.3045883178711")
-    let validator = BridgeRecordValidator(
-      knownBridgeIDs: knownBridgeIDs,
-      bridgeLocations: bridgeLocations,
-      validEntityTypes: Set(["Bridge"]),
-      minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-      maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
-    )
+    let validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
+                                          bridgeLocations: bridgeLocations,
+                                          validEntityTypes: Set(["Bridge"]),
+                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     #expect(result == nil, "Should accept matching coordinates for Montlake")
   }
 
   @Test func lowerSpokaneSt() {
     let record = testRecord(entityid: "6", lat: "47.57137680053711", lon: "-122.35354614257812")
-    let validator = BridgeRecordValidator(
-      knownBridgeIDs: knownBridgeIDs,
-      bridgeLocations: bridgeLocations,
-      validEntityTypes: Set(["Bridge"]),
-      minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-      maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
-    )
+    let validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
+                                          bridgeLocations: bridgeLocations,
+                                          validEntityTypes: Set(["Bridge"]),
+                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     #expect(result == nil, "Should accept matching coordinates for Lower Spokane St")
   }
 
   @Test func university() {
     let record = testRecord(entityid: "21", lat: "47.652652740478516", lon: "-122.32042694091797")
-    let validator = BridgeRecordValidator(
-      knownBridgeIDs: knownBridgeIDs,
-      bridgeLocations: bridgeLocations,
-      validEntityTypes: Set(["Bridge"]),
-      minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-      maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
-    )
+    let validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
+                                          bridgeLocations: bridgeLocations,
+                                          validEntityTypes: Set(["Bridge"]),
+                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     #expect(result == nil, "Should accept matching coordinates for University")
   }
 
   @Test func southPark() {
     let record = testRecord(entityid: "29", lat: "47.52923583984375", lon: "-122.31411743164062")
-    let validator = BridgeRecordValidator(
-      knownBridgeIDs: knownBridgeIDs,
-      bridgeLocations: bridgeLocations,
-      validEntityTypes: Set(["Bridge"]),
-      minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-      maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
-    )
+    let validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
+                                          bridgeLocations: bridgeLocations,
+                                          validEntityTypes: Set(["Bridge"]),
+                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     #expect(result == nil, "Should accept matching coordinates for South Park")
   }
@@ -125,13 +111,11 @@ final class AllSeattleBridgesGeospatialValidationTests {
   // Test geospatial mismatch detection
   @Test func test1stAveSouthGeospatialMismatch() {
     let record = testRecord(entityid: "1", lat: "48.0", lon: "-123.0") // Far away
-    let validator = BridgeRecordValidator(
-      knownBridgeIDs: knownBridgeIDs,
-      bridgeLocations: bridgeLocations,
-      validEntityTypes: Set(["Bridge"]),
-      minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-      maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
-    )
+    let validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
+                                          bridgeLocations: bridgeLocations,
+                                          validEntityTypes: Set(["Bridge"]),
+                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     switch result {
     case let .geospatialMismatch(expectedLat, expectedLon, actualLat, actualLon):

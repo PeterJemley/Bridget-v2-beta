@@ -11,7 +11,7 @@ struct SerializationConsistencyTests {
     let name: String
     let date: Date
     let snakeCaseField: String
-    
+
     enum CodingKeys: String, CodingKey {
       case id
       case name
@@ -82,5 +82,3 @@ struct SerializationConsistencyTests {
     }
   }
 }
-
-

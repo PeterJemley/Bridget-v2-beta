@@ -13,8 +13,8 @@
 //    - Perf drift: inject a deliberate 20% slow-down → .warning/.critical based on config
 
 @testable import Bridget
-import Testing
 import Foundation
+import Testing
 
 @Suite("Pipeline Parity Validator Tests")
 struct PipelineParityValidatorTests {
@@ -284,7 +284,7 @@ struct PipelineParityValidatorTests {
     // Verify relative delta calculation
     let relativeDelta = Double(bridge1CountChange?.metadata["relative_delta"] ?? "0") ?? 0
     #expect(relativeDelta == 0.03, "Relative delta should be approximately 3%")
-    
+
     // Verify tolerance (relaxed config uses 2% tolerance)
     let tolerance = Double(bridge1CountChange?.metadata["tolerance"] ?? "0") ?? 0
     #expect(tolerance == 0.02, "Tolerance should be 2% for relaxed config")

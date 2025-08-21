@@ -62,7 +62,7 @@ public enum FileManagerError: LocalizedError, Equatable {
       return "Disk full when writing to \(url.path)"
     }
   }
-  
+
   public static func == (lhs: FileManagerError, rhs: FileManagerError) -> Bool {
     switch (lhs, rhs) {
     case let (.directoryCreationFailed(url1, _), .directoryCreationFailed(url2, _)):
