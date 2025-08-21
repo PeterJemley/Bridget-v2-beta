@@ -26,7 +26,7 @@ import OSLog
 // MARK: - Error Types
 
 /// Errors that can occur during file operations
-public enum FileManagerError: LocalizedError {
+public enum FileManagerError: LocalizedError, Equatable {
   case directoryCreationFailed(URL, Error)
   case fileReplacementFailed(URL, Error)
   case fileEnumerationFailed(URL, Error)
@@ -60,6 +60,33 @@ public enum FileManagerError: LocalizedError {
       return "Permission denied for \(url.path)"
     case let .diskFull(url):
       return "Disk full when writing to \(url.path)"
+    }
+  }
+  
+  public static func == (lhs: FileManagerError, rhs: FileManagerError) -> Bool {
+    switch (lhs, rhs) {
+    case let (.directoryCreationFailed(url1, _), .directoryCreationFailed(url2, _)):
+      return url1 == url2
+    case let (.fileReplacementFailed(url1, _), .fileReplacementFailed(url2, _)):
+      return url1 == url2
+    case let (.fileEnumerationFailed(url1, _), .fileEnumerationFailed(url2, _)):
+      return url1 == url2
+    case let (.fileRemovalFailed(url1, _), .fileRemovalFailed(url2, _)):
+      return url1 == url2
+    case let (.fileAttributesFailed(url1, _), .fileAttributesFailed(url2, _)):
+      return url1 == url2
+    case let (.fileExistsCheckFailed(url1, _), .fileExistsCheckFailed(url2, _)):
+      return url1 == url2
+    case let (.invalidDirectory(url1), .invalidDirectory(url2)):
+      return url1 == url2
+    case let (.fileNotFound(url1), .fileNotFound(url2)):
+      return url1 == url2
+    case let (.permissionDenied(url1), .permissionDenied(url2)):
+      return url1 == url2
+    case let (.diskFull(url1), .diskFull(url2)):
+      return url1 == url2
+    default:
+      return false
     }
   }
 }

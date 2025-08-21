@@ -28,3 +28,4 @@ struct PipelineActivity: Codable, Identifiable {
     self.timestamp = timestamp
   }
 }
+

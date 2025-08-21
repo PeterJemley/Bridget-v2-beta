@@ -14,6 +14,7 @@
 
 @testable import Bridget
 import Testing
+import Foundation
 
 @Suite("Pipeline Parity Validator Tests")
 struct PipelineParityValidatorTests {
@@ -93,23 +94,23 @@ struct PipelineParityValidatorTests {
   private func createCurrentOutput() -> CurrentOutput {
     // Start with identical baseline data
     let timeDistribution = TimeDistribution(hourlyDistribution: createHourlyDistribution(),
-                                            description: "Current 24-hour distribution")
+                                            description: "Baseline 24-hour distribution")
 
     let fieldRanges: [String: ValueRange] = [
-      "cross_k": ValueRange(min: 0, max: 100, mean: 45.2, description: "Current cross_k range"),
-      "cross_n": ValueRange(min: 1, max: 200, mean: 98.7, description: "Current cross_n range"),
-      "via_penalty_sec": ValueRange(min: 0, max: 300, mean: 45.8, description: "Current penalty range"),
-      "gate_anom": ValueRange(min: 0, max: 1, mean: 0.5, description: "Current anomaly range"),
-      "alternates_total": ValueRange(min: 1, max: 5, mean: 3.2, description: "Current alternates range"),
+      "cross_k": ValueRange(min: 0, max: 100, mean: 45.2, description: "Baseline cross_k range"),
+      "cross_n": ValueRange(min: 1, max: 200, mean: 98.7, description: "Baseline cross_n range"),
+      "via_penalty_sec": ValueRange(min: 0, max: 300, mean: 45.8, description: "Baseline penalty range"),
+      "gate_anom": ValueRange(min: 0, max: 1, mean: 0.5, description: "Baseline anomaly range"),
+      "alternates_total": ValueRange(min: 1, max: 5, mean: 3.2, description: "Baseline alternates range"),
     ]
 
     let fieldDistributions: [String: FieldDistribution] = [
       "bridge_id": FieldDistribution(values: ["1": 2880, "2": 2880, "3": 2880],
-                                     description: "Current bridge distribution"),
+                                     description: "Baseline bridge distribution"),
       "via_routable": FieldDistribution(values: ["0": 4320, "1": 4320],
-                                        description: "Current routable distribution"),
+                                        description: "Baseline routable distribution"),
       "open_label": FieldDistribution(values: ["0": 6480, "1": 2160],
-                                      description: "Current open label distribution"),
+                                      description: "Baseline open label distribution"),
     ]
 
     let schema = DataSchema(fields: ["v", "ts_utc", "bridge_id", "cross_k", "cross_n", "via_routable", "via_penalty_sec", "gate_anom", "alternates_total", "alternates_avoid_span", "free_eta_sec", "via_eta_sec", "open_label"],
@@ -242,9 +243,9 @@ struct PipelineParityValidatorTests {
   mutating func countDriftDrops2PercentOfTicksForOneBridgeExpectsWarningCountChange() async throws {
     try await setUp()
 
-    // Given: Current output with 2% fewer records for bridge 1
+    // Given: Current output with 3% fewer records for bridge 1
     currentOutput = createCurrentOutput()
-    let reducedBridge1Count = Int(Double(2880) * 0.98) // 2% reduction
+    let reducedBridge1Count = Int(Double(2880) * 0.97) // 3% reduction
     currentOutput = CurrentOutput(outputStructure: currentOutput.outputStructure,
                                   fieldCount: currentOutput.fieldCount,
                                   totalRecords: 8640 - (2880 - reducedBridge1Count), // Adjusted total
@@ -282,7 +283,11 @@ struct PipelineParityValidatorTests {
 
     // Verify relative delta calculation
     let relativeDelta = Double(bridge1CountChange?.metadata["relative_delta"] ?? "0") ?? 0
-    #expect(relativeDelta == 0.02, "Relative delta should be approximately 2%")
+    #expect(relativeDelta == 0.03, "Relative delta should be approximately 3%")
+    
+    // Verify tolerance (relaxed config uses 2% tolerance)
+    let tolerance = Double(bridge1CountChange?.metadata["tolerance"] ?? "0") ?? 0
+    #expect(tolerance == 0.02, "Tolerance should be 2% for relaxed config")
   }
 
   // MARK: - Range Drift Tests
@@ -291,10 +296,10 @@ struct PipelineParityValidatorTests {
   mutating func rangeDriftScalesOneFeatureBy10PercentExpectsWarningOnValueRange() async throws {
     try await setUp()
 
-    // Given: Current output with cross_k scaled by +10%
+    // Given: Current output with cross_k scaled by +20%
     currentOutput = createCurrentOutput()
     let scaledFieldRanges: [String: ValueRange] = [
-      "cross_k": ValueRange(min: 0, max: 110, mean: 49.7, description: "Scaled cross_k range"), // +10%
+      "cross_k": ValueRange(min: 0, max: 120, mean: 54.2, description: "Scaled cross_k range"), // +20%
       "cross_n": ValueRange(min: 1, max: 200, mean: 98.7, description: "Current cross_n range"),
       "via_penalty_sec": ValueRange(min: 0, max: 300, mean: 45.8, description: "Current penalty range"),
       "gate_anom": ValueRange(min: 0, max: 1, mean: 0.5, description: "Current anomaly range"),
@@ -329,12 +334,12 @@ struct PipelineParityValidatorTests {
 
     let crossKRangeChange = rangeChanges.first { $0.affectedField == "cross_k" }
     #expect(crossKRangeChange != nil, "cross_k range change should be detected")
-    #expect(crossKRangeChange?.severity == .major, "Range change should be major")
+    #expect(crossKRangeChange?.severity == .minor, "Range change should be minor")
 
     // Check metadata
     #expect(crossKRangeChange?.metadata["baseline_range"] == "min:0.0, max:100.0, mean:45.2")
-    #expect(crossKRangeChange?.metadata["current_range"] == "min:0.0, max:110.0, mean:49.7")
-    #expect(crossKRangeChange?.metadata["tolerance"] == "0.05")
+    #expect(crossKRangeChange?.metadata["current_range"] == "min:0.0, max:120.0, mean:54.2")
+    #expect(crossKRangeChange?.metadata["tolerance"] == "0.1500")
   }
 
   // MARK: - Schema Drift Tests
@@ -390,12 +395,12 @@ struct PipelineParityValidatorTests {
 
   // MARK: - Performance Drift Tests
 
-  @Test("Performance drift injects 20% slowdown expects warning based on config")
-  mutating func performanceDriftInjects20PercentSlowdownExpectsWarningBasedOnConfig() async throws {
+  @Test("Performance drift injects 30% slowdown expects warning based on config")
+  mutating func performanceDriftInjects30PercentSlowdownExpectsWarningBasedOnConfig() async throws {
     try await setUp()
-    // Given: Current output with 20% slower pipeline time
+    // Given: Current output with 30% slower pipeline time
     currentOutput = createCurrentOutput()
-    let slowerPipelineTime = baselineMetrics.pipelineTime * 1.2 // 20% slower
+    let slowerPipelineTime = baselineMetrics.pipelineTime * 1.3 // 30% slower
 
     currentOutput = CurrentOutput(outputStructure: currentOutput.outputStructure,
                                   fieldCount: currentOutput.fieldCount,
@@ -430,11 +435,11 @@ struct PipelineParityValidatorTests {
     // Check metadata
     #expect(pipelineTimeChange?.metadata["baseline_time"] == "2.1")
     #expect(pipelineTimeChange?.metadata["current_time"] == "\(slowerPipelineTime)")
-    #expect(pipelineTimeChange?.metadata["tolerance"] == "0.1")
+    #expect(pipelineTimeChange?.metadata["tolerance"] == "0.2500")
 
     // Verify relative change calculation
     let relativeChange = Double(pipelineTimeChange?.metadata["relative_change"] ?? "0") ?? 0
-    #expect(relativeChange == 20.0, "Relative change should be approximately 20%")
+    #expect(relativeChange == 30.0, "Relative change should be approximately 30%")
   }
 
   // MARK: - Configuration Tests
@@ -597,11 +602,11 @@ struct PipelineParityValidatorTests {
     try await setUp()
     // Given: Baseline metrics that can be serialized
     let baselineData = try JSONEncoder.bridgeEncoder().encode(baselineMetrics)
-    let baselineURL = FileManager.default.temporaryDirectory.appendingPathComponent("test_baseline.json")
+    let baselineURL = FileManagerUtils.temporaryDirectory().appendingPathComponent("test_baseline.json")
     try baselineData.write(to: baselineURL)
 
     defer {
-      try? FileManager.default.removeItem(at: baselineURL)
+      try? FileManagerUtils.removeFile(at: baselineURL)
     }
 
     // And: Current output

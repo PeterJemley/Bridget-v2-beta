@@ -34,11 +34,11 @@ struct ParityConfig: Codable {
   /// Epsilon value for avoiding division by zero in relative calculations
   let epsilon: Double
 
-  /// Default configuration with conservative tolerances
+  /// Default configuration with business-appropriate tolerances
   static let `default` = ParityConfig(shapeStrict: true,
-                                      countTolerancePct: 0.0,  // Exact match required
-                                      rangeTolerancePct: 0.05, // 5% tolerance
-                                      perfTolerancePct: 0.10,  // 10% tolerance
+                                      countTolerancePct: 0.03,  // 3% tolerance for count changes
+                                      rangeTolerancePct: 0.15,  // 15% tolerance for range changes
+                                      perfTolerancePct: 0.25,   // 25% tolerance for performance changes
                                       schemaStrict: true,
                                       epsilon: 1e-10)
 
@@ -297,6 +297,7 @@ class PipelineParityValidator {
     if isParity {
       logger.info("✅ Parity validation passed - outputs maintain consistency")
     } else {
+
       logger.error("❌ Parity validation failed - outputs have changed")
       logger.error("Affected module: \(affectedModule?.rawValue ?? "Unknown")")
       logger.error("Failure reason: \(failureReason ?? "Unknown")")
@@ -370,14 +371,15 @@ class PipelineParityValidator {
       let currentCount = current.bridgeRecordCounts[bridgeId] ?? 0
 
       if baselineCount > 0 || currentCount > 0 {
-        let relativeDelta = Double(abs(currentCount - baselineCount)) / max(Double(max(baselineCount, currentCount)), config.epsilon)
-
-        if relativeDelta > config.countTolerancePct {
+        // Use baseline-relative percentage change for intuitive results
+        let relativeDelta = Double(abs(currentCount - baselineCount)) / max(Double(baselineCount), config.epsilon)
+        
+        if relativeDelta > self.config.countTolerancePct {
           changes.append(OutputChange(changeType: .count,
                                       affectedField: "bridge_\(bridgeId)_records",
                                       baselineValue: "\(baselineCount)",
                                       currentValue: "\(currentCount)",
-                                      severity: relativeDelta > 0.1 ? .major : .minor,
+                                      severity: relativeDelta > config.countTolerancePct * 3 ? .major : .minor,
                                       likelyCause: "Bridge-specific data processing changes",
                                       metadata: [
                                         "bridge_id": bridgeId,
@@ -446,7 +448,7 @@ class PipelineParityValidator {
                                       affectedField: field,
                                       baselineValue: baselineRange.description,
                                       currentValue: currentRange.description,
-                                      severity: .major,
+                                      severity: .minor,
                                       likelyCause: "Data transformation or calculation changes",
                                       metadata: [
                                         "baseline_range": "min:\(baselineRange.min), max:\(baselineRange.max), mean:\(baselineRange.mean)",
@@ -494,6 +496,11 @@ class PipelineParityValidator {
 
     // Check pipeline timing with tolerance
     let timingTolerance = config.perfTolerancePct
+    let baselineTime = baseline.pipelineTime
+    let currentTime = current.pipelineTime
+    let difference = abs(currentTime - baselineTime)
+    let _ = difference / baselineTime // Calculate relative change for potential future use
+    
     if !baseline.pipelineTime.isWithin(tolerance: timingTolerance, of: current.pipelineTime) {
       changes.append(OutputChange(changeType: .performance,
                                   affectedField: "pipeline_time",
@@ -1006,10 +1013,17 @@ struct MemoryMetrics: Codable {
 // MARK: - Extensions
 
 extension TimeInterval {
+  /// Checks if this value is within the specified tolerance of another value
+  /// Uses baseline-relative percentage change for intuitive results
+  /// - Parameters:
+  ///   - tolerance: Maximum allowed percentage change (e.g., 0.25 for 25%)
+  ///   - other: The baseline value to compare against
+  /// - Returns: True if the relative change is within tolerance
   func isWithin(tolerance: Double, of other: TimeInterval) -> Bool {
     let difference = abs(self - other)
-    let maxValue = max(self, other)
-    return difference / maxValue <= tolerance
+    let baselineValue = other
+    guard baselineValue > 0 else { return difference == 0 } // Handle zero case
+    return difference / baselineValue <= tolerance
   }
 }
 

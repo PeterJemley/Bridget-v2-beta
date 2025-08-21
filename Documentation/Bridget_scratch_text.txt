@@ -1,47 +1,70 @@
-	•	Protocols.swift Creation: Create a new file named Protocols.swift to house all progress, status, and error reporting delegate protocols for the ML pipeline.
-	•	MLTypes.swift Creation: Create a new file named MLTypes.swift to house all shared, foundational types, error enums, and “shape” constants used throughout the ML pipeline.
-	•	Stabilize Shapes: Write constants for feature dimension, target dimension, and horizon list in MLTypes.swift.
-	•	File Organization: Move progress and status delegate protocols to `Protocols.swift`, and foundational structs/enums to `MLTypes.swift`.
-	•	Code Usage Update: Replace references in other modules with imports of `Protocols.swift` and `MLTypes.swift`, and replace duplicated literal constants with shared constants.
-	•	Documentation: Add documentation to `Protocols.swift` and `MLTypes.swift` to indicate that updates to shapes/horizons should be reflected throughout the pipeline.
-	•	Training Progress Delegate Protocol: Defines methods for reporting training progress, completion, failure, pipeline start, data processing, training start, training completion, and pipeline completion.
-	•	Feature Engineering Progress Delegate Protocol: Defines methods for reporting feature engineering start, horizon processing, completion, and failure.
-	•	ML Constants: Specifies the feature dimension as 12 and the target dimension as 1.
-	•	Default Horizons: An array of integers representing default horizon values: [0, 3, 6, 9, 12].
-	•	Data Models: Includes `FeatureVector`, `ModelValidationResult`, `CoreMLError`, `DataValidationResult`, and `ProbeTickRaw`.
-	•	Model Validation Result: Provides information about the validation of a trained model.
-
-
-
-After reviewing the latest version of PipelineParityValidatorTests.swift􀰓, here’s what I found:
+You're in a strong position, having resolved the main issues and reduced the failing tests to just three. Here’s targeted advice for addressing the last mile:
 
 ⸻
 
-Compliance with Apple Testing Framework
+1. Systematically Debug Each Remaining Test
 
-• Test Structure:
-All tests are contained in an @Suite with the name "Pipeline Parity Validator Tests".
+For each failing test, follow this order:
 
-• Assertion Style:
-Most assertions use #expect(...), which is the correct approach for the Apple Testing framework.
+A. Confirm Test Data Integrity
+• Ensure that the baseline and current data are truly identical (especially for “no change” tests).
+• For tests expecting warnings, re-calculate the percentage drift using your new logic to ensure the test data should trigger (or not trigger) a warning.
 
-• Test Discovery:
-All tests meant for execution are annotated with @Test and have descriptive names.
-Functions not intended as tests (helpers, setup, etc.) are not annotated.
+B. Check Configuration Alignment
+• Match the test’s expected tolerance with the actual config used during validation.
+• Sometimes, tests are written with comments or assertions that assume an old config value. Make sure both the config and the assertion match.
 
-• No XCTest Remnants:
-The file does not import or use XCTest or its assertion methods.
+C. Examine Logic for Subtle Edge Cases
+• For counts or performance, check for integer/floating-point rounding errors, e.g.:
+Int(Double(2880) * 0.97) // May not always exactly hit the intended delta
 
-• Async/Throws Support:
-Functions are properly marked with async throws as needed, matching their behavior.
-
-⸻
-
-Verdict
-
-Your PipelineParityValidatorTests.swift􀰓 file is fully compliant with the Apple Testing framework and ready for use.
-All tests will be properly discovered and executed by the Swift Testing runner, and the assertion style is modern and consistent.
+• If you’re comparing floats, ensure you’re not hitting precision issues (consider using a tiny epsilon).
 
 ⸻
 
-If you’d like to validate a specific test, review test output, or want advice on best practices for Apple Testing, let me know! Otherwise, you’re good to go.
+2. Use Logging or Temporary Prints
+
+Add temporary logs in both your validation code and your test setup to output:
+• The baseline and current values being compared
+• The computed relative delta
+• The tolerance being used
+• The final pass/fail result for that check
+
+This will make it much easier to spot where an unexpected comparison is happening.
+
+⸻
+
+3. Quick Checklist for Each Type of Remaining Test
+
+• No Change Test Failing?
+   • Double-check the test data creation methods for subtle clock, random, or order differences.
+   • Confirm both current and baseline configs are identical and that the validator isn’t injecting any metadata.
+
+• Change Detection Test Failing?
+   • Confirm the test data’s difference genuinely exceeds the intended tolerance.
+   • Make sure the test is not reusing a config with the wrong tolerance for the test’s intention.
+
+• Edge Case Test Failing?
+   • Check if zero or extremely small baseline values are causing division by zero or blowing up the relative change calculation.
+
+⸻
+
+4. If All Else Fails: Focus on the Simplest Test First
+
+Start with the “no change” test—if this passes, you can be confident your basic logic is solid. Then tackle the warning-triggering tests.
+
+⸻
+
+5. Consider Adding Utility Assertions
+
+To simplify debugging, add a helper for asserting “almost equal” for floating-point comparisons, e.g.:
+func assertAlmostEqual(_ a: Double, _ b: Double, epsilon: Double = 1e-9) {
+    XCTAssert(abs(a - b) < epsilon)
+}
+
+Summary
+
+• Check test data for true equality/mismatch.
+• Ensure configs match test expectations.
+• Log/check calculations for each failing test.
+• Start debugging with the simplest test.
