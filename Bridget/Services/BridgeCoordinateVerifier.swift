@@ -16,6 +16,7 @@
 
 import CoreLocation
 import Foundation
+import OSLog
 
 #if DEBUG
 
@@ -25,7 +26,7 @@ import Foundation
     /// Verifies that our hardcoded bridge coordinates match the API data.
     /// Outputs results to console for manual review.
     public static func verifyCoordinates() async {
-      print("🔍 Verifying bridge coordinates against API data...")
+      os_log("🔍 Verifying bridge coordinates against API data...", log: .default, type: .info)
 
       do {
         // Fetch coordinates from Seattle API using DEBUG-only access
@@ -50,22 +51,22 @@ import Foundation
 
             // Tolerance of ~100 meters (0.001 degrees ≈ 100m)
             if latDiff > 0.001 || lonDiff > 0.001 {
-              print("⚠️  \(bridge.name) (ID: \(bridge.id)): API differs significantly")
-              print("    Constants: \(bridge.coordinate.latitude), \(bridge.coordinate.longitude)")
-              print("    API:       \(apiLat), \(apiLon)")
-              print("    Diff:      lat=\(String(format: "%.6f", latDiff)), lon=\(String(format: "%.6f", lonDiff))")
+              os_log("⚠️  %{public}@ (ID: %d): API differs significantly", log: .default, type: .info, bridge.name, bridge.id)
+              os_log("    Constants: %f, %f", log: .default, type: .info, bridge.coordinate.latitude, bridge.coordinate.longitude)
+              os_log("    API: %f, %f", log: .default, type: .info, apiLat, apiLon)
+              os_log("    Diff: lat=%f, lon=%f", log: .default, type: .info, latDiff, lonDiff)
             } else {
-              print("✅ \(bridge.name) (ID: \(bridge.id)): coordinates match")
+              os_log("✅ %{public}@ (ID: %d): coordinates match", log: .default, type: .info, bridge.name, bridge.id)
             }
           } else {
-            print("❌ \(bridge.name) (ID: \(bridge.id)): no API data found")
+            os_log("❌ %{public}@ (ID: %d): no API data found", log: .default, type: .info, bridge.name, bridge.id)
           }
         }
 
-        print("🔍 Coordinate verification complete.")
+        os_log("🔍 Coordinate verification complete.", log: .default, type: .info)
 
       } catch {
-        print("❌ Failed to verify coordinates: \(error)")
+        os_log("❌ Failed to verify coordinates: %{public}@", log: .default, type: .error, error.localizedDescription)
       }
     }
   }

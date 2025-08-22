@@ -38,14 +38,18 @@ import Foundation
 
 /// Feature engineering specific errors
 public enum FeatureEngineeringError: Error, LocalizedError {
-  case invalidFeatureVector(bridgeId: Int, timestamp: String, horizon: Int, description: String)
+  case invalidFeatureVector(bridgeId: Int,
+                            timestamp: String,
+                            horizon: Int,
+                            description: String)
   case invalidInputData(description: String)
   case validationFailed(description: String)
   
   public var errorDescription: String? {
     switch self {
     case let .invalidFeatureVector(bridgeId, timestamp, horizon, description):
-      return "Invalid feature vector for bridge \(bridgeId) at \(timestamp) horizon \(horizon): \(description)"
+      return "Invalid feature vector for bridge \(bridgeId) at \(timestamp) horizon \(horizon): " +
+             "\(description)"
     case let .invalidInputData(description):
       return "Invalid input data: \(description)"
     case let .validationFailed(description):
@@ -168,13 +172,20 @@ internal func isValidValue(_ value: Double) -> Bool {
 /// - Returns: True if all features are valid
 internal func validateFeatureVector(_ featureVector: FeatureVector) -> Bool {
   let features = [
-    featureVector.min_sin, featureVector.min_cos,
-    featureVector.dow_sin, featureVector.dow_cos,
-    featureVector.open_5m, featureVector.open_30m,
-    featureVector.detour_delta, featureVector.cross_rate,
-    featureVector.via_routable, featureVector.via_penalty,
-    featureVector.gate_anom, featureVector.detour_frac,
-    featureVector.current_speed, featureVector.normal_speed
+    featureVector.min_sin,
+    featureVector.min_cos,
+    featureVector.dow_sin,
+    featureVector.dow_cos,
+    featureVector.open_5m,
+    featureVector.open_30m,
+    featureVector.detour_delta,
+    featureVector.cross_rate,
+    featureVector.via_routable,
+    featureVector.via_penalty,
+    featureVector.gate_anom,
+    featureVector.detour_frac,
+    featureVector.current_speed,
+    featureVector.normal_speed
   ]
   
   return features.allSatisfy { isValidValue($0) }
@@ -209,13 +220,19 @@ internal func validateFeatureVector(_ featureVector: FeatureVector) -> Bool {
 /// 
 /// - Example:
 ///   ```swift
-///   let features = try makeFeatures(from: probeTicks, horizons: [0, 3, 6])
+///   let features = try makeFeatures(
+///     from: probeTicks,
+///     horizons: [0, 3, 6]
+///   )
 ///   // Returns: [[FeatureVector]] where features[0] = horizon 0 features
-///   //          features[1] = horizon 3 features, features[2] = horizon 6 features
+///   //          features[1] = horizon 3 features,
+///   //          features[2] = horizon 6 features
 ///   ```
-public func makeFeatures(from ticks: [ProbeTickRaw],
-                         horizons: [Int],
-                         deterministicSeed: UInt64 = 42) throws -> [[FeatureVector]]
+public func makeFeatures(
+  from ticks: [ProbeTickRaw],
+  horizons: [Int],
+  deterministicSeed: UInt64 = 42
+) throws -> [[FeatureVector]]
 {
   // Note: deterministicSeed parameter is kept for API compatibility
   // but no random number generation is used in this pure function
@@ -227,7 +244,10 @@ public func makeFeatures(from ticks: [ProbeTickRaw],
 
   for (_, bridgeTicks) in grouped {
     let sortedTicks = bridgeTicks.sorted {
-      guard let d1 = isoFormatter.date(from: $0.ts_utc), let d2 = isoFormatter.date(from: $1.ts_utc) else { return false }
+      guard let d1 = isoFormatter.date(from: $0.ts_utc),
+            let d2 = isoFormatter.date(from: $1.ts_utc) else {
+        return false
+      }
       return d1 < d2
     }
 
@@ -246,34 +266,45 @@ public func makeFeatures(from ticks: [ProbeTickRaw],
         let targetIdx = i + horizon
         let target = (targetIdx < sortedTicks.count) ? sortedTicks[targetIdx].open_label : 0
 
-        let penaltyNorm = min(max(tick.via_penalty_sec ?? 0.0, 0.0), 900.0) / 900.0
-        let gateAnomNorm = min(max(tick.gate_anom ?? 1.0, 1.0), 8.0) / 8.0
+        let penaltyNorm = min(
+          max(tick.via_penalty_sec ?? 0.0, 0.0),
+          900.0
+        ) / 900.0
+
+        let gateAnomNorm = min(
+          max(tick.gate_anom ?? 1.0, 1.0),
+          8.0
+        ) / 8.0
+
         let crossRate: Double = {
           let k = tick.cross_k ?? 0.0
           let n = tick.cross_n ?? 0.0
           return n > 0 ? k / n : -1.0
         }()
+
         let vR = tick.via_routable ?? 0.0
         let detourDelta = tick.detour_delta ?? 0.0
         let detourFrac = tick.detour_frac ?? 0.0
 
-        let fv = FeatureVector(bridge_id: tick.bridge_id,
-                               horizon_min: horizon,
-                               min_sin: minSin,
-                               min_cos: minCos,
-                               dow_sin: dowSin,
-                               dow_cos: dowCos,
-                               open_5m: open5m[i],
-                               open_30m: open30m[i],
-                               detour_delta: detourDelta,
-                               cross_rate: crossRate,
-                               via_routable: vR,
-                               via_penalty: penaltyNorm,
-                               gate_anom: gateAnomNorm,
-                               detour_frac: detourFrac,
-                               current_speed: tick.current_traffic_speed ?? 0.0,
-                               normal_speed: tick.normal_traffic_speed ?? 35.0,
-                               target: target)
+        let fv = FeatureVector(
+          bridge_id: tick.bridge_id,
+          horizon_min: horizon,
+          min_sin: minSin,
+          min_cos: minCos,
+          dow_sin: dowSin,
+          dow_cos: dowCos,
+          open_5m: open5m[i],
+          open_30m: open30m[i],
+          detour_delta: detourDelta,
+          cross_rate: crossRate,
+          via_routable: vR,
+          via_penalty: penaltyNorm,
+          gate_anom: gateAnomNorm,
+          detour_frac: detourFrac,
+          current_speed: tick.current_traffic_speed ?? 0.0,
+          normal_speed: tick.normal_traffic_speed ?? 35.0,
+          target: target
+        )
         
         // Validate feature vector (zero NaNs/Inf as per Step 1 contracts)
         guard validateFeatureVector(fv) else {
@@ -313,7 +344,10 @@ public class FeatureEngineeringService {
   /// - Parameters:
   ///   - configuration: Feature engineering configuration including horizons and seed
   ///   - progressDelegate: Optional delegate for progress reporting during processing
-  public init(configuration: FeatureEngineeringConfiguration, progressDelegate: FeatureEngineeringProgressDelegate? = nil) {
+  public init(
+    configuration: FeatureEngineeringConfiguration,
+    progressDelegate: FeatureEngineeringProgressDelegate? = nil
+  ) {
     self.configuration = configuration
     self.progressDelegate = progressDelegate
   }
@@ -336,9 +370,11 @@ public class FeatureEngineeringService {
   public func generateFeatures(from ticks: [ProbeTickRaw]) throws -> [[FeatureVector]] {
     progressDelegate?.featureEngineeringDidStart()
 
-    let allFeatures = try makeFeatures(from: ticks,
-                                       horizons: configuration.horizons,
-                                       deterministicSeed: configuration.deterministicSeed)
+    let allFeatures = try makeFeatures(
+      from: ticks,
+      horizons: configuration.horizons,
+      deterministicSeed: configuration.deterministicSeed
+    )
 
     let totalFeatures = allFeatures.flatMap { $0 }.count
     progressDelegate?.featureEngineeringDidComplete(totalFeatures)
@@ -361,7 +397,9 @@ public class FeatureEngineeringService {
   /// 
   /// - Note: The input MLMultiArrays have shape [featureCount, featureDimension]
   ///         and target MLMultiArrays have shape [featureCount, targetDimension].
-  public func convertToMLMultiArrays(_ features: [FeatureVector]) throws -> ([MLMultiArray], [MLMultiArray]) {
+  public func convertToMLMultiArrays(
+    _ features: [FeatureVector]
+  ) throws -> ([MLMultiArray], [MLMultiArray]) {
     var inputs = [MLMultiArray]()
     var targets = [MLMultiArray]()
 
@@ -395,14 +433,21 @@ public class FeatureEngineeringService {
 /// 
 /// - Note: This function is suitable for simple use cases where the full service
 ///         configuration is not needed. For complex pipelines, use the service class directly.
-public func generateFeatures(ticks: [ProbeTickRaw],
-                             horizons: [Int] = defaultHorizons,
-                             deterministicSeed: UInt64 = 42,
-                             progressDelegate: FeatureEngineeringProgressDelegate? = nil) throws -> [[FeatureVector]]
+public func generateFeatures(
+  ticks: [ProbeTickRaw],
+  horizons: [Int] = defaultHorizons,
+  deterministicSeed: UInt64 = 42,
+  progressDelegate: FeatureEngineeringProgressDelegate? = nil
+) throws -> [[FeatureVector]]
 {
-  let config = FeatureEngineeringConfiguration(horizons: horizons,
-                                               deterministicSeed: deterministicSeed)
-  let service = FeatureEngineeringService(configuration: config, progressDelegate: progressDelegate)
+  let config = FeatureEngineeringConfiguration(
+    horizons: horizons,
+    deterministicSeed: deterministicSeed
+  )
+  let service = FeatureEngineeringService(
+    configuration: config,
+    progressDelegate: progressDelegate
+  )
   return try service.generateFeatures(from: ticks)
 }
 
@@ -417,8 +462,11 @@ public func generateFeatures(ticks: [ProbeTickRaw],
 /// 
 /// - Note: This function is suitable for simple conversion tasks. For complex
 ///         pipelines, use the service class directly.
-public func convertFeaturesToMLMultiArrays(_ features: [FeatureVector]) throws -> ([MLMultiArray], [MLMultiArray]) {
+public func convertFeaturesToMLMultiArrays(
+  _ features: [FeatureVector]
+) throws -> ([MLMultiArray], [MLMultiArray]) {
   let config = FeatureEngineeringConfiguration()
   let service = FeatureEngineeringService(configuration: config)
   return try service.convertToMLMultiArrays(features)
 }
+

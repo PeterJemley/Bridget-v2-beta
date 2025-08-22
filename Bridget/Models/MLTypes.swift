@@ -232,7 +232,12 @@ public struct DataValidationResult {
                                                             bridgeIDValidity: 0.0,
                                                             speedDataValidity: 0.0,
                                                             duplicateCount: 0,
-                                                            missingFieldsCount: 0)
+                                                            missingFieldsCount: 0,
+                                                            nanCounts: [:],
+                                                            infiniteCounts: [:],
+                                                            outlierCounts: [:],
+                                                            rangeViolations: [:],
+                                                            nullCounts: [:])
 
   public init(totalRecords: Int = 0,
               bridgeCount: Int = 0,
@@ -250,7 +255,12 @@ public struct DataValidationResult {
                                                                           bridgeIDValidity: 0.0,
                                                                           speedDataValidity: 0.0,
                                                                           duplicateCount: 0,
-                                                                          missingFieldsCount: 0))
+                                                                          missingFieldsCount: 0,
+                                                                          nanCounts: [:],
+                                                                          infiniteCounts: [:],
+                                                                          outlierCounts: [:],
+                                                                          rangeViolations: [:],
+                                                                          nullCounts: [:]))
   {
     self.totalRecords = totalRecords
     self.bridgeCount = bridgeCount

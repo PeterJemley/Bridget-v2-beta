@@ -202,13 +202,28 @@ public struct DataQualityMetrics: Codable {
   public let duplicateCount: Int
   /// Number of records with missing required fields
   public let missingFieldsCount: Int
+  /// Count of NaN values by field name
+  public let nanCounts: [String: Int]
+  /// Count of infinite values by field name
+  public let infiniteCounts: [String: Int]
+  /// Count of outlier values by field name
+  public let outlierCounts: [String: Int]
+  /// Count of range violations by field name
+  public let rangeViolations: [String: Int]
+  /// Count of null values by field name
+  public let nullCounts: [String: Int]
 
   public init(dataCompleteness: Double,
               timestampValidity: Double,
               bridgeIDValidity: Double,
               speedDataValidity: Double,
               duplicateCount: Int,
-              missingFieldsCount: Int)
+              missingFieldsCount: Int,
+              nanCounts: [String: Int] = [:],
+              infiniteCounts: [String: Int] = [:],
+              outlierCounts: [String: Int] = [:],
+              rangeViolations: [String: Int] = [:],
+              nullCounts: [String: Int] = [:])
   {
     self.dataCompleteness = dataCompleteness
     self.timestampValidity = timestampValidity
@@ -216,6 +231,11 @@ public struct DataQualityMetrics: Codable {
     self.speedDataValidity = speedDataValidity
     self.duplicateCount = duplicateCount
     self.missingFieldsCount = missingFieldsCount
+    self.nanCounts = nanCounts
+    self.infiniteCounts = infiniteCounts
+    self.outlierCounts = outlierCounts
+    self.rangeViolations = rangeViolations
+    self.nullCounts = nullCounts
   }
 }
 
