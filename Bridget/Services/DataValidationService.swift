@@ -34,12 +34,12 @@ public struct ValidationConfig {
   /// Thresholds per bridge ID
   public var bridgeThresholds: [Int: BridgeThresholds] = [:]
   /// Global default thresholds
-  public var defaultThresholds: BridgeThresholds = BridgeThresholds()
+  public var defaultThresholds: BridgeThresholds = .init()
   /// Feature-specific thresholds
   public var featureThresholds: [String: FeatureThresholds] = [:]
   /// Performance settings
-  public var performanceConfig: PerformanceConfig = PerformanceConfig()
-  
+  public var performanceConfig: PerformanceConfig = .init()
+
   public init() {}
 }
 
@@ -48,7 +48,7 @@ public struct BridgeThresholds {
   public var maxMissingRatio: Double = 0.5
   public var outlierZScore: Double = 3.0
   public var rangeTolerances: [String: (min: Double, max: Double)] = [:]
-  
+
   public init() {}
 }
 
@@ -57,7 +57,7 @@ public struct FeatureThresholds {
   public var validRange: (min: Double, max: Double)?
   public var outlierMultiplier: Double = 1.5
   public var maxNullRatio: Double = 0.1
-  
+
   public init() {}
 }
 
@@ -66,7 +66,7 @@ public struct PerformanceConfig {
   public var enableParallelValidation: Bool = true
   public var batchSize: Int = 1000
   public var maxConcurrentValidators: Int = 4
-  
+
   public init() {}
 }
 
@@ -85,39 +85,39 @@ public protocol CustomValidator {
 /// ensuring data quality before and after feature engineering steps.
 public class DataValidationService {
   // MARK: - Properties
-  
+
   /// Validation configuration with customizable thresholds
   public var config: ValidationConfig
-  
+
   /// Registered custom validators
   private var customValidators: [CustomValidator] = []
-  
+
   // MARK: - Initialization
-  
+
   public init(config: ValidationConfig = ValidationConfig()) {
     self.config = config
   }
-  
+
   // MARK: - Public API
-  
+
   /// Registers a custom validator
   /// - Parameter validator: The custom validator to register
   public func registerValidator(_ validator: CustomValidator) {
     customValidators.append(validator)
     customValidators.sort { $0.priority < $1.priority }
   }
-  
+
   /// Removes a custom validator by name
   /// - Parameter name: The name of the validator to remove
   public func removeValidator(named name: String) {
     customValidators.removeAll { $0.name == name }
   }
-  
+
   /// Gets explanation for all validators
   /// - Returns: Dictionary of validator names to their explanations
   public func getValidatorExplanations() -> [String: String] {
     var explanations: [String: String] = [:]
-    
+
     // Built-in validators with actionable explanations
     explanations["RangeValidator"] = "Validates numeric values are within expected ranges for each field. Provides specific field names and values that violate ranges."
     explanations["TimestampValidator"] = "Checks timestamp format, monotonicity, and time windows. Reports specific timestamp issues and suggests corrections."
@@ -127,12 +127,12 @@ public class DataValidationService {
     explanations["FeatureValidator"] = "Validates feature vectors for ML pipeline compatibility. Ensures all required features are present and properly formatted."
     explanations["MissingRatioValidator"] = "Analyzes missing data ratios across fields. Flags fields with excessive missing data that may need attention."
     explanations["TimestampWindowValidator"] = "Validates timestamp windows and time-based patterns. Identifies unusual time spans and suggests data collection improvements."
-    
+
     // Custom validators
     for validator in customValidators {
       explanations[validator.name] = validator.explain()
     }
-    
+
     return explanations
   }
 
@@ -167,16 +167,23 @@ public class DataValidationService {
       async let outlierResult = Task { checkOutliers(ticks: ticks) }.value
 
       // Wait for all results
-      let results = await [rangeCheckResult, timestampResult, timestampWindowResult, 
-                          duplicateResult, missingDataResult, missingRatioResult, 
-                          coverageResult, outlierResult]
-      
+      let results = await [
+        rangeCheckResult,
+        timestampResult,
+        timestampWindowResult,
+        duplicateResult,
+        missingDataResult,
+        missingRatioResult,
+        coverageResult,
+        outlierResult,
+      ]
+
       // Aggregate results
       for validationResult in results {
         result.errors.append(contentsOf: validationResult.errors)
         result.warnings.append(contentsOf: validationResult.warnings)
       }
-      
+
       // Update specific metrics
       result.invalidBridgeIds = results[0].invalidBridgeIds
       result.invalidOpenLabels = results[0].invalidOpenLabels
@@ -421,43 +428,43 @@ public class DataValidationService {
   /// Validates timestamp windows and time-based patterns
   private func checkTimestampWindows(ticks: [ProbeTickRaw]) -> DataValidationResult {
     var result = DataValidationResult()
-    
+
     let timestamps = ticks.compactMap { ISO8601DateFormatter().date(from: $0.ts_utc) }.sorted()
     guard timestamps.count > 1 else { return result }
-    
+
     // Check for reasonable time windows
     let timeSpan = timestamps.last!.timeIntervalSince(timestamps.first!)
-    
+
     // Flag very short time spans (less than 1 hour)
     if timeSpan < 3600 {
       result.warnings.append("Very short time span: \(String(format: "%.1f", timeSpan / 60)) minutes")
     }
-    
+
     // Flag very long time spans (more than 30 days)
     if timeSpan > 30 * 24 * 3600 {
       result.warnings.append("Very long time span: \(String(format: "%.1f", timeSpan / (24 * 3600))) days")
     }
-    
+
     // Check for gaps in time series
     var gaps: [TimeInterval] = []
-    for i in 1..<timestamps.count {
-      let gap = timestamps[i].timeIntervalSince(timestamps[i-1])
+    for i in 1 ..< timestamps.count {
+      let gap = timestamps[i].timeIntervalSince(timestamps[i - 1])
       if gap > 3600 { // Gap larger than 1 hour
         gaps.append(gap)
       }
     }
-    
+
     if !gaps.isEmpty {
       let avgGap = gaps.reduce(0, +) / Double(gaps.count)
       result.warnings.append("Found \(gaps.count) time gaps, average: \(String(format: "%.1f", avgGap / 3600)) hours")
     }
-    
+
     // Check for time-of-day patterns
     let calendar = Calendar.current
     let hourDistribution = Dictionary(grouping: timestamps) { timestamp in
       calendar.component(.hour, from: timestamp)
     }.mapValues { $0.count }
-    
+
     let minHour = hourDistribution.values.min() ?? 0
     let maxHour = hourDistribution.values.max() ?? 0
     if maxHour > 0 && minHour > 0 {
@@ -466,7 +473,7 @@ public class DataValidationService {
         result.warnings.append("Unbalanced hour distribution: ratio \(String(format: "%.1f", ratio))")
       }
     }
-    
+
     return result
   }
 
@@ -476,7 +483,7 @@ public class DataValidationService {
     var seenRecords: Set<String> = []
     var duplicateCount = 0
     var duplicateDetails: [String] = []
-    
+
     for tick in ticks {
       let recordKey = "\(tick.bridge_id)_\(tick.ts_utc)"
       if seenRecords.contains(recordKey) {
@@ -486,7 +493,7 @@ public class DataValidationService {
         seenRecords.insert(recordKey)
       }
     }
-    
+
     if duplicateCount > 0 {
       result.warnings.append("Found \(duplicateCount) duplicate records in dataset")
       if duplicateCount <= 5 { // Show details for small numbers of duplicates
@@ -496,7 +503,7 @@ public class DataValidationService {
       }
       result.warnings.append("Action: Remove duplicate records to prevent data quality issues and potential ML training problems.")
     }
-    
+
     // Update data quality metrics
     let currentMetrics = result.dataQualityMetrics
     result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
@@ -510,7 +517,7 @@ public class DataValidationService {
                                                    outlierCounts: currentMetrics.outlierCounts,
                                                    rangeViolations: currentMetrics.rangeViolations,
                                                    nullCounts: currentMetrics.nullCounts)
-    
+
     return result
   }
 
@@ -595,13 +602,13 @@ public class DataValidationService {
   private func checkMissingRatios(ticks: [ProbeTickRaw]) -> DataValidationResult {
     var result = DataValidationResult()
     var missingRatios: [String: Double] = [:]
-    
+
     let fields = [
       "cross_k", "cross_n", "via_routable", "via_penalty_sec",
       "gate_anom", "alternates_total", "alternates_avoid",
-      "detour_delta", "detour_frac"
+      "detour_delta", "detour_frac",
     ]
-    
+
     for field in fields {
       var nullCount = 0
       for tick in ticks {
@@ -610,10 +617,10 @@ public class DataValidationService {
           nullCount += 1
         }
       }
-      
+
       let missingRatio = Double(nullCount) / Double(ticks.count)
       missingRatios[field] = missingRatio
-      
+
       // Flag high missing ratios
       if missingRatio > 0.5 {
         result.warnings.append("High missing ratio for \(field): \(String(format: "%.1f%%", missingRatio * 100))")
@@ -621,7 +628,7 @@ public class DataValidationService {
         result.warnings.append("Moderate missing ratio for \(field): \(String(format: "%.1f%%", missingRatio * 100))")
       }
     }
-    
+
     // Update data quality metrics with missing ratios
     let currentMetrics = result.dataQualityMetrics
     result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
@@ -635,7 +642,7 @@ public class DataValidationService {
                                                    outlierCounts: currentMetrics.outlierCounts,
                                                    rangeViolations: currentMetrics.rangeViolations,
                                                    nullCounts: currentMetrics.nullCounts)
-    
+
     return result
   }
 

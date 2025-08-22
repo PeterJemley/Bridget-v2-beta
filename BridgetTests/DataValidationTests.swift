@@ -481,22 +481,22 @@ struct DataValidationTests {
   mutating func shufflingPreservesValidationProperties() async throws {
     try await setUp()
     guard goldenSampleTicks.count > 10 else { return }
-    
+
     let originalResult = validationService.validate(ticks: goldenSampleTicks)
     let shuffledTicks = goldenSampleTicks.shuffled()
     let shuffledResult = validationService.validate(ticks: shuffledTicks)
-    
+
     // Basic counts should be preserved
     #expect(originalResult.totalRecords == shuffledResult.totalRecords)
     #expect(originalResult.bridgeCount == shuffledResult.bridgeCount)
-    
+
     // Validation rate should be preserved (order-independent validation)
     #expect(abs(originalResult.validationRate - shuffledResult.validationRate) < 0.001)
-    
+
     // Data quality metrics should be preserved (within floating point tolerance)
     #expect(abs(originalResult.dataQualityMetrics.dataCompleteness - shuffledResult.dataQualityMetrics.dataCompleteness) < 0.001)
     #expect(abs(originalResult.dataQualityMetrics.bridgeIDValidity - shuffledResult.dataQualityMetrics.bridgeIDValidity) < 0.001)
-    
+
     // Note: Error and warning counts may differ due to order-dependent checks like timestamp monotonicity
     // But the core validation results should be consistent
   }
@@ -505,9 +505,9 @@ struct DataValidationTests {
   mutating func constantOffsetsShiftStatisticsPredictably() async throws {
     try await setUp()
     guard goldenSampleTicks.count > 5 else { return }
-    
+
     let originalResult = validationService.validate(ticks: goldenSampleTicks)
-    
+
     // Create data with constant offset added to all numeric fields
     let offsetTicks = goldenSampleTicks.map { tick in
       ProbeTickRaw(v: tick.v,
@@ -524,29 +524,29 @@ struct DataValidationTests {
                    detour_delta: tick.detour_delta.map { $0 + 10.0 },
                    detour_frac: tick.detour_frac.map { $0 + 10.0 })
     }
-    
+
     let offsetResult = validationService.validate(ticks: offsetTicks)
-    
+
     // Basic counts should remain the same
     #expect(originalResult.totalRecords == offsetResult.totalRecords)
     #expect(originalResult.bridgeCount == offsetResult.bridgeCount)
-    
+
     // Validation rate might change due to range violations, but should be predictable
-    #expect(offsetResult.validationRate <= originalResult.validationRate || 
-            offsetResult.warnings.contains { $0.contains("range") })
+    #expect(offsetResult.validationRate <= originalResult.validationRate ||
+      offsetResult.warnings.contains { $0.contains("range") })
   }
 
   @Test("Feature vector validation should be invariant under horizon reordering")
   mutating func featureVectorHorizonInvariance() async throws {
     try await setUp()
     guard goldenSampleFeatures.count > 10 else { return }
-    
+
     let originalResult = validationService.validate(features: goldenSampleFeatures)
-    
+
     // Reorder features by horizon
     let reorderedFeatures = goldenSampleFeatures.sorted { $0.horizon_min < $1.horizon_min }
     let reorderedResult = validationService.validate(features: reorderedFeatures)
-    
+
     // Validation results should be identical
     #expect(originalResult.totalRecords == reorderedResult.totalRecords)
     #expect(originalResult.bridgeCount == reorderedResult.bridgeCount)
@@ -574,7 +574,7 @@ struct DataValidationTests {
   @Test("Unusual but valid timestamps should be handled correctly")
   mutating func unusualTimestampHandling() async throws {
     try await setUp()
-    
+
     let unusualTicks = [
       // Leap year date
       ProbeTickRaw(v: 1, ts_utc: "2024-02-29T12:00:00Z", bridge_id: 1,
@@ -590,7 +590,7 @@ struct DataValidationTests {
       ProbeTickRaw(v: 1, ts_utc: "2099-12-31T23:59:59Z", bridge_id: 3,
                    cross_k: 0.4, cross_n: 0.9, via_routable: 0.7,
                    via_penalty_sec: 35.0, gate_anom: 0.15, alternates_total: 1.0,
-                   alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4)
+                   alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
     ]
 
     let result = validationService.validate(ticks: unusualTicks)
@@ -605,7 +605,7 @@ struct DataValidationTests {
   @Test("Leap second and mixed timezone timestamps should be handled correctly")
   mutating func leapSecondAndTimezoneHandling() async throws {
     try await setUp()
-    
+
     let timezoneTicks = [
       // Leap second (June 30, 2015)
       ProbeTickRaw(v: 1, ts_utc: "2015-06-30T23:59:60Z", bridge_id: 1,
@@ -626,7 +626,7 @@ struct DataValidationTests {
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T15:00:00-05:00", bridge_id: 4,
                    cross_k: 0.3, cross_n: 0.8, via_routable: 0.6,
                    via_penalty_sec: 40.0, gate_anom: 0.2, alternates_total: 1.5,
-                   alternates_avoid: 0.6, open_label: 1, detour_delta: 180.0, detour_frac: 0.5)
+                   alternates_avoid: 0.6, open_label: 1, detour_delta: 180.0, detour_frac: 0.5),
     ]
 
     let result = validationService.validate(ticks: timezoneTicks)
@@ -634,7 +634,7 @@ struct DataValidationTests {
     #expect(result.totalRecords == 4)
     #expect(result.timestampRange.first != nil)
     #expect(result.timestampRange.last != nil)
-    
+
     // Leap seconds and timezone offsets should be handled gracefully
     // Note: ISO8601DateFormatter may not support leap seconds, so we expect warnings
     // but not fatal errors that would break validation
@@ -645,7 +645,7 @@ struct DataValidationTests {
   @Test("All-missing or all-NaN features should be clearly reported")
   mutating func allMissingFeaturesDetection() async throws {
     try await setUp()
-    
+
     let allMissingTicks = [
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
                    cross_k: nil, cross_n: nil, via_routable: nil,
@@ -654,7 +654,7 @@ struct DataValidationTests {
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 2,
                    cross_k: Double.nan, cross_n: Double.nan, via_routable: Double.nan,
                    via_penalty_sec: Double.nan, gate_anom: Double.nan, alternates_total: Double.nan,
-                   alternates_avoid: Double.nan, open_label: 1, detour_delta: Double.nan, detour_frac: Double.nan)
+                   alternates_avoid: Double.nan, open_label: 1, detour_delta: Double.nan, detour_frac: Double.nan),
     ]
 
     let result = validationService.validate(ticks: allMissingTicks)
@@ -669,7 +669,7 @@ struct DataValidationTests {
   @Test("All values NaN/infinite for specific fields should be detected and reported")
   mutating func allValuesNaNInfiniteForFields() async throws {
     try await setUp()
-    
+
     let fieldSpecificTicks = [
       // All cross_k values are NaN
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
@@ -696,24 +696,24 @@ struct DataValidationTests {
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:05:00Z", bridge_id: 6,
                    cross_k: 0.4, cross_n: 0.9, via_routable: 0.7,
                    via_penalty_sec: Double.infinity, gate_anom: 0.15, alternates_total: 1.0,
-                   alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4)
+                   alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
     ]
 
     let result = validationService.validate(ticks: fieldSpecificTicks)
 
     #expect(result.totalRecords == 6)
     #expect(result.isValid == false)
-    
+
     // Should detect that all cross_k values are NaN
     #expect(result.dataQualityMetrics.nanCounts["cross_k"] == 3)
-    
+
     // Should detect that all via_penalty_sec values are infinite
     #expect(result.dataQualityMetrics.infiniteCounts["via_penalty_sec"] == 3)
-    
+
     // Should provide actionable error messages
     #expect(result.errors.contains { $0.contains("NaN values") })
     #expect(result.errors.contains { $0.contains("infinite") || $0.contains("Infinite") })
-    
+
     // Should provide field-specific warnings
     #expect(result.warnings.contains { $0.contains("cross_k") || $0.contains("via_penalty_sec") })
   }
@@ -721,12 +721,12 @@ struct DataValidationTests {
   @Test("High cardinality bridge IDs should be handled efficiently")
   mutating func highCardinalityHandling() async throws {
     try await setUp()
-    
+
     // Generate ticks with many unique bridge IDs
     var highCardinalityTicks: [ProbeTickRaw] = []
-    for bridgeId in 1...1000 {
+    for bridgeId in 1 ... 1000 {
       highCardinalityTicks.append(
-        ProbeTickRaw(v: 1, ts_utc: "2025-01-01T\(String(format: "%02d", bridgeId % 24)):00:00Z", 
+        ProbeTickRaw(v: 1, ts_utc: "2025-01-01T\(String(format: "%02d", bridgeId % 24)):00:00Z",
                      bridge_id: bridgeId,
                      cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
                      via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
@@ -745,7 +745,7 @@ struct DataValidationTests {
   @Test("Precision loss near range boundaries should be handled correctly")
   mutating func precisionLossHandling() async throws {
     try await setUp()
-    
+
     let precisionTicks = [
       // Values very close to valid range boundaries
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
@@ -756,7 +756,7 @@ struct DataValidationTests {
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 2,
                    cross_k: 0.123456789123456789, cross_n: 1.987654321987654321, via_routable: 0.555555555555555555,
                    via_penalty_sec: 29.999999999999999, gate_anom: 0.111111111111111111, alternates_total: 2.888888888888888888,
-                   alternates_avoid: 0.444444444444444444, open_label: 1, detour_delta: 119.999999999999999, detour_frac: 0.333333333333333333)
+                   alternates_avoid: 0.444444444444444444, open_label: 1, detour_delta: 119.999999999999999, detour_frac: 0.333333333333333333),
     ]
 
     let result = validationService.validate(ticks: precisionTicks)
@@ -770,7 +770,7 @@ struct DataValidationTests {
   @Test("Non-default horizons should yield actionable warnings")
   mutating func nonDefaultHorizonsHandling() async throws {
     try await setUp()
-    
+
     let nonStandardFeatures = [
       FeatureVector(bridge_id: 1, horizon_min: 2, min_sin: 0.5, min_cos: 0.866, dow_sin: 0.0, dow_cos: 1.0,
                     open_5m: 0.3, open_30m: 0.7, detour_delta: 120.0, cross_rate: 0.25,
@@ -783,7 +783,7 @@ struct DataValidationTests {
       FeatureVector(bridge_id: 3, horizon_min: 11, min_sin: 0.259, min_cos: 0.966, dow_sin: 0.5, dow_cos: 0.866,
                     open_5m: 0.5, open_30m: 0.8, detour_delta: 150.0, cross_rate: 0.15,
                     via_routable: 0.7, via_penalty: 35.0, gate_anom: 0.15, detour_frac: 0.4,
-                    current_speed: 45.0, normal_speed: 55.0, target: 1) // Non-standard 11-minute horizon
+                    current_speed: 45.0, normal_speed: 55.0, target: 1), // Non-standard 11-minute horizon
     ]
 
     let result = validationService.validate(features: nonStandardFeatures)
@@ -800,36 +800,34 @@ struct DataValidationTests {
   @Test("Fuzz testing with random data should not crash")
   mutating func fuzzTestingResilience() async throws {
     try await setUp()
-    
-    for iteration in 1...10 {
+
+    for iteration in 1 ... 10 {
       var fuzzTicks: [ProbeTickRaw] = []
-      
+
       // Generate random probe ticks with various valid/invalid combinations
-      for _ in 1...50 {
-        let randomTick = ProbeTickRaw(
-          v: Int.random(in: 1...2),
-          ts_utc: generateRandomTimestamp(),
-          bridge_id: Int.random(in: 1...20),
-          cross_k: randomOptionalDouble(validRange: 0...2, nilChance: 0.1, nanChance: 0.05),
-          cross_n: randomOptionalDouble(validRange: 0...3, nilChance: 0.1, nanChance: 0.05),
-          via_routable: randomOptionalDouble(validRange: 0...1, nilChance: 0.1, nanChance: 0.05),
-          via_penalty_sec: randomOptionalDouble(validRange: 0...100, nilChance: 0.1, nanChance: 0.05),
-          gate_anom: randomOptionalDouble(validRange: 0...1, nilChance: 0.1, nanChance: 0.05),
-          alternates_total: randomOptionalDouble(validRange: 0...10, nilChance: 0.1, nanChance: 0.05),
-          alternates_avoid: randomOptionalDouble(validRange: 0...1, nilChance: 0.1, nanChance: 0.05),
-          open_label: Int.random(in: 0...1),
-          detour_delta: randomOptionalDouble(validRange: 0...300, nilChance: 0.1, nanChance: 0.05),
-          detour_frac: randomOptionalDouble(validRange: 0...1, nilChance: 0.1, nanChance: 0.05)
-        )
+      for _ in 1 ... 50 {
+        let randomTick = ProbeTickRaw(v: Int.random(in: 1 ... 2),
+                                      ts_utc: generateRandomTimestamp(),
+                                      bridge_id: Int.random(in: 1 ... 20),
+                                      cross_k: randomOptionalDouble(validRange: 0 ... 2, nilChance: 0.1, nanChance: 0.05),
+                                      cross_n: randomOptionalDouble(validRange: 0 ... 3, nilChance: 0.1, nanChance: 0.05),
+                                      via_routable: randomOptionalDouble(validRange: 0 ... 1, nilChance: 0.1, nanChance: 0.05),
+                                      via_penalty_sec: randomOptionalDouble(validRange: 0 ... 100, nilChance: 0.1, nanChance: 0.05),
+                                      gate_anom: randomOptionalDouble(validRange: 0 ... 1, nilChance: 0.1, nanChance: 0.05),
+                                      alternates_total: randomOptionalDouble(validRange: 0 ... 10, nilChance: 0.1, nanChance: 0.05),
+                                      alternates_avoid: randomOptionalDouble(validRange: 0 ... 1, nilChance: 0.1, nanChance: 0.05),
+                                      open_label: Int.random(in: 0 ... 1),
+                                      detour_delta: randomOptionalDouble(validRange: 0 ... 300, nilChance: 0.1, nanChance: 0.05),
+                                      detour_frac: randomOptionalDouble(validRange: 0 ... 1, nilChance: 0.1, nanChance: 0.05))
         fuzzTicks.append(randomTick)
       }
-      
+
       // Validation should not crash regardless of input
       let result = validationService.validate(ticks: fuzzTicks)
-      
+
       #expect(result.totalRecords == 50)
       #expect(!result.summary.isEmpty) // Should always provide some summary
-      
+
       // For iteration tracking
       if iteration % 5 == 0 {
         print("Completed fuzz test iteration \(iteration)/10")
@@ -840,7 +838,7 @@ struct DataValidationTests {
   @Test("Partial failure simulation should provide targeted messages")
   mutating func partialFailureSimulation() async throws {
     try await setUp()
-    
+
     let mixedQualityTicks = [
       // Good record
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
@@ -861,18 +859,18 @@ struct DataValidationTests {
       ProbeTickRaw(v: 1, ts_utc: "invalid-timestamp", bridge_id: 1,
                    cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
                    via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3)
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
     ]
 
     let result = validationService.validate(ticks: mixedQualityTicks)
 
     #expect(result.totalRecords == 4)
     #expect(result.bridgeCount >= 2) // Should identify valid bridges
-    
+
     // Should have targeted error messages
     #expect(result.errors.contains { $0.contains("bridge") || $0.contains("999") })
     #expect(result.errors.contains { $0.contains("timestamp") || $0.contains("invalid") })
-    
+
     // Should provide bridge-specific insights in summary
     #expect(!result.detailedSummary.isEmpty)
   }
@@ -880,7 +878,7 @@ struct DataValidationTests {
   @Test("Snapshot testing for validation output consistency")
   mutating func validationOutputSnapshot() async throws {
     try await setUp()
-    
+
     // Create a consistent test dataset
     let snapshotTicks = [
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
@@ -890,7 +888,7 @@ struct DataValidationTests {
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 1,
                    cross_k: Double.nan, cross_n: 1.1, via_routable: 0.9,
                    via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2)
+                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
     ]
 
     let result = validationService.validate(ticks: snapshotTicks)
@@ -910,7 +908,7 @@ struct DataValidationTests {
   @Test("Unknown feature fields should be gracefully ignored with warnings")
   mutating func unknownFieldHandling() async throws {
     try await setUp()
-    
+
     // Simulate feature vectors with additional unknown fields
     // Note: Swift's strong typing prevents us from adding unknown fields directly,
     // but we can test the validator's response to unexpected field combinations
@@ -918,15 +916,15 @@ struct DataValidationTests {
       FeatureVector(bridge_id: 1, horizon_min: 0, min_sin: 0.5, min_cos: 0.866, dow_sin: 0.0, dow_cos: 1.0,
                     open_5m: 0.3, open_30m: 0.7, detour_delta: 120.0, cross_rate: 0.25,
                     via_routable: 0.8, via_penalty: 30.0, gate_anom: 0.1, detour_frac: 0.3,
-                    current_speed: 50.0, normal_speed: 60.0, target: 1)
+                    current_speed: 50.0, normal_speed: 60.0, target: 1),
     ]
-    
+
     let result = validationService.validate(features: standardFeatures)
-    
+
     // Validator should handle standard features without warnings about unknown fields
     #expect(result.totalRecords == 1)
     #expect(!result.warnings.contains { $0.contains("unknown") || $0.contains("Unknown") })
-    
+
     // Future enhancement: when unknown field handling is added,
     // test that it warns gracefully about unexpected fields
   }
@@ -934,7 +932,7 @@ struct DataValidationTests {
   @Test("Data drift detection should flag statistical changes")
   mutating func dataDriftDetection() async throws {
     try await setUp()
-    
+
     // Create baseline data with known statistical properties
     let baselineTicks = [
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
@@ -944,9 +942,9 @@ struct DataValidationTests {
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 1,
                    cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
                    via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2)
+                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
     ]
-    
+
     // Create drifted data with significantly different statistics
     let driftedTicks = [
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T13:00:00Z", bridge_id: 1,
@@ -956,7 +954,7 @@ struct DataValidationTests {
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T13:01:00Z", bridge_id: 1,
                    cross_k: 1.6, cross_n: 2.1, via_routable: 0.2,
                    via_penalty_sec: 85.0, gate_anom: 0.9, alternates_total: 9.0,
-                   alternates_avoid: 0.95, open_label: 1, detour_delta: 320.0, detour_frac: 0.9)
+                   alternates_avoid: 0.95, open_label: 1, detour_delta: 320.0, detour_frac: 0.9),
     ]
 
     let baselineResult = validationService.validate(ticks: baselineTicks)
@@ -965,7 +963,7 @@ struct DataValidationTests {
     // Both should be structurally valid
     #expect(baselineResult.totalRecords == 2)
     #expect(driftedResult.totalRecords == 2)
-    
+
     // Drifted data should trigger warnings about extreme values (future enhancement)
     // For now, just verify the validator processes both datasets
     #expect(baselineResult.validationRate >= 0.0)
@@ -975,12 +973,12 @@ struct DataValidationTests {
   @Test("Async validation should handle large datasets efficiently")
   mutating func asyncValidationPerformance() async throws {
     try await setUp()
-    
+
     // Create a moderately large dataset
     var largeTicks: [ProbeTickRaw] = []
-    for i in 1...500 {
+    for i in 1 ... 500 {
       largeTicks.append(
-        ProbeTickRaw(v: 1, ts_utc: "2025-01-01T\(String(format: "%02d", (i % 24))):00:00Z", 
+        ProbeTickRaw(v: 1, ts_utc: "2025-01-01T\(String(format: "%02d", i % 24)):00:00Z",
                      bridge_id: (i % 10) + 1,
                      cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
                      via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
@@ -1002,12 +1000,12 @@ struct DataValidationTests {
   @Test("Custom validator registration and execution")
   mutating func customValidatorIntegration() async throws {
     try await setUp()
-    
+
     // Create a mock custom validator
     struct MockValidator: CustomValidator {
       let name = "MockBridgeIDValidator"
       let priority = 10
-      
+
       func validate(ticks: [ProbeTickRaw]) async -> DataValidationResult {
         var result = DataValidationResult()
         let invalidBridges = ticks.filter { $0.bridge_id > 100 }
@@ -1016,36 +1014,36 @@ struct DataValidationTests {
         }
         return result
       }
-      
-      func validate(features: [FeatureVector]) async -> DataValidationResult {
+
+      func validate(features _: [FeatureVector]) async -> DataValidationResult {
         return DataValidationResult()
       }
-      
+
       func explain() -> String {
         return "Mock validator that flags bridge IDs greater than 100"
       }
     }
-    
+
     // Register the custom validator
     validationService.registerValidator(MockValidator())
-    
+
     // Test with data that should trigger the custom validator
     let testTicks = [
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 150, // Should trigger mock validator
                    cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
                    via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3)
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
     ]
 
     let result = await validationService.validateAsync(ticks: testTicks)
 
     // Should include error from custom validator
     #expect(result.errors.contains { $0.contains("Mock validator") })
-    
+
     // Test validator explanation
     let explanations = validationService.getValidatorExplanations()
     #expect(explanations["MockBridgeIDValidator"] == "Mock validator that flags bridge IDs greater than 100")
-    
+
     // Clean up
     validationService.removeValidator(named: "MockBridgeIDValidator")
   }
@@ -1053,12 +1051,12 @@ struct DataValidationTests {
   @Test("Runtime plugin registration, configuration, disable, and priority")
   mutating func runtimePluginManagement() async throws {
     try await setUp()
-    
+
     // Create multiple validators with different priorities
     struct HighPriorityValidator: CustomValidator {
       let name = "HighPriorityValidator"
       let priority = 1 // High priority (lower number = higher priority)
-      
+
       func validate(ticks: [ProbeTickRaw]) async -> DataValidationResult {
         var result = DataValidationResult()
         if ticks.count > 10 {
@@ -1066,23 +1064,23 @@ struct DataValidationTests {
         }
         return result
       }
-      
-      func validate(features: [FeatureVector]) async -> DataValidationResult {
+
+      func validate(features _: [FeatureVector]) async -> DataValidationResult {
         return DataValidationResult()
       }
-      
+
       func explain() -> String {
         return "High priority validator that warns about large datasets"
       }
     }
-    
+
     struct MediumPriorityValidator: CustomValidator {
       let name = "MediumPriorityValidator"
       let priority = 50
-      
+
       func validate(ticks: [ProbeTickRaw]) async -> DataValidationResult {
         var result = DataValidationResult()
-        let highSpeedRecords = ticks.filter { 
+        let highSpeedRecords = ticks.filter {
           // Check if any speed-related fields are unusually high
           ($0.cross_k ?? 0) > 2.0 || ($0.cross_n ?? 0) > 3.0
         }
@@ -1091,20 +1089,20 @@ struct DataValidationTests {
         }
         return result
       }
-      
-      func validate(features: [FeatureVector]) async -> DataValidationResult {
+
+      func validate(features _: [FeatureVector]) async -> DataValidationResult {
         return DataValidationResult()
       }
-      
+
       func explain() -> String {
         return "Medium priority validator that checks for high speed values"
       }
     }
-    
+
     struct LowPriorityValidator: CustomValidator {
       let name = "LowPriorityValidator"
       let priority = 100
-      
+
       func validate(ticks: [ProbeTickRaw]) async -> DataValidationResult {
         var result = DataValidationResult()
         let weekendRecords = ticks.filter { tick in
@@ -1120,26 +1118,26 @@ struct DataValidationTests {
         }
         return result
       }
-      
-      func validate(features: [FeatureVector]) async -> DataValidationResult {
+
+      func validate(features _: [FeatureVector]) async -> DataValidationResult {
         return DataValidationResult()
       }
-      
+
       func explain() -> String {
         return "Low priority validator that identifies weekend data patterns"
       }
     }
-    
+
     // Test 1: Register validators and verify they're added
     validationService.registerValidator(HighPriorityValidator())
     validationService.registerValidator(MediumPriorityValidator())
     validationService.registerValidator(LowPriorityValidator())
-    
+
     let explanations = validationService.getValidatorExplanations()
     #expect(explanations["HighPriorityValidator"] != nil)
     #expect(explanations["MediumPriorityValidator"] != nil)
     #expect(explanations["LowPriorityValidator"] != nil)
-    
+
     // Test 2: Verify priority ordering (should be sorted by priority)
     let testTicks = [
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
@@ -1149,12 +1147,12 @@ struct DataValidationTests {
       ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 2,
                    cross_k: 0.5, cross_n: 1.0, via_routable: 0.9,
                    via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2)
+                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
     ]
-    
+
     // Add more records to trigger high priority validator
     var largeDataset = testTicks
-    for i in 3...15 {
+    for i in 3 ... 15 {
       largeDataset.append(
         ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:\(String(format: "%02d", i)):00Z", bridge_id: i,
                      cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
@@ -1162,28 +1160,28 @@ struct DataValidationTests {
                      alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3)
       )
     }
-    
+
     let result = await validationService.validateAsync(ticks: largeDataset)
-    
+
     // Should have warnings from multiple validators
     #expect(result.warnings.contains { $0.contains("HighPriority: Large dataset") })
     #expect(result.warnings.contains { $0.contains("MediumPriority: Found") })
-    
+
     // Test 3: Disable specific validator
     validationService.removeValidator(named: "MediumPriorityValidator")
-    
+
     let resultAfterRemoval = await validationService.validateAsync(ticks: largeDataset)
-    
+
     // Should still have high priority warning but not medium priority
     #expect(resultAfterRemoval.warnings.contains { $0.contains("HighPriority: Large dataset") })
     #expect(!resultAfterRemoval.warnings.contains { $0.contains("MediumPriority: Found") })
-    
+
     // Test 4: Verify validator explanations are still available
     let updatedExplanations = validationService.getValidatorExplanations()
     #expect(updatedExplanations["HighPriorityValidator"] != nil)
     #expect(updatedExplanations["LowPriorityValidator"] != nil)
     #expect(updatedExplanations["MediumPriorityValidator"] == nil) // Should be removed
-    
+
     // Clean up
     validationService.removeValidator(named: "HighPriorityValidator")
     validationService.removeValidator(named: "LowPriorityValidator")
@@ -1194,20 +1192,20 @@ struct DataValidationTests {
   @Test("Real sample data should pass validation")
   mutating func realSampleDataValidation() async throws {
     try await setUp()
-    
+
     // Load real sample data from the Samples directory
     let sampleData = try loadRealSampleData()
     guard !sampleData.isEmpty else { return }
-    
+
     let result = validationService.validate(ticks: sampleData)
-    
+
     // Real data should have reasonable validation results
     #expect(result.totalRecords > 0)
     #expect(result.bridgeCount > 0)
     #expect(result.validationRate > 0.5) // At least 50% should be valid
     #expect(result.timestampRange.first != nil)
     #expect(result.timestampRange.last != nil)
-    
+
     // Should have some data quality insights
     #expect(result.dataQualityMetrics.dataCompleteness > 0.0)
     #expect(result.dataQualityMetrics.bridgeIDValidity > 0.0)
@@ -1216,23 +1214,23 @@ struct DataValidationTests {
   @Test("Real sample data should have actionable validation feedback")
   mutating func realSampleDataActionableFeedback() async throws {
     try await setUp()
-    
+
     let sampleData = try loadRealSampleData()
     guard !sampleData.isEmpty else { return }
-    
+
     let result = validationService.validate(ticks: sampleData)
-    
+
     // Validation should provide actionable feedback
     #expect(!result.summary.isEmpty)
     #expect(!result.detailedSummary.isEmpty)
-    
+
     // If there are issues, they should be clearly described
     if !result.errors.isEmpty {
       for error in result.errors {
         #expect(error.contains("Invalid") || error.contains("Found") || error.contains("Missing"))
       }
     }
-    
+
     if !result.warnings.isEmpty {
       for warning in result.warnings {
         #expect(warning.contains("High") || warning.contains("Missing") || warning.contains("Unbalanced") || warning.contains("Non-monotonic"))
@@ -1244,20 +1242,20 @@ struct DataValidationTests {
 
   /// Generates a random timestamp in ISO8601 format
   private func generateRandomTimestamp() -> String {
-    let year = Int.random(in: 2020...2030)
-    let month = Int.random(in: 1...12)
-    let day = Int.random(in: 1...28) // Safe for all months
-    let hour = Int.random(in: 0...23)
-    let minute = Int.random(in: 0...59)
-    let second = Int.random(in: 0...59)
-    
+    let year = Int.random(in: 2020 ... 2030)
+    let month = Int.random(in: 1 ... 12)
+    let day = Int.random(in: 1 ... 28) // Safe for all months
+    let hour = Int.random(in: 0 ... 23)
+    let minute = Int.random(in: 0 ... 59)
+    let second = Int.random(in: 0 ... 59)
+
     return String(format: "%04d-%02d-%02dT%02d:%02d:%02dZ", year, month, day, hour, minute, second)
   }
 
   /// Generates a random optional double with configurable nil and NaN chances
   private func randomOptionalDouble(validRange: ClosedRange<Double>, nilChance: Double, nanChance: Double) -> Double? {
-    let rand = Double.random(in: 0...1)
-    
+    let rand = Double.random(in: 0 ... 1)
+
     if rand < nilChance {
       return nil
     } else if rand < nilChance + nanChance {
@@ -1272,48 +1270,48 @@ struct DataValidationTests {
   /// Loads real sample data from the Samples directory for testing
   private func loadRealSampleData() throws -> [ProbeTickRaw] {
     let bundle = Bundle.main
-    
+
     // Try to load from the main bundle first (for when tests run in the app)
     if let url = bundle.url(forResource: "minutes_2025-08-12", withExtension: "ndjson") {
       return try loadSampleDataFromURL(url)
     }
-    
+
     // Try to load from the test bundle
     if let url = bundle.url(forResource: "Samples/ndjson/minutes_2025-08-12", withExtension: "ndjson") {
       return try loadSampleDataFromURL(url)
     }
-    
+
     // Fallback: try to construct path relative to project root
     let projectRoot = URL(fileURLWithPath: #file)
       .deletingLastPathComponent() // BridgetTests
       .deletingLastPathComponent() // Bridget.xcodeproj
       .deletingLastPathComponent() // Bridget
       .deletingLastPathComponent() // Project root
-    
+
     let sampleURL = projectRoot
       .appendingPathComponent("Samples")
       .appendingPathComponent("ndjson")
       .appendingPathComponent("minutes_2025-08-12.ndjson")
-    
+
     if FileManager.default.fileExists(atPath: sampleURL.path) {
       return try loadSampleDataFromURL(sampleURL)
     }
-    
+
     // If no real data is available, return empty array
     return []
   }
-  
+
   /// Loads sample data from a URL and parses it as NDJSON
   private func loadSampleDataFromURL(_ url: URL) throws -> [ProbeTickRaw] {
     let data = try Data(contentsOf: url)
     let content = String(data: data, encoding: .utf8) ?? ""
-    
+
     let lines = content.components(separatedBy: .newlines)
       .filter { !$0.isEmpty }
-    
+
     var ticks: [ProbeTickRaw] = []
     let decoder = JSONDecoder()
-    
+
     for (index, line) in lines.prefix(100).enumerated() { // Limit to first 100 lines for testing
       do {
         let tick = try decoder.decode(ProbeTickRaw.self, from: line.data(using: .utf8)!)
@@ -1323,7 +1321,7 @@ struct DataValidationTests {
         continue
       }
     }
-    
+
     return ticks
   }
 

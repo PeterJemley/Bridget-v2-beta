@@ -168,27 +168,27 @@ struct FeatureEngineeringValidationHelperTests {
     // Given: Various Double values including edge cases
     let validValues: [Double] = [0.0, 1.0, -1.0, 100.0, -100.0, Double.pi, Double.infinity * 0.0]
     let invalidValues: [Double] = [Double.nan, Double.infinity, -Double.infinity]
-    
+
     // When/Then: Valid values should pass validation
     for value in validValues {
       #expect(isValidValue(value), "Value \(value) should be valid")
     }
-    
+
     // When/Then: Invalid values should fail validation
     for value in invalidValues {
       #expect(!isValidValue(value), "Value \(value) should be invalid")
     }
   }
-  
+
   @Test("validateFeatureVector correctly validates complete feature vectors")
   func testValidateFeatureVector() async throws {
     // Given: Valid feature vector from golden sample
     let validFeatures = try generateFeatures(ticks: FeatureEngineeringGoldenTests.goldenTicks, horizons: [0])
     let validFeatureVector = validFeatures[0][0]
-    
+
     // When/Then: Valid feature vector should pass validation
     #expect(validateFeatureVector(validFeatureVector), "Valid feature vector should pass validation")
-    
+
     // Given: Feature vector with NaN values (would need to create invalid FeatureVector)
     // This test demonstrates the validation logic without requiring invalid data creation
     let allFeatures = [
@@ -198,9 +198,9 @@ struct FeatureEngineeringValidationHelperTests {
       validFeatureVector.detour_delta, validFeatureVector.cross_rate,
       validFeatureVector.via_routable, validFeatureVector.via_penalty,
       validFeatureVector.gate_anom, validFeatureVector.detour_frac,
-      validFeatureVector.current_speed, validFeatureVector.normal_speed
+      validFeatureVector.current_speed, validFeatureVector.normal_speed,
     ]
-    
+
     // When/Then: All features should be valid
     for (index, value) in allFeatures.enumerated() {
       #expect(isValidValue(value), "Feature \(index) should be valid")
@@ -214,7 +214,7 @@ struct FeatureEngineeringValidationTests {
   func validateNoNaNOrInfValues() async throws {
     // Given: Valid golden sample data
     let result = try generateFeatures(ticks: FeatureEngineeringGoldenTests.goldenTicks, horizons: [0])
-    
+
     // Then: All feature vectors should be valid (no NaN/Inf)
     for horizonFeatures in result {
       for featureVector in horizonFeatures {
@@ -225,9 +225,9 @@ struct FeatureEngineeringValidationTests {
           featureVector.detour_delta, featureVector.cross_rate,
           featureVector.via_routable, featureVector.via_penalty,
           featureVector.gate_anom, featureVector.detour_frac,
-          featureVector.current_speed, featureVector.normal_speed
+          featureVector.current_speed, featureVector.normal_speed,
         ]
-        
+
         for (index, value) in features.enumerated() {
           #expect(!value.isNaN, "Feature \(index) should not be NaN")
           #expect(!value.isInfinite, "Feature \(index) should not be infinite")
@@ -235,16 +235,16 @@ struct FeatureEngineeringValidationTests {
       }
     }
   }
-  
+
   @Test("Produces deterministic results with same seed")
   func deterministicResults() async throws {
     // Given: Same input data and seed
     let seed: UInt64 = 12345
-    
+
     // When: Generating features twice with same seed
     let result1 = try generateFeatures(ticks: FeatureEngineeringGoldenTests.goldenTicks, horizons: [0], deterministicSeed: seed)
     let result2 = try generateFeatures(ticks: FeatureEngineeringGoldenTests.goldenTicks, horizons: [0], deterministicSeed: seed)
-    
+
     // Then: Results should be identical
     #expect(result1.count == result2.count)
     for (horizon1, horizon2) in zip(result1, result2) {
@@ -267,17 +267,17 @@ struct FeatureEngineeringValidationTests {
       }
     }
   }
-  
+
   @Test("Produces different results with different seeds")
   func differentResultsWithDifferentSeeds() async throws {
     // Given: Same input data but different seeds
     let seed1: UInt64 = 12345
     let seed2: UInt64 = 67890
-    
+
     // When: Generating features with different seeds
     let result1 = try generateFeatures(ticks: FeatureEngineeringGoldenTests.goldenTicks, horizons: [0], deterministicSeed: seed1)
     let result2 = try generateFeatures(ticks: FeatureEngineeringGoldenTests.goldenTicks, horizons: [0], deterministicSeed: seed2)
-    
+
     // Then: Results should be identical since no random number generation is used
     // (The function is truly stateless and deterministic)
     #expect(result1.count == result2.count)
@@ -301,17 +301,17 @@ struct FeatureEngineeringValidationTests {
       }
     }
   }
-  
+
   @Test("Deterministic behavior with larger datasets")
   func deterministicBehaviorWithLargerDatasets() async throws {
     // Given: Larger dataset with realistic bridge data patterns
     let largerDataset = generateRealisticBridgeDataset(count: 1000)
-    
+
     // When: Generating features multiple times with same parameters
     let result1 = try generateFeatures(ticks: largerDataset, horizons: [0, 3, 6], deterministicSeed: 42)
     let result2 = try generateFeatures(ticks: largerDataset, horizons: [0, 3, 6], deterministicSeed: 42)
     let result3 = try generateFeatures(ticks: largerDataset, horizons: [0, 3, 6], deterministicSeed: 999)
-    
+
     // Then: Same seed should produce identical results
     #expect(result1.count == result2.count)
     for (horizon1, horizon2) in zip(result1, result2) {
@@ -323,7 +323,7 @@ struct FeatureEngineeringValidationTests {
         #expect(fv1.open_30m == fv2.open_30m, "open_30m should be identical")
       }
     }
-    
+
     // And: Different seeds should also produce identical results (since no RNG is used)
     #expect(result1.count == result3.count)
     for (horizon1, horizon3) in zip(result1, result3) {
@@ -334,92 +334,89 @@ struct FeatureEngineeringValidationTests {
       }
     }
   }
-  
+
   @Test("Handles edge cases in larger datasets without hidden statefulness")
   func handlesEdgeCasesInLargerDatasets() async throws {
     // Given: Dataset with edge cases that might reveal hidden statefulness
     let edgeCaseDataset = generateEdgeCaseDataset(count: 500)
-    
+
     // When: Processing multiple times with different orders and seeds
     let result1 = try generateFeatures(ticks: edgeCaseDataset, horizons: [0], deterministicSeed: 1)
     let result2 = try generateFeatures(ticks: edgeCaseDataset.reversed(), horizons: [0], deterministicSeed: 1)
     let result3 = try generateFeatures(ticks: edgeCaseDataset, horizons: [0], deterministicSeed: 999)
-    
+
     // Then: Results should be consistent regardless of processing order or seed
     // (Since the function groups by bridge_id and sorts by timestamp internally)
     let totalFeatures1 = result1.flatMap { $0 }.count
     let totalFeatures2 = result2.flatMap { $0 }.count
     let totalFeatures3 = result3.flatMap { $0 }.count
-    
+
     #expect(totalFeatures1 == totalFeatures2, "Feature count should be identical regardless of input order")
     #expect(totalFeatures1 == totalFeatures3, "Feature count should be identical regardless of seed")
   }
-  
+
   // MARK: - Helper Functions for Test Data Generation
-  
+
   /// Generates realistic bridge dataset for testing deterministic behavior
   private func generateRealisticBridgeDataset(count: Int) -> [ProbeTickRaw] {
     var dataset: [ProbeTickRaw] = []
     let bridges = [1, 2, 3, 4, 6, 21, 29]
     let baseDate = ISO8601DateFormatter().date(from: "2025-01-27T00:00:00Z")!
-    
-    for i in 0..<count {
+
+    for i in 0 ..< count {
       let bridgeId = bridges[i % bridges.count]
       let minuteOffset = i % 1440 // Full day cycle
       let date = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: baseDate)!
       let timestamp = ISO8601DateFormatter().string(from: date)
-      
-      let tick = ProbeTickRaw(
-        v: 1,
-        ts_utc: timestamp,
-        bridge_id: bridgeId,
-        cross_k: Double(i % 10),
-        cross_n: Double(max(1, i % 15)),
-        via_routable: i % 2 == 0 ? 1.0 : 0.0,
-        via_penalty_sec: Double(i % 900),
-        gate_anom: Double(1 + (i % 8)),
-        alternates_total: Double(i % 5),
-        alternates_avoid: Double(i % 3),
-        open_label: i % 2,
-        detour_delta: Double((i % 1800) - 900), // -900 to 900
-        detour_frac: Double(i % 100) / 100.0,
-        current_traffic_speed: Double(20 + (i % 60)), // 20-80 mph
-        normal_traffic_speed: 35.0
-      )
+
+      let tick = ProbeTickRaw(v: 1,
+                              ts_utc: timestamp,
+                              bridge_id: bridgeId,
+                              cross_k: Double(i % 10),
+                              cross_n: Double(max(1, i % 15)),
+                              via_routable: i % 2 == 0 ? 1.0 : 0.0,
+                              via_penalty_sec: Double(i % 900),
+                              gate_anom: Double(1 + (i % 8)),
+                              alternates_total: Double(i % 5),
+                              alternates_avoid: Double(i % 3),
+                              open_label: i % 2,
+                              detour_delta: Double((i % 1800) - 900), // -900 to 900
+                              detour_frac: Double(i % 100) / 100.0,
+                              current_traffic_speed: Double(20 + (i % 60)), // 20-80 mph
+                              normal_traffic_speed: 35.0)
       dataset.append(tick)
     }
     return dataset
   }
-  
+
   /// Generates edge case dataset to test for hidden statefulness
   private func generateEdgeCaseDataset(count: Int) -> [ProbeTickRaw] {
     var dataset: [ProbeTickRaw] = []
     let bridges = [1, 2, 3, 4, 6, 21, 29]
     let baseDate = ISO8601DateFormatter().date(from: "2025-01-27T00:00:00Z")!
-    
-    for i in 0..<count {
+
+    for i in 0 ..< count {
       let bridgeId = bridges[i % bridges.count]
       let minuteOffset = i % 1440
       let date = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: baseDate)!
       let timestamp = ISO8601DateFormatter().string(from: date)
-      
+
       // Include edge cases that might reveal hidden statefulness
-      let tick = ProbeTickRaw(
-        v: 1,
-        ts_utc: timestamp,
-        bridge_id: bridgeId,
-        cross_k: i % 3 == 0 ? 0.0 : Double(i % 10), // Some zeros
-        cross_n: i % 3 == 0 ? 0.0 : Double(max(1, i % 15)), // Some zeros
-        via_routable: i % 4 == 0 ? nil : (i % 2 == 0 ? 1.0 : 0.0), // Some nil values
-        via_penalty_sec: i % 5 == 0 ? nil : Double(i % 900), // Some nil values
-        gate_anom: i % 6 == 0 ? nil : Double(1 + (i % 8)), // Some nil values
-        alternates_total: Double(i % 5),
-        alternates_avoid: Double(i % 3),
-        open_label: i % 2,
-        detour_delta: i % 7 == 0 ? nil : Double((i % 1800) - 900), // Some nil values
-        detour_frac: i % 8 == 0 ? nil : Double(i % 100) / 100.0, // Some nil values
-        current_traffic_speed: i % 9 == 0 ? nil : Double(20 + (i % 60)), // Some nil values
-        normal_traffic_speed: i % 10 == 0 ? nil : 35.0 // Some nil values
+      let tick = ProbeTickRaw(v: 1,
+                              ts_utc: timestamp,
+                              bridge_id: bridgeId,
+                              cross_k: i % 3 == 0 ? 0.0 : Double(i % 10), // Some zeros
+                              cross_n: i % 3 == 0 ? 0.0 : Double(max(1, i % 15)), // Some zeros
+                              via_routable: i % 4 == 0 ? nil : (i % 2 == 0 ? 1.0 : 0.0), // Some nil values
+                              via_penalty_sec: i % 5 == 0 ? nil : Double(i % 900), // Some nil values
+                              gate_anom: i % 6 == 0 ? nil : Double(1 + (i % 8)), // Some nil values
+                              alternates_total: Double(i % 5),
+                              alternates_avoid: Double(i % 3),
+                              open_label: i % 2,
+                              detour_delta: i % 7 == 0 ? nil : Double((i % 1800) - 900), // Some nil values
+                              detour_frac: i % 8 == 0 ? nil : Double(i % 100) / 100.0, // Some nil values
+                              current_traffic_speed: i % 9 == 0 ? nil : Double(20 + (i % 60)), // Some nil values
+                              normal_traffic_speed: i % 10 == 0 ? nil : 35.0 // Some nil values
       )
       dataset.append(tick)
     }

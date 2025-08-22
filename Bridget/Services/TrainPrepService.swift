@@ -35,10 +35,9 @@ func loadNDJSON(from path: String) throws -> [ProbeTickRaw] {
   var result = [ProbeTickRaw]()
   for (i, line) in data.split(separator: "\n").enumerated() {
     if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
-    if let decoded = try? JSONDecoder.bridgeDecoder().decode(
-      ProbeTickRaw.self,
-      from: Data(line.utf8)
-    ) {
+    if let decoded = try? JSONDecoder.bridgeDecoder().decode(ProbeTickRaw.self,
+                                                             from: Data(line.utf8))
+    {
       result.append(decoded)
     } else {
       os_log("[Warning] Failed to parse line %d: Could not decode ProbeTickRaw", log: .default, type: .info, i + 1)
@@ -61,12 +60,11 @@ public struct TrainPrepConfiguration {
   let trainingConfig: TrainingConfig
   let enableProgressReporting: Bool
 
-  init(
-    inputPath: String = "minutes_2025-01-27.ndjson",
-    outputDirectory: String = FileManagerUtils.temporaryDirectory().path,
-    trainingConfig: TrainingConfig = .production,
-    enableProgressReporting: Bool = true
-  ) {
+  init(inputPath: String = "minutes_2025-01-27.ndjson",
+       outputDirectory: String = FileManagerUtils.temporaryDirectory().path,
+       trainingConfig: TrainingConfig = .production,
+       enableProgressReporting: Bool = true)
+  {
     self.inputPath = inputPath
     self.outputDirectory = outputDirectory
     self.trainingConfig = trainingConfig
@@ -84,10 +82,9 @@ public class TrainPrepService {
   private let configuration: TrainPrepConfiguration
   private weak var progressDelegate: TrainPrepProgressDelegate?
 
-  init(
-    configuration: TrainPrepConfiguration,
-    progressDelegate: TrainPrepProgressDelegate? = nil
-  ) {
+  init(configuration: TrainPrepConfiguration,
+       progressDelegate: TrainPrepProgressDelegate? = nil)
+  {
     self.configuration = configuration
     self.progressDelegate = progressDelegate
   }
@@ -98,47 +95,40 @@ public class TrainPrepService {
     // Initialize performance monitoring
     let trainingBudget = configuration.trainingConfig.getPerformanceBudget()
     let performanceMonitor = PerformanceMonitoringService(
-      budget: PerformanceBudget(
-        parseTimeMs: trainingBudget.parseTimeMs,
-        featureEngineeringTimeMs: trainingBudget.featureEngineeringTimeMs,
-        mlMultiArrayConversionTimeMs: trainingBudget.mlMultiArrayConversionTimeMs,
-        trainingTimeMs: trainingBudget.trainingTimeMs,
-        validationTimeMs: trainingBudget.validationTimeMs,
-        peakMemoryMB: trainingBudget.peakMemoryMB
-      )
+      budget: PerformanceBudget(parseTimeMs: trainingBudget.parseTimeMs,
+                                featureEngineeringTimeMs: trainingBudget.featureEngineeringTimeMs,
+                                mlMultiArrayConversionTimeMs: trainingBudget.mlMultiArrayConversionTimeMs,
+                                trainingTimeMs: trainingBudget.trainingTimeMs,
+                                validationTimeMs: trainingBudget.validationTimeMs,
+                                peakMemoryMB: trainingBudget.peakMemoryMB)
     )
 
     do {
       // Parse NDJSON data
-      let ticks = try await measurePerformanceAsync(
-        "parse",
-        monitor: performanceMonitor
-      ) {
+      let ticks = try await measurePerformanceAsync("parse",
+                                                    monitor: performanceMonitor)
+      {
         try loadNDJSON(from: configuration.inputPath)
       }
       progressDelegate?.trainPrepDidLoadData(ticks.count)
 
       // Feature engineering
       let featureService = FeatureEngineeringService(
-        configuration: FeatureEngineeringConfiguration(
-          horizons: configuration.trainingConfig.horizons,
-          deterministicSeed: configuration.trainingConfig.deterministicSeed
-        )
+        configuration: FeatureEngineeringConfiguration(horizons: configuration.trainingConfig.horizons,
+                                                       deterministicSeed: configuration.trainingConfig.deterministicSeed)
       )
 
-      let allFeatures = try await measurePerformanceAsync(
-        "featureEngineering",
-        monitor: performanceMonitor
-      ) {
+      let allFeatures = try await measurePerformanceAsync("featureEngineering",
+                                                          monitor: performanceMonitor)
+      {
         try featureService.generateFeatures(from: ticks)
       }
 
       // Convert to MLMultiArrays
       for (idx, horizon) in configuration.trainingConfig.horizons.enumerated() {
-        let (inputs, _) = try await measurePerformanceAsync(
-          "mlMultiArrayConversion",
-          monitor: performanceMonitor
-        ) {
+        let (inputs, _) = try await measurePerformanceAsync("mlMultiArrayConversion",
+                                                            monitor: performanceMonitor)
+        {
           try featureService.convertToMLMultiArrays(allFeatures[idx])
         }
         progressDelegate?.trainPrepDidProcessHorizon(horizon, featureCount: inputs.count)
@@ -166,17 +156,14 @@ public class TrainPrepService {
 
 // MARK: - Convenience Functions
 
-func processTrainingData(
-  inputPath: String,
-  outputDirectory: String? = nil,
-  trainingConfig: TrainingConfig = .production,
-  progressDelegate: TrainPrepProgressDelegate? = nil
-) async throws {
-  let config = TrainPrepConfiguration(
-    inputPath: inputPath,
-    outputDirectory: outputDirectory ?? FileManagerUtils.temporaryDirectory().path,
-    trainingConfig: trainingConfig
-  )
+func processTrainingData(inputPath: String,
+                         outputDirectory: String? = nil,
+                         trainingConfig: TrainingConfig = .production,
+                         progressDelegate: TrainPrepProgressDelegate? = nil) async throws
+{
+  let config = TrainPrepConfiguration(inputPath: inputPath,
+                                      outputDirectory: outputDirectory ?? FileManagerUtils.temporaryDirectory().path,
+                                      trainingConfig: trainingConfig)
 
   let service = TrainPrepService(configuration: config, progressDelegate: progressDelegate)
   try await service.process()
@@ -187,10 +174,8 @@ func processTrainingData(
 func main() {
   Task {
     do {
-      try await processTrainingData(
-        inputPath: "minutes_2025-01-27.ndjson",
-        trainingConfig: .production
-      )
+      try await processTrainingData(inputPath: "minutes_2025-01-27.ndjson",
+                                    trainingConfig: .production)
     } catch {
       os_log("❌ Error in main: %{public}@", log: .default, type: .error, String(describing: error.localizedDescription))
     }
@@ -200,17 +185,14 @@ func main() {
 // MARK: - Integration with BridgeDataService Pipeline
 
 public extension TrainPrepService {
-  static func processExportedData(
-    ndjsonPath: String,
-    outputDirectory: String,
-    trainingConfig: TrainingConfig = .production,
-    progressDelegate: TrainPrepProgressDelegate? = nil
-  ) async throws -> [String] {
-    let config = TrainPrepConfiguration(
-      inputPath: ndjsonPath,
-      outputDirectory: outputDirectory,
-      trainingConfig: trainingConfig
-    )
+  static func processExportedData(ndjsonPath: String,
+                                  outputDirectory: String,
+                                  trainingConfig: TrainingConfig = .production,
+                                  progressDelegate: TrainPrepProgressDelegate? = nil) async throws -> [String]
+  {
+    let config = TrainPrepConfiguration(inputPath: ndjsonPath,
+                                        outputDirectory: outputDirectory,
+                                        trainingConfig: trainingConfig)
 
     let service = TrainPrepService(configuration: config, progressDelegate: progressDelegate)
     try await service.process()
@@ -220,11 +202,10 @@ public extension TrainPrepService {
     }
   }
 
-  static func processTodayData(
-    exportBaseDirectory: String = FileManagerUtils.temporaryDirectory().path,
-    trainingConfig: TrainingConfig = .production,
-    progressDelegate: TrainPrepProgressDelegate? = nil
-  ) async throws -> [String] {
+  static func processTodayData(exportBaseDirectory: String = FileManagerUtils.temporaryDirectory().path,
+                               trainingConfig: TrainingConfig = .production,
+                               progressDelegate: TrainPrepProgressDelegate? = nil) async throws -> [String]
+  {
     let dateFormatter = DateFormatter()
     dateFormatter.dateFormat = "yyyy-MM-dd"
     let today = dateFormatter.string(from: Date())
@@ -232,19 +213,15 @@ public extension TrainPrepService {
     let ndjsonPath = "\(exportBaseDirectory)/minutes_\(today).ndjson"
 
     guard FileManagerUtils.fileExists(at: ndjsonPath) else {
-      throw NSError(
-        domain: "TrainPrepService",
-        code: 404,
-        userInfo: [NSLocalizedDescriptionKey: "NDJSON file not found: \(ndjsonPath)"]
-      )
+      throw NSError(domain: "TrainPrepService",
+                    code: 404,
+                    userInfo: [NSLocalizedDescriptionKey: "NDJSON file not found: \(ndjsonPath)"])
     }
 
-    return try await processExportedData(
-      ndjsonPath: ndjsonPath,
-      outputDirectory: exportBaseDirectory,
-      trainingConfig: trainingConfig,
-      progressDelegate: progressDelegate
-    )
+    return try await processExportedData(ndjsonPath: ndjsonPath,
+                                         outputDirectory: exportBaseDirectory,
+                                         trainingConfig: trainingConfig,
+                                         progressDelegate: progressDelegate)
   }
 
   static func validateExportedData(ndjsonPath: String) throws -> DataValidationResult {
@@ -263,7 +240,8 @@ public extension TrainPrepService {
       }
 
       if let crossK = tick.cross_k,
-         let crossN = tick.cross_n {
+         let crossN = tick.cross_n
+      {
         if crossK > crossN {
           result.invalidCrossRatios += 1
         }
@@ -303,12 +281,10 @@ public extension TrainPrepService {
     try testData.write(toFile: testFilePath, atomically: true, encoding: .utf8)
 
     let testDelegate = TestProgressDelegate()
-    return try await processExportedData(
-      ndjsonPath: testFilePath,
-      outputDirectory: outputDirectory,
-      trainingConfig: .validation,
-      progressDelegate: testDelegate
-    )
+    return try await processExportedData(ndjsonPath: testFilePath,
+                                         outputDirectory: outputDirectory,
+                                         trainingConfig: .validation,
+                                         progressDelegate: testDelegate)
   }
 }
 
@@ -319,15 +295,15 @@ public class TestProgressDelegate: TrainPrepProgressDelegate {
     // Integration test started - removed print for SwiftLint compliance
   }
 
-  public func trainPrepDidLoadData(_ count: Int) {
+  public func trainPrepDidLoadData(_: Int) {
     // Loaded test records - removed print for SwiftLint compliance
   }
 
-  public func trainPrepDidProcessHorizon(_ horizon: Int, featureCount: Int) {
+  public func trainPrepDidProcessHorizon(_: Int, featureCount _: Int) {
     // Processed horizon - removed print for SwiftLint compliance
   }
 
-  public func trainPrepDidSaveHorizon(_ horizon: Int, to path: String) {
+  public func trainPrepDidSaveHorizon(_: Int, to _: String) {
     // Saved horizon - removed print for SwiftLint compliance
   }
 
@@ -335,7 +311,7 @@ public class TestProgressDelegate: TrainPrepProgressDelegate {
     // Integration test completed - removed print for SwiftLint compliance
   }
 
-  public func trainPrepDidFail(_ error: Error) {
+  public func trainPrepDidFail(_: Error) {
     // Integration test failed - removed print for SwiftLint compliance
   }
 }
@@ -363,13 +339,12 @@ public extension TrainPrepService {
     return (inputs, targets)
   }
 
-  static func trainCoreMLModel(
-    csvPath: String,
-    modelName: String,
-    outputDirectory: String,
-    configuration: MLModelConfiguration? = nil,
-    progressDelegate: CoreMLTrainingProgressDelegate? = nil
-  ) async throws -> String {
+  static func trainCoreMLModel(csvPath: String,
+                               modelName: String,
+                               outputDirectory: String,
+                               configuration _: MLModelConfiguration? = nil,
+                               progressDelegate: CoreMLTrainingProgressDelegate? = nil) async throws -> String
+  {
     await progressDelegate?.trainingDidStart()
 
     do {
@@ -377,24 +352,18 @@ public extension TrainPrepService {
       await progressDelegate?.trainingDidLoadData(features.count)
 
       // Use the new CoreMLTraining module
-      let trainingConfig = CoreMLTrainingConfig(
-        modelType: .neuralNetwork,
-        epochs: 100,
-        learningRate: 0.001,
-        batchSize: 32,
-        useANE: true
-      )
+      let trainingConfig = CoreMLTrainingConfig(modelType: .neuralNetwork,
+                                                epochs: 100,
+                                                learningRate: 0.001,
+                                                batchSize: 32,
+                                                useANE: true)
 
-      let trainer = CoreMLTraining(
-        config: trainingConfig,
-        progressDelegate: progressDelegate
-      )
+      let trainer = CoreMLTraining(config: trainingConfig,
+                                   progressDelegate: progressDelegate)
 
       // Train the model using the new module
-      _ = try await trainer.trainModel(
-        with: features,
-        progress: progressDelegate
-      )
+      _ = try await trainer.trainModel(with: features,
+                                       progress: progressDelegate)
 
       // Save the model
       let modelURL = URL(fileURLWithPath: outputDirectory)
@@ -410,20 +379,17 @@ public extension TrainPrepService {
     }
   }
 
-  static func createTrainingPipeline(
-    ndjsonPath: String,
-    outputDirectory: String,
-    horizons: [Int] = defaultHorizons,
-    modelConfiguration: MLModelConfiguration? = nil,
-    progressDelegate: CoreMLTrainingProgressDelegate? = nil
-  ) async throws -> [Int: String] {
+  static func createTrainingPipeline(ndjsonPath: String,
+                                     outputDirectory: String,
+                                     horizons: [Int] = defaultHorizons,
+                                     modelConfiguration: MLModelConfiguration? = nil,
+                                     progressDelegate: CoreMLTrainingProgressDelegate? = nil) async throws -> [Int: String]
+  {
     await progressDelegate?.pipelineDidStart()
 
-    let csvFiles = try await processExportedData(
-      ndjsonPath: ndjsonPath,
-      outputDirectory: outputDirectory,
-      trainingConfig: .production
-    )
+    let csvFiles = try await processExportedData(ndjsonPath: ndjsonPath,
+                                                 outputDirectory: outputDirectory,
+                                                 trainingConfig: .production)
 
     await progressDelegate?.pipelineDidProcessData(csvFiles.count)
 
@@ -435,13 +401,11 @@ public extension TrainPrepService {
 
       await progressDelegate?.pipelineDidStartTraining(horizon)
 
-      let modelPath = try await trainCoreMLModel(
-        csvPath: csvPath,
-        modelName: modelName,
-        outputDirectory: outputDirectory,
-        configuration: modelConfiguration,
-        progressDelegate: progressDelegate
-      )
+      let modelPath = try await trainCoreMLModel(csvPath: csvPath,
+                                                 modelName: modelName,
+                                                 outputDirectory: outputDirectory,
+                                                 configuration: modelConfiguration,
+                                                 progressDelegate: progressDelegate)
 
       trainedModels[horizon] = modelPath
       await progressDelegate?.pipelineDidCompleteTraining(horizon, modelPath: modelPath)
@@ -501,25 +465,23 @@ private extension TrainPrepService {
       let columns = line.split(separator: ",")
       guard columns.count >= 17 else { continue }
 
-      let featureVector = FeatureVector(
-        bridge_id: Int(columns[0]) ?? 0,
-        horizon_min: Int(columns[1]) ?? 0,
-        min_sin: Double(columns[2]) ?? 0.0,
-        min_cos: Double(columns[3]) ?? 0.0,
-        dow_sin: Double(columns[4]) ?? 0.0,
-        dow_cos: Double(columns[5]) ?? 0.0,
-        open_5m: Double(columns[6]) ?? 0.0,
-        open_30m: Double(columns[7]) ?? 0.0,
-        detour_delta: Double(columns[8]) ?? 0.0,
-        cross_rate: Double(columns[9]) ?? 0.0,
-        via_routable: Double(columns[10]) ?? 0.0,
-        via_penalty: Double(columns[11]) ?? 0.0,
-        gate_anom: Double(columns[12]) ?? 0.0,
-        detour_frac: Double(columns[13]) ?? 0.0,
-        current_speed: Double(columns[14]) ?? 35.0,
-        normal_speed: Double(columns[15]) ?? 35.0,
-        target: Int(columns[16]) ?? 0
-      )
+      let featureVector = FeatureVector(bridge_id: Int(columns[0]) ?? 0,
+                                        horizon_min: Int(columns[1]) ?? 0,
+                                        min_sin: Double(columns[2]) ?? 0.0,
+                                        min_cos: Double(columns[3]) ?? 0.0,
+                                        dow_sin: Double(columns[4]) ?? 0.0,
+                                        dow_cos: Double(columns[5]) ?? 0.0,
+                                        open_5m: Double(columns[6]) ?? 0.0,
+                                        open_30m: Double(columns[7]) ?? 0.0,
+                                        detour_delta: Double(columns[8]) ?? 0.0,
+                                        cross_rate: Double(columns[9]) ?? 0.0,
+                                        via_routable: Double(columns[10]) ?? 0.0,
+                                        via_penalty: Double(columns[11]) ?? 0.0,
+                                        gate_anom: Double(columns[12]) ?? 0.0,
+                                        detour_frac: Double(columns[13]) ?? 0.0,
+                                        current_speed: Double(columns[14]) ?? 35.0,
+                                        normal_speed: Double(columns[15]) ?? 35.0,
+                                        target: Int(columns[16]) ?? 0)
 
       features.append(featureVector)
     }
@@ -527,4 +489,3 @@ private extension TrainPrepService {
     return features
   }
 }
-
