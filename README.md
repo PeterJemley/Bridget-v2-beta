@@ -85,6 +85,7 @@
 - [x] All UI Fully Reactive to Observed Data Changes
 
 ## Modular Architecture Overview
+```
 App
 ├── Models/
 │ ├── @Observable BridgeStatusModel.swift
@@ -129,7 +130,7 @@ App
 │ └── AssetUtils.swift (with #fileLiteral, #imageLiteral)
 │
 └── App.swift (entry point with @main and top-level observation bindings)
-
+```
 
 ## Observation Framework Usage
 
