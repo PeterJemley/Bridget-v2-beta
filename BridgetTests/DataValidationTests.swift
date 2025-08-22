@@ -1394,4 +1394,257 @@ struct DataValidationTests {
       }
     }
   }
+
+  @Test("Edge cases should not cause crashes or unexpected behavior")
+  mutating func edgeCaseCrashPrevention() async throws {
+    try await setUp()
+
+    // Test 1: Empty array
+    let emptyResult = validationService.validate(ticks: [])
+    #expect(emptyResult.totalRecords == 0)
+    #expect(emptyResult.validationRate >= 0.0) // Should not crash
+    #expect(!emptyResult.summary.isEmpty) // Should provide meaningful summary
+
+    // Test 2: Single element array
+    let singleTick = [
+      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3)
+    ]
+    let singleResult = validationService.validate(ticks: singleTick)
+    #expect(singleResult.totalRecords == 1)
+    #expect(singleResult.validationRate >= 0.0) // Should not crash
+    #expect(singleResult.timestampRange.first != nil)
+    #expect(singleResult.timestampRange.last != nil)
+
+    // Test 3: Two identical timestamps (should be allowed for non-decreasing)
+    let duplicateTimeTicks = [
+      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 2,
+                   cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
+                   via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
+                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2)
+    ]
+    let duplicateResult = validationService.validate(ticks: duplicateTimeTicks)
+    #expect(duplicateResult.totalRecords == 2)
+    #expect(duplicateResult.validationRate >= 0.0) // Should not crash
+    #expect(duplicateResult.timestampRange.first != nil)
+    #expect(duplicateResult.timestampRange.last != nil)
+
+    // Test 4: All invalid timestamps
+    let invalidTimeTicks = [
+      ProbeTickRaw(v: 1, ts_utc: "invalid-timestamp", bridge_id: 1,
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(v: 1, ts_utc: "also-invalid", bridge_id: 2,
+                   cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
+                   via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
+                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2)
+    ]
+    let invalidResult = validationService.validate(ticks: invalidTimeTicks)
+    #expect(invalidResult.totalRecords == 2)
+    #expect(invalidResult.validationRate >= 0.0) // Should not crash
+    #expect(invalidResult.errors.contains { $0.contains("Invalid timestamp") })
+
+    // Test 5: Mixed valid/invalid timestamps
+    let mixedTimeTicks = [
+      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(v: 1, ts_utc: "invalid-timestamp", bridge_id: 2,
+                   cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
+                   via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
+                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
+      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:02:00Z", bridge_id: 3,
+                   cross_k: 0.4, cross_n: 0.9, via_routable: 0.7,
+                   via_penalty_sec: 35.0, gate_anom: 0.15, alternates_total: 1.0,
+                   alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4)
+    ]
+    let mixedResult = validationService.validate(ticks: mixedTimeTicks)
+    #expect(mixedResult.totalRecords == 3)
+    #expect(mixedResult.validationRate >= 0.0) // Should not crash
+    #expect(mixedResult.errors.contains { $0.contains("Invalid timestamp") })
+    #expect(mixedResult.timestampRange.first != nil)
+    #expect(mixedResult.timestampRange.last != nil)
+  }
+
+  @Test("Leap second timestamps should be handled gracefully")
+  mutating func leapSecondHandling() async throws {
+    try await setUp()
+
+    // Test with actual leap second timestamps
+    let leapSecondTicks = [
+      ProbeTickRaw(v: 1, ts_utc: "2025-06-30T23:59:60Z", bridge_id: 1, // Leap second
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(v: 1, ts_utc: "2025-06-30T23:59:59Z", bridge_id: 1, // Normal second
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(v: 1, ts_utc: "2025-07-01T00:00:00Z", bridge_id: 1, // Next day
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2)
+    ]
+
+    let result = validationService.validate(ticks: leapSecondTicks)
+    
+    // Should not crash and should handle leap seconds gracefully
+    #expect(result.totalRecords == 3)
+    #expect(result.validationRate >= 0.0)
+    
+    // Should provide meaningful feedback about leap second handling
+    #expect(!result.summary.isEmpty)
+    
+    // Should not have errors about invalid timestamps (leap seconds should be sanitized)
+    #expect(!result.errors.contains { $0.contains("Invalid timestamp") })
+  }
+
+  @Test("Mixed timezone formats should be handled correctly")
+  mutating func mixedTimezoneHandling() async throws {
+    try await setUp()
+
+    // Test with various timezone formats
+    let mixedTimezoneTicks = [
+      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1, // UTC
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00+00:00", bridge_id: 1, // UTC with offset
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00-08:00", bridge_id: 1, // PST
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2)
+    ]
+
+    let result = validationService.validate(ticks: mixedTimezoneTicks)
+    
+    // Should handle all timezone formats correctly
+    #expect(result.totalRecords == 3)
+    #expect(result.validationRate >= 0.0)
+    
+    // Should not have timestamp parsing errors
+    #expect(!result.errors.contains { $0.contains("Invalid timestamp") })
+  }
+
+  @Test("Parsing failure scenarios should be handled gracefully")
+  mutating func parsingFailureHandling() async throws {
+    try await setUp()
+
+    // Test with various malformed timestamps
+    let malformedTicks = [
+      ProbeTickRaw(v: 1, ts_utc: "not-a-timestamp", bridge_id: 1,
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00", bridge_id: 1, // Missing timezone
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(v: 1, ts_utc: "2025-13-01T12:00:00Z", bridge_id: 1, // Invalid month
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1, // Valid timestamp
+                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2)
+    ]
+
+    let result = validationService.validate(ticks: malformedTicks)
+    
+    // Should handle parsing failures gracefully
+    #expect(result.totalRecords == 4)
+    #expect(result.validationRate >= 0.0)
+    
+    // Should report parsing failures
+    #expect(result.errors.contains { $0.contains("Invalid timestamp") })
+    
+    // Should provide parsing success rate information
+    #expect(result.warnings.contains { $0.contains("failed to parse") })
+    #expect(result.warnings.contains { $0.contains("success rate") })
+  }
+
+  @Test("Array bounds safety should be maintained under all conditions")
+  mutating func arrayBoundsSafety() async throws {
+    try await setUp()
+
+    // Test with various array sizes that could trigger bounds issues
+    let testSizes = [0, 1, 2, 3, 10, 100]
+    
+    for size in testSizes {
+      var testTicks: [ProbeTickRaw] = []
+      
+      // Generate test data
+      for i in 0..<size {
+        let timestamp = "2025-01-01T12:\(String(format: "%02d", i)):00Z"
+        let tick = ProbeTickRaw(v: 1, ts_utc: timestamp, bridge_id: i + 1,
+                               cross_k: Double(i) * 0.1, cross_n: 1.0, via_routable: 0.8,
+                               via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+                               alternates_avoid: 0.5, open_label: i % 2, detour_delta: 120.0, detour_frac: 0.3)
+        testTicks.append(tick)
+      }
+      
+      // This should never crash, regardless of array size
+      let result = validationService.validate(ticks: testTicks)
+      
+      #expect(result.totalRecords == size)
+      #expect(result.validationRate >= 0.0) // Should not crash
+      #expect(!result.summary.isEmpty) // Should provide meaningful summary
+      
+      // For non-empty arrays, we should have timestamp range
+      if size > 0 {
+        #expect(result.timestampRange.first != nil)
+        #expect(result.timestampRange.last != nil)
+      }
+    }
+  }
+
+  @Test("Safe iteration patterns should work correctly")
+  mutating func safeIterationPatterns() async throws {
+    try await setUp()
+
+    // Test that our safe iteration patterns work as expected
+    let testArray = [1, 2, 3, 4, 5]
+    
+    // Test zip-based adjacent pairs
+    var adjacentCount = 0
+    for (prev, curr) in zip(testArray, testArray.dropFirst()) {
+      adjacentCount += 1
+      #expect(curr == prev + 1) // Should be consecutive numbers
+    }
+    #expect(adjacentCount == 4) // Should have 4 adjacent pairs for 5 elements
+    
+    // Test safe array access using existing extensions
+    #expect(testArray[safe: 0] == 1)
+    #expect(testArray[safe: 4] == 5)
+    #expect(testArray[safe: 5] == nil) // Out of bounds should return nil
+    #expect(testArray[safe: -1] == nil) // Negative index should return nil
+    
+    // Test with empty array
+    let emptyArray: [Int] = []
+    var emptyAdjacentCount = 0
+    for _ in zip(emptyArray, emptyArray.dropFirst()) {
+      emptyAdjacentCount += 1
+    }
+    #expect(emptyAdjacentCount == 0) // Should not iterate over empty array
+    
+    // Test with single element array
+    let singleArray = [42]
+    var singleAdjacentCount = 0
+    for _ in zip(singleArray, singleArray.dropFirst()) {
+      singleAdjacentCount += 1
+    }
+    #expect(singleAdjacentCount == 0) // Should not iterate over single element
+  }
 }

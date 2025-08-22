@@ -29,6 +29,8 @@
 
 import Foundation
 
+// MARK: - Data Validation Service
+
 /// Configuration for validation thresholds and parameters
 public struct ValidationConfig {
   /// Thresholds per bridge ID
@@ -91,6 +93,32 @@ public class DataValidationService {
 
   /// Registered custom validators
   private var customValidators: [CustomValidator] = []
+  
+  /// Cached ISO8601 date formatter for performance
+  private static let iso8601Formatter: ISO8601DateFormatter = {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+    return formatter
+  }()
+  
+  /// Sanitizes timestamp string to handle leap seconds and other edge cases
+  private func sanitizeTimestamp(_ timestamp: String) -> String? {
+    // Handle leap seconds by clamping :60 to :59.999
+    if timestamp.contains(":60") {
+      return timestamp.replacingOccurrences(of: ":60", with: ":59.999")
+    }
+    
+    // Handle other potential edge cases
+    // Remove any trailing whitespace
+    let trimmed = timestamp.trimmingCharacters(in: .whitespacesAndNewlines)
+    
+    // Basic format validation
+    guard trimmed.contains("T") && (trimmed.contains("Z") || trimmed.contains("+") || trimmed.contains("-")) else {
+      return nil
+    }
+    
+    return trimmed
+  }
 
   // MARK: - Initialization
 
@@ -393,18 +421,43 @@ public class DataValidationService {
     var result = DataValidationResult()
     var timestamps: [Date] = []
     var nonMonotonicCount = 0
+    var parsingFailures = 0
 
-    // Parse timestamps and check monotonicity
+    // Parse timestamps with sanitization and caching
     for (index, tick) in ticks.enumerated() {
-      if let date = ISO8601DateFormatter().date(from: tick.ts_utc) {
+      if let sanitizedTimestamp = sanitizeTimestamp(tick.ts_utc),
+         let date = Self.iso8601Formatter.date(from: sanitizedTimestamp) {
         timestamps.append(date)
-
-        if index > 0 && date < timestamps[index - 1] {
-          nonMonotonicCount += 1
-          result.warnings.append("Non-monotonic timestamp at index \(index): \(tick.ts_utc)")
-        }
       } else {
+        parsingFailures += 1
         result.errors.append("Invalid timestamp format at index \(index): \(tick.ts_utc)")
+      }
+    }
+
+    // Track parsing success rate
+    let originalCount = ticks.count
+    let parsedCount = timestamps.count
+    if parsedCount < originalCount {
+      result.warnings.append("\(originalCount - parsedCount) timestamps failed to parse (success rate: \(String(format: "%.1f", Double(parsedCount) / Double(originalCount) * 100))%)")
+    }
+
+    // Check monotonicity using safe pairwise iteration
+    guard timestamps.count >= 2 else {
+      // Handle edge cases: empty or single-element arrays
+      if timestamps.count == 1 {
+        result.timestampRange = (timestamps[0], timestamps[0])
+        result.warnings.append("Single timestamp found - monotonicity check skipped")
+      } else {
+        result.warnings.append("No valid timestamps found - monotonicity check skipped")
+      }
+      return result
+    }
+
+    // Use safe pairwise iteration to avoid bounds errors
+    for (prev, curr) in zip(timestamps, timestamps.dropFirst()) {
+      if curr < prev { // Non-decreasing check (allows equal timestamps)
+        nonMonotonicCount += 1
+        result.warnings.append("Non-monotonic timestamp detected: \(curr) < \(prev)")
       }
     }
 
@@ -429,8 +482,20 @@ public class DataValidationService {
   private func checkTimestampWindows(ticks: [ProbeTickRaw]) -> DataValidationResult {
     var result = DataValidationResult()
 
-    let timestamps = ticks.compactMap { ISO8601DateFormatter().date(from: $0.ts_utc) }.sorted()
-    guard timestamps.count > 1 else { return result }
+    let timestamps = ticks.compactMap { tick -> Date? in
+      guard let sanitized = sanitizeTimestamp(tick.ts_utc) else { return nil }
+      return Self.iso8601Formatter.date(from: sanitized)
+    }.sorted()
+    
+    // Guard against insufficient data
+    guard timestamps.count >= 2 else {
+      if timestamps.count == 1 {
+        result.warnings.append("Single timestamp found - time window analysis limited")
+      } else {
+        result.warnings.append("No valid timestamps found - time window analysis skipped")
+      }
+      return result
+    }
 
     // Check for reasonable time windows
     let timeSpan = timestamps.last!.timeIntervalSince(timestamps.first!)
@@ -445,10 +510,10 @@ public class DataValidationService {
       result.warnings.append("Very long time span: \(String(format: "%.1f", timeSpan / (24 * 3600))) days")
     }
 
-    // Check for gaps in time series
+    // Check for gaps in time series using safe pairwise iteration
     var gaps: [TimeInterval] = []
-    for i in 1 ..< timestamps.count {
-      let gap = timestamps[i].timeIntervalSince(timestamps[i - 1])
+    for (prev, curr) in zip(timestamps, timestamps.dropFirst()) {
+      let gap = curr.timeIntervalSince(prev)
       if gap > 3600 { // Gap larger than 1 hour
         gaps.append(gap)
       }
