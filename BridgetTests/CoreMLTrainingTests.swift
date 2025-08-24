@@ -20,7 +20,6 @@
 @testable import Bridget
 import CoreML
 import XCTest
-import Bridget // To access `missingBaseModelMessage`
 
 final class CoreMLTrainingTests: XCTestCase {
   // MARK: - Test Data
@@ -166,7 +165,7 @@ final class CoreMLTrainingTests: XCTestCase {
       XCTFail("Expected training to fail since actual training requires base model")
     } catch {
       // Then: Should throw training failed error (since we don't have a base model)
-      guard case CoreMLTrainingError.trainingFailed(let reason, _) = error else {
+      guard case let CoreMLTrainingError.trainingFailed(reason, _) = error else {
         XCTFail("Expected trainingFailed error, got \(error)")
         return
       }
@@ -207,7 +206,7 @@ final class CoreMLTrainingTests: XCTestCase {
       XCTFail("Expected training to fail")
     } catch {
       // Should fail due to training implementation requiring base model
-      guard case CoreMLTrainingError.trainingFailed(let reason, _) = error else {
+      guard case let CoreMLTrainingError.trainingFailed(reason, _) = error else {
         XCTFail("Expected trainingFailed error, got \(error)")
         return
       }
@@ -488,4 +487,3 @@ class MockCoreMLTrainingProgressDelegate: CoreMLTrainingProgressDelegate {
   func pipelineDidCompleteTraining(_: Int, modelPath _: String) {}
   func pipelineDidComplete(_: [Int: String]) {}
 }
-

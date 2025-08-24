@@ -84,7 +84,7 @@ final class MLPipelineViewModel: CoreMLTrainingProgressDelegate, TrainPrepProgre
 
   func startTrainingPipeline(ndjsonPath: String,
                              outputDirectory: String,
-                             horizons: [Int] = defaultHorizons)
+                             horizons _: [Int] = defaultHorizons)
   {
     isTraining = true
     trainingProgress = 0.0
@@ -95,25 +95,21 @@ final class MLPipelineViewModel: CoreMLTrainingProgressDelegate, TrainPrepProgre
       guard let self = self else { return }
       do {
         // Use the new Step 5 orchestrator service
-        let config = CoreMLTrainingConfig(
-          modelType: .neuralNetwork,
-          epochs: 100,
-          learningRate: 0.001,
-          batchSize: 32,
-          useANE: true
-        )
-        
+        let config = CoreMLTrainingConfig(modelType: .neuralNetwork,
+                                          epochs: 100,
+                                          learningRate: 0.001,
+                                          batchSize: 32,
+                                          useANE: true)
+
         let url = URL(fileURLWithPath: ndjsonPath)
-        let (model, report) = try await TrainPrepService().runPipeline(
-          from: url,
-          config: config,
-          progress: self
-        )
-        
+        let (model, report) = try await TrainPrepService().runPipeline(from: url,
+                                                                       config: config,
+                                                                       progress: self)
+
         // For now, store the model path as a placeholder
         // In a real implementation, you would save the model to disk
         let modelPath = "\(outputDirectory)/trained_model.mlmodel"
-        
+
         await MainActor.run {
           self.trainedModels = [6: modelPath] // Default horizon
           self.isTraining = false
@@ -144,25 +140,21 @@ final class MLPipelineViewModel: CoreMLTrainingProgressDelegate, TrainPrepProgre
       guard let self = self else { return }
       do {
         // Use the new Step 5 orchestrator service for single horizon training
-        let config = CoreMLTrainingConfig(
-          modelType: .neuralNetwork,
-          epochs: 100,
-          learningRate: 0.001,
-          batchSize: 32,
-          useANE: true
-        )
-        
+        let config = CoreMLTrainingConfig(modelType: .neuralNetwork,
+                                          epochs: 100,
+                                          learningRate: 0.001,
+                                          batchSize: 32,
+                                          useANE: true)
+
         // For single horizon training, we would need to create a CSV-like input
         // For now, this is a placeholder that would need to be implemented
         let url = URL(fileURLWithPath: csvPath)
-        let (model, report) = try await TrainPrepService().runPipeline(
-          from: url,
-          config: config,
-          progress: self
-        )
-        
+        let (model, report) = try await TrainPrepService().runPipeline(from: url,
+                                                                       config: config,
+                                                                       progress: self)
+
         let modelPath = "\(outputDirectory)/BridgeLiftPredictor_horizon_\(horizon).mlmodel"
-        
+
         await MainActor.run {
           self.trainedModels[horizon] = modelPath
           self.isTraining = false
@@ -269,35 +261,35 @@ extension MLPipelineViewModel {
       trainingProgress = 0.0
     }
   }
-  
+
   func trainPrepDidLoadData(_ count: Int) {
     Task { @MainActor in
       trainingStatus = "Loaded \(count) probe ticks"
       trainingProgress = 0.1
     }
   }
-  
+
   func trainPrepDidProcessHorizon(_ horizon: Int, featureCount: Int) {
     Task { @MainActor in
       trainingStatus = "Processed \(horizon)-minute horizon with \(featureCount) features"
       trainingProgress = 0.3
     }
   }
-  
+
   func trainPrepDidSaveHorizon(_ horizon: Int, to path: String) {
     Task { @MainActor in
       trainingStatus = "Saved \(horizon)-minute horizon to \(path)"
       trainingProgress = 0.4
     }
   }
-  
+
   func trainPrepDidComplete() {
     Task { @MainActor in
       trainingStatus = "Training preparation completed"
       trainingProgress = 0.5
     }
   }
-  
+
   func trainPrepDidFail(_ error: Error) {
     Task { @MainActor in
       trainingStatus = "Training preparation failed"

@@ -93,30 +93,30 @@ public class DataValidationService {
 
   /// Registered custom validators
   private var customValidators: [CustomValidator] = []
-  
+
   /// Cached ISO8601 date formatter for performance
   private static let iso8601Formatter: ISO8601DateFormatter = {
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
     return formatter
   }()
-  
+
   /// Sanitizes timestamp string to handle leap seconds and other edge cases
   private func sanitizeTimestamp(_ timestamp: String) -> String? {
     // Handle leap seconds by clamping :60 to :59.999
     if timestamp.contains(":60") {
       return timestamp.replacingOccurrences(of: ":60", with: ":59.999")
     }
-    
+
     // Handle other potential edge cases
     // Remove any trailing whitespace
     let trimmed = timestamp.trimmingCharacters(in: .whitespacesAndNewlines)
-    
+
     // Basic format validation
-    guard trimmed.contains("T") && (trimmed.contains("Z") || trimmed.contains("+") || trimmed.contains("-")) else {
+    guard trimmed.contains("T"), trimmed.contains("Z") || trimmed.contains("+") || trimmed.contains("-") else {
       return nil
     }
-    
+
     return trimmed
   }
 
@@ -426,7 +426,8 @@ public class DataValidationService {
     // Parse timestamps with sanitization and caching
     for (index, tick) in ticks.enumerated() {
       if let sanitizedTimestamp = sanitizeTimestamp(tick.ts_utc),
-         let date = Self.iso8601Formatter.date(from: sanitizedTimestamp) {
+         let date = Self.iso8601Formatter.date(from: sanitizedTimestamp)
+      {
         timestamps.append(date)
       } else {
         parsingFailures += 1
@@ -486,7 +487,7 @@ public class DataValidationService {
       guard let sanitized = sanitizeTimestamp(tick.ts_utc) else { return nil }
       return Self.iso8601Formatter.date(from: sanitized)
     }.sorted()
-    
+
     // Guard against insufficient data
     guard timestamps.count >= 2 else {
       if timestamps.count == 1 {

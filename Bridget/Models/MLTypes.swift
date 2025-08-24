@@ -617,7 +617,7 @@ public struct TrainingReport: Codable {
   public let shapes: ModelShapes
   /// Pipeline execution metadata
   public let metadata: TrainingMetadata
-  
+
   public init(timings: PipelineTimings,
               dataQuality: DataQualityMetrics,
               modelPerformance: CoreMLModelValidationResult,
@@ -644,7 +644,7 @@ public struct PipelineTimings: Codable {
   public var featureEngineeringTime: TimeInterval
   public var trainingTime: TimeInterval
   public var validationTime: TimeInterval
-  
+
   public init(totalDuration: TimeInterval,
               dataLoadingTime: TimeInterval,
               dataValidationTime: TimeInterval,
@@ -666,7 +666,7 @@ public struct TrainingSeeds: Codable {
   public let featureEngineeringSeed: Int
   public let trainingSeed: Int
   public let validationSeed: Int
-  
+
   public init(featureEngineeringSeed: Int,
               trainingSeed: Int,
               validationSeed: Int)
@@ -683,7 +683,7 @@ public struct ModelShapes: Codable {
   public let outputShape: [Int]
   public let featureCount: Int
   public let targetCount: Int
-  
+
   public init(inputShape: [Int],
               outputShape: [Int],
               featureCount: Int,
@@ -706,7 +706,7 @@ public struct TrainingMetadata: Codable {
   public let recordCount: Int
   public let bridgeCount: Int
   public let horizons: [Int]
-  
+
   public init(startTime: Date,
               endTime: Date,
               deviceInfo: String,
