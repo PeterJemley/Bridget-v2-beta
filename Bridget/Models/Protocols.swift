@@ -24,6 +24,7 @@ import Foundation
 // MARK: - Training Data Preparation Progress
 
 /// Protocol for reporting training data preparation progress
+@MainActor
 public protocol TrainPrepProgressDelegate: AnyObject {
   func trainPrepDidStart()
   func trainPrepDidLoadData(_ count: Int)

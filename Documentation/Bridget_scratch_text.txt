@@ -1,90 +1,126 @@
 What does "stateless" mean here: "These can be called independently and are stateless, as utility methods should be"?
 
+_______________
 
-Integrate these suggestions to further improve the tests and validators for edge cases and future extensibility:
 
-⸻
+integrate these responses: 
+Integration Checklist: Where and How to Apply Each Improvement
 
-1. Suggested Edge Case Tests
-
-• Duplicate Detection:
-Add tests that intentionally insert duplicate records (same bridge_id and timestamp) and validate that the validator identifies and reports them.
-Why? Duplicates can cause overfitting or misleading statistics.
-
-• Unusual but Valid Timestamps:
-Test leap seconds, leap years, and mid-century dates, as well as mixed timezone offsets in ts_utc.
-Why? Real-world time data is messy; this ensures resilience.
-
-• All-Missing or All-NaN Features:
-Add a test with all numeric features as nil, NaN, or infinite in a single batch to ensure errors are clear and not lost in aggregation.
-
-• High Cardinality:
-Test with thousands of unique bridge IDs or unexpected categorical values to verify performance and error messaging.
-
-• Precision Loss:
-Test features and output where floating-point rounding or precision loss could occur (e.g., values very near the edge of valid ranges) to ensure they're handled or flagged.
-
-• Non-default Horizons:
-Pass features with odd or non-standard horizons (e.g., 2, 4, 7, 11 min) to confirm horizon coverage is flexible and yields actionable warnings.
-
-⸻
-
-2. Validator Extensibility Enhancements
-
-• Customizable Thresholds Per Bridge/Feature:
-Allow the configuration of range and outlier thresholds on a per-bridge or per-feature basis (not just global), and test that they apply correctly.
-
-• Async/Parallel Validation:
-Add (and test) async validation for large datasets to avoid bottlenecks in the main thread.
-
-• Pluggable Custom Validators:
-You already have a plugin manager; add tests for registering, configuring, and running custom validators at runtime (e.g., via local config or remote API).
-
-• Explainability Hooks:
-Ensure every validator provides not only pass/fail/error, but also “why” (inputs, thresholds, statistics involved). Test that this info is present and clear for all custom and built-in validators.
-
-• Validator Ordering/Priority:
-Test that validator execution order (by priority) is respected, and failures in early, critical validators can short-circuit or skip subsequent lower-priority ones if desired.
-
-⸻
-
-3. Test Infrastructure Improvements
-
-• Fuzz Testing:
-Randomly generate probe ticks and feature vectors with combinations of valid/invalid/missing values to find unanticipated edge cases.
-
-• Golden Data Versioning:
-Store and test against multiple golden datasets (e.g., v1, v2, “legacy”, “production”) to ensure backward compatibility and early detection of validation drift.
-
-• Partial Failure Simulation:
-Test and verify system behavior when only a subset of records (e.g., a single bridge, or a single hour) fail validation. Ensure messages are targeted.
-
-• Snapshot/Diff Testing:
-For actionable feedback (summary/detailedSummary), implement assertions that changes to validator logic do not unintentionally change error/warning output, unless explicitly intended.
-
-⸻
-
-4. Future-Proofing for Data Drift and Feature Expansion
-
-• Unknown/New Features:
-Add tests to verify that the system gracefully ignores or warns about unknown fields, supporting forward compatibility with new features.
-
-• Data Drift Reporting:
-Test the integration of statistics output (mean, stdev, min/max trends) and ensure that drift from baseline (golden) is clearly flagged and actionable.
-
-⸻
-
-Example: Adding a Duplicate Record Test
-@Test("Duplicate probe ticks should be detected and reported")
-mutating func duplicateRecordDetection() async throws {
-  try await setUp()
-  guard !goldenSampleTicks.isEmpty else { return }
-  var dupTicks = goldenSampleTicks
-  // Add a duplicate of the first tick
-  dupTicks.append(goldenSampleTicks[0])
-
-  let result = validationService.validate(ticks: dupTicks)
-
-  #expect(result.errors.contains { $0.contains("Duplicate record") })
+1. Advance ETA on Every Edge (Path Traversal Logic)
+• Where: In your path traversal/scoring loop (e.g., in TrainPrepService or your prototype).
+• How: Always increment currentTime after every edge, not just bridges.
+• Why: Ensures accurate predicted arrival times for every segment.
+for edge in path.edges {
+    // Advance ETA for every edge
+    currentTime = currentTime.addingTimeInterval(edge.travelSeconds)
+    if edge.isBridge {
+        // ...predictor logic...
+    }
 }
 
+(Define travelSeconds as the canonical field for all duration math.)
+
+⸻
+
+2. Probability Aggregation—Use Union, Not Sum
+• Where: In your network-level probability calculation (when combining path probabilities).
+• How: Instead of summing, use the formula:
+let anyPathOK = 1.0 - pathProbabilities.map { 1.0 - $0 }.reduce(1.0, *)
+
+• Why: Correctly models the chance that at least one path is successful.
+
+⸻
+
+3. Log-Domain Aggregation and Probability Clamping
+• Where: When multiplying many probabilities (to avoid underflow).
+• How:
+let epsLow = 0.05, epsHigh = 0.99
+  let logP = bridgeProbs.map { min(max($0, epsLow), epsHigh) }.map(log).reduce(0, +)
+  let pathProb = exp(logP)
+
+• Why: Improves numerical stability, especially for long paths.
+
+⸻
+
+4. Canonical Time Units
+• Where: All edge definitions and ETA math.
+• How: Define all travel durations as TimeInterval (seconds), not minutes.
+• Why: Prevents accidental errors and makes API use consistent.
+
+⸻
+
+5. Strong Typing for Graph Primitives
+• Where: In your graph module (Node, Edge) and adjacency list construction.
+• How: Use dedicated NodeID: Hashable types; build adjacency list in init for reliability.
+• Why: Avoids bugs from accidental key duplication and keeps graph structure robust.
+
+⸻
+
+6. Explicitly Model Bidirectionality
+• Where: When creating your graph.
+• How: For each two-way road, insert two directed edges; never assume roads are symmetric.
+• Why: Matches real-world traffic logic and avoids routing bugs.
+
+⸻
+
+7. Seeded Randomness in Mocks
+• Where: In your synthetic probability/mock predictor.
+• How: Pass a seeded PRNG as an argument or property.
+• Why: Ensures deterministic, repeatable tests.
+
+⸻
+
+8. Batch Prediction API
+• Where: In your bridge predictor interface.
+• How: Collect all (bridgeId, eta, features) triples and use a predictBatch method (even if mocked).
+• Why: Matches how you’ll call Core ML for performance later.
+
+⸻
+
+9. ETA Windows (Optional)
+• Where: In your ETA estimation function.
+• How: Return (mean, min, max), even if you use only mean for now.
+• Why: Future-proofs your code for modeling travel time uncertainty.
+
+⸻
+
+10. Acceptance Checks & Known Limitations
+• Where: In your test suite and scoring logic.
+• How: Assert results are in [0,1], and mark shared-bridge path dependencies as open issues.
+• Why: Ensures logic is robust and edge cases are documented.
+
+⸻
+
+11. Tiny Code Nits
+• Where: Throughout your code files.
+• How:
+   • Import CoreLocation conditionally.
+   • Rename ambiguous variables (e.g., Graph.edges → allEdges).
+   • Validate paths for contiguity.
+• Why: Improves clarity and correctness.
+
+⸻
+
+12. Expanded Test Plan
+• Where: In your test suite (TrainPrepServiceTests or similar).
+• How: Add property-based, underflow, and no-safe-route tests as described.
+• Why: Catches subtle bugs and guards against regressions.
+
+⸻
+
+How to Sequence These Fixes
+
+1. Refactor graph, edge, and path types for time/identity.
+2. Update path traversal and probability scoring logic per #1-4.
+3. Implement seeded randomness and batch APIs in mocks.
+4. Add and run property/edge-case tests.
+5. Document known limitations and future work (shared-bridge dependencies, etc.).
+
+⸻
+
+Final Advice
+
+• Apply these changes in small, test-backed commits.
+• Keep mocks and injectability in your architecture to support fast iteration and future model swaps.
+• Document every new assumption, type, and calculation for team clarity.
+• Test rigorously: edge-cases, deep paths, and no-safe-route scenarios.

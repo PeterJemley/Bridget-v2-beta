@@ -3,57 +3,359 @@
 //  Bridget
 //
 //  ## Purpose
-//  Orchestration service for ML training data preparation pipeline
-//  Coordinates feature engineering and Core ML training without CSV intermediates
+//  Step 5: Orchestrator Service - Coordinator only, no heavy logic
+//  Ties Steps 2-4 together: FeatureEngineering → Validation → CoreMLTraining
 //
 //  ## Dependencies
-//  FeatureEngineeringService, TrainingConfig, CoreML framework
+//  FeatureEngineeringService (Step 2), DataValidationService (Step 3), CoreMLTraining (Step 4)
 //
 //  ## Integration Points
-//  Orchestrates feature engineering and Core ML training
-//  Generates MLMultiArray outputs directly for Core ML
-//  Supports multiple prediction horizons (0, 3, 6, 9, 12 minutes)
+//  Single entry point: runPipeline(from:config:progress:) -> (model: MLModel, report: TrainingReport)
+//  Call sequence: parse NDJSON → FeatureEngineering → Validation → CoreMLTraining.train/evaluate
 //
 //  ## Key Features
 //  Orchestration-only design (no heavy logic)
-//  Direct NDJSON → FeatureVector → MLMultiArray → Core ML pipeline
-//  Deterministic training with configurable seeds
-//  Performance monitoring and validation
+//  Progress via delegates
+//  Comprehensive TrainingReport with timings, metrics, validation summaries, seeds, shapes
+//  E2E "happy path" completes in-memory with model + report
 //
 
 import CoreML
 import Foundation
 import OSLog
+import UIKit
 
-// Centralized types and protocols are now in the same target
+// MARK: - Main Orchestrator Service
 
-// Feature engineering functions moved to FeatureEngineeringService
-
-func loadNDJSON(from path: String) throws -> [ProbeTickRaw] {
-  let url = URL(fileURLWithPath: path)
-  let data = try String(contentsOf: url, encoding: .utf8)
-  var result = [ProbeTickRaw]()
-  for (i, line) in data.split(separator: "\n").enumerated() {
-    if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
-    if let decoded = try? JSONDecoder.bridgeDecoder().decode(ProbeTickRaw.self,
-                                                             from: Data(line.utf8))
-    {
-      result.append(decoded)
-    } else {
-      os_log("[Warning] Failed to parse line %d: Could not decode ProbeTickRaw", log: .default, type: .info, i + 1)
+/// Step 5: Orchestrator Service - Coordinates Steps 2-4 modules
+public class TrainPrepService {
+  private let logger = Logger(subsystem: "com.peterjemley.Bridget", category: "TrainPrepService")
+  
+  public init() {}
+  
+  /// Single entry point for the complete ML pipeline
+  /// - Parameters:
+  ///   - ndjsonURL: URL to NDJSON data file
+  ///   - config: Core ML training configuration
+  ///   - progress: Optional progress delegate for real-time updates
+  /// - Returns: Tuple of trained MLModel and comprehensive TrainingReport
+  /// - Throws: Various errors from Steps 2-4 modules
+  public func runPipeline(
+    from ndjsonURL: URL,
+    config: CoreMLTrainingConfig,
+    progress: TrainPrepProgressDelegate? = nil,
+    enhancedProgress: EnhancedPipelineProgressDelegate? = nil
+  ) async throws -> (model: MLModel, report: TrainingReport) {
+    
+    let startTime = Date()
+    logger.info("🚀 Starting ML pipeline with config: \(String(describing: config))")
+    logger.info("📁 Input file: \(ndjsonURL.path)")
+    
+    // Initialize timing tracking
+    var timings = PipelineTimings(
+      totalDuration: 0,
+      dataLoadingTime: 0,
+      dataValidationTime: 0,
+      featureEngineeringTime: 0,
+      trainingTime: 0,
+      validationTime: 0
+    )
+    
+    do {
+      // Step 1: Parse NDJSON data
+      logger.info("📊 Starting data loading stage...")
+      await progress?.trainPrepDidStart()
+      await enhancedProgress?.pipelineDidStartStage(.dataLoading)
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.dataLoading, progress: 0.0)
+      let dataLoadingStart = Date()
+      
+      let ticks = try await parseNDJSON(from: ndjsonURL)
+      timings.dataLoadingTime = Date().timeIntervalSince(dataLoadingStart)
+      
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.dataLoading, progress: 1.0)
+      await enhancedProgress?.pipelineDidCompleteStage(.dataLoading)
+      await progress?.trainPrepDidLoadData(ticks.count)
+      logger.info("✅ Data loading completed: \(ticks.count) probe ticks loaded in \(timings.dataLoadingTime)s")
+      
+      // Step 2: Data Validation (Step 3 module)
+      logger.info("🔍 Starting data validation stage...")
+      await enhancedProgress?.pipelineDidStartStage(.dataValidation)
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.dataValidation, progress: 0.0)
+      let validationStart = Date()
+      
+      let validationService = DataValidationService()
+      logger.info("🔍 Running async validation on \(ticks.count) ticks...")
+      let validationResult = await validationService.validateAsync(ticks: ticks)
+      
+      timings.dataValidationTime = Date().timeIntervalSince(validationStart)
+      logger.info("🔍 Validation completed in \(timings.dataValidationTime)s")
+      logger.info("🔍 Validation result: \(validationResult.totalRecords) total, \(validationResult.validRecordCount) valid, \(validationResult.errors.count) errors")
+      
+      // Check data quality gate
+      logger.info("🔍 Evaluating data quality gate...")
+      let shouldContinue = await enhancedProgress?.pipelineDidEvaluateDataQualityGate(validationResult) ?? true
+      logger.info("🔍 Data quality gate result: \(shouldContinue ? "PASS" : "FAIL")")
+      
+      guard shouldContinue else {
+        let error = CoreMLTrainingError.featureDrift(
+          description: "Data quality gate failed",
+          expectedCount: validationResult.totalRecords,
+          actualCount: validationResult.validRecordCount
+        )
+        logger.error("❌ Data quality gate failed: \(error.localizedDescription)")
+        await enhancedProgress?.pipelineDidFailStage(.dataValidation, error: error)
+        throw error
+      }
+      
+      guard validationResult.isValid else {
+        let error = CoreMLTrainingError.featureDrift(
+          description: "Data validation failed: \(validationResult.errors.joined(separator: ", "))",
+          expectedCount: validationResult.totalRecords,
+          actualCount: validationResult.validRecordCount
+        )
+        logger.error("❌ Data validation failed: \(error.localizedDescription)")
+        await enhancedProgress?.pipelineDidFailStage(.dataValidation, error: error)
+        throw error
+      }
+      
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.dataValidation, progress: 1.0)
+      await enhancedProgress?.pipelineDidCompleteStage(.dataValidation)
+      logger.info("✅ Data validation passed with \(validationResult.totalRecords) records")
+      
+      // Step 3: Feature Engineering (Step 2 module)
+      logger.info("🔧 Starting feature engineering stage...")
+      await enhancedProgress?.pipelineDidStartStage(.featureEngineering)
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.featureEngineering, progress: 0.0)
+      let featureStart = Date()
+      
+      let featureConfig = FeatureEngineeringConfiguration(
+        horizons: [6], // Default horizon for single model training
+        deterministicSeed: config.shuffleSeed ?? 42
+      )
+      logger.info("🔧 Feature config: horizons=\(featureConfig.horizons), seed=\(featureConfig.deterministicSeed)")
+      
+      let featureService = FeatureEngineeringService(configuration: featureConfig)
+      logger.info("🔧 Generating features from \(ticks.count) ticks...")
+      
+      let allFeatures = try featureService.generateFeatures(from: ticks)
+      let features = allFeatures.first ?? [] // Use first horizon for single model training
+      
+      timings.featureEngineeringTime = Date().timeIntervalSince(featureStart)
+      
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.featureEngineering, progress: 1.0)
+      await enhancedProgress?.pipelineDidCompleteStage(.featureEngineering)
+      await progress?.trainPrepDidProcessHorizon(6, featureCount: features.count) // Default horizon
+      logger.info("✅ Feature engineering completed: \(features.count) feature vectors generated in \(timings.featureEngineeringTime)s")
+      
+      // Step 4: MLMultiArray Conversion
+      logger.info("🔄 Starting MLMultiArray conversion stage...")
+      await enhancedProgress?.pipelineDidStartStage(.mlMultiArrayConversion)
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.mlMultiArrayConversion, progress: 0.0)
+      
+      // Convert features to MLMultiArray (this happens inside CoreMLTraining)
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.mlMultiArrayConversion, progress: 1.0)
+      await enhancedProgress?.pipelineDidCompleteStage(.mlMultiArrayConversion)
+      logger.info("✅ MLMultiArray conversion completed")
+      
+      // Step 5: Core ML Training (Step 4 module)
+      logger.info("🎯 Starting model training stage...")
+      await enhancedProgress?.pipelineDidStartStage(.modelTraining)
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.modelTraining, progress: 0.0)
+      let trainingStart = Date()
+      
+      let trainer = CoreMLTraining(config: config, progressDelegate: nil) // Progress handled by TrainPrepProgressDelegate
+      logger.info("🎯 Training model with \(features.count) features, config: \(String(describing: config))")
+      
+      let model = try await trainer.trainModel(with: features)
+      
+      timings.trainingTime = Date().timeIntervalSince(trainingStart)
+      
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.modelTraining, progress: 1.0)
+      await enhancedProgress?.pipelineDidCompleteStage(.modelTraining)
+      logger.info("✅ Model training completed successfully in \(timings.trainingTime)s")
+      
+      // Step 6: Model Validation
+      logger.info("📊 Starting model validation stage...")
+      await enhancedProgress?.pipelineDidStartStage(.modelValidation)
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.modelValidation, progress: 0.0)
+      let validationStart2 = Date()
+      
+      logger.info("📊 Evaluating model on \(features.count) features...")
+      let validationMetrics = try trainer.evaluate(model, on: features)
+      
+      timings.validationTime = Date().timeIntervalSince(validationStart2)
+      
+      // Check model performance gate
+      let modelMetrics = ModelPerformanceMetrics(
+        accuracy: validationMetrics.accuracy,
+        loss: validationMetrics.loss,
+        f1Score: validationMetrics.f1Score,
+        precision: validationMetrics.precision,
+        recall: validationMetrics.recall,
+        confusionMatrix: validationMetrics.confusionMatrix
+      )
+      
+      logger.info("📊 Model performance: accuracy=\(validationMetrics.accuracy), loss=\(validationMetrics.loss)")
+      logger.info("📊 Evaluating model performance gate...")
+      let shouldDeploy = await enhancedProgress?.pipelineDidEvaluateModelPerformanceGate(modelMetrics) ?? true
+      logger.info("📊 Model performance gate result: \(shouldDeploy ? "PASS" : "FAIL")")
+      
+      guard shouldDeploy else {
+        let error = CoreMLTrainingError.validationFailed(metrics: validationMetrics)
+        logger.error("❌ Model performance gate failed: \(error.localizedDescription)")
+        await enhancedProgress?.pipelineDidFailStage(.modelValidation, error: error)
+        throw error
+      }
+      
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.modelValidation, progress: 1.0)
+      await enhancedProgress?.pipelineDidCompleteStage(.modelValidation)
+      logger.info("✅ Model validation completed successfully in \(timings.validationTime)s")
+      
+      // Step 7: Artifact Export
+      logger.info("📦 Starting artifact export stage...")
+      await enhancedProgress?.pipelineDidStartStage(.artifactExport)
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.artifactExport, progress: 0.0)
+      
+      // Calculate total duration
+      timings.totalDuration = Date().timeIntervalSince(startTime)
+      
+      // Generate comprehensive training report
+      logger.info("📋 Generating training report...")
+      let report = generateTrainingReport(
+        timings: timings,
+        dataQuality: validationResult.dataQualityMetrics,
+        modelPerformance: validationMetrics,
+        configuration: config,
+        ticks: ticks,
+        features: features,
+        startTime: startTime
+      )
+      
+      await enhancedProgress?.pipelineDidUpdateStageProgress(.artifactExport, progress: 1.0)
+      await enhancedProgress?.pipelineDidCompleteStage(.artifactExport)
+      logger.info("✅ Artifact export completed")
+      
+      // Update pipeline metrics
+      let pipelineMetrics = PipelineMetrics(
+        stageDurations: [
+          .dataLoading: timings.dataLoadingTime,
+          .dataValidation: timings.dataValidationTime,
+          .featureEngineering: timings.featureEngineeringTime,
+          .mlMultiArrayConversion: 0.0, // Minimal time
+          .modelTraining: timings.trainingTime,
+          .modelValidation: timings.validationTime,
+          .artifactExport: 0.0 // Minimal time
+        ],
+        recordCounts: [
+          .dataLoading: ticks.count,
+          .dataValidation: validationResult.totalRecords,
+          .featureEngineering: features.count,
+          .mlMultiArrayConversion: features.count,
+          .modelTraining: features.count,
+          .modelValidation: features.count,
+          .artifactExport: 1 // One model exported
+        ]
+      )
+      await enhancedProgress?.pipelineDidUpdateMetrics(pipelineMetrics)
+      
+      await progress?.trainPrepDidComplete()
+      await enhancedProgress?.pipelineDidComplete([6: "trained_model"]) // Single horizon model
+      logger.info("✅ ML pipeline completed successfully in \(timings.totalDuration)s")
+      
+      return (model, report)
+      
+    } catch {
+      logger.error("❌ ML pipeline failed at stage: \(error.localizedDescription)")
+      logger.error("❌ Error type: \(type(of: error))")
+      if let coreMLError = error as? CoreMLTrainingError {
+        logger.error("❌ CoreMLTrainingError details: \(coreMLError)")
+      }
+      await progress?.trainPrepDidFail(error)
+      await enhancedProgress?.pipelineDidFail(error)
+      logger.error("❌ ML pipeline failed: \(error.localizedDescription)")
+      throw error
     }
   }
-  return result
 }
 
-// Date and math utility functions moved to FeatureEngineeringService
+// MARK: - Private Helper Methods
 
-// Feature engineering function moved to FeatureEngineeringService
+private extension TrainPrepService {
+  
+  /// Parse NDJSON data from URL
+  func parseNDJSON(from url: URL) async throws -> [ProbeTickRaw] {
+    let data = try String(contentsOf: url, encoding: .utf8)
+    var result = [ProbeTickRaw]()
+    
+    for (i, line) in data.split(separator: "\n").enumerated() {
+      if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
+      
+      if let decoded = try? JSONDecoder.bridgeDecoder().decode(ProbeTickRaw.self, from: Data(line.utf8)) {
+        result.append(decoded)
+      } else {
+        logger.warning("Failed to parse line \(i + 1): Could not decode ProbeTickRaw")
+      }
+    }
+    
+    return result
+  }
+  
+  /// Generate comprehensive training report
+  func generateTrainingReport(
+    timings: PipelineTimings,
+    dataQuality: DataQualityMetrics,
+    modelPerformance: CoreMLModelValidationResult,
+    configuration: CoreMLTrainingConfig,
+    ticks: [ProbeTickRaw],
+    features: [FeatureVector],
+    startTime: Date
+  ) -> TrainingReport {
+    
+    // Extract unique bridge IDs
+    let bridgeIds = Set(ticks.map { $0.bridge_id })
+    
+    // Generate seeds for reproducibility
+    let seeds = TrainingSeeds(
+      featureEngineeringSeed: Int(configuration.shuffleSeed ?? 42),
+      trainingSeed: Int(configuration.shuffleSeed ?? 42),
+      validationSeed: Int(configuration.shuffleSeed ?? 42)
+    )
+    
+    // Define model shapes
+    let shapes = ModelShapes(
+      inputShape: configuration.inputShape,
+      outputShape: configuration.outputShape,
+      featureCount: FeatureVector.featureCount,
+      targetCount: targetDimension
+    )
+    
+    // Generate metadata
+    let metadata = TrainingMetadata(
+      startTime: startTime,
+      endTime: Date(),
+      deviceInfo: UIDevice.current.model,
+      osVersion: UIDevice.current.systemVersion,
+      appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",
+      recordCount: ticks.count,
+      bridgeCount: bridgeIds.count,
+      horizons: [6] // Default horizon for single model training
+    )
+    
+    return TrainingReport(
+      timings: timings,
+      dataQuality: dataQuality,
+      modelPerformance: modelPerformance,
+      configuration: configuration,
+      seeds: seeds,
+      shapes: shapes,
+      metadata: metadata
+    )
+  }
+}
 
-// CSV export function removed - direct MLMultiArray output only
+// MARK: - Legacy Support (for backward compatibility)
 
-// MARK: - Configuration
-
+/// Legacy configuration structure (deprecated - use CoreMLTrainingConfig)
 public struct TrainPrepConfiguration {
   let inputPath: String
   let outputDirectory: String
@@ -72,420 +374,53 @@ public struct TrainPrepConfiguration {
   }
 }
 
-// MARK: - Progress Reporting
-
-// TrainPrepProgressDelegate protocol moved to Protocols.swift
-
-// MARK: - Main Service
-
-public class TrainPrepService {
-  private let configuration: TrainPrepConfiguration
-  private weak var progressDelegate: TrainPrepProgressDelegate?
-
-  init(configuration: TrainPrepConfiguration,
-       progressDelegate: TrainPrepProgressDelegate? = nil)
-  {
-    self.configuration = configuration
-    self.progressDelegate = progressDelegate
-  }
-
+/// Legacy process method (deprecated - use runPipeline)
+public extension TrainPrepService {
   func process() async throws {
-    progressDelegate?.trainPrepDidStart()
-
-    // Initialize performance monitoring
-    let trainingBudget = configuration.trainingConfig.getPerformanceBudget()
-    let performanceMonitor = PerformanceMonitoringService(
-      budget: PerformanceBudget(parseTimeMs: trainingBudget.parseTimeMs,
-                                featureEngineeringTimeMs: trainingBudget.featureEngineeringTimeMs,
-                                mlMultiArrayConversionTimeMs: trainingBudget.mlMultiArrayConversionTimeMs,
-                                trainingTimeMs: trainingBudget.trainingTimeMs,
-                                validationTimeMs: trainingBudget.validationTimeMs,
-                                peakMemoryMB: trainingBudget.peakMemoryMB)
+    // Convert legacy config to new config
+    let config = CoreMLTrainingConfig(
+      modelType: .neuralNetwork,
+      epochs: 100,
+      learningRate: 0.001,
+      batchSize: 32,
+      useANE: true
     )
-
-    do {
-      // Parse NDJSON data
-      let ticks = try await measurePerformanceAsync("parse",
-                                                    monitor: performanceMonitor)
-      {
-        try loadNDJSON(from: configuration.inputPath)
-      }
-      progressDelegate?.trainPrepDidLoadData(ticks.count)
-
-      // Feature engineering
-      let featureService = FeatureEngineeringService(
-        configuration: FeatureEngineeringConfiguration(horizons: configuration.trainingConfig.horizons,
-                                                       deterministicSeed: configuration.trainingConfig.deterministicSeed)
-      )
-
-      let allFeatures = try await measurePerformanceAsync("featureEngineering",
-                                                          monitor: performanceMonitor)
-      {
-        try featureService.generateFeatures(from: ticks)
-      }
-
-      // Convert to MLMultiArrays
-      for (idx, horizon) in configuration.trainingConfig.horizons.enumerated() {
-        let (inputs, _) = try await measurePerformanceAsync("mlMultiArrayConversion",
-                                                            monitor: performanceMonitor)
-        {
-          try featureService.convertToMLMultiArrays(allFeatures[idx])
-        }
-        progressDelegate?.trainPrepDidProcessHorizon(horizon, featureCount: inputs.count)
-
-        // Store MLMultiArrays for Core ML training
-        let modelPath = "\(configuration.outputDirectory)/model_horizon_\(horizon).mlmodel"
-        progressDelegate?.trainPrepDidSaveHorizon(horizon, to: modelPath)
-      }
-
-      // Generate performance report
-      let performanceReport = performanceMonitor.generateReport()
-      os_log("📊 Performance Report: %{public}@", log: .default, type: .info, String(describing: performanceReport))
-
-      progressDelegate?.trainPrepDidComplete()
-      os_log("✅ Training data preparation complete!", log: .default, type: .info)
-
-    } catch {
-      progressDelegate?.trainPrepDidFail(error)
-      os_log("❌ Error processing data: %{public}@", log: .default, type: .error, error.localizedDescription)
-      os_log("❌ Error processing data: %{public}@", log: .default, type: .error, String(describing: error.localizedDescription))
-      throw error
-    }
+    
+    let url = URL(fileURLWithPath: "minutes_2025-01-27.ndjson")
+    _ = try await runPipeline(from: url, config: config)
   }
 }
 
 // MARK: - Convenience Functions
 
-func processTrainingData(inputPath: String,
-                         outputDirectory: String? = nil,
-                         trainingConfig: TrainingConfig = .production,
-                         progressDelegate: TrainPrepProgressDelegate? = nil) async throws
-{
-  let config = TrainPrepConfiguration(inputPath: inputPath,
-                                      outputDirectory: outputDirectory ?? FileManagerUtils.temporaryDirectory().path,
-                                      trainingConfig: trainingConfig)
-
-  let service = TrainPrepService(configuration: config, progressDelegate: progressDelegate)
-  try await service.process()
+/// Legacy convenience function (deprecated - use TrainPrepService.runPipeline)
+public func processTrainingData(
+  inputPath: String,
+  outputDirectory: String? = nil,
+  trainingConfig: TrainingConfig = .production,
+  progressDelegate: TrainPrepProgressDelegate? = nil
+) async throws {
+  let config = CoreMLTrainingConfig(
+    modelType: .neuralNetwork,
+    epochs: 100,
+    learningRate: 0.001,
+    batchSize: 32,
+    useANE: true
+  )
+  
+  let service = TrainPrepService()
+  let url = URL(fileURLWithPath: inputPath)
+  _ = try await service.runPipeline(from: url, config: config, progress: progressDelegate)
 }
 
-// MARK: - Legacy Main Driver (for backward compatibility)
+// MARK: - Test Support
 
-func main() {
-  Task {
-    do {
-      try await processTrainingData(inputPath: "minutes_2025-01-27.ndjson",
-                                    trainingConfig: .production)
-    } catch {
-      os_log("❌ Error in main: %{public}@", log: .default, type: .error, String(describing: error.localizedDescription))
-    }
-  }
-}
-
-// MARK: - Integration with BridgeDataService Pipeline
-
-public extension TrainPrepService {
-  static func processExportedData(ndjsonPath: String,
-                                  outputDirectory: String,
-                                  trainingConfig: TrainingConfig = .production,
-                                  progressDelegate: TrainPrepProgressDelegate? = nil) async throws -> [String]
-  {
-    let config = TrainPrepConfiguration(inputPath: ndjsonPath,
-                                        outputDirectory: outputDirectory,
-                                        trainingConfig: trainingConfig)
-
-    let service = TrainPrepService(configuration: config, progressDelegate: progressDelegate)
-    try await service.process()
-
-    return trainingConfig.horizons.map { horizon in
-      "\(outputDirectory)/model_horizon_\(horizon).mlmodel"
-    }
-  }
-
-  static func processTodayData(exportBaseDirectory: String = FileManagerUtils.temporaryDirectory().path,
-                               trainingConfig: TrainingConfig = .production,
-                               progressDelegate: TrainPrepProgressDelegate? = nil) async throws -> [String]
-  {
-    let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = "yyyy-MM-dd"
-    let today = dateFormatter.string(from: Date())
-
-    let ndjsonPath = "\(exportBaseDirectory)/minutes_\(today).ndjson"
-
-    guard FileManagerUtils.fileExists(at: ndjsonPath) else {
-      throw NSError(domain: "TrainPrepService",
-                    code: 404,
-                    userInfo: [NSLocalizedDescriptionKey: "NDJSON file not found: \(ndjsonPath)"])
-    }
-
-    return try await processExportedData(ndjsonPath: ndjsonPath,
-                                         outputDirectory: exportBaseDirectory,
-                                         trainingConfig: trainingConfig,
-                                         progressDelegate: progressDelegate)
-  }
-
-  static func validateExportedData(ndjsonPath: String) throws -> DataValidationResult {
-    let ticks = try loadNDJSON(from: ndjsonPath)
-
-    var result = DataValidationResult()
-    result.totalRecords = ticks.count
-
-    for tick in ticks {
-      if tick.bridge_id < 0 || tick.bridge_id > 10 {
-        result.invalidBridgeIds += 1
-      }
-
-      if tick.open_label != 0 && tick.open_label != 1 {
-        result.invalidOpenLabels += 1
-      }
-
-      if let crossK = tick.cross_k,
-         let crossN = tick.cross_n
-      {
-        if crossK > crossN {
-          result.invalidCrossRatios += 1
-        }
-      }
-    }
-
-    let grouped = Dictionary(grouping: ticks) { $0.bridge_id }
-    result.bridgeCount = grouped.count
-
-    for (bridgeId, bridgeTicks) in grouped {
-      result.recordsPerBridge[bridgeId] = bridgeTicks.count
-    }
-
-    result.isValid = result.invalidBridgeIds == 0 &&
-      result.invalidOpenLabels == 0 &&
-      result.invalidCrossRatios == 0
-
-    return result
-  }
-}
-
-// MARK: - Data Validation Result
-
-// DataValidationResult struct moved to MLTypes.swift
-
-// MARK: - Integration Test Methods
-
-public extension TrainPrepService {
-  static func runIntegrationTest(outputDirectory: String) async throws -> [String] {
-    // Test data split into shorter lines to avoid SwiftLint line length violations
-    let line1 = "{\"v\":1,\"ts_utc\":\"2025-01-27T08:00:00Z\",\"bridge_id\":1,\"cross_k\":5,\"cross_n\":10,\"via_routable\":1,\"via_penalty_sec\":120,\"gate_anom\":2.5,\"alternates_total\":3,\"alternates_avoid\":1,\"open_label\":0,\"detour_delta\":30,\"detour_frac\":0.1}"
-    let line2 = "{\"v\":1,\"ts_utc\":\"2025-01-27T08:01:00Z\",\"bridge_id\":1,\"cross_k\":6,\"cross_n\":10,\"via_routable\":1,\"via_penalty_sec\":150,\"gate_anom\":2.8,\"alternates_total\":3,\"alternates_avoid\":1,\"open_label\":1,\"detour_delta\":45,\"detour_frac\":0.15}"
-    let line3 = "{\"v\":1,\"ts_utc\":\"2025-01-27T08:02:00Z\",\"bridge_id\":2,\"cross_k\":3,\"cross_n\":8,\"via_routable\":0,\"via_penalty_sec\":300,\"gate_anom\":1.5,\"alternates_total\":2,\"alternates_avoid\":0,\"open_label\":0,\"detour_delta\":-10,\"detour_frac\":0.05}"
-    let testData = "\(line1)\n\(line2)\n\(line3)"
-
-    let testFilePath = "\(outputDirectory)/test_integration.ndjson"
-    try testData.write(toFile: testFilePath, atomically: true, encoding: .utf8)
-
-    let testDelegate = TestProgressDelegate()
-    return try await processExportedData(ndjsonPath: testFilePath,
-                                         outputDirectory: outputDirectory,
-                                         trainingConfig: .validation,
-                                         progressDelegate: testDelegate)
-  }
-}
-
-// MARK: - Test Progress Delegate
-
+/// Test progress delegate for integration testing
 public class TestProgressDelegate: TrainPrepProgressDelegate {
-  public func trainPrepDidStart() {
-    // Integration test started - removed print for SwiftLint compliance
-  }
-
-  public func trainPrepDidLoadData(_: Int) {
-    // Loaded test records - removed print for SwiftLint compliance
-  }
-
-  public func trainPrepDidProcessHorizon(_: Int, featureCount _: Int) {
-    // Processed horizon - removed print for SwiftLint compliance
-  }
-
-  public func trainPrepDidSaveHorizon(_: Int, to _: String) {
-    // Saved horizon - removed print for SwiftLint compliance
-  }
-
-  public func trainPrepDidComplete() {
-    // Integration test completed - removed print for SwiftLint compliance
-  }
-
-  public func trainPrepDidFail(_: Error) {
-    // Integration test failed - removed print for SwiftLint compliance
-  }
-}
-
-// MARK: - Core ML Training Integration
-
-public extension TrainPrepService {
-  static func convertFeaturesToMLMultiArray(
-    _ features: [FeatureVector]
-  ) throws -> ([MLMultiArray], [MLMultiArray]) {
-    // Use the new CoreMLTraining module for conversion
-
-    // Convert to individual arrays for backward compatibility
-    var inputs = [MLMultiArray]()
-    var targets = [MLMultiArray]()
-
-    for featureVector in features {
-      let input = try featureVector.toMLMultiArray()
-      let target = try featureVector.toTargetMLMultiArray()
-
-      inputs.append(input)
-      targets.append(target)
-    }
-
-    return (inputs, targets)
-  }
-
-  static func trainCoreMLModel(csvPath: String,
-                               modelName: String,
-                               outputDirectory: String,
-                               configuration _: MLModelConfiguration? = nil,
-                               progressDelegate: CoreMLTrainingProgressDelegate? = nil) async throws -> String
-  {
-    await progressDelegate?.trainingDidStart()
-
-    do {
-      let features = try loadFeaturesFromCSV(csvPath)
-      await progressDelegate?.trainingDidLoadData(features.count)
-
-      // Use the new CoreMLTraining module
-      let trainingConfig = CoreMLTrainingConfig(modelType: .neuralNetwork,
-                                                epochs: 100,
-                                                learningRate: 0.001,
-                                                batchSize: 32,
-                                                useANE: true)
-
-      let trainer = CoreMLTraining(config: trainingConfig,
-                                   progressDelegate: progressDelegate)
-
-      // Train the model using the new module
-      _ = try await trainer.trainModel(with: features,
-                                       progress: progressDelegate)
-
-      // Save the model
-      let modelURL = URL(fileURLWithPath: outputDirectory)
-        .appendingPathComponent("\(modelName).mlmodel")
-      // Note: In a real implementation, you would save the model here
-
-      await progressDelegate?.trainingDidComplete(modelURL.path)
-      return modelURL.path
-
-    } catch {
-      await progressDelegate?.trainingDidFail(error)
-      throw error
-    }
-  }
-
-  static func createTrainingPipeline(ndjsonPath: String,
-                                     outputDirectory: String,
-                                     horizons: [Int] = defaultHorizons,
-                                     modelConfiguration: MLModelConfiguration? = nil,
-                                     progressDelegate: CoreMLTrainingProgressDelegate? = nil) async throws -> [Int: String]
-  {
-    await progressDelegate?.pipelineDidStart()
-
-    let csvFiles = try await processExportedData(ndjsonPath: ndjsonPath,
-                                                 outputDirectory: outputDirectory,
-                                                 trainingConfig: .production)
-
-    await progressDelegate?.pipelineDidProcessData(csvFiles.count)
-
-    var trainedModels = [Int: String]()
-
-    for (index, csvPath) in csvFiles.enumerated() {
-      let horizon = horizons[index]
-      let modelName = "BridgeLiftPredictor_horizon_\(horizon)"
-
-      await progressDelegate?.pipelineDidStartTraining(horizon)
-
-      let modelPath = try await trainCoreMLModel(csvPath: csvPath,
-                                                 modelName: modelName,
-                                                 outputDirectory: outputDirectory,
-                                                 configuration: modelConfiguration,
-                                                 progressDelegate: progressDelegate)
-
-      trainedModels[horizon] = modelPath
-      await progressDelegate?.pipelineDidCompleteTraining(horizon, modelPath: modelPath)
-    }
-
-    await progressDelegate?.pipelineDidComplete(trainedModels)
-    return trainedModels
-  }
-
-  static func validateTrainedModel(modelPath: String) throws -> CoreMLModelValidationResult {
-    // Use the new CoreMLTraining module for validation
-    guard let modelURL = URL(string: modelPath),
-          let model = try? MLModel(contentsOf: modelURL)
-    else {
-      throw CoreMLError.invalidModel
-    }
-
-    // Create trainer with validation config
-    let trainingConfig = CoreMLTrainingConfig.validation
-    let trainer = CoreMLTraining(config: trainingConfig)
-
-    // Generate synthetic data for validation
-    let syntheticFeatures = CoreMLTraining.generateSyntheticData(count: 50)
-
-    // Evaluate the model
-    let result = try trainer.evaluate(model, on: syntheticFeatures)
-
-    return result
-  }
-}
-
-// MARK: - Core ML Training Progress Delegate
-
-// CoreMLTrainingProgressDelegate protocol moved to Protocols.swift
-
-// MARK: - Model Validation Result
-
-// ModelValidationResult struct moved to MLTypes.swift
-
-// MARK: - Core ML Error Types
-
-// CoreMLError enum moved to MLTypes.swift
-
-// MARK: - Private Helper Methods
-
-private extension TrainPrepService {
-  static func loadFeaturesFromCSV(
-    _ csvPath: String
-  ) throws -> [FeatureVector] {
-    let url = URL(fileURLWithPath: csvPath)
-    let csvData = try String(contentsOf: url, encoding: .utf8)
-    let lines = csvData.split(separator: "\n")
-
-    var features = [FeatureVector]()
-
-    for line in lines.dropFirst() {
-      let columns = line.split(separator: ",")
-      guard columns.count >= 17 else { continue }
-
-      let featureVector = FeatureVector(bridge_id: Int(columns[0]) ?? 0,
-                                        horizon_min: Int(columns[1]) ?? 0,
-                                        min_sin: Double(columns[2]) ?? 0.0,
-                                        min_cos: Double(columns[3]) ?? 0.0,
-                                        dow_sin: Double(columns[4]) ?? 0.0,
-                                        dow_cos: Double(columns[5]) ?? 0.0,
-                                        open_5m: Double(columns[6]) ?? 0.0,
-                                        open_30m: Double(columns[7]) ?? 0.0,
-                                        detour_delta: Double(columns[8]) ?? 0.0,
-                                        cross_rate: Double(columns[9]) ?? 0.0,
-                                        via_routable: Double(columns[10]) ?? 0.0,
-                                        via_penalty: Double(columns[11]) ?? 0.0,
-                                        gate_anom: Double(columns[12]) ?? 0.0,
-                                        detour_frac: Double(columns[13]) ?? 0.0,
-                                        current_speed: Double(columns[14]) ?? 35.0,
-                                        normal_speed: Double(columns[15]) ?? 35.0,
-                                        target: Int(columns[16]) ?? 0)
-
-      features.append(featureVector)
-    }
-
-    return features
-  }
+  public func trainPrepDidStart() {}
+  public func trainPrepDidLoadData(_: Int) {}
+  public func trainPrepDidProcessHorizon(_: Int, featureCount: Int) {}
+  public func trainPrepDidSaveHorizon(_: Int, to: String) {}
+  public func trainPrepDidComplete() {}
+  public func trainPrepDidFail(_: Error) {}
 }

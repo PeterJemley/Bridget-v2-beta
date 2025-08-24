@@ -598,3 +598,131 @@ public enum PipelineStage: String, Codable, CaseIterable {
     }
   }
 }
+
+// MARK: - Training Report
+
+/// Comprehensive training report with timings, metrics, validation summaries, seeds, and shapes
+public struct TrainingReport: Codable {
+  /// Pipeline execution timings in seconds
+  public let timings: PipelineTimings
+  /// Data quality metrics and validation results
+  public let dataQuality: DataQualityMetrics
+  /// Model performance metrics
+  public let modelPerformance: CoreMLModelValidationResult
+  /// Configuration used for training
+  public let configuration: CoreMLTrainingConfig
+  /// Random seeds used for reproducibility
+  public let seeds: TrainingSeeds
+  /// Input/output shapes for model validation
+  public let shapes: ModelShapes
+  /// Pipeline execution metadata
+  public let metadata: TrainingMetadata
+  
+  public init(timings: PipelineTimings,
+              dataQuality: DataQualityMetrics,
+              modelPerformance: CoreMLModelValidationResult,
+              configuration: CoreMLTrainingConfig,
+              seeds: TrainingSeeds,
+              shapes: ModelShapes,
+              metadata: TrainingMetadata)
+  {
+    self.timings = timings
+    self.dataQuality = dataQuality
+    self.modelPerformance = modelPerformance
+    self.configuration = configuration
+    self.seeds = seeds
+    self.shapes = shapes
+    self.metadata = metadata
+  }
+}
+
+/// Pipeline execution timings
+public struct PipelineTimings: Codable {
+  public var totalDuration: TimeInterval
+  public var dataLoadingTime: TimeInterval
+  public var dataValidationTime: TimeInterval
+  public var featureEngineeringTime: TimeInterval
+  public var trainingTime: TimeInterval
+  public var validationTime: TimeInterval
+  
+  public init(totalDuration: TimeInterval,
+              dataLoadingTime: TimeInterval,
+              dataValidationTime: TimeInterval,
+              featureEngineeringTime: TimeInterval,
+              trainingTime: TimeInterval,
+              validationTime: TimeInterval)
+  {
+    self.totalDuration = totalDuration
+    self.dataLoadingTime = dataLoadingTime
+    self.dataValidationTime = dataValidationTime
+    self.featureEngineeringTime = featureEngineeringTime
+    self.trainingTime = trainingTime
+    self.validationTime = validationTime
+  }
+}
+
+/// Training seeds for reproducibility
+public struct TrainingSeeds: Codable {
+  public let featureEngineeringSeed: Int
+  public let trainingSeed: Int
+  public let validationSeed: Int
+  
+  public init(featureEngineeringSeed: Int,
+              trainingSeed: Int,
+              validationSeed: Int)
+  {
+    self.featureEngineeringSeed = featureEngineeringSeed
+    self.trainingSeed = trainingSeed
+    self.validationSeed = validationSeed
+  }
+}
+
+/// Model input/output shapes
+public struct ModelShapes: Codable {
+  public let inputShape: [Int]
+  public let outputShape: [Int]
+  public let featureCount: Int
+  public let targetCount: Int
+  
+  public init(inputShape: [Int],
+              outputShape: [Int],
+              featureCount: Int,
+              targetCount: Int)
+  {
+    self.inputShape = inputShape
+    self.outputShape = outputShape
+    self.featureCount = featureCount
+    self.targetCount = targetCount
+  }
+}
+
+/// Training metadata
+public struct TrainingMetadata: Codable {
+  public let startTime: Date
+  public let endTime: Date
+  public let deviceInfo: String
+  public let osVersion: String
+  public let appVersion: String
+  public let recordCount: Int
+  public let bridgeCount: Int
+  public let horizons: [Int]
+  
+  public init(startTime: Date,
+              endTime: Date,
+              deviceInfo: String,
+              osVersion: String,
+              appVersion: String,
+              recordCount: Int,
+              bridgeCount: Int,
+              horizons: [Int])
+  {
+    self.startTime = startTime
+    self.endTime = endTime
+    self.deviceInfo = deviceInfo
+    self.osVersion = osVersion
+    self.appVersion = appVersion
+    self.recordCount = recordCount
+    self.bridgeCount = bridgeCount
+    self.horizons = horizons
+  }
+}

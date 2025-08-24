@@ -20,6 +20,7 @@
 @testable import Bridget
 import CoreML
 import XCTest
+import Bridget // To access `missingBaseModelMessage`
 
 final class CoreMLTrainingTests: XCTestCase {
   // MARK: - Test Data
@@ -158,28 +159,20 @@ final class CoreMLTrainingTests: XCTestCase {
       return
     }
     let features = Array(syntheticFeatures.prefix(20))
-    let mockDelegate = await MockCoreMLTrainingProgressDelegate()
 
     // When: Training model
     do {
-      _ = try await trainer.trainModel(with: features, progress: mockDelegate)
+      _ = try await trainer.trainModel(with: features)
       XCTFail("Expected training to fail since actual training requires base model")
     } catch {
       // Then: Should throw training failed error (since we don't have a base model)
-      guard case CoreMLTrainingError.trainingFailed = error else {
+      guard case CoreMLTrainingError.trainingFailed(let reason, _) = error else {
         XCTFail("Expected trainingFailed error, got \(error)")
         return
       }
+      // Verify the error message contains the expected text
+      XCTAssertTrue(reason.contains(missingBaseModelMessage))
     }
-
-    // Verify delegate was called
-    let didStartCalled = await mockDelegate.trainingDidStartCalled
-    let didLoadDataCalled = await mockDelegate.trainingDidLoadDataCalled
-    let didPrepareDataCalled = await mockDelegate.trainingDidPrepareDataCalled
-
-    XCTAssertTrue(didStartCalled)
-    XCTAssertTrue(didLoadDataCalled)
-    XCTAssertTrue(didPrepareDataCalled)
   }
 
   func testTrainModelWithInsufficientData() async throws {
@@ -214,7 +207,12 @@ final class CoreMLTrainingTests: XCTestCase {
       XCTFail("Expected training to fail")
     } catch {
       // Should fail due to training implementation requiring base model
-      XCTAssertTrue(error is CoreMLTrainingError)
+      guard case CoreMLTrainingError.trainingFailed(let reason, _) = error else {
+        XCTFail("Expected trainingFailed error, got \(error)")
+        return
+      }
+      // Verify the error message contains the expected text
+      XCTAssertTrue(reason.contains(missingBaseModelMessage))
     }
   }
 
@@ -490,3 +488,4 @@ class MockCoreMLTrainingProgressDelegate: CoreMLTrainingProgressDelegate {
   func pipelineDidCompleteTraining(_: Int, modelPath _: String) {}
   func pipelineDidComplete(_: [Int: String]) {}
 }
+

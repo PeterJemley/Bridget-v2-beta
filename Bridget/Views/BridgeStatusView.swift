@@ -82,3 +82,5 @@ struct BridgeStatusCard: View {
   BridgeStatusView()
 }
 
+
+
