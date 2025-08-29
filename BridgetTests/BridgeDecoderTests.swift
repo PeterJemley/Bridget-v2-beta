@@ -20,12 +20,13 @@
 
 // MARK: - Imports
 
-@testable import Bridget
 import Foundation
 import MetricKit
-import os
 import OSLog
 import Testing
+import os
+
+@testable import Bridget
 
 // MARK: - MetricKitObserver (Performance Metrics)
 
@@ -70,7 +71,9 @@ final class MetricKitObserver: NSObject, MXMetricManagerSubscriber {
 
         // Check CPU thresholds
         if cpuTimeSeconds > PerformanceThresholds.maxCPUTime {
-          performanceWarnings.append("⚠️ High CPU usage: \(cpuTimeSeconds)s (threshold: \(PerformanceThresholds.maxCPUTime)s)")
+          performanceWarnings.append(
+            "⚠️ High CPU usage: \(cpuTimeSeconds)s (threshold: \(PerformanceThresholds.maxCPUTime)s)"
+          )
         }
       } else {
         print("  🔥 CPU Metrics: Unavailable")
@@ -85,7 +88,9 @@ final class MetricKitObserver: NSObject, MXMetricManagerSubscriber {
 
         // Check memory thresholds
         if UInt64(peakBytes) > PerformanceThresholds.maxMemoryUsage {
-          performanceWarnings.append("⚠️ High memory usage: \(peakBytes) bytes (threshold: \(PerformanceThresholds.maxMemoryUsage) bytes)")
+          performanceWarnings.append(
+            "⚠️ High memory usage: \(peakBytes) bytes (threshold: \(PerformanceThresholds.maxMemoryUsage) bytes)"
+          )
         }
       } else {
         print("  💾 Memory Metrics: Unavailable")
@@ -110,8 +115,10 @@ final class MetricKitObserver: NSObject, MXMetricManagerSubscriber {
       // Network Transfer Metrics
       // Detailed network transfer properties (cellularBytesSent, wifiBytesReceived, etc.) are not guaranteed public.
       // Hence, only print presence and warn about lack of detailed data.
-      if let _ = payload.networkTransferMetrics {
-        print("  🌐 Network Transfer Metrics: Present (detailed values unavailable due to MetricKit API limitations)")
+      if payload.networkTransferMetrics != nil {
+        print(
+          "  🌐 Network Transfer Metrics: Present (detailed values unavailable due to MetricKit API limitations)"
+        )
       } else {
         print("  🌐 Network Transfer Metrics: Unavailable")
       }
@@ -167,7 +174,8 @@ class BridgetMetricsCollector {
       for (key, duration) in dateValidationMetrics {
         let count = validationCounts[key] ?? 0
         let avgDuration = count > 0 ? duration / Double(count) : 0
-        summary += "  - \(key): \(count) validations, avg: \(String(format: "%.3f", avgDuration))s\n"
+        summary +=
+          "  - \(key): \(count) validations, avg: \(String(format: "%.3f", avgDuration))s\n"
       }
 
       return summary
@@ -204,9 +212,10 @@ struct BridgeDecoderTests {
     let json = #"{"date": "2025-01-03T10:12:00.000"}"#.data(using: .utf8)!
     let dateString = "2025-01-03T10:12:00.000"
     let reporter = ConsoleDateValidationErrorReporter()
-    let context = DateValidationContext(recordID: "test-validPrimaryFormat", source: "BridgeDecoderTests")
+    let context = DateValidationContext(
+      recordID: "test-validPrimaryFormat", source: "BridgeDecoderTests")
     let valResult = DateValidator.validate(dateString)
-    if case let .failure(error) = valResult {
+    if case .failure(let error) = valResult {
       reporter.report(error, level: .error, context: context)
       throw error
     }
@@ -222,9 +231,10 @@ struct BridgeDecoderTests {
     let json = #"{"date": "2025-01-03T10:12:00Z"}"#.data(using: .utf8)!
     let dateString = "2025-01-03T10:12:00Z"
     let reporter = ConsoleDateValidationErrorReporter()
-    let context = DateValidationContext(recordID: "test-validISO8601Format", source: "BridgeDecoderTests")
+    let context = DateValidationContext(
+      recordID: "test-validISO8601Format", source: "BridgeDecoderTests")
     let valResult = DateValidator.validate(dateString)
-    if case let .failure(error) = valResult {
+    if case .failure(let error) = valResult {
       reporter.report(error, level: .error, context: context)
       throw error
     }
@@ -240,9 +250,10 @@ struct BridgeDecoderTests {
     let json = #"{"date": "not-a-date"}"#.data(using: .utf8)!
     let reporter = ConsoleDateValidationErrorReporter()
     let dateString = "not-a-date"
-    let context = DateValidationContext(recordID: "test-malformedDate", source: "BridgeDecoderTests")
+    let context = DateValidationContext(
+      recordID: "test-malformedDate", source: "BridgeDecoderTests")
     let valResult = DateValidator.validate(dateString)
-    if case let .failure(error) = valResult {
+    if case .failure(let error) = valResult {
       reporter.report(error, level: .error, context: context)
     }
     do {
@@ -305,7 +316,7 @@ struct BridgeDecoderTests {
       let parser = DefaultDateParser()
       let result = parser.parse("invalid-date")
       #expect(result == nil, "Invalid date should return nil")
-      // Reaching here means TEST_LOGGING macro is not active
+    // Reaching here means TEST_LOGGING macro is not active
     #endif
   }
 
@@ -314,14 +325,19 @@ struct BridgeDecoderTests {
   @Test("business validation: empty and malformed date")
   func businessValidationEmptyAndMalformed() async throws {
     let reporter = ConsoleDateValidationErrorReporter()
-    let context = DateValidationContext(recordID: "test-businessValidation", source: "BridgeDecoderTests")
+    let context = DateValidationContext(
+      recordID: "test-businessValidation", source: "BridgeDecoderTests")
     let emptyResult = DateValidator.validate("")
     #expect({ if case .failure = emptyResult { return true } else { return false } }())
-    if case let .failure(err) = emptyResult { reporter.report(err, level: .error, context: context) }
+    if case .failure(let err) = emptyResult {
+      reporter.report(err, level: .error, context: context)
+    }
 
     let malformedResult = DateValidator.validate("not-a-date")
     #expect({ if case .failure = malformedResult { return true } else { return false } }())
-    if case let .failure(err) = malformedResult { reporter.report(err, level: .error, context: context) }
+    if case .failure(let err) = malformedResult {
+      reporter.report(err, level: .error, context: context)
+    }
 
     let validResult = DateValidator.validate("2025-08-07T12:34:56.000")
     #expect({ if case .success = validResult { return true } else { return false } }())
@@ -337,54 +353,74 @@ struct BridgeDecoderTests {
     // Invalid calendar date: February 30th
     let feb30 = "2025-02-30T10:00:00"
     let result1 = DateValidator.validate(feb30)
-    #expect({ if case .failure = result1 { return true } else { return false } }(), "February 30th should fail")
-    if case let .failure(err) = result1 { reporter.report(err, level: .error, context: ctx) }
+    #expect(
+      { if case .failure = result1 { return true } else { return false } }(),
+      "February 30th should fail")
+    if case .failure(let err) = result1 { reporter.report(err, level: .error, context: ctx) }
 
     // Invalid calendar date: April 31st
     let apr31 = "2025-04-31T10:00:00"
     let result2 = DateValidator.validate(apr31)
-    #expect({ if case .failure = result2 { return true } else { return false } }(), "April 31st should fail")
-    if case let .failure(err) = result2 { reporter.report(err, level: .error, context: ctx) }
+    #expect(
+      { if case .failure = result2 { return true } else { return false } }(),
+      "April 31st should fail")
+    if case .failure(let err) = result2 { reporter.report(err, level: .error, context: ctx) }
 
     // Valid leap year: Feb 29, 2024
     let leap = "2024-02-29T12:00:00"
     let result3 = DateValidator.validate(leap)
-    #expect({ if case .success = result3 { return true } else { return false } }(), "Leap year Feb 29 should pass")
+    #expect(
+      { if case .success = result3 { return true } else { return false } }(),
+      "Leap year Feb 29 should pass")
 
     // Invalid leap year: Feb 29, 2023
     let notLeap = "2023-02-29T12:00:00"
     let result4 = DateValidator.validate(notLeap)
-    #expect({ if case .failure = result4 { return true } else { return false } }(), "Non-leap year Feb 29 should fail")
-    if case let .failure(err) = result4 { reporter.report(err, level: .error, context: ctx) }
+    #expect(
+      { if case .failure = result4 { return true } else { return false } }(),
+      "Non-leap year Feb 29 should fail")
+    if case .failure(let err) = result4 { reporter.report(err, level: .error, context: ctx) }
 
     // Valid timezone offset, positive
     let tzpos = "2025-01-01T12:00:00+05:00"
     let result5 = DateValidator.validate(tzpos)
-    #expect({ if case .success = result5 { return true } else { return false } }(), "Positive timezone offset should pass")
+    #expect(
+      { if case .success = result5 { return true } else { return false } }(),
+      "Positive timezone offset should pass")
 
     // Valid timezone offset, negative
     let tzneg = "2025-01-01T12:00:00-08:00"
     let result6 = DateValidator.validate(tzneg)
-    #expect({ if case .success = result6 { return true } else { return false } }(), "Negative timezone offset should pass")
+    #expect(
+      { if case .success = result6 { return true } else { return false } }(),
+      "Negative timezone offset should pass")
 
     // Boundary year: 1900
     let y1900 = "1900-01-01T00:00:00Z"
     let result7 = DateValidator.validate(y1900)
-    #expect({ if case .success = result7 { return true } else { return false } }(), "Year 1900 should pass")
+    #expect(
+      { if case .success = result7 { return true } else { return false } }(),
+      "Year 1900 should pass")
 
     // Boundary year: 2100
     let y2100 = "2100-12-31T23:59:59Z"
     let result8 = DateValidator.validate(y2100)
-    #expect({ if case .success = result8 { return true } else { return false } }(), "Year 2100 should pass")
+    #expect(
+      { if case .success = result8 { return true } else { return false } }(),
+      "Year 2100 should pass")
 
     // Extra whitespace
     let ws = " 2025-01-01T12:00:00Z "
     let result9 = DateValidator.validate(ws.trimmingCharacters(in: .whitespaces))
-    #expect({ if case .success = result9 { return true } else { return false } }(), "Whitespace-trimmed string should pass")
+    #expect(
+      { if case .success = result9 { return true } else { return false } }(),
+      "Whitespace-trimmed string should pass")
 
     // Null/optional handling
     let result10 = DateValidator.validate(nil)
-    #expect({ if case .failure = result10 { return true } else { return false } }(), "Nil string should fail")
+    #expect(
+      { if case .failure = result10 { return true } else { return false } }(),
+      "Nil string should fail")
   }
 
   /// Measures performance of date validation for 10,000 records with a realistic date string.
@@ -399,25 +435,28 @@ struct BridgeDecoderTests {
     os_signpost(.begin, log: log, name: "ValidationLoop", signpostID: signpostID)
 
     let baseDates = [
-      "2025-01-03T10:12:00.000",    // Standard format
-      "2025-01-03T10:12:00Z",       // UTC format
+      "2025-01-03T10:12:00.000",  // Standard format
+      "2025-01-03T10:12:00Z",  // UTC format
       "2025-01-03T10:12:00+05:00",  // Timezone offset
-      "2024-02-29T12:00:00",        // Leap year
-      "1900-01-01T00:00:00Z",       // Boundary year (valid)
-      "invalid-date",               // Invalid format
-      "2023-02-29T12:00:00",        // Invalid leap (should fail)
-      "2025-02-30T10:00:00",        // Invalid calendar day
+      "2024-02-29T12:00:00",  // Leap year
+      "1900-01-01T00:00:00Z",  // Boundary year (valid)
+      "invalid-date",  // Invalid format
+      "2023-02-29T12:00:00",  // Invalid leap (should fail)
+      "2025-02-30T10:00:00",  // Invalid calendar day
       "2025-01-01T12:00:00-08:00",  // Negative offset
-      "2025-01-01T12:00:00",        // No milliseconds, no zone
-      " 2025-01-01T12:00:00Z ",     // Whitespace
+      "2025-01-01T12:00:00",  // No milliseconds, no zone
+      " 2025-01-01T12:00:00Z ",  // Whitespace
       "2025-01-03T10:12:00.500",
     ]
     // Ensure we get exactly 10,000 dates
     let repeats = 10000 / baseDates.count  // Integer division
     let remainder = 10000 % baseDates.count  // Get remainder
-    let testDates = Array(repeating: baseDates, count: repeats).flatMap { $0 } + Array(baseDates.prefix(remainder))
+    let testDates =
+      Array(repeating: baseDates, count: repeats).flatMap { $0 }
+      + Array(baseDates.prefix(remainder))
 
-    var successCount = 0, failCount = 0
+    var successCount = 0
+    var failCount = 0
     for date in testDates {
       let startTime = CFAbsoluteTimeGetCurrent()
       let result = DateValidator.validate(date.trimmingCharacters(in: .whitespaces))
@@ -425,17 +464,21 @@ struct BridgeDecoderTests {
       let duration = endTime - startTime
 
       // Track metrics for each validation
-      let format = String(date.prefix(19)) // Get format type
+      let format = String(date.prefix(19))  // Get format type
       if case .success = result {
-        BridgetMetricsCollector.shared.trackDateValidation(format: format, duration: duration, success: true)
+        BridgetMetricsCollector.shared.trackDateValidation(
+          format: format, duration: duration, success: true)
         successCount += 1
       } else {
-        BridgetMetricsCollector.shared.trackDateValidation(format: format, duration: duration, success: false)
+        BridgetMetricsCollector.shared.trackDateValidation(
+          format: format, duration: duration, success: false)
         failCount += 1
       }
     }
 
-    print("dateValidationPerformance: successCount=\(successCount), failCount=\(failCount), total=\(successCount + failCount)")
+    print(
+      "dateValidationPerformance: successCount=\(successCount), failCount=\(failCount), total=\(successCount + failCount)"
+    )
 
     // Print Bridget-specific metrics
     print(BridgetMetricsCollector.shared.getPerformanceSummary())
@@ -445,7 +488,10 @@ struct BridgeDecoderTests {
     // The test validates 10,000 dates, but some may be rejected by improved validation
     // We expect the total to be 10,000, but the exact success/fail distribution may vary
     let totalValidations = successCount + failCount
-    #expect(totalValidations == 10000, "Validation did not cover all records: success=\(successCount) fail=\(failCount) total=\(totalValidations)")
+    #expect(
+      totalValidations == 10000,
+      "Validation did not cover all records: success=\(successCount) fail=\(failCount) total=\(totalValidations)"
+    )
     #expect(successCount > 0, "No successful validations")
     #expect(failCount > 0, "No failed validations - validation may be too permissive")
   }
@@ -480,7 +526,8 @@ struct BridgeDecoderTests {
       let validationSignpostID = OSSignpostID(log: log)
       os_signpost(.begin, log: log, name: "FullValidation", signpostID: validationSignpostID)
 
-      var successCount = 0, failCount = 0
+      var successCount = 0
+      var failCount = 0
       for date in testDates {
         let result = DateValidator.validate(date.trimmingCharacters(in: .whitespaces))
         if case .success = result {
@@ -503,16 +550,29 @@ struct BridgeDecoderTests {
 
     // Test different validation scenarios with signposts
     let scenarios = [
-      ("valid_only", ["2025-01-03T10:12:00.000", "2025-01-03T10:12:00Z", "2025-01-03T10:12:00+05:00"]),
-      ("mixed_validity", ["2025-01-03T10:12:00.000", "invalid-date", "2025-01-03T10:12:00Z", "not-a-date"]),
-      ("edge_cases", ["2024-02-29T12:00:00", "2023-02-29T12:00:00", "2025-02-30T10:00:00", "1900-01-01T00:00:00Z"]),
+      (
+        "valid_only",
+        ["2025-01-03T10:12:00.000", "2025-01-03T10:12:00Z", "2025-01-03T10:12:00+05:00"]
+      ),
+      (
+        "mixed_validity",
+        ["2025-01-03T10:12:00.000", "invalid-date", "2025-01-03T10:12:00Z", "not-a-date"]
+      ),
+      (
+        "edge_cases",
+        [
+          "2024-02-29T12:00:00", "2023-02-29T12:00:00", "2025-02-30T10:00:00",
+          "1900-01-01T00:00:00Z",
+        ]
+      ),
     ]
 
     for (_, testDates) in scenarios {
       let signpostID = OSSignpostID(log: log)
       os_signpost(.begin, log: log, name: "Scenario", signpostID: signpostID)
 
-      var successCount = 0, failCount = 0
+      var successCount = 0
+      var failCount = 0
       for date in testDates {
         let result = DateValidator.validate(date)
         if case .success = result {
@@ -532,25 +592,25 @@ struct BridgeDecoderTests {
 
   /**
    ### Performance Monitoring and Profiling Guide
-
+  
    #### 1. Manual Profiling with Xcode Instruments
    - In Xcode, select "Product > Profile" (or use Cmd+I) and choose Instruments.
    - Use the "Allocations" and "Leaks" templates for memory analysis.
    - Use "Points of Interest" to see os_signpost markers for timing intervals.
    - Run these tests as part of the profiling session and observe resource graphs.
-
+  
    #### 2. Automated MetricKit Integration (Optional)
    MetricKit provides system-level performance and energy metrics asynchronously.
    This test file includes a minimal MetricKit observer that prints payloads received.
    For deeper integration, see Apple's documentation:
    https://developer.apple.com/documentation/metrickit
-
+  
    #### 3. Usage Examples
-
+  
    **For Development:**
    ```swift
    // Run tests with metrics collection
    xcodebuild test -scheme Bridget -destination 'platform=iOS Simulator,name=iPhone 16'
-
+  
    */
 }

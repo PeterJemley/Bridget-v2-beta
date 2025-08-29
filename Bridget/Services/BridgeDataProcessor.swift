@@ -76,16 +76,16 @@ class BridgeDataProcessor {
   private let knownBridgeIDs = BridgeID.allIDs
 
   private let bridgeLocations: [String: (lat: Double, lon: Double)] = [
-    "1": (47.542213439941406, -122.33446502685547), // 1st Ave South
+    "1": (47.542213439941406, -122.33446502685547),  // 1st Ave South
     "2": (47.65981674194336, -122.37619018554688),  // Ballard
-    "3": (47.64760208129883, -122.3497314453125),   // Fremont
-    "4": (47.64728546142578, -122.3045883178711),   // Montlake
+    "3": (47.64760208129883, -122.3497314453125),  // Fremont
+    "4": (47.64728546142578, -122.3045883178711),  // Montlake
     "6": (47.57137680053711, -122.35354614257812),  // Lower Spokane St
-    "21": (47.652652740478516, -122.32042694091797), // University
+    "21": (47.652652740478516, -122.32042694091797),  // University
     "29": (47.52923583984375, -122.31411743164062),  // South Park
   ]
 
-  private let validEntityTypes = Set(["Bridge"]) // Expand as needed
+  private let validEntityTypes = Set(["Bridge"])  // Expand as needed
 
   private let validator: BridgeRecordValidator
 
@@ -96,11 +96,12 @@ class BridgeDataProcessor {
     let calendar = Calendar.current
     let minDate = calendar.date(byAdding: .year, value: -10, to: now) ?? now
     let maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
-    validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
-                                      bridgeLocations: bridgeLocations,
-                                      validEntityTypes: validEntityTypes,
-                                      minDate: minDate,
-                                      maxDate: maxDate)
+    validator = BridgeRecordValidator(
+      knownBridgeIDs: knownBridgeIDs,
+      bridgeLocations: bridgeLocations,
+      validEntityTypes: validEntityTypes,
+      minDate: minDate,
+      maxDate: maxDate)
   }
 
   // MARK: - Data Processing
@@ -131,13 +132,15 @@ class BridgeDataProcessor {
     var modelMap = [String: (name: String, openings: [Date])]()
     for record in validRecords {
       if isNotEmpty(record.entityid), isNotEmpty(record.entityname), record.openDate != nil {
-        modelMap[record.entityid, default: (record.entityname, [])].openings.append(record.openDate!)
+        modelMap[record.entityid, default: (record.entityname, [])].openings.append(
+          record.openDate!)
       }
     }
     let models: [BridgeStatusModel] = modelMap.compactMap { id, val in
       if let bridgeID = BridgeID(rawValue: id), isNotEmpty(val.name) {
         let sortedOpenings = val.openings.sorted()
-        return BridgeStatusModel(bridgeName: val.name, apiBridgeID: bridgeID, historicalOpenings: sortedOpenings)
+        return BridgeStatusModel(
+          bridgeName: val.name, apiBridgeID: bridgeID, historicalOpenings: sortedOpenings)
       }
       return nil
     }

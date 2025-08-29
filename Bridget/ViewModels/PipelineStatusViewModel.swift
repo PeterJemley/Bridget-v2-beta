@@ -27,7 +27,8 @@ final class PipelineStatusViewModel {
 
     // Update isPipelineHealthy
     if let lastPopulation, let lastExport {
-      let populationAge = calendar.dateComponents([.day], from: lastPopulation, to: today).day ?? 999
+      let populationAge =
+        calendar.dateComponents([.day], from: lastPopulation, to: today).day ?? 999
       let exportAge = calendar.dateComponents([.day], from: lastExport, to: today).day ?? 999
       isPipelineHealthy = (populationAge <= 1 && exportAge <= 1)
     } else {
@@ -68,7 +69,8 @@ final class PipelineStatusViewModel {
             if let recentTick = try? modelContext.fetch(recentDescriptor).first {
               let calendar = Calendar.current
               let today = calendar.startOfDay(for: Date())
-              let age = calendar.dateComponents([.day], from: recentTick.tsUtc, to: today).day ?? 999
+              let age =
+                calendar.dateComponents([.day], from: recentTick.tsUtc, to: today).day ?? 999
               if age == 0 {
                 dataAvailabilityStatus = "Available (Today) - \(count) records"
               } else if age == 1 {

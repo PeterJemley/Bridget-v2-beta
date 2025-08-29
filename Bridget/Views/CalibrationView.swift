@@ -32,7 +32,7 @@ struct CalibrationView: View {
             case .pending: Image(systemName: "clock").foregroundStyle(.secondary)
             case .running: ProgressView().controlSize(.small)
             case .success: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-            case .error:   Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+            case .error: Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
             }
           }
           .contentShape(Rectangle())
@@ -47,7 +47,7 @@ struct CalibrationView: View {
         .buttonStyle(.borderedProminent)
         .disabled(vm.isRunning)
 
-        Button("Close") { /* dismiss */ }
+        Button("Close") { /* dismiss */  }
           .buttonStyle(.bordered)
       }
     }
@@ -66,7 +66,7 @@ struct CalibrationView: View {
             CalibrationView(vm: calibrationVM)
           } else {
             // Show empty state instead of loading message
-            EmptyView() // Placeholder for loading or empty state
+            EmptyView()  // Placeholder for loading or empty state
           }
         }
         .onAppear {
@@ -77,8 +77,9 @@ struct CalibrationView: View {
               BridgeStatusModel(bridgeName: "Fremont Bridge", apiBridgeID: .fremont),
               BridgeStatusModel(bridgeName: "Montlake Bridge", apiBridgeID: .montlake),
             ]
-            calibrationVM = CalibrationVM(calibrator: DefaultBridgeCalibrator(),
-                                          bridges: mockBridges)
+            calibrationVM = CalibrationVM(
+              calibrator: DefaultBridgeCalibrator(),
+              bridges: mockBridges)
           }
         }
       }

@@ -45,15 +45,17 @@ struct PipelineMetricsData: Codable {
   let errorCounts: [String: Int]
   let recordCounts: [String: Int]
   let customValidationResults: [String: Bool]?
+  let statisticalMetrics: StatisticalTrainingMetrics?  // Phase 3 enhancement
 
   var stageMetrics: [PipelineStageMetric] {
     stageDurations.keys.map { stage in
-      PipelineStageMetric(stage: stage,
-                          duration: stageDurations[stage] ?? 0.0,
-                          memory: memoryUsage[stage] ?? 0,
-                          errorCount: errorCounts[stage] ?? 0,
-                          recordCount: recordCounts[stage] ?? 0,
-                          validationRate: validationRates[stage] ?? 1.0)
+      PipelineStageMetric(
+        stage: stage,
+        duration: stageDurations[stage] ?? 0.0,
+        memory: memoryUsage[stage] ?? 0,
+        errorCount: errorCounts[stage] ?? 0,
+        recordCount: recordCounts[stage] ?? 0,
+        validationRate: validationRates[stage] ?? 1.0)
     }.sorted { $0.duration > $1.duration }
   }
 }
@@ -100,6 +102,11 @@ struct PipelineMetricsDashboard: View {
             // Custom validation results
             if let customResults = data.customValidationResults, !customResults.isEmpty {
               customValidationSection(results: customResults)
+            }
+
+            // Statistical uncertainty metrics (Phase 3 enhancement)
+            if let statisticalMetrics = data.statisticalMetrics {
+              StatisticalUncertaintySection(metrics: statisticalMetrics)
             }
           } else {
             noDataView
@@ -163,17 +170,21 @@ struct PipelineMetricsDashboard: View {
 
       if let data = metricsData {
         HStack(spacing: 20) {
-          MetricCard(title: "Total Duration",
-                     value: "\(String(format: "%.1f", data.stageDurations.values.reduce(0, +)))s",
-                     color: .blue)
+          MetricCard(
+            title: "Total Duration",
+            value: "\(String(format: "%.1f", data.stageDurations.values.reduce(0, +)))s",
+            color: .blue)
 
-          MetricCard(title: "Total Memory",
-                     value: "\(data.memoryUsage.values.reduce(0, +)) MB",
-                     color: .purple)
+          MetricCard(
+            title: "Total Memory",
+            value: "\(data.memoryUsage.values.reduce(0, +)) MB",
+            color: .purple)
 
-          MetricCard(title: "Success Rate",
-                     value: "\(String(format: "%.1f", data.validationRates.values.reduce(0, +) / Double(data.validationRates.count) * 100))%",
-                     color: .green)
+          MetricCard(
+            title: "Success Rate",
+            value:
+              "\(String(format: "%.1f", data.validationRates.values.reduce(0, +) / Double(data.validationRates.count) * 100))%",
+            color: .green)
         }
       }
     }
@@ -189,10 +200,12 @@ struct PipelineMetricsDashboard: View {
       Text("Performance Overview")
         .font(.headline)
 
-      LazyVGrid(columns: [
-        GridItem(.flexible()),
-        GridItem(.flexible()),
-      ], spacing: 12) {
+      LazyVGrid(
+        columns: [
+          GridItem(.flexible()),
+          GridItem(.flexible()),
+        ], spacing: 12
+      ) {
         ForEach(data.stageMetrics.prefix(6)) { metric in
           StageMetricCard(metric: metric)
         }
@@ -208,14 +221,16 @@ struct PipelineMetricsDashboard: View {
         .font(.headline)
 
       Chart(data.stageMetrics) { metric in
-        BarMark(x: .value("Duration", metric.duration),
-                y: .value("Stage", metric.displayName))
-          .foregroundStyle(metric.statusColor.gradient)
-          .annotation(position: .trailing) {
-            Text("\(String(format: "%.1f", metric.duration))s")
-              .font(.caption)
-              .foregroundColor(.secondary)
-          }
+        BarMark(
+          x: .value("Duration", metric.duration),
+          y: .value("Stage", metric.displayName)
+        )
+        .foregroundStyle(metric.statusColor.gradient)
+        .annotation(position: .trailing) {
+          Text("\(String(format: "%.1f", metric.duration))s")
+            .font(.caption)
+            .foregroundColor(.secondary)
+        }
       }
       .frame(height: 200)
       .chartXAxis {
@@ -245,14 +260,18 @@ struct PipelineMetricsDashboard: View {
         .font(.headline)
 
       Chart(data.stageMetrics) { metric in
-        LineMark(x: .value("Stage", metric.displayName),
-                 y: .value("Memory", metric.memory))
-          .symbol(Circle())
-          .foregroundStyle(.purple.gradient)
+        LineMark(
+          x: .value("Stage", metric.displayName),
+          y: .value("Memory", metric.memory)
+        )
+        .symbol(Circle())
+        .foregroundStyle(.purple.gradient)
 
-        AreaMark(x: .value("Stage", metric.displayName),
-                 y: .value("Memory", metric.memory))
-          .foregroundStyle(.purple.opacity(0.1))
+        AreaMark(
+          x: .value("Stage", metric.displayName),
+          y: .value("Memory", metric.memory)
+        )
+        .foregroundStyle(.purple.opacity(0.1))
       }
       .frame(height: 200)
       .chartYAxis {
@@ -291,8 +310,11 @@ struct PipelineMetricsDashboard: View {
 
       ForEach(Array(results.keys.sorted()), id: \.self) { validatorName in
         HStack {
-          Image(systemName: results[validatorName] == true ? "checkmark.circle.fill" : "xmark.circle.fill")
-            .foregroundColor(results[validatorName] == true ? .green : .red)
+          Image(
+            systemName: results[validatorName] == true
+              ? "checkmark.circle.fill" : "xmark.circle.fill"
+          )
+          .foregroundColor(results[validatorName] == true ? .green : .red)
 
           Text(validatorName)
             .font(.subheadline)
@@ -306,7 +328,9 @@ struct PipelineMetricsDashboard: View {
             .padding(.vertical, 4)
             .background(
               RoundedRectangle(cornerRadius: 4)
-                .fill(results[validatorName] == true ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
+                .fill(
+                  results[validatorName] == true ? Color.green.opacity(0.1) : Color.red.opacity(0.1)
+                )
             )
         }
         .padding(.vertical, 4)
@@ -357,9 +381,10 @@ struct PipelineMetricsDashboard: View {
     ]
 
     for path in possiblePaths {
-      if let url = URL(string: path),
-         let data = try? Data(contentsOf: url),
-         let decoded = try? JSONDecoder.bridgeDecoder().decode(PipelineMetricsData.self, from: data)
+      // Use fileURLWithPath for local file paths
+      let url = URL(fileURLWithPath: path)
+      if let data = try? Data(contentsOf: url),
+        let decoded = try? JSONDecoder.bridgeDecoder().decode(PipelineMetricsData.self, from: data)
       {
         DispatchQueue.main.async {
           self.metricsData = decoded
@@ -394,57 +419,79 @@ struct PipelineMetricsDashboard: View {
   }
 
   private func createSampleData() -> PipelineMetricsData {
-    PipelineMetricsData(timestamp: Date(),
-                        stageDurations: [
-                          "dataLoading": 2.5,
-                          "dataValidation": 1.8,
-                          "featureEngineering": 15.2,
-                          "mlMultiArrayConversion": 3.1,
-                          "modelTraining": 45.7,
-                          "modelValidation": 8.3,
-                          "artifactExport": 1.2,
-                        ],
-                        memoryUsage: [
-                          "dataLoading": 128,
-                          "dataValidation": 256,
-                          "featureEngineering": 1024,
-                          "mlMultiArrayConversion": 512,
-                          "modelTraining": 2048,
-                          "modelValidation": 1024,
-                          "artifactExport": 256,
-                        ],
-                        validationRates: [
-                          "dataLoading": 1.0,
-                          "dataValidation": 0.98,
-                          "featureEngineering": 0.95,
-                          "mlMultiArrayConversion": 1.0,
-                          "modelTraining": 1.0,
-                          "modelValidation": 0.92,
-                          "artifactExport": 1.0,
-                        ],
-                        errorCounts: [
-                          "dataLoading": 0,
-                          "dataValidation": 2,
-                          "featureEngineering": 5,
-                          "mlMultiArrayConversion": 0,
-                          "modelTraining": 0,
-                          "modelValidation": 8,
-                          "artifactExport": 0,
-                        ],
-                        recordCounts: [
-                          "dataLoading": 10000,
-                          "dataValidation": 10000,
-                          "featureEngineering": 9800,
-                          "mlMultiArrayConversion": 9800,
-                          "modelTraining": 9800,
-                          "modelValidation": 9800,
-                          "artifactExport": 9800,
-                        ],
-                        customValidationResults: [
-                          "NoMissingGateAnomValidator": true,
-                          "DetourDeltaRangeValidator": false,
-                          "DataQualityValidator": true,
-                        ])
+    PipelineMetricsData(
+      timestamp: Date(),
+      stageDurations: [
+        "dataLoading": 2.5,
+        "dataValidation": 1.8,
+        "featureEngineering": 15.2,
+        "mlMultiArrayConversion": 3.1,
+        "modelTraining": 45.7,
+        "modelValidation": 8.3,
+        "artifactExport": 1.2,
+      ],
+      memoryUsage: [
+        "dataLoading": 128,
+        "dataValidation": 256,
+        "featureEngineering": 1024,
+        "mlMultiArrayConversion": 512,
+        "modelTraining": 2048,
+        "modelValidation": 1024,
+        "artifactExport": 256,
+      ],
+      validationRates: [
+        "dataLoading": 1.0,
+        "dataValidation": 0.98,
+        "featureEngineering": 0.95,
+        "mlMultiArrayConversion": 1.0,
+        "modelTraining": 1.0,
+        "modelValidation": 0.92,
+        "artifactExport": 1.0,
+      ],
+      errorCounts: [
+        "dataLoading": 0,
+        "dataValidation": 2,
+        "featureEngineering": 5,
+        "mlMultiArrayConversion": 0,
+        "modelTraining": 0,
+        "modelValidation": 8,
+        "artifactExport": 0,
+      ],
+      recordCounts: [
+        "dataLoading": 10000,
+        "dataValidation": 10000,
+        "featureEngineering": 9800,
+        "mlMultiArrayConversion": 9800,
+        "modelTraining": 9800,
+        "modelValidation": 9800,
+        "artifactExport": 9800,
+      ],
+      customValidationResults: [
+        "NoMissingGateAnomValidator": true,
+        "DetourDeltaRangeValidator": false,
+        "DataQualityValidator": true,
+      ],
+      statisticalMetrics: createSampleStatisticalMetrics())
+  }
+
+  private func createSampleStatisticalMetrics() -> StatisticalTrainingMetrics {
+    StatisticalTrainingMetrics(
+      trainingLossStats: ETASummary(mean: 0.085, variance: 0.002, min: 0.082, max: 0.089),
+      validationLossStats: ETASummary(mean: 0.092, variance: 0.003, min: 0.088, max: 0.096),
+      predictionAccuracyStats: ETASummary(mean: 0.87, variance: 0.001, min: 0.86, max: 0.88),
+      etaPredictionVariance: ETASummary(mean: 120.5, variance: 25.2, min: 95.0, max: 145.0),
+      performanceConfidenceIntervals: PerformanceConfidenceIntervals(
+        accuracy95CI: ConfidenceInterval(lower: 0.84, upper: 0.90),
+        f1Score95CI: ConfidenceInterval(lower: 0.82, upper: 0.92),
+        meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)
+      ),
+      errorDistribution: ErrorDistributionMetrics(
+        absoluteErrorStats: ETASummary(mean: 0.045, variance: 0.002, min: 0.025, max: 0.065),
+        relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
+        withinOneStdDev: 68.5,
+        withinTwoStdDev: 95.2
+      )
+    )
   }
 }
 
@@ -592,6 +639,168 @@ struct StageDetailRow: View {
     .background(Color(.systemBackground))
     .cornerRadius(8)
     .shadow(radius: 1)
+  }
+
+}
+
+// MARK: - Statistical Uncertainty Section (Phase 3 Enhancement)
+
+struct StatisticalUncertaintySection: View {
+  let metrics: StatisticalTrainingMetrics
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 16) {
+      Text("Statistical Uncertainty Analysis")
+        .font(.headline)
+        .foregroundColor(.primary)
+
+      // Training Loss Statistics
+      VStack(alignment: .leading, spacing: 8) {
+        Text("Training Loss Statistics")
+          .font(.subheadline)
+          .fontWeight(.medium)
+
+        HStack {
+          StatisticCard(
+            title: "Mean Loss",
+            value: String(format: "%.4f", metrics.trainingLossStats.mean),
+            subtitle: "±\(String(format: "%.4f", metrics.trainingLossStats.stdDev))"
+          )
+
+          StatisticCard(
+            title: "Variance",
+            value: String(format: "%.6f", metrics.trainingLossStats.variance),
+            subtitle: "Min: \(String(format: "%.4f", metrics.trainingLossStats.min))"
+          )
+
+          StatisticCard(
+            title: "Max Loss",
+            value: String(format: "%.4f", metrics.trainingLossStats.max),
+            subtitle:
+              "Range: \(String(format: "%.4f", metrics.trainingLossStats.max - metrics.trainingLossStats.min))"
+          )
+        }
+      }
+
+      // Prediction Accuracy Statistics
+      VStack(alignment: .leading, spacing: 8) {
+        Text("Prediction Accuracy Statistics")
+          .font(.subheadline)
+          .fontWeight(.medium)
+
+        HStack {
+          StatisticCard(
+            title: "Mean Accuracy",
+            value: String(format: "%.3f", metrics.predictionAccuracyStats.mean),
+            subtitle: "±\(String(format: "%.3f", metrics.predictionAccuracyStats.stdDev))"
+          )
+
+          StatisticCard(
+            title: "95% CI Lower",
+            value: String(
+              format: "%.3f", metrics.performanceConfidenceIntervals.accuracy95CI.lower),
+            subtitle: "Confidence Interval"
+          )
+
+          StatisticCard(
+            title: "95% CI Upper",
+            value: String(
+              format: "%.3f", metrics.performanceConfidenceIntervals.accuracy95CI.upper),
+            subtitle: "Confidence Interval"
+          )
+        }
+      }
+
+      // ETA Prediction Variance
+      VStack(alignment: .leading, spacing: 8) {
+        Text("ETA Prediction Variance")
+          .font(.subheadline)
+          .fontWeight(.medium)
+
+        HStack {
+          StatisticCard(
+            title: "Mean ETA",
+            value: String(format: "%.1fs", metrics.etaPredictionVariance.mean),
+            subtitle: "±\(String(format: "%.1fs", metrics.etaPredictionVariance.stdDev))"
+          )
+
+          StatisticCard(
+            title: "Variance",
+            value: String(format: "%.1f", metrics.etaPredictionVariance.variance),
+            subtitle: "Min: \(String(format: "%.1fs", metrics.etaPredictionVariance.min))"
+          )
+
+          StatisticCard(
+            title: "Max ETA",
+            value: String(format: "%.1fs", metrics.etaPredictionVariance.max),
+            subtitle:
+              "Range: \(String(format: "%.1fs", metrics.etaPredictionVariance.max - metrics.etaPredictionVariance.min))"
+          )
+        }
+      }
+
+      // Error Distribution
+      VStack(alignment: .leading, spacing: 8) {
+        Text("Error Distribution Analysis")
+          .font(.subheadline)
+          .fontWeight(.medium)
+
+        HStack {
+          StatisticCard(
+            title: "Within 1σ",
+            value: String(format: "%.1f%%", metrics.errorDistribution.withinOneStdDev),
+            subtitle: "Standard Deviation"
+          )
+
+          StatisticCard(
+            title: "Within 2σ",
+            value: String(format: "%.1f%%", metrics.errorDistribution.withinTwoStdDev),
+            subtitle: "Standard Deviation"
+          )
+
+          StatisticCard(
+            title: "Mean Error",
+            value: String(format: "%.4f", metrics.errorDistribution.absoluteErrorStats.mean),
+            subtitle:
+              "±\(String(format: "%.4f", metrics.errorDistribution.absoluteErrorStats.stdDev))"
+          )
+        }
+      }
+    }
+    .padding()
+    .background(Color(.systemBackground))
+    .cornerRadius(12)
+    .shadow(radius: 2)
+  }
+}
+
+// MARK: - Statistic Card Component
+
+struct StatisticCard: View {
+  let title: String
+  let value: String
+  let subtitle: String
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Text(title)
+        .font(.caption)
+        .foregroundColor(.secondary)
+
+      Text(value)
+        .font(.subheadline)
+        .fontWeight(.semibold)
+        .foregroundColor(.primary)
+
+      Text(subtitle)
+        .font(.caption2)
+        .foregroundColor(.secondary)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.vertical, 8)
+    .padding(.horizontal, 12)
+    .background(Color(.systemGray6))
+    .cornerRadius(8)
   }
 }
 

@@ -98,9 +98,10 @@ final class MLPipelineBackgroundManager {
   // MARK: - Background Task Registration
 
   private func registerDataPopulationTask() {
-    BGTaskScheduler.shared.register(forTaskWithIdentifier: dataPopulationTaskID,
-                                    using: nil)
-    { task in
+    BGTaskScheduler.shared.register(
+      forTaskWithIdentifier: dataPopulationTaskID,
+      using: nil
+    ) { task in
       guard let refreshTask = task as? BGAppRefreshTask else {
         self.logger.error("Expected BGAppRefreshTask but got \(type(of: task))")
         return
@@ -110,9 +111,10 @@ final class MLPipelineBackgroundManager {
   }
 
   private func registerDataExportTask() {
-    BGTaskScheduler.shared.register(forTaskWithIdentifier: dataExportTaskID,
-                                    using: nil)
-    { task in
+    BGTaskScheduler.shared.register(
+      forTaskWithIdentifier: dataExportTaskID,
+      using: nil
+    ) { task in
       guard let refreshTask = task as? BGAppRefreshTask else {
         self.logger.error("Expected BGAppRefreshTask but got \(type(of: task))")
         return
@@ -122,9 +124,10 @@ final class MLPipelineBackgroundManager {
   }
 
   private func registerMaintenanceTask() {
-    BGTaskScheduler.shared.register(forTaskWithIdentifier: maintenanceTaskID,
-                                    using: nil)
-    { task in
+    BGTaskScheduler.shared.register(
+      forTaskWithIdentifier: maintenanceTaskID,
+      using: nil
+    ) { task in
       guard let refreshTask = task as? BGAppRefreshTask else {
         self.logger.error("Expected BGAppRefreshTask but got \(type(of: task))")
         return
@@ -144,7 +147,7 @@ final class MLPipelineBackgroundManager {
     let today = calendar.startOfDay(for: now)
 
     if let lastPopulation = UserDefaults.standard.object(forKey: lastPopulationDateKey) as? Date,
-       calendar.isDate(lastPopulation, inSameDayAs: today)
+      calendar.isDate(lastPopulation, inSameDayAs: today)
     {
       // Already populated today, schedule for tomorrow
       request.earliestBeginDate = calendar.date(byAdding: .day, value: 1, to: today)
@@ -154,7 +157,9 @@ final class MLPipelineBackgroundManager {
       components.hour = 2
       components.minute = 0
 
-      if let targetTime = calendar.nextDate(after: now, matching: components, matchingPolicy: .nextTime) {
+      if let targetTime = calendar.nextDate(
+        after: now, matching: components, matchingPolicy: .nextTime)
+      {
         request.earliestBeginDate = targetTime
       } else {
         request.earliestBeginDate = calendar.date(byAdding: .day, value: 1, to: today)
@@ -163,7 +168,8 @@ final class MLPipelineBackgroundManager {
 
     do {
       try BGTaskScheduler.shared.submit(request)
-      logger.info("Scheduled data population task for \(request.earliestBeginDate?.description ?? "unknown")")
+      logger.info(
+        "Scheduled data population task for \(request.earliestBeginDate?.description ?? "unknown")")
     } catch {
       logger.error("Failed to schedule data population task: \(error.localizedDescription)")
     }
@@ -182,15 +188,17 @@ final class MLPipelineBackgroundManager {
     let timeComponents = exportTimeString.split(separator: ":")
 
     if timeComponents.count == 2,
-       let hour = Int(timeComponents[0]),
-       let minute = Int(timeComponents[1])
+      let hour = Int(timeComponents[0]),
+      let minute = Int(timeComponents[1])
     {
       let calendar = Calendar.current
       var components = DateComponents()
       components.hour = hour
       components.minute = minute
 
-      if let targetTime = calendar.nextDate(after: Date(), matching: components, matchingPolicy: .nextTime) {
+      if let targetTime = calendar.nextDate(
+        after: Date(), matching: components, matchingPolicy: .nextTime)
+      {
         request.earliestBeginDate = targetTime
 
         do {
@@ -212,7 +220,9 @@ final class MLPipelineBackgroundManager {
     components.hour = 3
     components.minute = 0
 
-    if let targetTime = calendar.nextDate(after: Date(), matching: components, matchingPolicy: .nextTime) {
+    if let targetTime = calendar.nextDate(
+      after: Date(), matching: components, matchingPolicy: .nextTime)
+    {
       request.earliestBeginDate = targetTime
 
       do {
@@ -298,9 +308,10 @@ final class MLPipelineBackgroundManager {
 
       // Show success notification if enabled
       if MLPipelineNotificationManager.shared.isNotificationTypeEnabled(.success) {
-        MLPipelineNotificationManager.shared.showSuccessNotification(title: "Data Population Complete",
-                                                                     body: "Today's data has been automatically populated.",
-                                                                     operation: .dataPopulation)
+        MLPipelineNotificationManager.shared.showSuccessNotification(
+          title: "Data Population Complete",
+          body: "Today's data has been automatically populated.",
+          operation: .dataPopulation)
       }
     }
   }
@@ -318,9 +329,10 @@ final class MLPipelineBackgroundManager {
 
       // Show success notification if enabled
       if MLPipelineNotificationManager.shared.isNotificationTypeEnabled(.success) {
-        MLPipelineNotificationManager.shared.showSuccessNotification(title: "Data Export Complete",
-                                                                     body: "Today's data has been automatically exported.",
-                                                                     operation: .dataExport)
+        MLPipelineNotificationManager.shared.showSuccessNotification(
+          title: "Data Export Complete",
+          body: "Today's data has been automatically exported.",
+          operation: .dataExport)
       }
     }
   }
@@ -351,10 +363,12 @@ final class MLPipelineBackgroundManager {
       for path in paths {
         do {
           try FileManagerUtils.removeOldFiles(in: path, olderThan: cutoffDate) { file in
-            file.lastPathComponent.hasPrefix("minutes_") && file.lastPathComponent.hasSuffix(".ndjson")
+            file.lastPathComponent.hasPrefix("minutes_")
+              && file.lastPathComponent.hasSuffix(".ndjson")
           }
         } catch {
-          logger.error("Failed to cleanup old exports in \(path.path): \(error.localizedDescription)")
+          logger.error(
+            "Failed to cleanup old exports in \(path.path): \(error.localizedDescription)")
         }
       }
     } catch {
@@ -368,7 +382,7 @@ final class MLPipelineBackgroundManager {
     let today = calendar.startOfDay(for: Date())
 
     if let lastPopulation = UserDefaults.standard.object(forKey: lastPopulationDateKey) as? Date,
-       let lastExport = UserDefaults.standard.object(forKey: lastExportDateKey) as? Date
+      let lastExport = UserDefaults.standard.object(forKey: lastExportDateKey) as? Date
     {
       let populationAge = calendar.dateComponents([.day], from: lastPopulation, to: today).day ?? 0
       let exportAge = calendar.dateComponents([.day], from: lastExport, to: today).day ?? 0
@@ -435,13 +449,14 @@ extension MLPipelineBackgroundManager {
   ///   - description: The activity description
   ///   - type: The type of activity
   func addActivity(title: String, description: String, type: ActivityType) {
-    let activity = PipelineActivity(title: title,
-                                    description: description,
-                                    type: type,
-                                    timestamp: Date())
+    let activity = PipelineActivity(
+      title: title,
+      description: description,
+      type: type,
+      timestamp: Date())
 
     var activities = getRecentActivities()
-    activities.insert(activity, at: 0) // Add to beginning
+    activities.insert(activity, at: 0)  // Add to beginning
 
     // Keep only the last 10 activities
     if activities.count > 10 {
@@ -455,7 +470,7 @@ extension MLPipelineBackgroundManager {
   /// Gets the recent activities list
   func getRecentActivities() -> [PipelineActivity] {
     guard let data = UserDefaults.standard.data(forKey: recentActivitiesKey),
-          let activities = try? JSONDecoder.bridgeDecoder().decode([PipelineActivity].self, from: data)
+      let activities = try? JSONDecoder.bridgeDecoder().decode([PipelineActivity].self, from: data)
     else {
       return []
     }

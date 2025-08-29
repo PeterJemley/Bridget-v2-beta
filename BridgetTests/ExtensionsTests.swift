@@ -7,9 +7,9 @@ struct ExtensionsTests {
 
   @Test("flooredToMinute returns start of minute")
   func dateFlooredToMinute() {
-    let date = Date(timeIntervalSince1970: 1_701_000_356) // 2023-12-12 12:32:36 UTC
+    let date = Date(timeIntervalSince1970: 1_701_000_356)  // 2023-12-12 12:32:36 UTC
     let floored = date.flooredToMinute
-    let expected = Date(timeIntervalSince1970: 1_701_000_320) // 12:32:00 UTC
+    let expected = Date(timeIntervalSince1970: 1_701_000_320)  // 12:32:00 UTC
     #expect(floored == expected)
   }
 

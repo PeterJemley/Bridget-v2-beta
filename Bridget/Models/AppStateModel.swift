@@ -74,7 +74,7 @@ class AppStateModel {
   /// The duration (in seconds) that cached data remains valid.
   /// Default is 5 minutes.
   @ObservationIgnored
-  var cacheExpirationTime: TimeInterval = 300 // 5 minutes
+  var cacheExpirationTime: TimeInterval = 300  // 5 minutes
 
   /// A flag indicating whether the app is currently in offline mode.
   @ObservationIgnored
@@ -94,11 +94,14 @@ class AppStateModel {
   ///   - modelContext: The SwiftData ModelContext used for local data persistence.
   ///   - bridgeEventPersistence: The persistence service for BridgeEvent entities.
   ///     Optional. If not provided, a `BridgeEventPersistenceService` will be created with the given `modelContext`.
-  init(modelContext: ModelContext,
-       bridgeEventPersistence: BridgeEventPersistenceServiceProtocol? = nil)
-  {
+  init(
+    modelContext: ModelContext,
+    bridgeEventPersistence: BridgeEventPersistenceServiceProtocol? = nil
+  ) {
     self.modelContext = modelContext
-    self.bridgeEventPersistence = bridgeEventPersistence ?? BridgeEventPersistenceService(modelContext: modelContext)
+    self.bridgeEventPersistence =
+      bridgeEventPersistence
+      ?? BridgeEventPersistenceService(modelContext: modelContext)
     self.isLoading = false
     self.error = nil
     self.validationFailures = []
@@ -119,15 +122,24 @@ class AppStateModel {
     #if DEBUG
       // Create a lightweight in-memory ModelContainer for SwiftData
       let schema = Schema([BridgeEvent.self])
-      let modelConfiguration = ModelConfiguration(isStoredInMemoryOnly: true)
+      let modelConfiguration = ModelConfiguration(
+        isStoredInMemoryOnly: true
+      )
       do {
-        let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+        let container = try ModelContainer(
+          for: schema,
+          configurations: [modelConfiguration]
+        )
         self.init(modelContext: container.mainContext)
       } catch {
-        fatalError("Failed to create test ModelContainer: \(error.localizedDescription)")
+        fatalError(
+          "Failed to create test ModelContainer: \(error.localizedDescription)"
+        )
       }
     #else
-      fatalError("AppStateModel.init() is for test use only. Use the designated initializer.")
+      fatalError(
+        "AppStateModel.init() is for test use only. Use the designated initializer."
+      )
     #endif
   }
 
@@ -154,20 +166,27 @@ class AppStateModel {
     // Load persisted BridgeEvent entities via persistence service
     var persistedBridgeEvents: [BridgeEvent] = []
     do {
-      persistedBridgeEvents = try bridgeEventPersistence.fetchAllEvents() // fetchAllEvents is sync so no await
+      persistedBridgeEvents = try bridgeEventPersistence.fetchAllEvents()  // fetchAllEvents is sync so no await
     } catch {
       print("Failed to fetch persisted BridgeEvents:", error)
     }
 
     do {
       // Fetch all bridges from API to get the canonical list for validation
-      let (apiBridges, apiValidationFailures) = try await BridgeDataService.shared.loadHistoricalData()
+      let (apiBridges, apiValidationFailures) =
+        try await BridgeDataService.shared.loadHistoricalData()
       validationFailures = apiValidationFailures
 
-      let persistedBridgeIDs = Set(persistedBridgeEvents.map { $0.bridgeID })
-      let apiBridgeIDs = Set(apiBridges.compactMap { $0.apiBridgeID?.rawValue })
+      let persistedBridgeIDs = Set(
+        persistedBridgeEvents.map { $0.bridgeID }
+      )
+      let apiBridgeIDs = Set(
+        apiBridges.compactMap { $0.apiBridgeID?.rawValue }
+      )
 
-      if apiBridgeIDs.isSubset(of: persistedBridgeIDs), !persistedBridgeEvents.isEmpty {
+      if apiBridgeIDs.isSubset(of: persistedBridgeIDs),
+        !persistedBridgeEvents.isEmpty
+      {
         // Persisted data is complete or newer, no UI update needed here
         isLoading = false
         recordSuccessfulFetch()
@@ -178,20 +197,25 @@ class AppStateModel {
         do {
           try bridgeEventPersistence.deleteAllEvents()
         } catch {
-          print("Failed to clear persisted BridgeEvents before inserting new ones:", error)
+          print(
+            "Failed to clear persisted BridgeEvents before inserting new ones:",
+            error
+          )
         }
 
         // Persist bridge events fetched from API via persistence service
         do {
-          let bridgeEvents: [BridgeEvent] = apiBridges.flatMap { model in
+          let bridgeEvents: [BridgeEvent] = apiBridges.flatMap {
+            model in
             // TODO: Populate minutesOpen, latitude, longitude with real values if available
             model.historicalOpenings.map {
-              BridgeEvent(bridgeID: model.apiBridgeID?.rawValue ?? "",
-                          bridgeName: model.bridgeName,
-                          openDateTime: $0,
-                          minutesOpen: 0, // TODO: Provide correct duration
-                          latitude: 0.0,  // TODO: Provide correct latitude
-                          longitude: 0.0  // TODO: Provide correct longitude
+              BridgeEvent(
+                bridgeID: model.apiBridgeID?.rawValue ?? "",
+                bridgeName: model.bridgeName,
+                openDateTime: $0,
+                minutesOpen: 0,  // TODO: Provide correct duration
+                latitude: 0.0,  // TODO: Provide correct latitude
+                longitude: 0.0  // TODO: Provide correct longitude
               )
             }
           }
@@ -242,7 +266,10 @@ class AppStateModel {
     do {
       try bridgeEventPersistence.deleteAllEvents()
     } catch {
-      print("Failed to clear persisted BridgeEvents during refresh:", error)
+      print(
+        "Failed to clear persisted BridgeEvents during refresh:",
+        error
+      )
     }
 
     // Load fresh data (will fetch from API and persist)

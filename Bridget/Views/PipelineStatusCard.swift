@@ -19,20 +19,24 @@ struct PipelineStatusCard: View {
       }
 
       VStack(spacing: 12) {
-        PipelineStatusRow(title: "Data Availability",
-                          subtitle: viewModel.dataAvailabilityStatus,
-                          icon: viewModel.isPipelineHealthy ? "checkmark.circle.fill" : "exclamationmark.triangle.fill",
-                          color: viewModel.isPipelineHealthy ? .green : .orange)
+        PipelineStatusRow(
+          title: "Data Availability",
+          subtitle: viewModel.dataAvailabilityStatus,
+          icon: viewModel.isPipelineHealthy
+            ? "checkmark.circle.fill" : "exclamationmark.triangle.fill",
+          color: viewModel.isPipelineHealthy ? .green : .orange)
 
-        PipelineStatusRow(title: "Last Population",
-                          subtitle: viewModel.populationStatus,
-                          icon: "arrow.down.circle.fill",
-                          color: .blue)
+        PipelineStatusRow(
+          title: "Last Population",
+          subtitle: viewModel.populationStatus,
+          icon: "arrow.down.circle.fill",
+          color: .blue)
 
-        PipelineStatusRow(title: "Last Export",
-                          subtitle: viewModel.exportStatus,
-                          icon: "square.and.arrow.up.circle.fill",
-                          color: .purple)
+        PipelineStatusRow(
+          title: "Last Export",
+          subtitle: viewModel.exportStatus,
+          icon: "square.and.arrow.up.circle.fill",
+          color: .purple)
       }
     }
     .padding()
@@ -54,24 +58,26 @@ struct PipelineStatusCard: View {
             .padding()
         } else {
           // Show empty state instead of loading message
-          EmptyView() // Placeholder for loading or empty state
+          EmptyView()  // Placeholder for loading or empty state
         }
       }
       .onAppear {
         if viewModel == nil {
-          viewModel = PipelineStatusViewModel(backgroundManager: MLPipelineBackgroundManager.shared,
-                                              modelContext: modelContext)
+          viewModel = PipelineStatusViewModel(
+            backgroundManager: MLPipelineBackgroundManager.shared,
+            modelContext: modelContext)
         }
       }
     }
   }
 
   return PreviewContainer()
-    .modelContainer(for: [
-      BridgeEvent.self,
-      RoutePreference.self,
-      TrafficInferenceCache.self,
-      UserRouteHistory.self,
-      ProbeTick.self,
-    ], inMemory: true)
+    .modelContainer(
+      for: [
+        BridgeEvent.self,
+        RoutePreference.self,
+        TrafficInferenceCache.self,
+        UserRouteHistory.self,
+        ProbeTick.self,
+      ], inMemory: true)
 }

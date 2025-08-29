@@ -6,15 +6,21 @@ final class SettingsViewModel {
   // MARK: - Persisted Settings
 
   @AppStorage("MLAutoExportEnabled") @ObservationIgnored var autoExportEnabled: Bool = false
-  @AppStorage("MLAutoExportTime") @ObservationIgnored var autoExportTime: String = "01:00" // "HH:mm"
+  // HH:mm format
+  @AppStorage("MLAutoExportTime") @ObservationIgnored var autoExportTime: String = "01:00"
 
   // MARK: - Notification Settings
 
-  @AppStorage("MLPipelineNotificationsEnabled") @ObservationIgnored var notificationsEnabled: Bool = true
-  @AppStorage("MLPipelineSuccessNotifications") @ObservationIgnored var successNotifications: Bool = true
-  @AppStorage("MLPipelineFailureNotifications") @ObservationIgnored var failureNotifications: Bool = true
-  @AppStorage("MLPipelineProgressNotifications") @ObservationIgnored var progressNotifications: Bool = false
-  @AppStorage("MLPipelineHealthNotifications") @ObservationIgnored var healthNotifications: Bool = true
+  @AppStorage("MLPipelineNotificationsEnabled") @ObservationIgnored var notificationsEnabled: Bool =
+    true
+  @AppStorage("MLPipelineSuccessNotifications") @ObservationIgnored var successNotifications: Bool =
+    true
+  @AppStorage("MLPipelineFailureNotifications") @ObservationIgnored var failureNotifications: Bool =
+    true
+  @AppStorage("MLPipelineProgressNotifications") @ObservationIgnored var progressNotifications:
+    Bool = false
+  @AppStorage("MLPipelineHealthNotifications") @ObservationIgnored var healthNotifications: Bool =
+    true
 
   // MARK: - UI State
 

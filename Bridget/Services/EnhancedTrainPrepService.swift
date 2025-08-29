@@ -26,8 +26,8 @@
 
 import CoreML
 import Foundation
-import Observation
 import OSLog
+import Observation
 
 // MARK: - Enhanced Training Service
 
@@ -46,23 +46,25 @@ public class EnhancedTrainPrepService {
   private var stageStartTimes: [PipelineStage: Date] = [:]
   private var stageMetrics: PipelineMetrics
 
-  public init(configuration: EnhancedPipelineConfig,
-              progressDelegate: EnhancedPipelineProgressDelegate? = nil)
-  {
+  public init(
+    configuration: EnhancedPipelineConfig,
+    progressDelegate: EnhancedPipelineProgressDelegate? = nil
+  ) {
     self.configuration = configuration
     self.progressDelegate = progressDelegate
 
     // Initialize services
-    let retryPolicy = RetryPolicy(maxAttempts: configuration.maxRetryAttempts,
-                                  baseDelay: 1.0,
-                                  maxDelay: 30.0,
-                                  backoffMultiplier: configuration.retryBackoffMultiplier,
-                                  enableJitter: true)
+    let retryPolicy = RetryPolicy(
+      maxAttempts: configuration.maxRetryAttempts,
+      baseDelay: 1.0,
+      maxDelay: 30.0,
+      backoffMultiplier: configuration.retryBackoffMultiplier,
+      enableJitter: true)
 
     self.retryService = RetryRecoveryService(policy: retryPolicy)
 
-    let checkpointDir = configuration.checkpointDirectory ??
-      "\(configuration.outputDirectory)/checkpoints"
+    let checkpointDir =
+      configuration.checkpointDirectory ?? "\(configuration.outputDirectory)/checkpoints"
     self.recoveryService = RecoveryService(checkpointDirectory: checkpointDir)
 
     self.dataValidationService = DataValidationService()
@@ -110,7 +112,7 @@ public class EnhancedTrainPrepService {
         try await exportMetrics()
       }
 
-      await progressDelegate?.pipelineDidComplete([:]) // TODO: Add actual model paths
+      await progressDelegate?.pipelineDidComplete([:])  // TODO: Add actual model paths
 
     } catch {
       logger.error("Pipeline failed: \(error.localizedDescription)")
@@ -177,7 +179,8 @@ public class EnhancedTrainPrepService {
       pipelineState.stageProgress = 1.0
 
       await progressDelegate?.pipelineDidCompleteStage(stage)
-      logger.info("Stage completed: \(stage.displayName) in \(String(format: "%.2f", stageDuration))s")
+      logger.info(
+        "Stage completed: \(stage.displayName) in \(String(format: "%.2f", stageDuration))s")
 
     } catch {
       // Stage failed
@@ -187,7 +190,8 @@ public class EnhancedTrainPrepService {
       pipelineState.error = error.localizedDescription
       await progressDelegate?.pipelineDidFailStage(stage, error: error)
 
-      logger.error("Stage failed: \(stage.displayName) after \(String(format: "%.2f", stageDuration))s")
+      logger.error(
+        "Stage failed: \(stage.displayName) after \(String(format: "%.2f", stageDuration))s")
       throw error
     }
   }
@@ -250,11 +254,14 @@ public class EnhancedTrainPrepService {
     logger.info("Plugin validation completed: \(pluginValidationResults.count) validators ran")
     for (index, result) in pluginValidationResults.enumerated() {
       let validatorName = result.value.errors.isEmpty ? "Unknown" : "Validator \(index + 1)"
-      logger.info("\(validatorName): \(result.value.isValid ? "PASSED" : "FAILED") with \(result.value.errors.count) errors")
+      logger.info(
+        "\(validatorName): \(result.value.isValid ? "PASSED" : "FAILED") with \(result.value.errors.count) errors"
+      )
     }
 
     // Check data quality gates
-    let passedQualityGate = await progressDelegate?.pipelineDidEvaluateDataQualityGate(combinedResult) ?? true
+    let passedQualityGate =
+      await progressDelegate?.pipelineDidEvaluateDataQualityGate(combinedResult) ?? true
 
     guard passedQualityGate else {
       throw PipelineError.dataQualityGateFailed(combinedResult)
@@ -268,7 +275,9 @@ public class EnhancedTrainPrepService {
   }
 
   private func executeFeatureEngineering() async throws {
-    logger.info("Starting feature engineering for \(self.configuration.trainingConfig.horizons.count) horizons")
+    logger.info(
+      "Starting feature engineering for \(self.configuration.trainingConfig.horizons.count) horizons"
+    )
 
     // Load validated data
     // TODO: Implement data loading from checkpoint/storage
@@ -277,8 +286,9 @@ public class EnhancedTrainPrepService {
     let sampleTicks: [ProbeTickRaw] = []
 
     let featureService = FeatureEngineeringService(
-      configuration: FeatureEngineeringConfiguration(horizons: configuration.trainingConfig.horizons,
-                                                     deterministicSeed: configuration.trainingConfig.deterministicSeed)
+      configuration: FeatureEngineeringConfiguration(
+        horizons: configuration.trainingConfig.horizons,
+        deterministicSeed: configuration.trainingConfig.deterministicSeed)
     )
 
     if configuration.enableParallelization {
@@ -288,8 +298,12 @@ public class EnhancedTrainPrepService {
     }
   }
 
-  private func executeParallelFeatureEngineering(_ featureService: FeatureEngineeringService, ticks: [ProbeTickRaw]) async throws {
-    logger.info("Executing feature engineering in parallel with max \(self.configuration.maxConcurrentHorizons) concurrent horizons")
+  private func executeParallelFeatureEngineering(
+    _ featureService: FeatureEngineeringService, ticks: [ProbeTickRaw]
+  ) async throws {
+    logger.info(
+      "Executing feature engineering in parallel with max \(self.configuration.maxConcurrentHorizons) concurrent horizons"
+    )
 
     await withTaskGroup(of: (Int, [FeatureVector]).self) { [self] group in
       for horizon in configuration.trainingConfig.horizons {
@@ -298,11 +312,13 @@ public class EnhancedTrainPrepService {
             // Generate features for a single horizon
             let allFeatures = try featureService.generateFeatures(from: ticks)
             // Find the features for this specific horizon
-            let horizonIndex = self.configuration.trainingConfig.horizons.firstIndex(of: horizon) ?? 0
+            let horizonIndex =
+              self.configuration.trainingConfig.horizons.firstIndex(of: horizon) ?? 0
             let features = allFeatures.count > horizonIndex ? allFeatures[horizonIndex] : []
             return (horizon, features)
           } catch {
-            self.logger.error("Feature engineering failed for horizon \(horizon): \(error.localizedDescription)")
+            self.logger.error(
+              "Feature engineering failed for horizon \(horizon): \(error.localizedDescription)")
             // Return empty features for failed horizon
             return (horizon, [])
           }
@@ -313,20 +329,26 @@ public class EnhancedTrainPrepService {
 
       for await (horizon, features) in group {
         horizonFeatures[horizon] = features
-        logger.info("Completed feature engineering for horizon \(horizon) with \(features.count) features")
+        logger.info(
+          "Completed feature engineering for horizon \(horizon) with \(features.count) features")
 
         // Update progress
-        let progress = Double(horizonFeatures.count) / Double(configuration.trainingConfig.horizons.count)
-        await progressDelegate?.pipelineDidUpdateStageProgress(.featureEngineering, progress: progress)
+        let progress =
+          Double(horizonFeatures.count) / Double(configuration.trainingConfig.horizons.count)
+        await progressDelegate?.pipelineDidUpdateStageProgress(
+          .featureEngineering, progress: progress)
       }
 
       let allFeatures = horizonFeatures.values.flatMap { $0 }
       if !allFeatures.isEmpty {
         let (featureValidationResults, _) = pluginManager.validateAll(features: allFeatures)
-        logger.info("Feature validation completed: \(featureValidationResults.count) validators ran")
+        logger.info(
+          "Feature validation completed: \(featureValidationResults.count) validators ran")
 
         for (index, result) in featureValidationResults.enumerated() {
-          logger.info("Feature validator \(index + 1): \(result.value.isValid ? "PASSED" : "FAILED") with \(result.value.errors.count) errors")
+          logger.info(
+            "Feature validator \(index + 1): \(result.value.isValid ? "PASSED" : "FAILED") with \(result.value.errors.count) errors"
+          )
         }
       }
 
@@ -335,18 +357,22 @@ public class EnhancedTrainPrepService {
     }
   }
 
-  private func executeSerialFeatureEngineering(_ featureService: FeatureEngineeringService, ticks: [ProbeTickRaw]) async throws {
+  private func executeSerialFeatureEngineering(
+    _ featureService: FeatureEngineeringService, ticks: [ProbeTickRaw]
+  ) async throws {
     logger.info("Executing feature engineering serially")
 
     for (index, horizon) in configuration.trainingConfig.horizons.enumerated() {
       let allFeatures = try featureService.generateFeatures(from: ticks)
       let horizonIndex = configuration.trainingConfig.horizons.firstIndex(of: horizon) ?? 0
       let features = allFeatures.count > horizonIndex ? allFeatures[horizonIndex] : []
-      logger.info("Completed feature engineering for horizon \(horizon) with \(features.count) features")
+      logger.info(
+        "Completed feature engineering for horizon \(horizon) with \(features.count) features")
 
       // Update progress
       let progress = Double(index + 1) / Double(configuration.trainingConfig.horizons.count)
-      await progressDelegate?.pipelineDidUpdateStageProgress(.featureEngineering, progress: progress)
+      await progressDelegate?.pipelineDidUpdateStageProgress(
+        .featureEngineering, progress: progress)
     }
   }
 
@@ -375,19 +401,23 @@ public class EnhancedTrainPrepService {
     // This would evaluate the trained models and check performance gates
 
     // For now, create sample metrics for plugin validation
-    let sampleMetrics = ModelPerformanceMetrics(accuracy: 0.85,
-                                                loss: 0.3,
-                                                f1Score: 0.82,
-                                                precision: 0.87,
-                                                recall: 0.78,
-                                                confusionMatrix: [[85, 15], [20, 80]])
+    let sampleMetrics = ModelPerformanceMetrics(
+      accuracy: 0.85,
+      loss: 0.3,
+      f1Score: 0.82,
+      precision: 0.87,
+      recall: 0.78,
+      confusionMatrix: [[85, 15], [20, 80]])
 
     // Run model performance validation plugins
     let modelValidationResults = pluginManager.validateAll(metrics: sampleMetrics)
-    logger.info("Model validation plugins completed: \(modelValidationResults.count) validators ran")
+    logger.info(
+      "Model validation plugins completed: \(modelValidationResults.count) validators ran")
 
     for (index, result) in modelValidationResults.enumerated() {
-      logger.info("Model validator \(index + 1): \(result.value.isValid ? "PASSED" : "FAILED") with \(result.value.errors.count) errors")
+      logger.info(
+        "Model validator \(index + 1): \(result.value.isValid ? "PASSED" : "FAILED") with \(result.value.errors.count) errors"
+      )
     }
 
     logger.info("Model validation completed")
@@ -426,7 +456,9 @@ public class EnhancedTrainPrepService {
   // MARK: - Metrics and Monitoring
 
   @MainActor
-  private func updateStageMetrics(_ stage: PipelineStage, duration: TimeInterval, success: Bool) async {
+  private func updateStageMetrics(_ stage: PipelineStage, duration: TimeInterval, success: Bool)
+    async
+  {
     stageMetrics.stageDurations[stage] = duration
     stageMetrics.memoryUsage[stage] = getCurrentMemoryUsage()
 
@@ -466,7 +498,9 @@ public class EnhancedTrainPrepService {
     for (i, line) in data.split(separator: "\n").enumerated() {
       if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
 
-      if let decoded = try? JSONDecoder.bridgeDecoder().decode(ProbeTickRaw.self, from: Data(line.utf8)) {
+      if let decoded = try? JSONDecoder.bridgeDecoder().decode(
+        ProbeTickRaw.self, from: Data(line.utf8))
+      {
         result.append(decoded)
       } else {
         logger.warning("Failed to parse line \(i + 1): Could not decode ProbeTickRaw")
@@ -487,13 +521,13 @@ public enum PipelineError: LocalizedError {
 
   public var errorDescription: String? {
     switch self {
-    case let .dataQualityGateFailed(result):
+    case .dataQualityGateFailed(let result):
       return "Data quality gate failed: \(result.errors.joined(separator: ", "))"
-    case let .modelPerformanceGateFailed(metrics):
+    case .modelPerformanceGateFailed(let metrics):
       return "Model performance gate failed: accuracy \(metrics.accuracy), loss \(metrics.loss)"
-    case let .checkpointNotFound(stage):
+    case .checkpointNotFound(let stage):
       return "Checkpoint not found for stage: \(stage.displayName)"
-    case let .stageExecutionFailed(stage, error):
+    case .stageExecutionFailed(let stage, let error):
       return "Stage \(stage.displayName) failed: \(error.localizedDescription)"
     }
   }
@@ -505,7 +539,9 @@ extension RecoveryService {
   }
 
   func loadCheckpoint(stage: PipelineStage) throws -> PipelineExecutionState {
-    guard let state = try loadCheckpoint(PipelineExecutionState.self, for: stage, id: "pipeline_state") else {
+    guard
+      let state = try loadCheckpoint(PipelineExecutionState.self, for: stage, id: "pipeline_state")
+    else {
       throw PipelineError.checkpointNotFound(stage)
     }
     return state

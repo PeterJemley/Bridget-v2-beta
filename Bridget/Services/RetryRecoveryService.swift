@@ -32,22 +32,24 @@ public struct RetryPolicy {
   public let maxDelay: TimeInterval
   public let backoffMultiplier: Double
   public let enableJitter: Bool
-  public let retryableErrorTypes: Set<String> // Store error type names instead of Error instances
+  public let retryableErrorTypes: Set<String>  // Store error type names instead of Error instances
 
-  public static let `default` = RetryPolicy(maxAttempts: 3,
-                                            baseDelay: 1.0,
-                                            maxDelay: 30.0,
-                                            backoffMultiplier: 2.0,
-                                            enableJitter: true,
-                                            retryableErrorTypes: [])
+  public static let `default` = RetryPolicy(
+    maxAttempts: 3,
+    baseDelay: 1.0,
+    maxDelay: 30.0,
+    backoffMultiplier: 2.0,
+    enableJitter: true,
+    retryableErrorTypes: [])
 
-  public init(maxAttempts: Int = 3,
-              baseDelay: TimeInterval = 1.0,
-              maxDelay: TimeInterval = 30.0,
-              backoffMultiplier: Double = 2.0,
-              enableJitter: Bool = true,
-              retryableErrorTypes: Set<String> = [])
-  {
+  public init(
+    maxAttempts: Int = 3,
+    baseDelay: TimeInterval = 1.0,
+    maxDelay: TimeInterval = 30.0,
+    backoffMultiplier: Double = 2.0,
+    enableJitter: Bool = true,
+    retryableErrorTypes: Set<String> = []
+  ) {
     self.maxAttempts = maxAttempts
     self.baseDelay = baseDelay
     self.maxDelay = maxDelay
@@ -59,9 +61,9 @@ public struct RetryPolicy {
 
 /// Circuit breaker state
 public enum CircuitBreakerState {
-  case closed      // Normal operation
-  case open        // Failing, not attempting operations
-  case halfOpen    // Testing if service is recovered
+  case closed  // Normal operation
+  case open  // Failing, not attempting operations
+  case halfOpen  // Testing if service is recovered
 }
 
 // MARK: - Retry Service
@@ -76,10 +78,11 @@ public class RetryRecoveryService {
   private let circuitBreakerThreshold: Int
   private let circuitBreakerTimeout: TimeInterval
 
-  public init(policy: RetryPolicy = .default,
-              circuitBreakerThreshold: Int = 5,
-              circuitBreakerTimeout: TimeInterval = 60.0)
-  {
+  public init(
+    policy: RetryPolicy = .default,
+    circuitBreakerThreshold: Int = 5,
+    circuitBreakerTimeout: TimeInterval = 60.0
+  ) {
     self.policy = policy
     self.circuitBreakerThreshold = circuitBreakerThreshold
     self.circuitBreakerTimeout = circuitBreakerTimeout
@@ -89,7 +92,7 @@ public class RetryRecoveryService {
   public func executeWithRetry<T>(_ operation: () async throws -> T) async throws -> T {
     var lastError: Error?
 
-    for attempt in 1 ... policy.maxAttempts {
+    for attempt in 1...policy.maxAttempts {
       do {
         // Check circuit breaker
         try await checkCircuitBreaker()
@@ -103,7 +106,9 @@ public class RetryRecoveryService {
 
       } catch {
         lastError = error
-        logger.warning("Operation failed on attempt \(attempt)/\(self.policy.maxAttempts): \(error.localizedDescription)")
+        logger.warning(
+          "Operation failed on attempt \(attempt)/\(self.policy.maxAttempts): \(error.localizedDescription)"
+        )
 
         // Check if error is retryable
         guard shouldRetry(error, attempt: attempt) else {
@@ -131,13 +136,14 @@ public class RetryRecoveryService {
   }
 
   /// Execute operation with custom retry logic
-  public func executeWithCustomRetry<T>(_ operation: () async throws -> T,
-                                        shouldRetry: @escaping (Error, Int) -> Bool,
-                                        delayCalculator: @escaping (Int) -> TimeInterval) async throws -> T
-  {
+  public func executeWithCustomRetry<T>(
+    _ operation: () async throws -> T,
+    shouldRetry: @escaping (Error, Int) -> Bool,
+    delayCalculator: @escaping (Int) -> TimeInterval
+  ) async throws -> T {
     var lastError: Error?
 
-    for attempt in 1 ... policy.maxAttempts {
+    for attempt in 1...policy.maxAttempts {
       do {
         let result = try await operation()
         onSuccess()
@@ -145,7 +151,9 @@ public class RetryRecoveryService {
 
       } catch {
         lastError = error
-        logger.warning("Operation failed on attempt \(attempt)/\(self.policy.maxAttempts): \(error.localizedDescription)")
+        logger.warning(
+          "Operation failed on attempt \(attempt)/\(self.policy.maxAttempts): \(error.localizedDescription)"
+        )
 
         guard shouldRetry(error, attempt) else {
           logger.error("Error is not retryable: \(error.localizedDescription)")
@@ -182,15 +190,12 @@ public class RetryRecoveryService {
     // Default retry logic for common error types
     switch error {
     case let urlError as URLError:
-      return urlError.code == .networkConnectionLost ||
-        urlError.code == .timedOut ||
-        urlError.code == .serverCertificateUntrusted
+      return urlError.code == .networkConnectionLost || urlError.code == .timedOut
+        || urlError.code == .serverCertificateUntrusted
     case let posixError as POSIXError:
-      return posixError.code == .EIO ||
-        posixError.code == .ENOMEM ||
-        posixError.code == .ETIMEDOUT
+      return posixError.code == .EIO || posixError.code == .ENOMEM || posixError.code == .ETIMEDOUT
     default:
-      return true // Retry by default for unknown errors
+      return true  // Retry by default for unknown errors
     }
   }
 
@@ -199,7 +204,7 @@ public class RetryRecoveryService {
     let cappedDelay = min(exponentialDelay, policy.maxDelay)
 
     if policy.enableJitter {
-      let jitter = Double.random(in: 0.8 ... 1.2)
+      let jitter = Double.random(in: 0.8...1.2)
       return cappedDelay * jitter
     }
 
@@ -209,11 +214,11 @@ public class RetryRecoveryService {
   private func checkCircuitBreaker() async throws {
     switch circuitBreakerState {
     case .closed:
-      return // Normal operation
+      return  // Normal operation
 
     case .open:
       if let lastFailure = lastFailureTime,
-         Date().timeIntervalSince(lastFailure) >= circuitBreakerTimeout
+        Date().timeIntervalSince(lastFailure) >= circuitBreakerTimeout
       {
         circuitBreakerState = .halfOpen
         logger.info("Circuit breaker transitioning to half-open state")
@@ -257,7 +262,9 @@ public class RecoveryService {
   }
 
   /// Create recovery checkpoint
-  public func createCheckpoint<T: Codable>(_ data: T, for stage: PipelineStage, id: String) throws -> String {
+  public func createCheckpoint<T: Codable>(_ data: T, for stage: PipelineStage, id: String) throws
+    -> String
+  {
     let checkpointPath = "\(checkpointDirectory)/\(stage.rawValue)_\(id).checkpoint"
 
     do {
@@ -269,13 +276,16 @@ public class RecoveryService {
       return checkpointPath
 
     } catch {
-      logger.error("Failed to create checkpoint for stage \(stage.rawValue): \(error.localizedDescription)")
+      logger.error(
+        "Failed to create checkpoint for stage \(stage.rawValue): \(error.localizedDescription)")
       throw RecoveryError.checkpointCreationFailed(error)
     }
   }
 
   /// Load recovery checkpoint
-  public func loadCheckpoint<T: Codable>(_ type: T.Type, for stage: PipelineStage, id: String) throws -> T? {
+  public func loadCheckpoint<T: Codable>(_ type: T.Type, for stage: PipelineStage, id: String)
+    throws -> T?
+  {
     let checkpointPath = "\(checkpointDirectory)/\(stage.rawValue)_\(id).checkpoint"
 
     guard FileManagerUtils.fileExists(at: checkpointPath) else {
@@ -292,7 +302,8 @@ public class RecoveryService {
       return checkpoint
 
     } catch {
-      logger.error("Failed to load checkpoint for stage \(stage.rawValue): \(error.localizedDescription)")
+      logger.error(
+        "Failed to load checkpoint for stage \(stage.rawValue): \(error.localizedDescription)")
       throw RecoveryError.checkpointLoadingFailed(error)
     }
   }
@@ -305,7 +316,8 @@ public class RecoveryService {
       try FileManagerUtils.removeFile(at: checkpointPath)
       logger.info("Deleted checkpoint for stage \(stage.rawValue) at \(checkpointPath)")
     } catch {
-      logger.error("Failed to delete checkpoint for stage \(stage.rawValue): \(error.localizedDescription)")
+      logger.error(
+        "Failed to delete checkpoint for stage \(stage.rawValue): \(error.localizedDescription)")
       throw RecoveryError.checkpointDeletionFailed(error)
     }
   }
@@ -326,9 +338,10 @@ public class RecoveryService {
   /// Clean up old checkpoints
   public func cleanupOldCheckpoints(olderThan age: TimeInterval) throws {
     let cutoffDate = Date().addingTimeInterval(-age)
-    try FileManagerUtils.removeOldFiles(in: URL(fileURLWithPath: checkpointDirectory),
-                                        olderThan: cutoffDate)
-    { url in
+    try FileManagerUtils.removeOldFiles(
+      in: URL(fileURLWithPath: checkpointDirectory),
+      olderThan: cutoffDate
+    ) { url in
       url.lastPathComponent.hasSuffix(".checkpoint")
     }
   }
@@ -368,11 +381,11 @@ public enum RecoveryError: LocalizedError {
 
   public var errorDescription: String? {
     switch self {
-    case let .checkpointCreationFailed(error):
+    case .checkpointCreationFailed(let error):
       return "Failed to create checkpoint: \(error.localizedDescription)"
-    case let .checkpointLoadingFailed(error):
+    case .checkpointLoadingFailed(let error):
       return "Failed to load checkpoint: \(error.localizedDescription)"
-    case let .checkpointDeletionFailed(error):
+    case .checkpointDeletionFailed(let error):
       return "Failed to delete checkpoint: \(error.localizedDescription)"
     }
   }

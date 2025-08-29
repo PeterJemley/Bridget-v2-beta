@@ -229,7 +229,9 @@ extension LiftFeatures {
   ///
   /// - Returns: Array of 14 Double values representing the feature vector
   func packedVector() -> [Double] {
-    let bridgeIndex = Double(BridgeID.allCases.firstIndex(of: bridgeId) ?? -1)
+    let bridgeIndex = Double(
+      BridgeID.allCases.firstIndex(of: bridgeId) ?? -1
+    )
     return [
       bridgeIndex,
       horizonMin,

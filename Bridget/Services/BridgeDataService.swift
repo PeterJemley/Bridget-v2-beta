@@ -80,8 +80,9 @@ class BridgeDataService {
   /// ```
   func loadHistoricalData() async throws -> ([BridgeStatusModel], [ValidationFailure]) {
     // Check cache first - return valid cached data if available
-    if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache([BridgeStatusModel].self,
-                                                                           for: "historical_bridges"),
+    if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache(
+      [BridgeStatusModel].self,
+      for: "historical_bridges"),
       cacheService.isCacheValid(for: "historical_bridges")
     {
       // Update cache metadata for all bridges
@@ -115,8 +116,9 @@ class BridgeDataService {
       return (cleanedBridges, validationFailures)
     } catch {
       // Graceful degradation: return stale cache if network failed
-      if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache([BridgeStatusModel].self,
-                                                                             for: "historical_bridges")
+      if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache(
+        [BridgeStatusModel].self,
+        for: "historical_bridges")
       {
         cachedBridges.forEach { $0.markAsStale() }
         return (cachedBridges, [])
@@ -158,7 +160,8 @@ class BridgeDataService {
       let batchData = try await fetchBatch(offset: offset, limit: batchSize)
 
       // Parse the JSON to check if we got any records
-      guard let jsonArray = try JSONSerialization.jsonObject(with: batchData) as? [[String: Any]] else {
+      guard let jsonArray = try JSONSerialization.jsonObject(with: batchData) as? [[String: Any]]
+      else {
         throw NetworkError.invalidResponse
       }
 
@@ -181,7 +184,9 @@ class BridgeDataService {
         if jsonArray.count < batchSize {
           hasMoreData = false
           #if DEBUG
-            print("Received partial batch (\(jsonArray.count) < \(batchSize)). Completed batch fetching.")
+            print(
+              "Received partial batch (\(jsonArray.count) < \(batchSize)). Completed batch fetching."
+            )
           #endif
         }
       }
@@ -253,8 +258,9 @@ class BridgeDataService {
   /// ```
   func generateRoutes(from bridges: [BridgeStatusModel]) -> [RouteModel] {
     // Check cache first for generated routes
-    if let cachedRoutes: [RouteModel] = cacheService.loadFromCache([RouteModel].self,
-                                                                   for: "generated_routes"),
+    if let cachedRoutes: [RouteModel] = cacheService.loadFromCache(
+      [RouteModel].self,
+      for: "generated_routes"),
       cacheService.isCacheValid(for: "generated_routes")
     {
       return cachedRoutes

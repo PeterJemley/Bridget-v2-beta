@@ -45,13 +45,13 @@ struct SerializationConsistencyTests {
   @Test("snake_case key decoding")
   func snakeCaseKeyDecoding() async throws {
     let json = """
-    {
-        "id": 3,
-        "name": "SnakeCase",
-        "date": "2025-08-18T09:30:00Z",
-        "snake_case_field": "snake"
-    }
-    """.data(using: .utf8)!
+      {
+          "id": 3,
+          "name": "SnakeCase",
+          "date": "2025-08-18T09:30:00Z",
+          "snake_case_field": "snake"
+      }
+      """.data(using: .utf8)!
     let decoder = JSONDecoder.bridgeDecoder()
     let model = try decoder.decode(SampleModel.self, from: json)
     #expect(model.snakeCaseField == "snake")

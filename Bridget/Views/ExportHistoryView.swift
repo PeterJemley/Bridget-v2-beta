@@ -70,20 +70,23 @@ public struct ExportHistoryView: View {
     // Gather from both Documents and Downloads (if macOS)
     do {
       let documentURLs = try [FileManagerUtils.documentsDirectory()]
-      let downloadsURLs = FileManagerUtils.downloadsDirectory() != nil ? [FileManagerUtils.downloadsDirectory()!] : []
+      let downloadsURLs =
+        FileManagerUtils.downloadsDirectory() != nil ? [FileManagerUtils.downloadsDirectory()!] : []
 
       let searchURLs = documentURLs + downloadsURLs
 
       for baseURL in searchURLs {
         do {
-          let contents = try FileManagerUtils.enumerateFiles(in: baseURL,
-                                                             properties: [.contentModificationDateKey])
+          let contents = try FileManagerUtils.enumerateFiles(
+            in: baseURL,
+            properties: [.contentModificationDateKey])
           let ndjsonFiles = contents.filter { $0.pathExtension.lowercased() == "ndjson" }
 
           for fileURL in ndjsonFiles {
             let resourceValues = try fileURL.resourceValues(forKeys: [.contentModificationDateKey])
             let modDate = resourceValues.contentModificationDate ?? Date.distantPast
-            let exportedFile = ExportedFile(url: fileURL, name: fileURL.lastPathComponent, date: modDate)
+            let exportedFile = ExportedFile(
+              url: fileURL, name: fileURL.lastPathComponent, date: modDate)
             files.append(exportedFile)
           }
         } catch {

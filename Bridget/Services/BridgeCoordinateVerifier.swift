@@ -38,8 +38,9 @@ import OSLog
           .compactMapValues { records -> (Double, Double)? in
             // Get the first valid coordinate set for each bridge
             guard let record = records.first,
-                  let lat = record.latitudeValue,
-                  let lon = record.longitudeValue else { return nil }
+              let lat = record.latitudeValue,
+              let lon = record.longitudeValue
+            else { return nil }
             return (lat, lon)
           }
 
@@ -51,22 +52,32 @@ import OSLog
 
             // Tolerance of ~100 meters (0.001 degrees ≈ 100m)
             if latDiff > 0.001 || lonDiff > 0.001 {
-              os_log("⚠️  %{public}@ (ID: %d): API differs significantly", log: .default, type: .info, bridge.name, bridge.id)
-              os_log("    Constants: %f, %f", log: .default, type: .info, bridge.coordinate.latitude, bridge.coordinate.longitude)
+              os_log(
+                "⚠️  %{public}@ (ID: %d): API differs significantly", log: .default, type: .info,
+                bridge.name, bridge.id)
+              os_log(
+                "    Constants: %f, %f", log: .default, type: .info, bridge.coordinate.latitude,
+                bridge.coordinate.longitude)
               os_log("    API: %f, %f", log: .default, type: .info, apiLat, apiLon)
               os_log("    Diff: lat=%f, lon=%f", log: .default, type: .info, latDiff, lonDiff)
             } else {
-              os_log("✅ %{public}@ (ID: %d): coordinates match", log: .default, type: .info, bridge.name, bridge.id)
+              os_log(
+                "✅ %{public}@ (ID: %d): coordinates match", log: .default, type: .info, bridge.name,
+                bridge.id)
             }
           } else {
-            os_log("❌ %{public}@ (ID: %d): no API data found", log: .default, type: .info, bridge.name, bridge.id)
+            os_log(
+              "❌ %{public}@ (ID: %d): no API data found", log: .default, type: .info, bridge.name,
+              bridge.id)
           }
         }
 
         os_log("🔍 Coordinate verification complete.", log: .default, type: .info)
 
       } catch {
-        os_log("❌ Failed to verify coordinates: %{public}@", log: .default, type: .error, error.localizedDescription)
+        os_log(
+          "❌ Failed to verify coordinates: %{public}@", log: .default, type: .error,
+          error.localizedDescription)
       }
     }
   }

@@ -83,25 +83,30 @@ struct PipelinePluginManagementView: View {
           Toggle("Enable Plugins", isOn: $pluginManager.pluginsEnabled)
             .toggleStyle(.switch)
 
-          Text("\(pluginManager.validators.filter { $0.isEnabled }.count) of \(pluginManager.validators.count) active")
-            .font(.caption)
-            .foregroundColor(.secondary)
+          Text(
+            "\(pluginManager.validators.filter { $0.isEnabled }.count) of \(pluginManager.validators.count) active"
+          )
+          .font(.caption)
+          .foregroundColor(.secondary)
         }
       }
 
       // Plugin statistics
       HStack(spacing: 20) {
-        StatCard(title: "Total Plugins",
-                 value: "\(pluginManager.validators.count)",
-                 color: .blue)
+        StatCard(
+          title: "Total Plugins",
+          value: "\(pluginManager.validators.count)",
+          color: .blue)
 
-        StatCard(title: "Active",
-                 value: "\(pluginManager.validators.filter { $0.isEnabled }.count)",
-                 color: .green)
+        StatCard(
+          title: "Active",
+          value: "\(pluginManager.validators.filter { $0.isEnabled }.count)",
+          color: .green)
 
-        StatCard(title: "Last Run",
-                 value: pluginManager.lastValidationResults.isEmpty ? "Never" : "Recent",
-                 color: .orange)
+        StatCard(
+          title: "Last Run",
+          value: pluginManager.lastValidationResults.isEmpty ? "Never" : "Recent",
+          color: .orange)
       }
     }
     .padding()
@@ -128,9 +133,10 @@ struct PipelinePluginManagementView: View {
   private var pluginListView: some View {
     List {
       ForEach(filteredValidators, id: \.name) { validator in
-        PluginRowView(validator: validator,
-                      lastResult: pluginManager.lastValidationResults[validator.name])
-        {
+        PluginRowView(
+          validator: validator,
+          lastResult: pluginManager.lastValidationResults[validator.name]
+        ) {
           selectedValidatorName = ValidatorNameItem(id: validator.name)
         }
       }
@@ -172,8 +178,8 @@ struct PipelinePluginManagementView: View {
       return pluginManager.validators
     } else {
       return pluginManager.validators.filter { validator in
-        validator.name.localizedCaseInsensitiveContains(searchText) ||
-          validator.description.localizedCaseInsensitiveContains(searchText)
+        validator.name.localizedCaseInsensitiveContains(searchText)
+          || validator.description.localizedCaseInsensitiveContains(searchText)
       }
     }
   }
@@ -261,14 +267,18 @@ struct PluginRowView: View {
         }
 
         // Enable/disable toggle
-        Toggle("", isOn: Binding(get: { validator.isEnabled },
-                                 set: { _ in
-                                   // Update validator enabled state
-                                   // Note: This would need to be implemented in the validator protocol
-                                   // For now, the toggle is read-only
-                                 }))
-                                 .toggleStyle(.switch)
-                                 .scaleEffect(0.8)
+        Toggle(
+          "",
+          isOn: Binding(
+            get: { validator.isEnabled },
+            set: { _ in
+              // Update validator enabled state
+              // Note: This would need to be implemented in the validator protocol
+              // For now, the toggle is read-only
+            })
+        )
+        .toggleStyle(.switch)
+        .scaleEffect(0.8)
 
         // Chevron
         Image(systemName: "chevron.right")
@@ -350,7 +360,7 @@ struct AddValidatorView: View {
           TextField("Name", text: $customName)
           TextField("Description", text: $customDescription)
 
-          Stepper("Priority: \(priority)", value: $priority, in: 1 ... 1000)
+          Stepper("Priority: \(priority)", value: $priority, in: 1...1000)
         }
 
         Section("Preview") {
@@ -358,8 +368,10 @@ struct AddValidatorView: View {
             Text("Name: \(customName.isEmpty ? selectedValidatorType : customName)")
               .font(.subheadline)
 
-            Text("Description: \(customDescription.isEmpty ? availableValidatorTypes[selectedValidatorType] ?? "" : customDescription)")
-              .font(.subheadline)
+            Text(
+              "Description: \(customDescription.isEmpty ? availableValidatorTypes[selectedValidatorType] ?? "" : customDescription)"
+            )
+            .font(.subheadline)
 
             Text("Priority: \(priority)")
               .font(.subheadline)

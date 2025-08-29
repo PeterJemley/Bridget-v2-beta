@@ -7,6 +7,6 @@ import Foundation
 
   import CoreLocation
 
-  // BridgeCoordinateVerifier moved to BridgeCoordinateVerifier.swift
+// BridgeCoordinateVerifier moved to BridgeCoordinateVerifier.swift
 
 #endif

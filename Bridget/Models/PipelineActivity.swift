@@ -20,7 +20,12 @@ struct PipelineActivity: Codable, Identifiable {
   let type: ActivityType
   let timestamp: Date
 
-  init(title: String, description: String, type: ActivityType, timestamp: Date) {
+  init(
+    title: String,
+    description: String,
+    type: ActivityType,
+    timestamp: Date
+  ) {
     self.id = UUID()
     self.title = title
     self.description = description

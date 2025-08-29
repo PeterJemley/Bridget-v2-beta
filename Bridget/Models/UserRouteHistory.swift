@@ -111,7 +111,7 @@ final class UserRouteHistory {
   // MARK: - Contextual Data
 
   /// Day of the week when route was used
-  var dayOfWeek: Int // 1 = Sunday, 7 = Saturday
+  var dayOfWeek: Int  // 1 = Sunday, 7 = Saturday
 
   /// Hour of day when route was started (0-23)
   var hourOfDay: Int
@@ -153,11 +153,12 @@ final class UserRouteHistory {
   ///   - predictedTravelTime: The predicted travel time in seconds
   ///   - routeSelectedAt: When the route was selected (defaults to now)
   ///   - algorithmVersion: Version of prediction algorithm used
-  init(routeID: String,
-       predictedTravelTime: TimeInterval,
-       routeSelectedAt: Date = Date(),
-       algorithmVersion: String = "1.0")
-  {
+  init(
+    routeID: String,
+    predictedTravelTime: TimeInterval,
+    routeSelectedAt: Date = Date(),
+    algorithmVersion: String = "1.0"
+  ) {
     self.historyID = UUID().uuidString
     self.routeID = routeID
     self.routeSelectedAt = routeSelectedAt
@@ -231,8 +232,8 @@ final class UserRouteHistory {
     switch accuracy {
     case ..<(-0.2): performanceRating = .muchBetter
     case -0.2 ..< -0.1: performanceRating = .better
-    case -0.1 ... 0.1: performanceRating = .asExpected
-    case 0.1 ..< 0.3: performanceRating = .worse
+    case -0.1...0.1: performanceRating = .asExpected
+    case 0.1..<0.3: performanceRating = .worse
     default: performanceRating = .muchWorse
     }
   }
@@ -257,7 +258,9 @@ final class UserRouteHistory {
     if weatherConditions != nil { score += 0.1 }
 
     // Score for reasonable prediction accuracy
-    if let accuracy = predictionAccuracy, abs(accuracy) < 0.5 { score += 0.1 }
+    if let accuracy = predictionAccuracy, abs(accuracy) < 0.5 {
+      score += 0.1
+    }
 
     dataQualityScore = score
   }
@@ -303,10 +306,8 @@ extension UserRouteHistory {
 extension UserRouteHistory {
   /// Whether this record is suitable for ML training
   var isSuitableForTraining: Bool {
-    return wasCompleted &&
-      dataQualityScore >= 0.6 &&
-      actualTravelTime != nil &&
-      !usedForTraining
+    return wasCompleted && dataQualityScore >= 0.6
+      && actualTravelTime != nil && !usedForTraining
   }
 
   /// Marks this record as used for ML training

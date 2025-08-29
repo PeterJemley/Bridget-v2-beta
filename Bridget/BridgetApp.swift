@@ -22,9 +22,12 @@ struct AppLifecycleObserver: View {
         let center = NotificationCenter.default
 
         let didBecomeActive = center.notifications(named: UIApplication.didBecomeActiveNotification)
-        let willResignActive = center.notifications(named: UIApplication.willResignActiveNotification)
-        let didEnterBackground = center.notifications(named: UIApplication.didEnterBackgroundNotification)
-        let willEnterForeground = center.notifications(named: UIApplication.willEnterForegroundNotification)
+        let willResignActive = center.notifications(
+          named: UIApplication.willResignActiveNotification)
+        let didEnterBackground = center.notifications(
+          named: UIApplication.didEnterBackgroundNotification)
+        let willEnterForeground = center.notifications(
+          named: UIApplication.willEnterForegroundNotification)
 
         Task {
           for await _ in didBecomeActive {
@@ -82,10 +85,11 @@ struct BridgetApp: App {
     WindowGroup {
       VStack {
         ContentView()
-        AppLifecycleObserver(onDidBecomeActive: handleAppDidBecomeActive,
-                             onWillResignActive: handleAppWillResignActive,
-                             onDidEnterBackground: handleAppDidEnterBackground,
-                             onWillEnterForeground: handleAppWillEnterForeground)
+        AppLifecycleObserver(
+          onDidBecomeActive: handleAppDidBecomeActive,
+          onWillResignActive: handleAppWillResignActive,
+          onDidEnterBackground: handleAppDidEnterBackground,
+          onWillEnterForeground: handleAppWillEnterForeground)
       }
       .task { initializeMLPipeline() }
     }
@@ -127,10 +131,11 @@ struct BridgetApp: App {
     backgroundManager.scheduleNextExecution()
 
     if notificationManager.isNotificationsEnabled {
-      notificationManager.showProgressNotification(title: "ML Pipeline Active",
-                                                   body: "Pipeline operations will continue in the background",
-                                                   operation: .maintenance,
-                                                   progress: 1.0)
+      notificationManager.showProgressNotification(
+        title: "ML Pipeline Active",
+        body: "Pipeline operations will continue in the background",
+        operation: .maintenance,
+        progress: 1.0)
     }
   }
 
@@ -145,32 +150,36 @@ struct BridgetApp: App {
     let today = calendar.startOfDay(for: Date())
 
     if let lastPopulation = backgroundManager.lastPopulationDate,
-       let lastExport = backgroundManager.lastExportDate
+      let lastExport = backgroundManager.lastExportDate
     {
       let populationAge = calendar.dateComponents([.day], from: lastPopulation, to: today).day ?? 0
       let exportAge = calendar.dateComponents([.day], from: lastExport, to: today).day ?? 0
 
       if populationAge > 1, notificationManager.isNotificationTypeEnabled(.health) {
         let body = "Data population is \(populationAge) days old. Consider refreshing data."
-        notificationManager.showHealthNotification(title: "Pipeline Health Warning",
-                                                   body: body,
-                                                   healthIssue: .dataStale)
+        notificationManager.showHealthNotification(
+          title: "Pipeline Health Warning",
+          body: body,
+          healthIssue: .dataStale)
       }
 
       if exportAge > 1, notificationManager.isNotificationTypeEnabled(.health) {
         let body = "Data export is \(exportAge) days old. Consider running export."
-        notificationManager.showHealthNotification(title: "Pipeline Health Warning",
-                                                   body: body,
-                                                   healthIssue: .exportFailed)
+        notificationManager.showHealthNotification(
+          title: "Pipeline Health Warning",
+          body: body,
+          healthIssue: .exportFailed)
       }
     }
   }
 
   private func showWelcomeNotification() {
     let title = "Welcome to Bridget ML Pipeline!"
-    let body = "Your ML training data pipeline is now active. Data will be collected and exported automatically."
-    notificationManager.showSuccessNotification(title: title,
-                                                body: body,
-                                                operation: .maintenance)
+    let body =
+      "Your ML training data pipeline is now active. Data will be collected and exported automatically."
+    notificationManager.showSuccessNotification(
+      title: title,
+      body: body,
+      operation: .maintenance)
   }
 }

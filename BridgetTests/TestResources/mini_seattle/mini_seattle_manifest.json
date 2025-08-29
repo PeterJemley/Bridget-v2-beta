@@ -1,0 +1,49 @@
+{
+  "dataset": "mini_seattle",
+  "version": "1.0.0",
+  "generated": "2025-08-28T10:00:00Z",
+  "description": "Mini Seattle bridge network for fast unit tests",
+  "source": "Synthetic dataset based on real Seattle bridge locations",
+  "statistics": {
+    "nodes": 18,
+    "edges": 36,
+    "bridges": 4,
+    "total_distance_km": 15.5,
+    "average_degree": 4.0
+  },
+  "bridges": [
+    "ballard",
+    "fremont", 
+    "university",
+    "montlake"
+  ],
+  "test_scenarios": [
+    {
+      "name": "Ballard to Downtown",
+      "start": "ballard_north",
+      "end": "downtown_center",
+      "expected_bridges": ["ballard", "fremont", "university", "montlake"],
+      "expected_travel_time_min": 15
+    },
+    {
+      "name": "West Seattle to Ballard",
+      "start": "west_seattle_south",
+      "end": "ballard_north", 
+      "expected_bridges": ["montlake", "university", "fremont", "ballard"],
+      "expected_travel_time_min": 20
+    },
+    {
+      "name": "Fremont to University",
+      "start": "fremont_north",
+      "end": "university_south",
+      "expected_bridges": ["fremont", "university"],
+      "expected_travel_time_min": 8
+    }
+  ],
+  "files": [
+    "mini_seattle_nodes.json",
+    "mini_seattle_edges.json", 
+    "mini_seattle_bridges.json",
+    "mini_seattle_manifest.json"
+  ]
+}

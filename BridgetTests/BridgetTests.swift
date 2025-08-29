@@ -17,8 +17,9 @@
 //    - Example test implementation
 //
 
-@testable import Bridget
 import Testing
+
+@testable import Bridget
 
 struct BridgetTests {
   @Test func example() async throws {

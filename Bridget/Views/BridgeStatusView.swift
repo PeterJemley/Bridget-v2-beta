@@ -14,20 +14,23 @@ struct BridgeStatusView: View {
               .bold()
 
             // Sample bridge status cards
-            BridgeStatusCard(bridgeName: "Fremont Bridge",
-                             status: "Open",
-                             statusColor: .green,
-                             lastUpdated: "2 minutes ago")
+            BridgeStatusCard(
+              bridgeName: "Fremont Bridge",
+              status: "Open",
+              statusColor: .green,
+              lastUpdated: "2 minutes ago")
 
-            BridgeStatusCard(bridgeName: "Ballard Bridge",
-                             status: "Opening",
-                             statusColor: .orange,
-                             lastUpdated: "1 minute ago")
+            BridgeStatusCard(
+              bridgeName: "Ballard Bridge",
+              status: "Opening",
+              statusColor: .orange,
+              lastUpdated: "1 minute ago")
 
-            BridgeStatusCard(bridgeName: "University Bridge",
-                             status: "Closed",
-                             statusColor: .red,
-                             lastUpdated: "5 minutes ago")
+            BridgeStatusCard(
+              bridgeName: "University Bridge",
+              status: "Closed",
+              statusColor: .red,
+              lastUpdated: "5 minutes ago")
           }
           .padding()
         }

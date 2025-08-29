@@ -11,9 +11,10 @@
 //  ✅ COVERAGE: Golden samples, edge cases, error conditions, all validation checks
 //
 
-@testable import Bridget
 import Foundation
 import Testing
+
+@testable import Bridget
 
 @Suite("Data Validation Service Tests")
 struct DataValidationTests {
@@ -37,36 +38,37 @@ struct DataValidationTests {
     // Create realistic golden sample probe ticks with deterministic, valid values
     let baseTime = ISO8601DateFormatter().date(from: "2025-01-01T12:00:00Z")!
 
-    for hour in 0 ..< 24 {
+    for hour in 0..<24 {
       for bridgeId in [1, 2] {
         let timestamp = Calendar.current.date(byAdding: .hour, value: hour, to: baseTime)!
         let isoString = ISO8601DateFormatter().string(from: timestamp)
 
         // Use deterministic values that are guaranteed to pass validation
-        let crossK = 0.5 + (Double(hour % 3) * 0.2) // 0.5, 0.7, 0.9, 0.5, 0.7, 0.9...
+        let crossK = 0.5 + (Double(hour % 3) * 0.2)  // 0.5, 0.7, 0.9, 0.5, 0.7, 0.9...
         let crossN = 1.0
-        let viaRoutable = 0.8 + (Double(hour % 2) * 0.2) // 0.8, 1.0, 0.8, 1.0...
-        let viaPenalty = 20.0 + (Double(hour % 4) * 10.0) // 20, 30, 40, 50, 20, 30...
-        let gateAnom = 0.1 + (Double(hour % 2) * 0.05) // 0.1, 0.15, 0.1, 0.15...
-        let alternatesTotal = 2.0 + Double(hour % 2) // 2.0, 3.0, 2.0, 3.0...
-        let alternatesAvoid = 0.2 + (Double(hour % 3) * 0.1) // 0.2, 0.3, 0.4, 0.2, 0.3...
-        let openLabel = hour % 2 // 0, 1, 0, 1...
-        let detourDelta = 120.0 + (Double(hour % 3) * 60.0) // 120, 180, 240, 120, 180...
-        let detourFrac = 0.3 + (Double(hour % 4) * 0.1) // 0.3, 0.4, 0.5, 0.6, 0.3...
+        let viaRoutable = 0.8 + (Double(hour % 2) * 0.2)  // 0.8, 1.0, 0.8, 1.0...
+        let viaPenalty = 20.0 + (Double(hour % 4) * 10.0)  // 20, 30, 40, 50, 20, 30...
+        let gateAnom = 0.1 + (Double(hour % 2) * 0.05)  // 0.1, 0.15, 0.1, 0.15...
+        let alternatesTotal = 2.0 + Double(hour % 2)  // 2.0, 3.0, 2.0, 3.0...
+        let alternatesAvoid = 0.2 + (Double(hour % 3) * 0.1)  // 0.2, 0.3, 0.4, 0.2, 0.3...
+        let openLabel = hour % 2  // 0, 1, 0, 1...
+        let detourDelta = 120.0 + (Double(hour % 3) * 60.0)  // 120, 180, 240, 120, 180...
+        let detourFrac = 0.3 + (Double(hour % 4) * 0.1)  // 0.3, 0.4, 0.5, 0.6, 0.3...
 
-        let tick = ProbeTickRaw(v: hour * 2 + bridgeId,
-                                ts_utc: isoString,
-                                bridge_id: bridgeId,
-                                cross_k: crossK,
-                                cross_n: crossN,
-                                via_routable: viaRoutable,
-                                via_penalty_sec: viaPenalty,
-                                gate_anom: gateAnom,
-                                alternates_total: alternatesTotal,
-                                alternates_avoid: alternatesAvoid,
-                                open_label: openLabel,
-                                detour_delta: detourDelta,
-                                detour_frac: detourFrac)
+        let tick = ProbeTickRaw(
+          v: hour * 2 + bridgeId,
+          ts_utc: isoString,
+          bridge_id: bridgeId,
+          cross_k: crossK,
+          cross_n: crossN,
+          via_routable: viaRoutable,
+          via_penalty_sec: viaPenalty,
+          gate_anom: gateAnom,
+          alternates_total: alternatesTotal,
+          alternates_avoid: alternatesAvoid,
+          open_label: openLabel,
+          detour_delta: detourDelta,
+          detour_frac: detourFrac)
         testGoldenSampleTicks.append(tick)
       }
     }
@@ -74,10 +76,10 @@ struct DataValidationTests {
     let result = testValidationService.validate(ticks: testGoldenSampleTicks)
 
     #expect(result.isValid == true)
-    #expect(result.totalRecords == 48) // 24 hours × 2 bridges
+    #expect(result.totalRecords == 48)  // 24 hours × 2 bridges
     #expect(result.bridgeCount == 2)
     #expect(result.errors.isEmpty)
-    #expect(result.warnings.count <= 2) // Allow some warnings for edge cases
+    #expect(result.warnings.count <= 2)  // Allow some warnings for edge cases
     #expect(result.validRecordCount == 48)
     #expect(result.validationRate > 0.95)
   }
@@ -91,7 +93,7 @@ struct DataValidationTests {
     // Create realistic golden sample feature vectors with deterministic values
     let baseTime = ISO8601DateFormatter().date(from: "2025-01-01T12:00:00Z")!
 
-    for hour in 0 ..< 24 {
+    for hour in 0..<24 {
       for bridgeId in [1, 2] {
         let timestamp = Calendar.current.date(byAdding: .hour, value: hour, to: baseTime)!
         let isoString = ISO8601DateFormatter().string(from: timestamp)
@@ -101,23 +103,24 @@ struct DataValidationTests {
           let minute = Calendar.current.component(.minute, from: date)
           let weekday = Calendar.current.component(.weekday, from: date)
 
-          let feature = FeatureVector(bridge_id: bridgeId,
-                                      horizon_min: horizon,
-                                      min_sin: sin(Double(minute) * .pi / 30),
-                                      min_cos: cos(Double(minute) * .pi / 30),
-                                      dow_sin: sin(Double(weekday) * .pi / 7),
-                                      dow_cos: cos(Double(weekday) * .pi / 7),
-                                      open_5m: hour % 2 == 1 ? 1.0 : 0.0,
-                                      open_30m: hour % 2 == 1 ? 1.0 : 0.0,
-                                      detour_delta: 120.0 + (Double(hour % 3) * 60.0),
-                                      cross_rate: 0.5 + (Double(hour % 3) * 0.2),
-                                      via_routable: 0.8 + (Double(hour % 2) * 0.2),
-                                      via_penalty: 20.0 + (Double(hour % 4) * 10.0),
-                                      gate_anom: 0.1 + (Double(hour % 2) * 0.05),
-                                      detour_frac: 0.3 + (Double(hour % 4) * 0.1),
-                                      current_speed: 25.0 + (Double(hour % 5) * 5.0),
-                                      normal_speed: 30.0 + (Double(hour % 3) * 2.0),
-                                      target: hour % 2)
+          let feature = FeatureVector(
+            bridge_id: bridgeId,
+            horizon_min: horizon,
+            min_sin: sin(Double(minute) * .pi / 30),
+            min_cos: cos(Double(minute) * .pi / 30),
+            dow_sin: sin(Double(weekday) * .pi / 7),
+            dow_cos: cos(Double(weekday) * .pi / 7),
+            open_5m: hour % 2 == 1 ? 1.0 : 0.0,
+            open_30m: hour % 2 == 1 ? 1.0 : 0.0,
+            detour_delta: 120.0 + (Double(hour % 3) * 60.0),
+            cross_rate: 0.5 + (Double(hour % 3) * 0.2),
+            via_routable: 0.8 + (Double(hour % 2) * 0.2),
+            via_penalty: 20.0 + (Double(hour % 4) * 10.0),
+            gate_anom: 0.1 + (Double(hour % 2) * 0.05),
+            detour_frac: 0.3 + (Double(hour % 4) * 0.1),
+            current_speed: 25.0 + (Double(hour % 5) * 5.0),
+            normal_speed: 30.0 + (Double(hour % 3) * 2.0),
+            target: hour % 2)
           testGoldenSampleFeatures.append(feature)
         }
       }
@@ -126,7 +129,7 @@ struct DataValidationTests {
     let result = testValidationService.validate(features: testGoldenSampleFeatures)
 
     #expect(result.isValid == true)
-    #expect(result.totalRecords == 240) // 24 hours × 2 bridges × 5 horizons
+    #expect(result.totalRecords == 240)  // 24 hours × 2 bridges × 5 horizons
     #expect(result.bridgeCount == 2)
     #expect(result.errors.isEmpty)
     #expect(result.warnings.isEmpty)
@@ -152,19 +155,22 @@ struct DataValidationTests {
   @Test("Single record should pass validation")
   mutating func singleRecordValidation() async throws {
     try await setUp()
-    let singleTick = [ProbeTickRaw(v: 1,
-                                   ts_utc: "2025-01-01T12:00:00Z",
-                                   bridge_id: 1,
-                                   cross_k: 0.5,
-                                   cross_n: 1.0,
-                                   via_routable: 0.8,
-                                   via_penalty_sec: 30.0,
-                                   gate_anom: 0.1,
-                                   alternates_total: 2.0,
-                                   alternates_avoid: 0.5,
-                                   open_label: 0,
-                                   detour_delta: 120.0,
-                                   detour_frac: 0.3)]
+    let singleTick = [
+      ProbeTickRaw(
+        v: 1,
+        ts_utc: "2025-01-01T12:00:00Z",
+        bridge_id: 1,
+        cross_k: 0.5,
+        cross_n: 1.0,
+        via_routable: 0.8,
+        via_penalty_sec: 30.0,
+        gate_anom: 0.1,
+        alternates_total: 2.0,
+        alternates_avoid: 0.5,
+        open_label: 0,
+        detour_delta: 120.0,
+        detour_frac: 0.3)
+    ]
 
     let result = validationService.validate(ticks: singleTick)
 
@@ -186,47 +192,50 @@ struct DataValidationTests {
     // Fall back: November 3, 2024 at 2:00 AM becomes 1:00 AM (in US)
 
     // Create timestamps in UTC around these transitions
-    let springForwardBase = ISO8601DateFormatter().date(from: "2024-03-10T06:00:00Z")! // 6 AM UTC
-    let fallBackBase = ISO8601DateFormatter().date(from: "2024-11-03T06:00:00Z")! // 6 AM UTC
+    let springForwardBase = ISO8601DateFormatter().date(from: "2024-03-10T06:00:00Z")!  // 6 AM UTC
+    let fallBackBase = ISO8601DateFormatter().date(from: "2024-11-03T06:00:00Z")!  // 6 AM UTC
 
     // Create 2 hours of data around each transition (in UTC)
-    for minute in 0 ..< 120 {
-      let springTimestamp = Calendar.current.date(byAdding: .minute, value: minute, to: springForwardBase)!
+    for minute in 0..<120 {
+      let springTimestamp = Calendar.current.date(
+        byAdding: .minute, value: minute, to: springForwardBase)!
       let fallTimestamp = Calendar.current.date(byAdding: .minute, value: minute, to: fallBackBase)!
 
       let springISOString = ISO8601DateFormatter().string(from: springTimestamp)
       let fallISOString = ISO8601DateFormatter().string(from: fallTimestamp)
 
       // Spring forward data
-      let springTick = ProbeTickRaw(v: minute,
-                                    ts_utc: springISOString,
-                                    bridge_id: 1,
-                                    cross_k: 0.5,
-                                    cross_n: 1.0,
-                                    via_routable: 0.8,
-                                    via_penalty_sec: 20.0,
-                                    gate_anom: 0.1,
-                                    alternates_total: 2.0,
-                                    alternates_avoid: 0.2,
-                                    open_label: minute % 2,
-                                    detour_delta: 120.0,
-                                    detour_frac: 0.3)
+      let springTick = ProbeTickRaw(
+        v: minute,
+        ts_utc: springISOString,
+        bridge_id: 1,
+        cross_k: 0.5,
+        cross_n: 1.0,
+        via_routable: 0.8,
+        via_penalty_sec: 20.0,
+        gate_anom: 0.1,
+        alternates_total: 2.0,
+        alternates_avoid: 0.2,
+        open_label: minute % 2,
+        detour_delta: 120.0,
+        detour_frac: 0.3)
       dstTicks.append(springTick)
 
       // Fall back data
-      let fallTick = ProbeTickRaw(v: minute + 200, // Different version numbers
-                                  ts_utc: fallISOString,
-                                  bridge_id: 2,
-                                  cross_k: 0.6,
-                                  cross_n: 1.0,
-                                  via_routable: 0.9,
-                                  via_penalty_sec: 25.0,
-                                  gate_anom: 0.15,
-                                  alternates_total: 3.0,
-                                  alternates_avoid: 0.3,
-                                  open_label: minute % 2,
-                                  detour_delta: 180.0,
-                                  detour_frac: 0.4)
+      let fallTick = ProbeTickRaw(
+        v: minute + 200,  // Different version numbers
+        ts_utc: fallISOString,
+        bridge_id: 2,
+        cross_k: 0.6,
+        cross_n: 1.0,
+        via_routable: 0.9,
+        via_penalty_sec: 25.0,
+        gate_anom: 0.15,
+        alternates_total: 3.0,
+        alternates_avoid: 0.3,
+        open_label: minute % 2,
+        detour_delta: 180.0,
+        detour_frac: 0.4)
       dstTicks.append(fallTick)
     }
 
@@ -234,7 +243,7 @@ struct DataValidationTests {
 
     // DST transitions should not cause validation errors
     #expect(result.isValid == true)
-    #expect(result.totalRecords == 240) // 120 + 120
+    #expect(result.totalRecords == 240)  // 120 + 120
     #expect(result.bridgeCount == 2)
 
     // Should have valid timestamp ranges
@@ -252,19 +261,20 @@ struct DataValidationTests {
     try await setUp()
     guard !goldenSampleTicks.isEmpty else { return }
     var invalidTicks = goldenSampleTicks
-    invalidTicks[0] = ProbeTickRaw(v: 1,
-                                   ts_utc: "2025-01-01T12:00:00Z",
-                                   bridge_id: -1, // Invalid negative ID
-                                   cross_k: 0.5,
-                                   cross_n: 1.0,
-                                   via_routable: 0.8,
-                                   via_penalty_sec: 30.0,
-                                   gate_anom: 0.1,
-                                   alternates_total: 2.0,
-                                   alternates_avoid: 0.5,
-                                   open_label: 0,
-                                   detour_delta: 120.0,
-                                   detour_frac: 0.3)
+    invalidTicks[0] = ProbeTickRaw(
+      v: 1,
+      ts_utc: "2025-01-01T12:00:00Z",
+      bridge_id: -1,  // Invalid negative ID
+      cross_k: 0.5,
+      cross_n: 1.0,
+      via_routable: 0.8,
+      via_penalty_sec: 30.0,
+      gate_anom: 0.1,
+      alternates_total: 2.0,
+      alternates_avoid: 0.5,
+      open_label: 0,
+      detour_delta: 120.0,
+      detour_frac: 0.3)
 
     let result = validationService.validate(ticks: invalidTicks)
 
@@ -278,19 +288,20 @@ struct DataValidationTests {
     try await setUp()
     guard !goldenSampleTicks.isEmpty else { return }
     var invalidTicks = goldenSampleTicks
-    invalidTicks[0] = ProbeTickRaw(v: 1,
-                                   ts_utc: "2025-01-01T12:00:00Z",
-                                   bridge_id: 1,
-                                   cross_k: 0.5,
-                                   cross_n: 1.0,
-                                   via_routable: 0.8,
-                                   via_penalty_sec: 30.0,
-                                   gate_anom: 0.1,
-                                   alternates_total: 2.0,
-                                   alternates_avoid: 0.5,
-                                   open_label: 2, // Invalid label (should be 0 or 1)
-                                   detour_delta: 120.0,
-                                   detour_frac: 0.3)
+    invalidTicks[0] = ProbeTickRaw(
+      v: 1,
+      ts_utc: "2025-01-01T12:00:00Z",
+      bridge_id: 1,
+      cross_k: 0.5,
+      cross_n: 1.0,
+      via_routable: 0.8,
+      via_penalty_sec: 30.0,
+      gate_anom: 0.1,
+      alternates_total: 2.0,
+      alternates_avoid: 0.5,
+      open_label: 2,  // Invalid label (should be 0 or 1)
+      detour_delta: 120.0,
+      detour_frac: 0.3)
 
     let result = validationService.validate(ticks: invalidTicks)
 
@@ -304,19 +315,20 @@ struct DataValidationTests {
     try await setUp()
     guard !goldenSampleTicks.isEmpty else { return }
     var nanTicks = goldenSampleTicks
-    nanTicks[0] = ProbeTickRaw(v: 1,
-                               ts_utc: "2025-01-01T12:00:00Z",
-                               bridge_id: 1,
-                               cross_k: Double.nan, // NaN value
-                               cross_n: 1.0,
-                               via_routable: 0.8,
-                               via_penalty_sec: 30.0,
-                               gate_anom: 0.1,
-                               alternates_total: 2.0,
-                               alternates_avoid: 0.5,
-                               open_label: 0,
-                               detour_delta: 120.0,
-                               detour_frac: 0.3)
+    nanTicks[0] = ProbeTickRaw(
+      v: 1,
+      ts_utc: "2025-01-01T12:00:00Z",
+      bridge_id: 1,
+      cross_k: Double.nan,  // NaN value
+      cross_n: 1.0,
+      via_routable: 0.8,
+      via_penalty_sec: 30.0,
+      gate_anom: 0.1,
+      alternates_total: 2.0,
+      alternates_avoid: 0.5,
+      open_label: 0,
+      detour_delta: 120.0,
+      detour_frac: 0.3)
 
     let result = validationService.validate(ticks: nanTicks)
 
@@ -330,19 +342,20 @@ struct DataValidationTests {
     try await setUp()
     guard !goldenSampleTicks.isEmpty else { return }
     var infiniteTicks = goldenSampleTicks
-    infiniteTicks[0] = ProbeTickRaw(v: 1,
-                                    ts_utc: "2025-01-01T12:00:00Z",
-                                    bridge_id: 1,
-                                    cross_k: 0.5,
-                                    cross_n: Double.infinity, // Infinite value
-                                    via_routable: 0.8,
-                                    via_penalty_sec: 30.0,
-                                    gate_anom: 0.1,
-                                    alternates_total: 2.0,
-                                    alternates_avoid: 0.5,
-                                    open_label: 0,
-                                    detour_delta: 120.0,
-                                    detour_frac: 0.3)
+    infiniteTicks[0] = ProbeTickRaw(
+      v: 1,
+      ts_utc: "2025-01-01T12:00:00Z",
+      bridge_id: 1,
+      cross_k: 0.5,
+      cross_n: Double.infinity,  // Infinite value
+      via_routable: 0.8,
+      via_penalty_sec: 30.0,
+      gate_anom: 0.1,
+      alternates_total: 2.0,
+      alternates_avoid: 0.5,
+      open_label: 0,
+      detour_delta: 120.0,
+      detour_frac: 0.3)
 
     let result = validationService.validate(ticks: infiniteTicks)
 
@@ -357,23 +370,24 @@ struct DataValidationTests {
     guard goldenSampleTicks.count >= 2 else { return }
     var nonMonotonicTicks = goldenSampleTicks
     // Swap timestamps to create non-monotonic sequence
-    nonMonotonicTicks[1] = ProbeTickRaw(v: 2,
-                                        ts_utc: "2025-01-01T11:00:00Z", // Earlier than first timestamp
-                                        bridge_id: 1,
-                                        cross_k: 0.6,
-                                        cross_n: 1.0,
-                                        via_routable: 0.9,
-                                        via_penalty_sec: 25.0,
-                                        gate_anom: 0.05,
-                                        alternates_total: 2.0,
-                                        alternates_avoid: 0.4,
-                                        open_label: 1,
-                                        detour_delta: 90.0,
-                                        detour_frac: 0.25)
+    nonMonotonicTicks[1] = ProbeTickRaw(
+      v: 2,
+      ts_utc: "2025-01-01T11:00:00Z",  // Earlier than first timestamp
+      bridge_id: 1,
+      cross_k: 0.6,
+      cross_n: 1.0,
+      via_routable: 0.9,
+      via_penalty_sec: 25.0,
+      gate_anom: 0.05,
+      alternates_total: 2.0,
+      alternates_avoid: 0.4,
+      open_label: 1,
+      detour_delta: 90.0,
+      detour_frac: 0.25)
 
     let result = validationService.validate(ticks: nonMonotonicTicks)
 
-    #expect(result.isValid == true) // Warnings don't make it invalid
+    #expect(result.isValid == true)  // Warnings don't make it invalid
     #expect(result.warnings.contains { $0.contains("Non-monotonic timestamp") })
   }
 
@@ -384,27 +398,28 @@ struct DataValidationTests {
     try await setUp()
     guard !goldenSampleFeatures.isEmpty else { return }
     var invalidFeatures = goldenSampleFeatures
-    invalidFeatures[0] = FeatureVector(bridge_id: 1,
-                                       horizon_min: 0,
-                                       min_sin: 1.5, // Out of range [-1, 1]
-                                       min_cos: 0.5,
-                                       dow_sin: 0.3,
-                                       dow_cos: 0.7,
-                                       open_5m: 0.8,
-                                       open_30m: 0.6,
-                                       detour_delta: 120.0,
-                                       cross_rate: 0.4,
-                                       via_routable: 0.9,
-                                       via_penalty: 25.0,
-                                       gate_anom: 0.1,
-                                       detour_frac: 0.3,
-                                       current_speed: 25.0,
-                                       normal_speed: 30.0,
-                                       target: 0)
+    invalidFeatures[0] = FeatureVector(
+      bridge_id: 1,
+      horizon_min: 0,
+      min_sin: 1.5,  // Out of range [-1, 1]
+      min_cos: 0.5,
+      dow_sin: 0.3,
+      dow_cos: 0.7,
+      open_5m: 0.8,
+      open_30m: 0.6,
+      detour_delta: 120.0,
+      cross_rate: 0.4,
+      via_routable: 0.9,
+      via_penalty: 25.0,
+      gate_anom: 0.1,
+      detour_frac: 0.3,
+      current_speed: 25.0,
+      normal_speed: 30.0,
+      target: 0)
 
     let result = validationService.validate(features: invalidFeatures)
 
-    #expect(result.isValid == true) // Warnings don't make it invalid
+    #expect(result.isValid == true)  // Warnings don't make it invalid
     #expect(result.warnings.contains { $0.contains("Cyclical feature out of range") })
   }
 
@@ -413,23 +428,24 @@ struct DataValidationTests {
     try await setUp()
     guard !goldenSampleFeatures.isEmpty else { return }
     var invalidFeatures = goldenSampleFeatures
-    invalidFeatures[0] = FeatureVector(bridge_id: 1,
-                                       horizon_min: 0,
-                                       min_sin: 0.5,
-                                       min_cos: 0.5,
-                                       dow_sin: 0.3,
-                                       dow_cos: 0.7,
-                                       open_5m: 0.8,
-                                       open_30m: 0.6,
-                                       detour_delta: 120.0,
-                                       cross_rate: 0.4,
-                                       via_routable: 0.9,
-                                       via_penalty: 25.0,
-                                       gate_anom: 0.1,
-                                       detour_frac: 0.3,
-                                       current_speed: 25.0,
-                                       normal_speed: 30.0,
-                                       target: 2 // Invalid target (should be 0 or 1)
+    invalidFeatures[0] = FeatureVector(
+      bridge_id: 1,
+      horizon_min: 0,
+      min_sin: 0.5,
+      min_cos: 0.5,
+      dow_sin: 0.3,
+      dow_cos: 0.7,
+      open_5m: 0.8,
+      open_30m: 0.6,
+      detour_delta: 120.0,
+      cross_rate: 0.4,
+      via_routable: 0.9,
+      via_penalty: 25.0,
+      gate_anom: 0.1,
+      detour_frac: 0.3,
+      current_speed: 25.0,
+      normal_speed: 30.0,
+      target: 2  // Invalid target (should be 0 or 1)
     )
 
     let result = validationService.validate(features: invalidFeatures)
@@ -446,7 +462,7 @@ struct DataValidationTests {
 
     let result = validationService.validate(features: limitedHorizonFeatures)
 
-    #expect(result.isValid == true) // Warnings don't make it invalid
+    #expect(result.isValid == true)  // Warnings don't make it invalid
     #expect(result.warnings.contains { $0.contains("Missing features for horizons: 9min") })
     #expect(result.horizonCoverage[9] == nil)
   }
@@ -458,11 +474,21 @@ struct DataValidationTests {
     try await setUp()
     let result = validationService.validate(ticks: goldenSampleTicks)
 
-    #expect(result.dataQualityMetrics.nullCounts.isEmpty || result.dataQualityMetrics.nullCounts.values.allSatisfy { $0 >= 0 })
-    #expect(result.dataQualityMetrics.nanCounts.isEmpty || result.dataQualityMetrics.nanCounts.values.allSatisfy { $0 >= 0 })
-    #expect(result.dataQualityMetrics.infiniteCounts.isEmpty || result.dataQualityMetrics.infiniteCounts.values.allSatisfy { $0 >= 0 })
-    #expect(result.dataQualityMetrics.outlierCounts.isEmpty || result.dataQualityMetrics.outlierCounts.values.allSatisfy { $0 >= 0 })
-    #expect(result.dataQualityMetrics.rangeViolations.isEmpty || result.dataQualityMetrics.rangeViolations.values.allSatisfy { $0 >= 0 })
+    #expect(
+      result.dataQualityMetrics.nullCounts.isEmpty
+        || result.dataQualityMetrics.nullCounts.values.allSatisfy { $0 >= 0 })
+    #expect(
+      result.dataQualityMetrics.nanCounts.isEmpty
+        || result.dataQualityMetrics.nanCounts.values.allSatisfy { $0 >= 0 })
+    #expect(
+      result.dataQualityMetrics.infiniteCounts.isEmpty
+        || result.dataQualityMetrics.infiniteCounts.values.allSatisfy { $0 >= 0 })
+    #expect(
+      result.dataQualityMetrics.outlierCounts.isEmpty
+        || result.dataQualityMetrics.outlierCounts.values.allSatisfy { $0 >= 0 })
+    #expect(
+      result.dataQualityMetrics.rangeViolations.isEmpty
+        || result.dataQualityMetrics.rangeViolations.values.allSatisfy { $0 >= 0 })
   }
 
   @Test("Validation rate should be calculated correctly")
@@ -494,8 +520,14 @@ struct DataValidationTests {
     #expect(abs(originalResult.validationRate - shuffledResult.validationRate) < 0.001)
 
     // Data quality metrics should be preserved (within floating point tolerance)
-    #expect(abs(originalResult.dataQualityMetrics.dataCompleteness - shuffledResult.dataQualityMetrics.dataCompleteness) < 0.001)
-    #expect(abs(originalResult.dataQualityMetrics.bridgeIDValidity - shuffledResult.dataQualityMetrics.bridgeIDValidity) < 0.001)
+    #expect(
+      abs(
+        originalResult.dataQualityMetrics.dataCompleteness
+          - shuffledResult.dataQualityMetrics.dataCompleteness) < 0.001)
+    #expect(
+      abs(
+        originalResult.dataQualityMetrics.bridgeIDValidity
+          - shuffledResult.dataQualityMetrics.bridgeIDValidity) < 0.001)
 
     // Note: Error and warning counts may differ due to order-dependent checks like timestamp monotonicity
     // But the core validation results should be consistent
@@ -510,19 +542,20 @@ struct DataValidationTests {
 
     // Create data with constant offset added to all numeric fields
     let offsetTicks = goldenSampleTicks.map { tick in
-      ProbeTickRaw(v: tick.v,
-                   ts_utc: tick.ts_utc,
-                   bridge_id: tick.bridge_id,
-                   cross_k: tick.cross_k.map { $0 + 10.0 },
-                   cross_n: tick.cross_n.map { $0 + 10.0 },
-                   via_routable: tick.via_routable.map { $0 + 10.0 },
-                   via_penalty_sec: tick.via_penalty_sec.map { $0 + 10.0 },
-                   gate_anom: tick.gate_anom.map { $0 + 10.0 },
-                   alternates_total: tick.alternates_total.map { $0 + 10.0 },
-                   alternates_avoid: tick.alternates_avoid.map { $0 + 10.0 },
-                   open_label: tick.open_label,
-                   detour_delta: tick.detour_delta.map { $0 + 10.0 },
-                   detour_frac: tick.detour_frac.map { $0 + 10.0 })
+      ProbeTickRaw(
+        v: tick.v,
+        ts_utc: tick.ts_utc,
+        bridge_id: tick.bridge_id,
+        cross_k: tick.cross_k.map { $0 + 10.0 },
+        cross_n: tick.cross_n.map { $0 + 10.0 },
+        via_routable: tick.via_routable.map { $0 + 10.0 },
+        via_penalty_sec: tick.via_penalty_sec.map { $0 + 10.0 },
+        gate_anom: tick.gate_anom.map { $0 + 10.0 },
+        alternates_total: tick.alternates_total.map { $0 + 10.0 },
+        alternates_avoid: tick.alternates_avoid.map { $0 + 10.0 },
+        open_label: tick.open_label,
+        detour_delta: tick.detour_delta.map { $0 + 10.0 },
+        detour_frac: tick.detour_frac.map { $0 + 10.0 })
     }
 
     let offsetResult = validationService.validate(ticks: offsetTicks)
@@ -532,8 +565,9 @@ struct DataValidationTests {
     #expect(originalResult.bridgeCount == offsetResult.bridgeCount)
 
     // Validation rate might change due to range violations, but should be predictable
-    #expect(offsetResult.validationRate <= originalResult.validationRate ||
-      offsetResult.warnings.contains { $0.contains("range") })
+    #expect(
+      offsetResult.validationRate <= originalResult.validationRate
+        || offsetResult.warnings.contains { $0.contains("range") })
   }
 
   @Test("Feature vector validation should be invariant under horizon reordering")
@@ -577,20 +611,23 @@ struct DataValidationTests {
 
     let unusualTicks = [
       // Leap year date
-      ProbeTickRaw(v: 1, ts_utc: "2024-02-29T12:00:00Z", bridge_id: 1,
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2024-02-29T12:00:00Z", bridge_id: 1,
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
       // Y2K era date
-      ProbeTickRaw(v: 1, ts_utc: "2000-01-01T00:00:00Z", bridge_id: 2,
-                   cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
-                   via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2000-01-01T00:00:00Z", bridge_id: 2,
+        cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
+        via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
+        alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
       // Far future date
-      ProbeTickRaw(v: 1, ts_utc: "2099-12-31T23:59:59Z", bridge_id: 3,
-                   cross_k: 0.4, cross_n: 0.9, via_routable: 0.7,
-                   via_penalty_sec: 35.0, gate_anom: 0.15, alternates_total: 1.0,
-                   alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2099-12-31T23:59:59Z", bridge_id: 3,
+        cross_k: 0.4, cross_n: 0.9, via_routable: 0.7,
+        via_penalty_sec: 35.0, gate_anom: 0.15, alternates_total: 1.0,
+        alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
     ]
 
     let result = validationService.validate(ticks: unusualTicks)
@@ -608,25 +645,29 @@ struct DataValidationTests {
 
     let timezoneTicks = [
       // Leap second (June 30, 2015)
-      ProbeTickRaw(v: 1, ts_utc: "2015-06-30T23:59:60Z", bridge_id: 1,
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2015-06-30T23:59:60Z", bridge_id: 1,
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
       // Mixed timezone offsets (these should be normalized to UTC)
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00-08:00", bridge_id: 2,
-                   cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
-                   via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00-08:00", bridge_id: 2,
+        cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
+        via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
+        alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
       // Another leap second (December 31, 2016)
-      ProbeTickRaw(v: 1, ts_utc: "2016-12-31T23:59:60Z", bridge_id: 3,
-                   cross_k: 0.4, cross_n: 0.9, via_routable: 0.7,
-                   via_penalty_sec: 35.0, gate_anom: 0.15, alternates_total: 1.0,
-                   alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2016-12-31T23:59:60Z", bridge_id: 3,
+        cross_k: 0.4, cross_n: 0.9, via_routable: 0.7,
+        via_penalty_sec: 35.0, gate_anom: 0.15, alternates_total: 1.0,
+        alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
       // Eastern timezone
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T15:00:00-05:00", bridge_id: 4,
-                   cross_k: 0.3, cross_n: 0.8, via_routable: 0.6,
-                   via_penalty_sec: 40.0, gate_anom: 0.2, alternates_total: 1.5,
-                   alternates_avoid: 0.6, open_label: 1, detour_delta: 180.0, detour_frac: 0.5),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T15:00:00-05:00", bridge_id: 4,
+        cross_k: 0.3, cross_n: 0.8, via_routable: 0.6,
+        via_penalty_sec: 40.0, gate_anom: 0.2, alternates_total: 1.5,
+        alternates_avoid: 0.6, open_label: 1, detour_delta: 180.0, detour_frac: 0.5),
     ]
 
     let result = validationService.validate(ticks: timezoneTicks)
@@ -638,8 +679,8 @@ struct DataValidationTests {
     // Leap seconds and timezone offsets should be handled gracefully
     // Note: ISO8601DateFormatter may not support leap seconds, so we expect warnings
     // but not fatal errors that would break validation
-    #expect(result.validationRate >= 0.0) // Should complete validation
-    #expect(!result.summary.isEmpty) // Should provide meaningful summary
+    #expect(result.validationRate >= 0.0)  // Should complete validation
+    #expect(!result.summary.isEmpty)  // Should provide meaningful summary
   }
 
   @Test("All-missing or all-NaN features should be clearly reported")
@@ -647,14 +688,17 @@ struct DataValidationTests {
     try await setUp()
 
     let allMissingTicks = [
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
-                   cross_k: nil, cross_n: nil, via_routable: nil,
-                   via_penalty_sec: nil, gate_anom: nil, alternates_total: nil,
-                   alternates_avoid: nil, open_label: 0, detour_delta: nil, detour_frac: nil),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 2,
-                   cross_k: Double.nan, cross_n: Double.nan, via_routable: Double.nan,
-                   via_penalty_sec: Double.nan, gate_anom: Double.nan, alternates_total: Double.nan,
-                   alternates_avoid: Double.nan, open_label: 1, detour_delta: Double.nan, detour_frac: Double.nan),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
+        cross_k: nil, cross_n: nil, via_routable: nil,
+        via_penalty_sec: nil, gate_anom: nil, alternates_total: nil,
+        alternates_avoid: nil, open_label: 0, detour_delta: nil, detour_frac: nil),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 2,
+        cross_k: Double.nan, cross_n: Double.nan, via_routable: Double.nan,
+        via_penalty_sec: Double.nan, gate_anom: Double.nan, alternates_total: Double.nan,
+        alternates_avoid: Double.nan, open_label: 1, detour_delta: Double.nan,
+        detour_frac: Double.nan),
     ]
 
     let result = validationService.validate(ticks: allMissingTicks)
@@ -663,7 +707,8 @@ struct DataValidationTests {
     #expect(result.dataQualityMetrics.nullCounts.values.reduce(0, +) > 0)
     #expect(result.dataQualityMetrics.nanCounts.values.reduce(0, +) > 0)
     #expect(result.errors.contains { $0.contains("NaN values") })
-    #expect(result.warnings.contains { $0.contains("High null rate") || $0.contains("missing ratio") })
+    #expect(
+      result.warnings.contains { $0.contains("High null rate") || $0.contains("missing ratio") })
   }
 
   @Test("All values NaN/infinite for specific fields should be detected and reported")
@@ -672,31 +717,37 @@ struct DataValidationTests {
 
     let fieldSpecificTicks = [
       // All cross_k values are NaN
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
-                   cross_k: Double.nan, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 2,
-                   cross_k: Double.nan, cross_n: 1.1, via_routable: 0.9,
-                   via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:02:00Z", bridge_id: 3,
-                   cross_k: Double.nan, cross_n: 0.9, via_routable: 0.7,
-                   via_penalty_sec: 35.0, gate_anom: 0.15, alternates_total: 1.0,
-                   alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
+        cross_k: Double.nan, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 2,
+        cross_k: Double.nan, cross_n: 1.1, via_routable: 0.9,
+        via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
+        alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:02:00Z", bridge_id: 3,
+        cross_k: Double.nan, cross_n: 0.9, via_routable: 0.7,
+        via_penalty_sec: 35.0, gate_anom: 0.15, alternates_total: 1.0,
+        alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
       // All via_penalty_sec values are infinite
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:03:00Z", bridge_id: 4,
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: Double.infinity, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:04:00Z", bridge_id: 5,
-                   cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
-                   via_penalty_sec: Double.infinity, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:05:00Z", bridge_id: 6,
-                   cross_k: 0.4, cross_n: 0.9, via_routable: 0.7,
-                   via_penalty_sec: Double.infinity, gate_anom: 0.15, alternates_total: 1.0,
-                   alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:03:00Z", bridge_id: 4,
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: Double.infinity, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:04:00Z", bridge_id: 5,
+        cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
+        via_penalty_sec: Double.infinity, gate_anom: 0.05, alternates_total: 3.0,
+        alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:05:00Z", bridge_id: 6,
+        cross_k: 0.4, cross_n: 0.9, via_routable: 0.7,
+        via_penalty_sec: Double.infinity, gate_anom: 0.15, alternates_total: 1.0,
+        alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
     ]
 
     let result = validationService.validate(ticks: fieldSpecificTicks)
@@ -724,13 +775,14 @@ struct DataValidationTests {
 
     // Generate ticks with many unique bridge IDs
     var highCardinalityTicks: [ProbeTickRaw] = []
-    for bridgeId in 1 ... 1000 {
+    for bridgeId in 1...1000 {
       highCardinalityTicks.append(
-        ProbeTickRaw(v: 1, ts_utc: "2025-01-01T\(String(format: "%02d", bridgeId % 24)):00:00Z",
-                     bridge_id: bridgeId,
-                     cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                     via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                     alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3)
+        ProbeTickRaw(
+          v: 1, ts_utc: "2025-01-01T\(String(format: "%02d", bridgeId % 24)):00:00Z",
+          bridge_id: bridgeId,
+          cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+          via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+          alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3)
       )
     }
 
@@ -738,8 +790,8 @@ struct DataValidationTests {
 
     #expect(result.totalRecords == 1000)
     #expect(result.bridgeCount == 1000)
-    #expect(result.validationRate > 0.0) // Should complete validation
-    #expect(!result.summary.isEmpty) // Should provide meaningful summary
+    #expect(result.validationRate > 0.0)  // Should complete validation
+    #expect(!result.summary.isEmpty)  // Should provide meaningful summary
   }
 
   @Test("Precision loss near range boundaries should be handled correctly")
@@ -748,23 +800,30 @@ struct DataValidationTests {
 
     let precisionTicks = [
       // Values very close to valid range boundaries
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
-                   cross_k: 0.0000001, cross_n: 0.9999999, via_routable: 0.0000001,
-                   via_penalty_sec: 0.1, gate_anom: 0.0000001, alternates_total: 0.1,
-                   alternates_avoid: 0.9999999, open_label: 0, detour_delta: 0.1, detour_frac: 0.9999999),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
+        cross_k: 0.0000001, cross_n: 0.9999999, via_routable: 0.0000001,
+        via_penalty_sec: 0.1, gate_anom: 0.0000001, alternates_total: 0.1,
+        alternates_avoid: 0.9999999, open_label: 0, detour_delta: 0.1, detour_frac: 0.9999999),
       // Values with high precision
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 2,
-                   cross_k: 0.123456789123456789, cross_n: 1.987654321987654321, via_routable: 0.555555555555555555,
-                   via_penalty_sec: 29.999999999999999, gate_anom: 0.111111111111111111, alternates_total: 2.888888888888888888,
-                   alternates_avoid: 0.444444444444444444, open_label: 1, detour_delta: 119.999999999999999, detour_frac: 0.333333333333333333),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 2,
+        cross_k: 0.123456789123456789, cross_n: 1.987654321987654321,
+        via_routable: 0.555555555555555555,
+        via_penalty_sec: 29.999999999999999, gate_anom: 0.111111111111111111,
+        alternates_total: 2.888888888888888888,
+        alternates_avoid: 0.444444444444444444, open_label: 1, detour_delta: 119.999999999999999,
+        detour_frac: 0.333333333333333333),
     ]
 
     let result = validationService.validate(ticks: precisionTicks)
 
     #expect(result.totalRecords == 2)
-    #expect(result.validationRate > 0.0) // Should handle precision without failing
+    #expect(result.validationRate > 0.0)  // Should handle precision without failing
     // Precision should not cause range violations for valid values
-    #expect(result.dataQualityMetrics.rangeViolations.isEmpty || result.dataQualityMetrics.rangeViolations.values.allSatisfy { $0 == 0 })
+    #expect(
+      result.dataQualityMetrics.rangeViolations.isEmpty
+        || result.dataQualityMetrics.rangeViolations.values.allSatisfy { $0 == 0 })
   }
 
   @Test("Non-default horizons should yield actionable warnings")
@@ -772,24 +831,31 @@ struct DataValidationTests {
     try await setUp()
 
     let nonStandardFeatures = [
-      FeatureVector(bridge_id: 1, horizon_min: 2, min_sin: 0.5, min_cos: 0.866, dow_sin: 0.0, dow_cos: 1.0,
-                    open_5m: 0.3, open_30m: 0.7, detour_delta: 120.0, cross_rate: 0.25,
-                    via_routable: 0.8, via_penalty: 30.0, gate_anom: 0.1, detour_frac: 0.3,
-                    current_speed: 50.0, normal_speed: 60.0, target: 1), // Non-standard 2-minute horizon
-      FeatureVector(bridge_id: 2, horizon_min: 7, min_sin: 0.707, min_cos: 0.707, dow_sin: 0.707, dow_cos: 0.707,
-                    open_5m: 0.4, open_30m: 0.6, detour_delta: 90.0, cross_rate: 0.35,
-                    via_routable: 0.9, via_penalty: 25.0, gate_anom: 0.05, detour_frac: 0.2,
-                    current_speed: 55.0, normal_speed: 65.0, target: 0), // Non-standard 7-minute horizon
-      FeatureVector(bridge_id: 3, horizon_min: 11, min_sin: 0.259, min_cos: 0.966, dow_sin: 0.5, dow_cos: 0.866,
-                    open_5m: 0.5, open_30m: 0.8, detour_delta: 150.0, cross_rate: 0.15,
-                    via_routable: 0.7, via_penalty: 35.0, gate_anom: 0.15, detour_frac: 0.4,
-                    current_speed: 45.0, normal_speed: 55.0, target: 1), // Non-standard 11-minute horizon
+      FeatureVector(
+        bridge_id: 1, horizon_min: 2, min_sin: 0.5, min_cos: 0.866, dow_sin: 0.0, dow_cos: 1.0,
+        open_5m: 0.3, open_30m: 0.7, detour_delta: 120.0, cross_rate: 0.25,
+        via_routable: 0.8, via_penalty: 30.0, gate_anom: 0.1, detour_frac: 0.3,
+        current_speed: 50.0, normal_speed: 60.0, target: 1),  // Non-standard 2-minute horizon
+      FeatureVector(
+        bridge_id: 2, horizon_min: 7, min_sin: 0.707, min_cos: 0.707, dow_sin: 0.707,
+        dow_cos: 0.707,
+        open_5m: 0.4, open_30m: 0.6, detour_delta: 90.0, cross_rate: 0.35,
+        via_routable: 0.9, via_penalty: 25.0, gate_anom: 0.05, detour_frac: 0.2,
+        current_speed: 55.0, normal_speed: 65.0, target: 0),  // Non-standard 7-minute horizon
+      FeatureVector(
+        bridge_id: 3, horizon_min: 11, min_sin: 0.259, min_cos: 0.966, dow_sin: 0.5, dow_cos: 0.866,
+        open_5m: 0.5, open_30m: 0.8, detour_delta: 150.0, cross_rate: 0.15,
+        via_routable: 0.7, via_penalty: 35.0, gate_anom: 0.15, detour_frac: 0.4,
+        current_speed: 45.0, normal_speed: 55.0, target: 1),  // Non-standard 11-minute horizon
     ]
 
     let result = validationService.validate(features: nonStandardFeatures)
 
     #expect(result.totalRecords == 3)
-    #expect(result.warnings.contains { $0.contains("Missing features for horizons") || $0.contains("horizon") })
+    #expect(
+      result.warnings.contains {
+        $0.contains("Missing features for horizons") || $0.contains("horizon")
+      })
     #expect(result.horizonCoverage[2] == 1)
     #expect(result.horizonCoverage[7] == 1)
     #expect(result.horizonCoverage[11] == 1)
@@ -801,24 +867,28 @@ struct DataValidationTests {
   mutating func fuzzTestingResilience() async throws {
     try await setUp()
 
-    for iteration in 1 ... 10 {
+    for iteration in 1...10 {
       var fuzzTicks: [ProbeTickRaw] = []
 
       // Generate random probe ticks with various valid/invalid combinations
-      for _ in 1 ... 50 {
-        let randomTick = ProbeTickRaw(v: Int.random(in: 1 ... 2),
-                                      ts_utc: generateRandomTimestamp(),
-                                      bridge_id: Int.random(in: 1 ... 20),
-                                      cross_k: randomOptionalDouble(validRange: 0 ... 2, nilChance: 0.1, nanChance: 0.05),
-                                      cross_n: randomOptionalDouble(validRange: 0 ... 3, nilChance: 0.1, nanChance: 0.05),
-                                      via_routable: randomOptionalDouble(validRange: 0 ... 1, nilChance: 0.1, nanChance: 0.05),
-                                      via_penalty_sec: randomOptionalDouble(validRange: 0 ... 100, nilChance: 0.1, nanChance: 0.05),
-                                      gate_anom: randomOptionalDouble(validRange: 0 ... 1, nilChance: 0.1, nanChance: 0.05),
-                                      alternates_total: randomOptionalDouble(validRange: 0 ... 10, nilChance: 0.1, nanChance: 0.05),
-                                      alternates_avoid: randomOptionalDouble(validRange: 0 ... 1, nilChance: 0.1, nanChance: 0.05),
-                                      open_label: Int.random(in: 0 ... 1),
-                                      detour_delta: randomOptionalDouble(validRange: 0 ... 300, nilChance: 0.1, nanChance: 0.05),
-                                      detour_frac: randomOptionalDouble(validRange: 0 ... 1, nilChance: 0.1, nanChance: 0.05))
+      for _ in 1...50 {
+        let randomTick = ProbeTickRaw(
+          v: Int.random(in: 1...2),
+          ts_utc: generateRandomTimestamp(),
+          bridge_id: Int.random(in: 1...20),
+          cross_k: randomOptionalDouble(validRange: 0...2, nilChance: 0.1, nanChance: 0.05),
+          cross_n: randomOptionalDouble(validRange: 0...3, nilChance: 0.1, nanChance: 0.05),
+          via_routable: randomOptionalDouble(validRange: 0...1, nilChance: 0.1, nanChance: 0.05),
+          via_penalty_sec: randomOptionalDouble(
+            validRange: 0...100, nilChance: 0.1, nanChance: 0.05),
+          gate_anom: randomOptionalDouble(validRange: 0...1, nilChance: 0.1, nanChance: 0.05),
+          alternates_total: randomOptionalDouble(
+            validRange: 0...10, nilChance: 0.1, nanChance: 0.05),
+          alternates_avoid: randomOptionalDouble(
+            validRange: 0...1, nilChance: 0.1, nanChance: 0.05),
+          open_label: Int.random(in: 0...1),
+          detour_delta: randomOptionalDouble(validRange: 0...300, nilChance: 0.1, nanChance: 0.05),
+          detour_frac: randomOptionalDouble(validRange: 0...1, nilChance: 0.1, nanChance: 0.05))
         fuzzTicks.append(randomTick)
       }
 
@@ -826,7 +896,7 @@ struct DataValidationTests {
       let result = validationService.validate(ticks: fuzzTicks)
 
       #expect(result.totalRecords == 50)
-      #expect(!result.summary.isEmpty) // Should always provide some summary
+      #expect(!result.summary.isEmpty)  // Should always provide some summary
 
       // For iteration tracking
       if iteration % 5 == 0 {
@@ -841,31 +911,35 @@ struct DataValidationTests {
 
     let mixedQualityTicks = [
       // Good record
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
       // Bad bridge ID
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 999,
-                   cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
-                   via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 999,
+        cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
+        via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
+        alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
       // Good record for bridge 2
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:02:00Z", bridge_id: 2,
-                   cross_k: 0.4, cross_n: 0.9, via_routable: 0.7,
-                   via_penalty_sec: 35.0, gate_anom: 0.15, alternates_total: 1.0,
-                   alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:02:00Z", bridge_id: 2,
+        cross_k: 0.4, cross_n: 0.9, via_routable: 0.7,
+        via_penalty_sec: 35.0, gate_anom: 0.15, alternates_total: 1.0,
+        alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
       // Invalid timestamp
-      ProbeTickRaw(v: 1, ts_utc: "invalid-timestamp", bridge_id: 1,
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "invalid-timestamp", bridge_id: 1,
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
     ]
 
     let result = validationService.validate(ticks: mixedQualityTicks)
 
     #expect(result.totalRecords == 4)
-    #expect(result.bridgeCount >= 2) // Should identify valid bridges
+    #expect(result.bridgeCount >= 2)  // Should identify valid bridges
 
     // Should have targeted error messages
     #expect(result.errors.contains { $0.contains("bridge") || $0.contains("999") })
@@ -881,14 +955,16 @@ struct DataValidationTests {
 
     // Create a consistent test dataset
     let snapshotTicks = [
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 1,
-                   cross_k: Double.nan, cross_n: 1.1, via_routable: 0.9,
-                   via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 1,
+        cross_k: Double.nan, cross_n: 1.1, via_routable: 0.9,
+        via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
+        alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
     ]
 
     let result = validationService.validate(ticks: snapshotTicks)
@@ -896,9 +972,9 @@ struct DataValidationTests {
     // Snapshot assertions - should remain consistent unless intentionally changed
     #expect(result.totalRecords == 2)
     #expect(result.bridgeCount == 1)
-    #expect(result.isValid == false) // Due to NaN value
+    #expect(result.isValid == false)  // Due to NaN value
     #expect(result.dataQualityMetrics.nanCounts["cross_k"] == 1)
-    #expect(result.errors.count >= 1) // Should have NaN error
+    #expect(result.errors.count >= 1)  // Should have NaN error
     #expect(result.summary.contains("2 records"))
     #expect(result.summary.contains("1 bridge"))
   }
@@ -913,10 +989,11 @@ struct DataValidationTests {
     // Note: Swift's strong typing prevents us from adding unknown fields directly,
     // but we can test the validator's response to unexpected field combinations
     let standardFeatures = [
-      FeatureVector(bridge_id: 1, horizon_min: 0, min_sin: 0.5, min_cos: 0.866, dow_sin: 0.0, dow_cos: 1.0,
-                    open_5m: 0.3, open_30m: 0.7, detour_delta: 120.0, cross_rate: 0.25,
-                    via_routable: 0.8, via_penalty: 30.0, gate_anom: 0.1, detour_frac: 0.3,
-                    current_speed: 50.0, normal_speed: 60.0, target: 1),
+      FeatureVector(
+        bridge_id: 1, horizon_min: 0, min_sin: 0.5, min_cos: 0.866, dow_sin: 0.0, dow_cos: 1.0,
+        open_5m: 0.3, open_30m: 0.7, detour_delta: 120.0, cross_rate: 0.25,
+        via_routable: 0.8, via_penalty: 30.0, gate_anom: 0.1, detour_frac: 0.3,
+        current_speed: 50.0, normal_speed: 60.0, target: 1)
     ]
 
     let result = validationService.validate(features: standardFeatures)
@@ -935,26 +1012,30 @@ struct DataValidationTests {
 
     // Create baseline data with known statistical properties
     let baselineTicks = [
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 1,
-                   cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
-                   via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 1,
+        cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
+        via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
+        alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
     ]
 
     // Create drifted data with significantly different statistics
     let driftedTicks = [
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T13:00:00Z", bridge_id: 1,
-                   cross_k: 1.5, cross_n: 2.0, via_routable: 0.3, // Significantly different values
-                   via_penalty_sec: 80.0, gate_anom: 0.8, alternates_total: 8.0,
-                   alternates_avoid: 0.9, open_label: 0, detour_delta: 300.0, detour_frac: 0.8),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T13:01:00Z", bridge_id: 1,
-                   cross_k: 1.6, cross_n: 2.1, via_routable: 0.2,
-                   via_penalty_sec: 85.0, gate_anom: 0.9, alternates_total: 9.0,
-                   alternates_avoid: 0.95, open_label: 1, detour_delta: 320.0, detour_frac: 0.9),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T13:00:00Z", bridge_id: 1,
+        cross_k: 1.5, cross_n: 2.0, via_routable: 0.3,  // Significantly different values
+        via_penalty_sec: 80.0, gate_anom: 0.8, alternates_total: 8.0,
+        alternates_avoid: 0.9, open_label: 0, detour_delta: 300.0, detour_frac: 0.8),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T13:01:00Z", bridge_id: 1,
+        cross_k: 1.6, cross_n: 2.1, via_routable: 0.2,
+        via_penalty_sec: 85.0, gate_anom: 0.9, alternates_total: 9.0,
+        alternates_avoid: 0.95, open_label: 1, detour_delta: 320.0, detour_frac: 0.9),
     ]
 
     let baselineResult = validationService.validate(ticks: baselineTicks)
@@ -976,13 +1057,14 @@ struct DataValidationTests {
 
     // Create a moderately large dataset
     var largeTicks: [ProbeTickRaw] = []
-    for i in 1 ... 500 {
+    for i in 1...500 {
       largeTicks.append(
-        ProbeTickRaw(v: 1, ts_utc: "2025-01-01T\(String(format: "%02d", i % 24)):00:00Z",
-                     bridge_id: (i % 10) + 1,
-                     cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                     via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                     alternates_avoid: 0.5, open_label: i % 2, detour_delta: 120.0, detour_frac: 0.3)
+        ProbeTickRaw(
+          v: 1, ts_utc: "2025-01-01T\(String(format: "%02d", i % 24)):00:00Z",
+          bridge_id: (i % 10) + 1,
+          cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+          via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+          alternates_avoid: 0.5, open_label: i % 2, detour_delta: 120.0, detour_frac: 0.3)
       )
     }
 
@@ -1010,7 +1092,8 @@ struct DataValidationTests {
         var result = DataValidationResult()
         let invalidBridges = ticks.filter { $0.bridge_id > 100 }
         if !invalidBridges.isEmpty {
-          result.errors.append("Mock validator: Found \(invalidBridges.count) bridges with ID > 100")
+          result.errors.append(
+            "Mock validator: Found \(invalidBridges.count) bridges with ID > 100")
         }
         return result
       }
@@ -1029,10 +1112,11 @@ struct DataValidationTests {
 
     // Test with data that should trigger the custom validator
     let testTicks = [
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 150, // Should trigger mock validator
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 150,  // Should trigger mock validator
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3)
     ]
 
     let result = await validationService.validateAsync(ticks: testTicks)
@@ -1042,7 +1126,9 @@ struct DataValidationTests {
 
     // Test validator explanation
     let explanations = validationService.getValidatorExplanations()
-    #expect(explanations["MockBridgeIDValidator"] == "Mock validator that flags bridge IDs greater than 100")
+    #expect(
+      explanations["MockBridgeIDValidator"]
+        == "Mock validator that flags bridge IDs greater than 100")
 
     // Clean up
     validationService.removeValidator(named: "MockBridgeIDValidator")
@@ -1055,7 +1141,7 @@ struct DataValidationTests {
     // Create multiple validators with different priorities
     struct HighPriorityValidator: CustomValidator {
       let name = "HighPriorityValidator"
-      let priority = 1 // High priority (lower number = higher priority)
+      let priority = 1  // High priority (lower number = higher priority)
 
       func validate(ticks: [ProbeTickRaw]) async -> DataValidationResult {
         var result = DataValidationResult()
@@ -1085,7 +1171,8 @@ struct DataValidationTests {
           ($0.cross_k ?? 0) > 2.0 || ($0.cross_n ?? 0) > 3.0
         }
         if !highSpeedRecords.isEmpty {
-          result.warnings.append("MediumPriority: Found \(highSpeedRecords.count) records with high speed values")
+          result.warnings.append(
+            "MediumPriority: Found \(highSpeedRecords.count) records with high speed values")
         }
         return result
       }
@@ -1109,7 +1196,7 @@ struct DataValidationTests {
           // Simple weekend detection (Saturday = 6, Sunday = 0)
           if let date = ISO8601DateFormatter().date(from: tick.ts_utc) {
             let weekday = Calendar.current.component(.weekday, from: date)
-            return weekday == 1 || weekday == 7 // Sunday or Saturday
+            return weekday == 1 || weekday == 7  // Sunday or Saturday
           }
           return false
         }
@@ -1140,24 +1227,27 @@ struct DataValidationTests {
 
     // Test 2: Verify priority ordering (should be sorted by priority)
     let testTicks = [
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
-                   cross_k: 2.5, cross_n: 3.5, via_routable: 0.8, // High speed values
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 2,
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.9,
-                   via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
+        cross_k: 2.5, cross_n: 3.5, via_routable: 0.8,  // High speed values
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:01:00Z", bridge_id: 2,
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.9,
+        via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
+        alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
     ]
 
     // Add more records to trigger high priority validator
     var largeDataset = testTicks
-    for i in 3 ... 15 {
+    for i in 3...15 {
       largeDataset.append(
-        ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:\(String(format: "%02d", i)):00Z", bridge_id: i,
-                     cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                     via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                     alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3)
+        ProbeTickRaw(
+          v: 1, ts_utc: "2025-01-01T12:\(String(format: "%02d", i)):00Z", bridge_id: i,
+          cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+          via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+          alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3)
       )
     }
 
@@ -1180,7 +1270,7 @@ struct DataValidationTests {
     let updatedExplanations = validationService.getValidatorExplanations()
     #expect(updatedExplanations["HighPriorityValidator"] != nil)
     #expect(updatedExplanations["LowPriorityValidator"] != nil)
-    #expect(updatedExplanations["MediumPriorityValidator"] == nil) // Should be removed
+    #expect(updatedExplanations["MediumPriorityValidator"] == nil)  // Should be removed
 
     // Clean up
     validationService.removeValidator(named: "HighPriorityValidator")
@@ -1202,7 +1292,7 @@ struct DataValidationTests {
     // Real data should have reasonable validation results
     #expect(result.totalRecords > 0)
     #expect(result.bridgeCount > 0)
-    #expect(result.validationRate > 0.5) // At least 50% should be valid
+    #expect(result.validationRate > 0.5)  // At least 50% should be valid
     #expect(result.timestampRange.first != nil)
     #expect(result.timestampRange.last != nil)
 
@@ -1233,7 +1323,9 @@ struct DataValidationTests {
 
     if !result.warnings.isEmpty {
       for warning in result.warnings {
-        #expect(warning.contains("High") || warning.contains("Missing") || warning.contains("Unbalanced") || warning.contains("Non-monotonic"))
+        #expect(
+          warning.contains("High") || warning.contains("Missing") || warning.contains("Unbalanced")
+            || warning.contains("Non-monotonic"))
       }
     }
   }
@@ -1242,25 +1334,27 @@ struct DataValidationTests {
 
   /// Generates a random timestamp in ISO8601 format
   private func generateRandomTimestamp() -> String {
-    let year = Int.random(in: 2020 ... 2030)
-    let month = Int.random(in: 1 ... 12)
-    let day = Int.random(in: 1 ... 28) // Safe for all months
-    let hour = Int.random(in: 0 ... 23)
-    let minute = Int.random(in: 0 ... 59)
-    let second = Int.random(in: 0 ... 59)
+    let year = Int.random(in: 2020...2030)
+    let month = Int.random(in: 1...12)
+    let day = Int.random(in: 1...28)  // Safe for all months
+    let hour = Int.random(in: 0...23)
+    let minute = Int.random(in: 0...59)
+    let second = Int.random(in: 0...59)
 
     return String(format: "%04d-%02d-%02dT%02d:%02d:%02dZ", year, month, day, hour, minute, second)
   }
 
   /// Generates a random optional double with configurable nil and NaN chances
-  private func randomOptionalDouble(validRange: ClosedRange<Double>, nilChance: Double, nanChance: Double) -> Double? {
-    let rand = Double.random(in: 0 ... 1)
+  private func randomOptionalDouble(
+    validRange: ClosedRange<Double>, nilChance: Double, nanChance: Double
+  ) -> Double? {
+    let rand = Double.random(in: 0...1)
 
     if rand < nilChance {
       return nil
     } else if rand < nilChance + nanChance {
       return Double.nan
-    } else if rand < nilChance + nanChance + 0.01 { // 1% chance of infinity
+    } else if rand < nilChance + nanChance + 0.01 {  // 1% chance of infinity
       return Double.infinity
     } else {
       return Double.random(in: validRange)
@@ -1277,18 +1371,21 @@ struct DataValidationTests {
     }
 
     // Try to load from the test bundle
-    if let url = bundle.url(forResource: "Samples/ndjson/minutes_2025-08-12", withExtension: "ndjson") {
+    if let url = bundle.url(
+      forResource: "Samples/ndjson/minutes_2025-08-12", withExtension: "ndjson")
+    {
       return try loadSampleDataFromURL(url)
     }
 
     // Fallback: try to construct path relative to project root
     let projectRoot = URL(fileURLWithPath: #file)
-      .deletingLastPathComponent() // BridgetTests
-      .deletingLastPathComponent() // Bridget.xcodeproj
-      .deletingLastPathComponent() // Bridget
-      .deletingLastPathComponent() // Project root
+      .deletingLastPathComponent()  // BridgetTests
+      .deletingLastPathComponent()  // Bridget.xcodeproj
+      .deletingLastPathComponent()  // Bridget
+      .deletingLastPathComponent()  // Project root
 
-    let sampleURL = projectRoot
+    let sampleURL =
+      projectRoot
       .appendingPathComponent("Samples")
       .appendingPathComponent("ndjson")
       .appendingPathComponent("minutes_2025-08-12.ndjson")
@@ -1312,7 +1409,7 @@ struct DataValidationTests {
     var ticks: [ProbeTickRaw] = []
     let decoder = JSONDecoder()
 
-    for (index, line) in lines.prefix(100).enumerated() { // Limit to first 100 lines for testing
+    for (index, line) in lines.prefix(100).enumerated() {  // Limit to first 100 lines for testing
       do {
         let tick = try decoder.decode(ProbeTickRaw.self, from: line.data(using: .utf8)!)
         ticks.append(tick)
@@ -1330,36 +1427,37 @@ struct DataValidationTests {
     goldenSampleTicks = []
     let baseTime = ISO8601DateFormatter().date(from: "2025-01-01T12:00:00Z")!
 
-    for hour in 0 ..< 24 {
+    for hour in 0..<24 {
       for bridgeId in [1, 2] {
         let timestamp = Calendar.current.date(byAdding: .hour, value: hour, to: baseTime)!
         let isoString = ISO8601DateFormatter().string(from: timestamp)
 
         // Use deterministic values that are guaranteed to pass validation
-        let crossK = 0.5 + (Double(hour % 3) * 0.2) // 0.5, 0.7, 0.9, 0.5, 0.7, 0.9...
+        let crossK = 0.5 + (Double(hour % 3) * 0.2)  // 0.5, 0.7, 0.9, 0.5, 0.7, 0.9...
         let crossN = 1.0
-        let viaRoutable = 0.8 + (Double(hour % 2) * 0.2) // 0.8, 1.0, 0.8, 1.0...
-        let viaPenalty = 20.0 + (Double(hour % 4) * 10.0) // 20, 30, 40, 50, 20, 30...
-        let gateAnom = 0.1 + (Double(hour % 2) * 0.05) // 0.1, 0.15, 0.1, 0.15...
-        let alternatesTotal = 2.0 + Double(hour % 2) // 2.0, 3.0, 2.0, 3.0...
-        let alternatesAvoid = 0.2 + (Double(hour % 3) * 0.1) // 0.2, 0.3, 0.4, 0.2, 0.3...
-        let openLabel = hour % 2 // 0, 1, 0, 1...
-        let detourDelta = 120.0 + (Double(hour % 3) * 60.0) // 120, 180, 240, 120, 180...
-        let detourFrac = 0.3 + (Double(hour % 4) * 0.1) // 0.3, 0.4, 0.5, 0.6, 0.3...
+        let viaRoutable = 0.8 + (Double(hour % 2) * 0.2)  // 0.8, 1.0, 0.8, 1.0...
+        let viaPenalty = 20.0 + (Double(hour % 4) * 10.0)  // 20, 30, 40, 50, 20, 30...
+        let gateAnom = 0.1 + (Double(hour % 2) * 0.05)  // 0.1, 0.15, 0.1, 0.15...
+        let alternatesTotal = 2.0 + Double(hour % 2)  // 2.0, 3.0, 2.0, 3.0...
+        let alternatesAvoid = 0.2 + (Double(hour % 3) * 0.1)  // 0.2, 0.3, 0.4, 0.2, 0.3...
+        let openLabel = hour % 2  // 0, 1, 0, 1...
+        let detourDelta = 120.0 + (Double(hour % 3) * 60.0)  // 120, 180, 240, 120, 180...
+        let detourFrac = 0.3 + (Double(hour % 4) * 0.1)  // 0.3, 0.4, 0.5, 0.6, 0.3...
 
-        let tick = ProbeTickRaw(v: hour * 2 + bridgeId,
-                                ts_utc: isoString,
-                                bridge_id: bridgeId,
-                                cross_k: crossK,
-                                cross_n: crossN,
-                                via_routable: viaRoutable,
-                                via_penalty_sec: viaPenalty,
-                                gate_anom: gateAnom,
-                                alternates_total: alternatesTotal,
-                                alternates_avoid: alternatesAvoid,
-                                open_label: openLabel,
-                                detour_delta: detourDelta,
-                                detour_frac: detourFrac)
+        let tick = ProbeTickRaw(
+          v: hour * 2 + bridgeId,
+          ts_utc: isoString,
+          bridge_id: bridgeId,
+          cross_k: crossK,
+          cross_n: crossN,
+          via_routable: viaRoutable,
+          via_penalty_sec: viaPenalty,
+          gate_anom: gateAnom,
+          alternates_total: alternatesTotal,
+          alternates_avoid: alternatesAvoid,
+          open_label: openLabel,
+          detour_delta: detourDelta,
+          detour_frac: detourFrac)
         goldenSampleTicks.append(tick)
       }
     }
@@ -1373,23 +1471,24 @@ struct DataValidationTests {
         let weekday = Calendar.current.component(.weekday, from: date)
 
         let hour = Calendar.current.component(.hour, from: date)
-        let feature = FeatureVector(bridge_id: tick.bridge_id,
-                                    horizon_min: horizon,
-                                    min_sin: sin(Double(minute) * .pi / 30),
-                                    min_cos: cos(Double(minute) * .pi / 30),
-                                    dow_sin: sin(Double(weekday) * .pi / 7),
-                                    dow_cos: cos(Double(weekday) * .pi / 7),
-                                    open_5m: tick.open_label == 1 ? 1.0 : 0.0,
-                                    open_30m: tick.open_label == 1 ? 1.0 : 0.0,
-                                    detour_delta: tick.detour_delta ?? 120.0,
-                                    cross_rate: (tick.cross_k ?? 0.5) / (tick.cross_n ?? 1.0),
-                                    via_routable: tick.via_routable ?? 0.8,
-                                    via_penalty: tick.via_penalty_sec ?? 20.0,
-                                    gate_anom: tick.gate_anom ?? 0.1,
-                                    detour_frac: tick.detour_frac ?? 0.3,
-                                    current_speed: 25.0 + (Double(hour % 5) * 5.0),
-                                    normal_speed: 30.0 + (Double(hour % 3) * 2.0),
-                                    target: tick.open_label)
+        let feature = FeatureVector(
+          bridge_id: tick.bridge_id,
+          horizon_min: horizon,
+          min_sin: sin(Double(minute) * .pi / 30),
+          min_cos: cos(Double(minute) * .pi / 30),
+          dow_sin: sin(Double(weekday) * .pi / 7),
+          dow_cos: cos(Double(weekday) * .pi / 7),
+          open_5m: tick.open_label == 1 ? 1.0 : 0.0,
+          open_30m: tick.open_label == 1 ? 1.0 : 0.0,
+          detour_delta: tick.detour_delta ?? 120.0,
+          cross_rate: (tick.cross_k ?? 0.5) / (tick.cross_n ?? 1.0),
+          via_routable: tick.via_routable ?? 0.8,
+          via_penalty: tick.via_penalty_sec ?? 20.0,
+          gate_anom: tick.gate_anom ?? 0.1,
+          detour_frac: tick.detour_frac ?? 0.3,
+          current_speed: 25.0 + (Double(hour % 5) * 5.0),
+          normal_speed: 30.0 + (Double(hour % 3) * 2.0),
+          target: tick.open_label)
         goldenSampleFeatures.append(feature)
       }
     }
@@ -1402,73 +1501,81 @@ struct DataValidationTests {
     // Test 1: Empty array
     let emptyResult = validationService.validate(ticks: [])
     #expect(emptyResult.totalRecords == 0)
-    #expect(emptyResult.validationRate >= 0.0) // Should not crash
-    #expect(!emptyResult.summary.isEmpty) // Should provide meaningful summary
+    #expect(emptyResult.validationRate >= 0.0)  // Should not crash
+    #expect(!emptyResult.summary.isEmpty)  // Should provide meaningful summary
 
     // Test 2: Single element array
     let singleTick = [
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3)
     ]
     let singleResult = validationService.validate(ticks: singleTick)
     #expect(singleResult.totalRecords == 1)
-    #expect(singleResult.validationRate >= 0.0) // Should not crash
+    #expect(singleResult.validationRate >= 0.0)  // Should not crash
     #expect(singleResult.timestampRange.first != nil)
     #expect(singleResult.timestampRange.last != nil)
 
     // Test 3: Two identical timestamps (should be allowed for non-decreasing)
     let duplicateTimeTicks = [
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 2,
-                   cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
-                   via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 2,
+        cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
+        via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
+        alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
     ]
     let duplicateResult = validationService.validate(ticks: duplicateTimeTicks)
     #expect(duplicateResult.totalRecords == 2)
-    #expect(duplicateResult.validationRate >= 0.0) // Should not crash
+    #expect(duplicateResult.validationRate >= 0.0)  // Should not crash
     #expect(duplicateResult.timestampRange.first != nil)
     #expect(duplicateResult.timestampRange.last != nil)
 
     // Test 4: All invalid timestamps
     let invalidTimeTicks = [
-      ProbeTickRaw(v: 1, ts_utc: "invalid-timestamp", bridge_id: 1,
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
-      ProbeTickRaw(v: 1, ts_utc: "also-invalid", bridge_id: 2,
-                   cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
-                   via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "invalid-timestamp", bridge_id: 1,
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "also-invalid", bridge_id: 2,
+        cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
+        via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
+        alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
     ]
     let invalidResult = validationService.validate(ticks: invalidTimeTicks)
     #expect(invalidResult.totalRecords == 2)
-    #expect(invalidResult.validationRate >= 0.0) // Should not crash
+    #expect(invalidResult.validationRate >= 0.0)  // Should not crash
     #expect(invalidResult.errors.contains { $0.contains("Invalid timestamp") })
 
     // Test 5: Mixed valid/invalid timestamps
     let mixedTimeTicks = [
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
-      ProbeTickRaw(v: 1, ts_utc: "invalid-timestamp", bridge_id: 2,
-                   cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
-                   via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
-                   alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:02:00Z", bridge_id: 3,
-                   cross_k: 0.4, cross_n: 0.9, via_routable: 0.7,
-                   via_penalty_sec: 35.0, gate_anom: 0.15, alternates_total: 1.0,
-                   alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.3),
+      ProbeTickRaw(
+        v: 1, ts_utc: "invalid-timestamp", bridge_id: 2,
+        cross_k: 0.6, cross_n: 1.1, via_routable: 0.9,
+        via_penalty_sec: 25.0, gate_anom: 0.05, alternates_total: 3.0,
+        alternates_avoid: 0.3, open_label: 1, detour_delta: 90.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:02:00Z", bridge_id: 3,
+        cross_k: 0.4, cross_n: 0.9, via_routable: 0.7,
+        via_penalty_sec: 35.0, gate_anom: 0.15, alternates_total: 1.0,
+        alternates_avoid: 0.7, open_label: 0, detour_delta: 150.0, detour_frac: 0.4),
     ]
     let mixedResult = validationService.validate(ticks: mixedTimeTicks)
     #expect(mixedResult.totalRecords == 3)
-    #expect(mixedResult.validationRate >= 0.0) // Should not crash
+    #expect(mixedResult.validationRate >= 0.0)  // Should not crash
     #expect(mixedResult.errors.contains { $0.contains("Invalid timestamp") })
     #expect(mixedResult.timestampRange.first != nil)
     #expect(mixedResult.timestampRange.last != nil)
@@ -1480,18 +1587,21 @@ struct DataValidationTests {
 
     // Test with actual leap second timestamps
     let leapSecondTicks = [
-      ProbeTickRaw(v: 1, ts_utc: "2025-06-30T23:59:60Z", bridge_id: 1, // Leap second
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
-      ProbeTickRaw(v: 1, ts_utc: "2025-06-30T23:59:59Z", bridge_id: 1, // Normal second
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
-      ProbeTickRaw(v: 1, ts_utc: "2025-07-01T00:00:00Z", bridge_id: 1, // Next day
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-06-30T23:59:60Z", bridge_id: 1,  // Leap second
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-06-30T23:59:59Z", bridge_id: 1,  // Normal second
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-07-01T00:00:00Z", bridge_id: 1,  // Next day
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
     ]
 
     let result = validationService.validate(ticks: leapSecondTicks)
@@ -1513,18 +1623,21 @@ struct DataValidationTests {
 
     // Test with various timezone formats
     let mixedTimezoneTicks = [
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1, // UTC
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00+00:00", bridge_id: 1, // UTC with offset
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00-08:00", bridge_id: 1, // PST
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,  // UTC
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00+00:00", bridge_id: 1,  // UTC with offset
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00-08:00", bridge_id: 1,  // PST
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
     ]
 
     let result = validationService.validate(ticks: mixedTimezoneTicks)
@@ -1543,22 +1656,26 @@ struct DataValidationTests {
 
     // Test with various malformed timestamps
     let malformedTicks = [
-      ProbeTickRaw(v: 1, ts_utc: "not-a-timestamp", bridge_id: 1,
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00", bridge_id: 1, // Missing timezone
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
-      ProbeTickRaw(v: 1, ts_utc: "2025-13-01T12:00:00Z", bridge_id: 1, // Invalid month
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
-      ProbeTickRaw(v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1, // Valid timestamp
-                   cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
-                   via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                   alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "not-a-timestamp", bridge_id: 1,
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00", bridge_id: 1,  // Missing timezone
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-13-01T12:00:00Z", bridge_id: 1,  // Invalid month
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
+      ProbeTickRaw(
+        v: 1, ts_utc: "2025-01-01T12:00:00Z", bridge_id: 1,  // Valid timestamp
+        cross_k: 0.5, cross_n: 1.0, via_routable: 0.8,
+        via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+        alternates_avoid: 0.5, open_label: 0, detour_delta: 120.0, detour_frac: 0.2),
     ]
 
     let result = validationService.validate(ticks: malformedTicks)
@@ -1586,12 +1703,13 @@ struct DataValidationTests {
       var testTicks: [ProbeTickRaw] = []
 
       // Generate test data
-      for i in 0 ..< size {
+      for i in 0..<size {
         let timestamp = "2025-01-01T12:\(String(format: "%02d", i)):00Z"
-        let tick = ProbeTickRaw(v: 1, ts_utc: timestamp, bridge_id: i + 1,
-                                cross_k: Double(i) * 0.1, cross_n: 1.0, via_routable: 0.8,
-                                via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
-                                alternates_avoid: 0.5, open_label: i % 2, detour_delta: 120.0, detour_frac: 0.3)
+        let tick = ProbeTickRaw(
+          v: 1, ts_utc: timestamp, bridge_id: i + 1,
+          cross_k: Double(i) * 0.1, cross_n: 1.0, via_routable: 0.8,
+          via_penalty_sec: 30.0, gate_anom: 0.1, alternates_total: 2.0,
+          alternates_avoid: 0.5, open_label: i % 2, detour_delta: 120.0, detour_frac: 0.3)
         testTicks.append(tick)
       }
 
@@ -1599,8 +1717,8 @@ struct DataValidationTests {
       let result = validationService.validate(ticks: testTicks)
 
       #expect(result.totalRecords == size)
-      #expect(result.validationRate >= 0.0) // Should not crash
-      #expect(!result.summary.isEmpty) // Should provide meaningful summary
+      #expect(result.validationRate >= 0.0)  // Should not crash
+      #expect(!result.summary.isEmpty)  // Should provide meaningful summary
 
       // For non-empty arrays, we should have timestamp range
       if size > 0 {
@@ -1621,15 +1739,15 @@ struct DataValidationTests {
     var adjacentCount = 0
     for (prev, curr) in zip(testArray, testArray.dropFirst()) {
       adjacentCount += 1
-      #expect(curr == prev + 1) // Should be consecutive numbers
+      #expect(curr == prev + 1)  // Should be consecutive numbers
     }
-    #expect(adjacentCount == 4) // Should have 4 adjacent pairs for 5 elements
+    #expect(adjacentCount == 4)  // Should have 4 adjacent pairs for 5 elements
 
     // Test safe array access using existing extensions
     #expect(testArray[safe: 0] == 1)
     #expect(testArray[safe: 4] == 5)
-    #expect(testArray[safe: 5] == nil) // Out of bounds should return nil
-    #expect(testArray[safe: -1] == nil) // Negative index should return nil
+    #expect(testArray[safe: 5] == nil)  // Out of bounds should return nil
+    #expect(testArray[safe: -1] == nil)  // Negative index should return nil
 
     // Test with empty array
     let emptyArray: [Int] = []
@@ -1637,7 +1755,7 @@ struct DataValidationTests {
     for _ in zip(emptyArray, emptyArray.dropFirst()) {
       emptyAdjacentCount += 1
     }
-    #expect(emptyAdjacentCount == 0) // Should not iterate over empty array
+    #expect(emptyAdjacentCount == 0)  // Should not iterate over empty array
 
     // Test with single element array
     let singleArray = [42]
@@ -1645,6 +1763,6 @@ struct DataValidationTests {
     for _ in zip(singleArray, singleArray.dropFirst()) {
       singleAdjacentCount += 1
     }
-    #expect(singleAdjacentCount == 0) // Should not iterate over single element
+    #expect(singleAdjacentCount == 0)  // Should not iterate over single element
   }
 }

@@ -199,7 +199,8 @@ struct FileManagerUtilsTests {
     let testDir = try createUniqueTestDirectory()
     defer { cleanupTestDirectory(testDir) }
 
-    let tempFile = try FileManagerUtils.createTemporaryFile(in: testDir, prefix: "test", extension: "tmp")
+    let tempFile = try FileManagerUtils.createTemporaryFile(
+      in: testDir, prefix: "test", extension: "tmp")
 
     #expect(FileManagerUtils.fileExists(at: tempFile))
     #expect(tempFile.pathExtension == "tmp")
@@ -292,7 +293,8 @@ struct FileManagerUtilsTests {
     let oldDate = Date().addingTimeInterval(-2 * 24 * 60 * 60)
     try FileManager.default.setAttributes([.modificationDate: oldDate], ofItemAtPath: oldFile.path)
 
-    try FileManagerUtils.removeOldFiles(in: testDir, olderThan: Date().addingTimeInterval(-1 * 24 * 60 * 60))
+    try FileManagerUtils.removeOldFiles(
+      in: testDir, olderThan: Date().addingTimeInterval(-1 * 24 * 60 * 60))
     #expect(!FileManagerUtils.fileExists(at: oldFile))
     #expect(FileManagerUtils.fileExists(at: newFile))
   }

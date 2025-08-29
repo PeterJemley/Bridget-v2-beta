@@ -42,7 +42,7 @@ func calculateCrossRate(at timestamp: Date, from events: [BridgeEvent]) -> (Int,
   // For now, use a simplified calculation based on bridge openings
   // In a real implementation, this would come from traffic sensors or GPS data
   let crossK = crossingEvents.count
-  let crossN = max(crossK, 1) // Ensure we don't divide by zero
+  let crossN = max(crossK, 1)  // Ensure we don't divide by zero
 
   return (crossK, crossN)
 }
@@ -60,11 +60,11 @@ func calculateCrossRate(at timestamp: Date, from events: [BridgeEvent]) -> (Int,
 func calculateViaMetrics(at timestamp: Date, from events: [BridgeEvent]) -> (Bool, Int) {
   // Check if there's an active bridge opening that would require via routing
   let activeEvent = events.first { event in
-    event.openDateTime <= timestamp &&
-      (event.closeDateTime == nil || event.closeDateTime! > timestamp)
+    event.openDateTime <= timestamp
+      && (event.closeDateTime == nil || event.closeDateTime! > timestamp)
   }
 
-  let viaRoutable = activeEvent == nil // Can route directly if bridge is closed
+  let viaRoutable = activeEvent == nil  // Can route directly if bridge is closed
   let viaPenaltySec = activeEvent != nil ? Int(activeEvent!.minutesOpen * 60) : 0
 
   return (viaRoutable, viaPenaltySec)
@@ -86,24 +86,31 @@ func calculateGateAnomaly(at timestamp: Date, from events: [BridgeEvent]) -> Dou
   let oneWeekAgo = calendar.date(byAdding: .day, value: -7, to: timestamp) ?? timestamp
 
   let recentEvents = events.filter { $0.openDateTime >= oneWeekAgo }
-  let averageMinutesOpen = recentEvents.isEmpty ? 5.0 :
-    Double(recentEvents.map { $0.minutesOpen }.reduce(0, +)) / Double(recentEvents.count)
+  let averageMinutesOpen =
+    recentEvents.isEmpty
+    ? 5.0 : Double(recentEvents.map { $0.minutesOpen }.reduce(0, +)) / Double(recentEvents.count)
 
   let currentEvent = events.first { event in
-    event.openDateTime <= timestamp &&
-      (event.closeDateTime == nil || event.closeDateTime! > timestamp)
+    event.openDateTime <= timestamp
+      && (event.closeDateTime == nil || event.closeDateTime! > timestamp)
   }
 
   if let currentEvent = currentEvent {
-    let currentMinutesOpen = currentEvent.closeDateTime != nil ?
-      Double(calendar.dateComponents([.minute], from: currentEvent.openDateTime, to: currentEvent.closeDateTime!).minute ?? 0) :
-      Double(calendar.dateComponents([.minute], from: currentEvent.openDateTime, to: timestamp).minute ?? 0)
+    let currentMinutesOpen =
+      currentEvent.closeDateTime != nil
+      ? Double(
+        calendar.dateComponents(
+          [.minute], from: currentEvent.openDateTime, to: currentEvent.closeDateTime!
+        ).minute ?? 0)
+      : Double(
+        calendar.dateComponents([.minute], from: currentEvent.openDateTime, to: timestamp).minute
+          ?? 0)
 
     let ratio = currentMinutesOpen / max(averageMinutesOpen, 1.0)
-    return min(max(ratio, 1.0), 8.0) // Clamp to [1, 8]
+    return min(max(ratio, 1.0), 8.0)  // Clamp to [1, 8]
   }
 
-  return 1.0 // No anomaly if bridge is closed
+  return 1.0  // No anomaly if bridge is closed
 }
 
 /// Calculates alternate route metrics for a specific timestamp.
@@ -119,8 +126,8 @@ func calculateGateAnomaly(at timestamp: Date, from events: [BridgeEvent]) -> Dou
 func calculateAlternateMetrics(at _: Date, from _: [BridgeEvent]) -> (Int, Int) {
   // For now, use simplified metrics
   // In a real implementation, this would come from routing engine analysis
-  let alternatesTotal = 3 // Assume 3 alternate routes available
-  let alternatesAvoid = 0 // Assume no alternates avoid the bridge span
+  let alternatesTotal = 3  // Assume 3 alternate routes available
+  let alternatesAvoid = 0  // Assume no alternates avoid the bridge span
 
   return (alternatesTotal, alternatesAvoid)
 }
@@ -136,14 +143,15 @@ func calculateAlternateMetrics(at _: Date, from _: [BridgeEvent]) -> (Int, Int) 
 ///   - timestamp: The timestamp for this tick
 ///   - events: Historical bridge events for this bridge
 /// - Returns: A ProbeTick instance if valid data exists, nil otherwise
-func makeProbeTick(for bridgeID: String,
-                   at timestamp: Date,
-                   from events: [BridgeEvent]) -> ProbeTick?
-{
+func makeProbeTick(
+  for bridgeID: String,
+  at timestamp: Date,
+  from events: [BridgeEvent]
+) -> ProbeTick? {
   // Find if there's an active bridge opening at this timestamp
   let activeEvent = events.first { event in
-    event.openDateTime <= timestamp &&
-      (event.closeDateTime == nil || event.closeDateTime! > timestamp)
+    event.openDateTime <= timestamp
+      && (event.closeDateTime == nil || event.closeDateTime! > timestamp)
   }
 
   // Calculate features based on historical data
@@ -159,25 +167,26 @@ func makeProbeTick(for bridgeID: String,
   }
 
   // Validate and clamp values to prevent crashes
-  let clampedViaPenaltySec = min(max(viaPenaltySec, 0), 900) // Clamp to [0, 900]
-  let clampedGateAnom = min(max(gateAnom, 1.0), 8.0) // Clamp to [1, 8]
+  let clampedViaPenaltySec = min(max(viaPenaltySec, 0), 900)  // Clamp to [0, 900]
+  let clampedGateAnom = min(max(gateAnom, 1.0), 8.0)  // Clamp to [1, 8]
   let clampedCrossK = max(crossK, 0)
-  let clampedCrossN = max(crossN, 1) // Ensure we don't have zero
+  let clampedCrossN = max(crossN, 1)  // Ensure we don't have zero
 
   // Create the ProbeTick record
-  let tick = ProbeTick(tsUtc: timestamp,
-                       bridgeId: bridgeIdInt,
-                       crossK: Int16(clampedCrossK),
-                       crossN: Int16(clampedCrossN),
-                       viaRoutable: viaRoutable,
-                       viaPenaltySec: Int32(clampedViaPenaltySec),
-                       gateAnom: clampedGateAnom,
-                       alternatesTotal: Int16(alternatesTotal),
-                       alternatesAvoid: Int16(alternatesAvoid),
-                       freeEtaSec: nil, // TODO: Implement real-time ETA calculation
-                       viaEtaSec: nil,  // TODO: Implement via route ETA calculation
-                       openLabel: openLabel,
-                       isValid: true)
+  let tick = ProbeTick(
+    tsUtc: timestamp,
+    bridgeId: bridgeIdInt,
+    crossK: Int16(clampedCrossK),
+    crossN: Int16(clampedCrossN),
+    viaRoutable: viaRoutable,
+    viaPenaltySec: Int32(clampedViaPenaltySec),
+    gateAnom: clampedGateAnom,
+    alternatesTotal: Int16(alternatesTotal),
+    alternatesAvoid: Int16(alternatesAvoid),
+    freeEtaSec: nil,  // TODO: Implement real-time ETA calculation
+    viaEtaSec: nil,  // TODO: Implement via route ETA calculation
+    openLabel: openLabel,
+    isValid: true)
 
   return tick
 }
@@ -194,11 +203,12 @@ func makeProbeTick(for bridgeID: String,
 ///   - startDate: Start of the date range (inclusive)
 ///   - endDate: End of the date range (exclusive)
 /// - Returns: Array of ProbeTick instances created
-func makeProbeTicks(from events: [BridgeEvent],
-                    for bridgeIDs: [String],
-                    from startDate: Date,
-                    to endDate: Date) -> [ProbeTick]
-{
+func makeProbeTicks(
+  from events: [BridgeEvent],
+  for bridgeIDs: [String],
+  from startDate: Date,
+  to endDate: Date
+) -> [ProbeTick] {
   let calendar = Calendar.current
 
   // Group events by bridge ID for efficient lookup
@@ -262,10 +272,11 @@ final class ProbeTickDataService {
   /// - May take several minutes for large date ranges
   func populateHistoricalProbeTicks(from startDate: Date, to endDate: Date) async throws {
     // Fetch all bridge events in the date range
-    let fetchDescriptor = FetchDescriptor<BridgeEvent>(predicate: #Predicate {
-      $0.openDateTime >= startDate && $0.openDateTime < endDate && $0.isValidated
-    },
-    sortBy: [SortDescriptor(\.openDateTime), SortDescriptor(\.bridgeID)])
+    let fetchDescriptor = FetchDescriptor<BridgeEvent>(
+      predicate: #Predicate {
+        $0.openDateTime >= startDate && $0.openDateTime < endDate && $0.isValidated
+      },
+      sortBy: [SortDescriptor(\.openDateTime), SortDescriptor(\.bridgeID)])
 
     let events = try context.fetch(fetchDescriptor)
 
@@ -276,7 +287,7 @@ final class ProbeTickDataService {
     let totalMinutes = calendar.dateComponents([.minute], from: startDate, to: endDate).minute ?? 0
     var processedMinutes = 0
     var batchCount = 0
-    let batchSize = 50 // Batch size for saving
+    let batchSize = 50  // Batch size for saving
 
     print("🔄 [INFO] Starting data population: \(totalMinutes) minutes to process")
 
@@ -301,7 +312,9 @@ final class ProbeTickDataService {
 
       if processedMinutes % 100 == 0 {
         let progress = Double(processedMinutes) / Double(totalMinutes) * 100
-        print("🔄 [INFO] Data population progress: \(Int(progress))% (\(processedMinutes)/\(totalMinutes) minutes)")
+        print(
+          "🔄 [INFO] Data population progress: \(Int(progress))% (\(processedMinutes)/\(totalMinutes) minutes)"
+        )
       }
     }
 

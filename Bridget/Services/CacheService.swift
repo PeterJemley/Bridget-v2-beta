@@ -67,7 +67,7 @@ class CacheService {
   // MARK: - Properties
 
   private let cacheDirectory = "BridgeCache"
-  private let cacheExpirationTime: TimeInterval = 300 // 5 minutes
+  private let cacheExpirationTime: TimeInterval = 300  // 5 minutes
 
   // MARK: - Initialization
 

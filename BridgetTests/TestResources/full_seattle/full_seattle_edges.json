@@ -1,0 +1,722 @@
+[
+  {
+    "from": "ballard_north",
+    "to": "ballard_center",
+    "travelTimeSec": 120,
+    "distanceM": 1000,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "ballard_center",
+    "to": "ballard_south",
+    "travelTimeSec": 120,
+    "distanceM": 1000,
+    "isBridge": true,
+    "bridgeID": "ballard",
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "ballard_south",
+    "to": "fremont_north",
+    "travelTimeSec": 300,
+    "distanceM": 2500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "fremont_north",
+    "to": "fremont_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "fremont_center",
+    "to": "fremont_south",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": true,
+    "bridgeID": "fremont",
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "fremont_south",
+    "to": "university_north",
+    "travelTimeSec": 240,
+    "distanceM": 2000,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "university_north",
+    "to": "university_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "university_center",
+    "to": "university_south",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": true,
+    "bridgeID": "university",
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "university_south",
+    "to": "montlake_north",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "montlake_north",
+    "to": "montlake_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "montlake_center",
+    "to": "montlake_south",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": true,
+    "bridgeID": "montlake",
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "montlake_south",
+    "to": "capitol_hill_north",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "capitol_hill_north",
+    "to": "capitol_hill_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "capitol_hill_center",
+    "to": "capitol_hill_south",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "capitol_hill_south",
+    "to": "downtown_north",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "downtown_north",
+    "to": "downtown_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "downtown_center",
+    "to": "downtown_south",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "downtown_south",
+    "to": "sodo_north",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "sodo_north",
+    "to": "sodo_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "sodo_center",
+    "to": "sodo_south",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "sodo_south",
+    "to": "georgetown_north",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": true,
+    "bridgeID": "georgetown",
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "georgetown_north",
+    "to": "georgetown_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "georgetown_center",
+    "to": "georgetown_south",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "georgetown_south",
+    "to": "south_park_north",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": true,
+    "bridgeID": "south_park",
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "south_park_north",
+    "to": "south_park_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "south_park_center",
+    "to": "south_park_south",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "south_park_south",
+    "to": "west_seattle_north",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": true,
+    "bridgeID": "duwamish",
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "west_seattle_north",
+    "to": "west_seattle_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "west_seattle_center",
+    "to": "west_seattle_south",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "west_seattle_north",
+    "to": "downtown_west",
+    "travelTimeSec": 300,
+    "distanceM": 2500,
+    "isBridge": true,
+    "bridgeID": "west_seattle",
+    "laneCount": 4,
+    "speedLimit": 35
+  },
+  {
+    "from": "downtown_west",
+    "to": "downtown_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "downtown_center",
+    "to": "downtown_east",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "downtown_east",
+    "to": "capitol_hill_west",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "capitol_hill_west",
+    "to": "capitol_hill_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "capitol_hill_center",
+    "to": "capitol_hill_east",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "capitol_hill_east",
+    "to": "montlake_west",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "montlake_west",
+    "to": "montlake_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "montlake_center",
+    "to": "montlake_east",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "montlake_east",
+    "to": "uw_west",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "uw_west",
+    "to": "uw_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "uw_center",
+    "to": "uw_east",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "uw_east",
+    "to": "university_west",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "university_west",
+    "to": "university_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "university_center",
+    "to": "university_east",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "university_east",
+    "to": "eastlake_west",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "eastlake_west",
+    "to": "eastlake_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "eastlake_center",
+    "to": "eastlake_east",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "eastlake_east",
+    "to": "capitol_hill_west",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "queen_anne_west",
+    "to": "queen_anne_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "queen_anne_center",
+    "to": "queen_anne_east",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "queen_anne_east",
+    "to": "fremont_west",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": true,
+    "bridgeID": "aurora",
+    "laneCount": 4,
+    "speedLimit": 35
+  },
+  {
+    "from": "fremont_west",
+    "to": "fremont_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "fremont_center",
+    "to": "fremont_east",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "fremont_east",
+    "to": "ballard_west",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "ballard_west",
+    "to": "ballard_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "ballard_center",
+    "to": "ballard_east",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "ballard_east",
+    "to": "magnolia_west",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": true,
+    "bridgeID": "magnolia",
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "magnolia_west",
+    "to": "magnolia_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "magnolia_center",
+    "to": "magnolia_east",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "magnolia_east",
+    "to": "queen_anne_west",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "sodo_east",
+    "to": "sodo_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "sodo_center",
+    "to": "sodo_west",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "sodo_west",
+    "to": "downtown_east",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": true,
+    "bridgeID": "first_ave_south",
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "georgetown_east",
+    "to": "georgetown_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "georgetown_center",
+    "to": "georgetown_west",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "georgetown_west",
+    "to": "sodo_east",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": true,
+    "bridgeID": "lower_spokane",
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "south_park_east",
+    "to": "south_park_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "south_park_center",
+    "to": "south_park_west",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "south_park_west",
+    "to": "georgetown_east",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  },
+  {
+    "from": "west_seattle_east",
+    "to": "west_seattle_center",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "west_seattle_center",
+    "to": "west_seattle_west",
+    "travelTimeSec": 90,
+    "distanceM": 750,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 25
+  },
+  {
+    "from": "west_seattle_west",
+    "to": "south_park_east",
+    "travelTimeSec": 180,
+    "distanceM": 1500,
+    "isBridge": false,
+    "bridgeID": null,
+    "laneCount": 2,
+    "speedLimit": 30
+  }
+]

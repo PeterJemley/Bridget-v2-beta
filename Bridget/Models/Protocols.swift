@@ -86,17 +86,26 @@ public protocol BridgeEventPersistenceServiceProtocol: AnyObject {
 public protocol EnhancedPipelineProgressDelegate: AnyObject, Sendable {
   // Stage lifecycle
   func pipelineDidStartStage(_ stage: PipelineStage)
-  func pipelineDidUpdateStageProgress(_ stage: PipelineStage, progress: Double)
+  func pipelineDidUpdateStageProgress(
+    _ stage: PipelineStage,
+    progress: Double
+  )
   func pipelineDidCompleteStage(_ stage: PipelineStage)
   func pipelineDidFailStage(_ stage: PipelineStage, error: Error)
 
   // Checkpointing
   func pipelineDidCreateCheckpoint(_ stage: PipelineStage, at path: String)
-  func pipelineDidResumeFromCheckpoint(_ stage: PipelineStage, at path: String)
+  func pipelineDidResumeFromCheckpoint(
+    _ stage: PipelineStage,
+    at path: String
+  )
 
   // Validation gates
-  func pipelineDidEvaluateDataQualityGate(_ result: DataValidationResult) -> Bool
-  func pipelineDidEvaluateModelPerformanceGate(_ metrics: ModelPerformanceMetrics) -> Bool
+  func pipelineDidEvaluateDataQualityGate(_ result: DataValidationResult)
+    -> Bool
+  func pipelineDidEvaluateModelPerformanceGate(
+    _ metrics: ModelPerformanceMetrics
+  ) -> Bool
 
   // Performance metrics
   func pipelineDidUpdateMetrics(_ metrics: PipelineMetrics)
@@ -126,19 +135,20 @@ public protocol CheckpointManager {
 /// Comprehensive pipeline metrics
 public struct PipelineMetrics: Codable {
   public var stageDurations: [PipelineStage: TimeInterval]
-  public var memoryUsage: [PipelineStage: Int] // MB
+  public var memoryUsage: [PipelineStage: Int]  // MB
   public var recordCounts: [PipelineStage: Int]
   public var errorCounts: [PipelineStage: Int]
   public var validationRates: [PipelineStage: Double]
   public let timestamp: Date
 
-  public init(stageDurations: [PipelineStage: TimeInterval] = [:],
-              memoryUsage: [PipelineStage: Int] = [:],
-              recordCounts: [PipelineStage: Int] = [:],
-              errorCounts: [PipelineStage: Int] = [:],
-              validationRates: [PipelineStage: Double] = [:],
-              timestamp: Date = Date())
-  {
+  public init(
+    stageDurations: [PipelineStage: TimeInterval] = [:],
+    memoryUsage: [PipelineStage: Int] = [:],
+    recordCounts: [PipelineStage: Int] = [:],
+    errorCounts: [PipelineStage: Int] = [:],
+    validationRates: [PipelineStage: Double] = [:],
+    timestamp: Date = Date()
+  ) {
     self.stageDurations = stageDurations
     self.memoryUsage = memoryUsage
     self.recordCounts = recordCounts
@@ -157,13 +167,14 @@ public struct ModelPerformanceMetrics: Codable {
   public let recall: Double
   public let confusionMatrix: [[Int]]
 
-  public init(accuracy: Double,
-              loss: Double,
-              f1Score: Double,
-              precision: Double,
-              recall: Double,
-              confusionMatrix: [[Int]])
-  {
+  public init(
+    accuracy: Double,
+    loss: Double,
+    f1Score: Double,
+    precision: Double,
+    recall: Double,
+    confusionMatrix: [[Int]]
+  ) {
     self.accuracy = accuracy
     self.loss = loss
     self.f1Score = f1Score

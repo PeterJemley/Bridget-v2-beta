@@ -113,7 +113,9 @@ public class DataValidationService {
     let trimmed = timestamp.trimmingCharacters(in: .whitespacesAndNewlines)
 
     // Basic format validation
-    guard trimmed.contains("T"), trimmed.contains("Z") || trimmed.contains("+") || trimmed.contains("-") else {
+    guard trimmed.contains("T"),
+      trimmed.contains("Z") || trimmed.contains("+") || trimmed.contains("-")
+    else {
       return nil
     }
 
@@ -147,14 +149,22 @@ public class DataValidationService {
     var explanations: [String: String] = [:]
 
     // Built-in validators with actionable explanations
-    explanations["RangeValidator"] = "Validates numeric values are within expected ranges for each field. Provides specific field names and values that violate ranges."
-    explanations["TimestampValidator"] = "Checks timestamp format, monotonicity, and time windows. Reports specific timestamp issues and suggests corrections."
-    explanations["DuplicateValidator"] = "Detects duplicate records based on bridge_id and timestamp. Lists specific duplicate records for removal."
-    explanations["MissingDataValidator"] = "Identifies missing, null, NaN, and infinite values. Provides field-specific counts and suggests data quality improvements."
-    explanations["OutlierValidator"] = "Detects statistical outliers using IQR method. Reports specific outlier values and their statistical significance."
-    explanations["FeatureValidator"] = "Validates feature vectors for ML pipeline compatibility. Ensures all required features are present and properly formatted."
-    explanations["MissingRatioValidator"] = "Analyzes missing data ratios across fields. Flags fields with excessive missing data that may need attention."
-    explanations["TimestampWindowValidator"] = "Validates timestamp windows and time-based patterns. Identifies unusual time spans and suggests data collection improvements."
+    explanations["RangeValidator"] =
+      "Validates numeric values are within expected ranges for each field. Provides specific field names and values that violate ranges."
+    explanations["TimestampValidator"] =
+      "Checks timestamp format, monotonicity, and time windows. Reports specific timestamp issues and suggests corrections."
+    explanations["DuplicateValidator"] =
+      "Detects duplicate records based on bridge_id and timestamp. Lists specific duplicate records for removal."
+    explanations["MissingDataValidator"] =
+      "Identifies missing, null, NaN, and infinite values. Provides field-specific counts and suggests data quality improvements."
+    explanations["OutlierValidator"] =
+      "Detects statistical outliers using IQR method. Reports specific outlier values and their statistical significance."
+    explanations["FeatureValidator"] =
+      "Validates feature vectors for ML pipeline compatibility. Ensures all required features are present and properly formatted."
+    explanations["MissingRatioValidator"] =
+      "Analyzes missing data ratios across fields. Flags fields with excessive missing data that may need attention."
+    explanations["TimestampWindowValidator"] =
+      "Validates timestamp windows and time-based patterns. Identifies unusual time spans and suggests data collection improvements."
 
     // Custom validators
     for validator in customValidators {
@@ -401,17 +411,18 @@ public class DataValidationService {
     result.invalidCrossRatios = invalidCrossRatios
     // Update data quality metrics with range violations
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
-                                                   timestampValidity: currentMetrics.timestampValidity,
-                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
-                                                   speedDataValidity: currentMetrics.speedDataValidity,
-                                                   duplicateCount: currentMetrics.duplicateCount,
-                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
-                                                   nanCounts: currentMetrics.nanCounts,
-                                                   infiniteCounts: currentMetrics.infiniteCounts,
-                                                   outlierCounts: currentMetrics.outlierCounts,
-                                                   rangeViolations: rangeViolations,
-                                                   nullCounts: currentMetrics.nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(
+      dataCompleteness: currentMetrics.dataCompleteness,
+      timestampValidity: currentMetrics.timestampValidity,
+      bridgeIDValidity: currentMetrics.bridgeIDValidity,
+      speedDataValidity: currentMetrics.speedDataValidity,
+      duplicateCount: currentMetrics.duplicateCount,
+      missingFieldsCount: currentMetrics.missingFieldsCount,
+      nanCounts: currentMetrics.nanCounts,
+      infiniteCounts: currentMetrics.infiniteCounts,
+      outlierCounts: currentMetrics.outlierCounts,
+      rangeViolations: rangeViolations,
+      nullCounts: currentMetrics.nullCounts)
 
     return result
   }
@@ -426,7 +437,7 @@ public class DataValidationService {
     // Parse timestamps with sanitization and caching
     for (index, tick) in ticks.enumerated() {
       if let sanitizedTimestamp = sanitizeTimestamp(tick.ts_utc),
-         let date = Self.iso8601Formatter.date(from: sanitizedTimestamp)
+        let date = Self.iso8601Formatter.date(from: sanitizedTimestamp)
       {
         timestamps.append(date)
       } else {
@@ -439,7 +450,9 @@ public class DataValidationService {
     let originalCount = ticks.count
     let parsedCount = timestamps.count
     if parsedCount < originalCount {
-      result.warnings.append("\(originalCount - parsedCount) timestamps failed to parse (success rate: \(String(format: "%.1f", Double(parsedCount) / Double(originalCount) * 100))%)")
+      result.warnings.append(
+        "\(originalCount - parsedCount) timestamps failed to parse (success rate: \(String(format: "%.1f", Double(parsedCount) / Double(originalCount) * 100))%)"
+      )
     }
 
     // Check monotonicity using safe pairwise iteration
@@ -456,7 +469,7 @@ public class DataValidationService {
 
     // Use safe pairwise iteration to avoid bounds errors
     for (prev, curr) in zip(timestamps, timestamps.dropFirst()) {
-      if curr < prev { // Non-decreasing check (allows equal timestamps)
+      if curr < prev {  // Non-decreasing check (allows equal timestamps)
         nonMonotonicCount += 1
         result.warnings.append("Non-monotonic timestamp detected: \(curr) < \(prev)")
       }
@@ -467,8 +480,9 @@ public class DataValidationService {
       result.timestampRange = (first, last)
 
       let duration = last.timeIntervalSince(first)
-      if duration < 300 { // Less than 5 minutes
-        result.warnings.append("Very short time span: \(String(format: "%.1f", duration / 60)) minutes")
+      if duration < 300 {  // Less than 5 minutes
+        result.warnings.append(
+          "Very short time span: \(String(format: "%.1f", duration / 60)) minutes")
       }
     }
 
@@ -503,26 +517,29 @@ public class DataValidationService {
 
     // Flag very short time spans (less than 1 hour)
     if timeSpan < 3600 {
-      result.warnings.append("Very short time span: \(String(format: "%.1f", timeSpan / 60)) minutes")
+      result.warnings.append(
+        "Very short time span: \(String(format: "%.1f", timeSpan / 60)) minutes")
     }
 
     // Flag very long time spans (more than 30 days)
     if timeSpan > 30 * 24 * 3600 {
-      result.warnings.append("Very long time span: \(String(format: "%.1f", timeSpan / (24 * 3600))) days")
+      result.warnings.append(
+        "Very long time span: \(String(format: "%.1f", timeSpan / (24 * 3600))) days")
     }
 
     // Check for gaps in time series using safe pairwise iteration
     var gaps: [TimeInterval] = []
     for (prev, curr) in zip(timestamps, timestamps.dropFirst()) {
       let gap = curr.timeIntervalSince(prev)
-      if gap > 3600 { // Gap larger than 1 hour
+      if gap > 3600 {  // Gap larger than 1 hour
         gaps.append(gap)
       }
     }
 
     if !gaps.isEmpty {
       let avgGap = gaps.reduce(0, +) / Double(gaps.count)
-      result.warnings.append("Found \(gaps.count) time gaps, average: \(String(format: "%.1f", avgGap / 3600)) hours")
+      result.warnings.append(
+        "Found \(gaps.count) time gaps, average: \(String(format: "%.1f", avgGap / 3600)) hours")
     }
 
     // Check for time-of-day patterns
@@ -536,7 +553,8 @@ public class DataValidationService {
     if maxHour > 0 && minHour > 0 {
       let ratio = Double(maxHour) / Double(minHour)
       if ratio > 5.0 {
-        result.warnings.append("Unbalanced hour distribution: ratio \(String(format: "%.1f", ratio))")
+        result.warnings.append(
+          "Unbalanced hour distribution: ratio \(String(format: "%.1f", ratio))")
       }
     }
 
@@ -562,27 +580,31 @@ public class DataValidationService {
 
     if duplicateCount > 0 {
       result.warnings.append("Found \(duplicateCount) duplicate records in dataset")
-      if duplicateCount <= 5 { // Show details for small numbers of duplicates
+      if duplicateCount <= 5 {  // Show details for small numbers of duplicates
         result.warnings.append("Duplicate records: \(duplicateDetails.joined(separator: ", "))")
       } else {
-        result.warnings.append("First 5 duplicates: \(duplicateDetails.prefix(5).joined(separator: ", "))")
+        result.warnings.append(
+          "First 5 duplicates: \(duplicateDetails.prefix(5).joined(separator: ", "))")
       }
-      result.warnings.append("Action: Remove duplicate records to prevent data quality issues and potential ML training problems.")
+      result.warnings.append(
+        "Action: Remove duplicate records to prevent data quality issues and potential ML training problems."
+      )
     }
 
     // Update data quality metrics
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
-                                                   timestampValidity: currentMetrics.timestampValidity,
-                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
-                                                   speedDataValidity: currentMetrics.speedDataValidity,
-                                                   duplicateCount: duplicateCount,
-                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
-                                                   nanCounts: currentMetrics.nanCounts,
-                                                   infiniteCounts: currentMetrics.infiniteCounts,
-                                                   outlierCounts: currentMetrics.outlierCounts,
-                                                   rangeViolations: currentMetrics.rangeViolations,
-                                                   nullCounts: currentMetrics.nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(
+      dataCompleteness: currentMetrics.dataCompleteness,
+      timestampValidity: currentMetrics.timestampValidity,
+      bridgeIDValidity: currentMetrics.bridgeIDValidity,
+      speedDataValidity: currentMetrics.speedDataValidity,
+      duplicateCount: duplicateCount,
+      missingFieldsCount: currentMetrics.missingFieldsCount,
+      nanCounts: currentMetrics.nanCounts,
+      infiniteCounts: currentMetrics.infiniteCounts,
+      outlierCounts: currentMetrics.outlierCounts,
+      rangeViolations: currentMetrics.rangeViolations,
+      nullCounts: currentMetrics.nullCounts)
 
     return result
   }
@@ -629,37 +651,45 @@ public class DataValidationService {
         nullCounts[field] = nullCount
         let percentage = Double(nullCount) / Double(ticks.count) * 100
         if percentage > 50 {
-          result.warnings.append("High null rate for \(field): \(String(format: "%.1f", percentage))%")
-          result.warnings.append("Action: Investigate data collection for \(field) - consider data source issues or sensor problems.")
+          result.warnings.append(
+            "High null rate for \(field): \(String(format: "%.1f", percentage))%")
+          result.warnings.append(
+            "Action: Investigate data collection for \(field) - consider data source issues or sensor problems."
+          )
         }
       }
 
       if nanCount > 0 {
         nanCounts[field] = nanCount
         result.errors.append("Found \(nanCount) NaN values in \(field)")
-        result.errors.append("Action: NaN values in \(field) indicate calculation errors or invalid data. Review data processing pipeline.")
+        result.errors.append(
+          "Action: NaN values in \(field) indicate calculation errors or invalid data. Review data processing pipeline."
+        )
       }
 
       if infiniteCount > 0 {
         infiniteCounts[field] = infiniteCount
         result.errors.append("Found \(infiniteCount) infinite values in \(field)")
-        result.errors.append("Action: Infinite values in \(field) suggest division by zero or overflow. Check mathematical operations.")
+        result.errors.append(
+          "Action: Infinite values in \(field) suggest division by zero or overflow. Check mathematical operations."
+        )
       }
     }
 
     // Update data quality metrics with null, NaN, and infinite counts
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
-                                                   timestampValidity: currentMetrics.timestampValidity,
-                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
-                                                   speedDataValidity: currentMetrics.speedDataValidity,
-                                                   duplicateCount: currentMetrics.duplicateCount,
-                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
-                                                   nanCounts: nanCounts,
-                                                   infiniteCounts: infiniteCounts,
-                                                   outlierCounts: currentMetrics.outlierCounts,
-                                                   rangeViolations: currentMetrics.rangeViolations,
-                                                   nullCounts: nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(
+      dataCompleteness: currentMetrics.dataCompleteness,
+      timestampValidity: currentMetrics.timestampValidity,
+      bridgeIDValidity: currentMetrics.bridgeIDValidity,
+      speedDataValidity: currentMetrics.speedDataValidity,
+      duplicateCount: currentMetrics.duplicateCount,
+      missingFieldsCount: currentMetrics.missingFieldsCount,
+      nanCounts: nanCounts,
+      infiniteCounts: infiniteCounts,
+      outlierCounts: currentMetrics.outlierCounts,
+      rangeViolations: currentMetrics.rangeViolations,
+      nullCounts: nullCounts)
 
     return result
   }
@@ -689,25 +719,28 @@ public class DataValidationService {
 
       // Flag high missing ratios
       if missingRatio > 0.5 {
-        result.warnings.append("High missing ratio for \(field): \(String(format: "%.1f%%", missingRatio * 100))")
+        result.warnings.append(
+          "High missing ratio for \(field): \(String(format: "%.1f%%", missingRatio * 100))")
       } else if missingRatio > 0.1 {
-        result.warnings.append("Moderate missing ratio for \(field): \(String(format: "%.1f%%", missingRatio * 100))")
+        result.warnings.append(
+          "Moderate missing ratio for \(field): \(String(format: "%.1f%%", missingRatio * 100))")
       }
     }
 
     // Update data quality metrics with missing ratios
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
-                                                   timestampValidity: currentMetrics.timestampValidity,
-                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
-                                                   speedDataValidity: currentMetrics.speedDataValidity,
-                                                   duplicateCount: currentMetrics.duplicateCount,
-                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
-                                                   nanCounts: currentMetrics.nanCounts,
-                                                   infiniteCounts: currentMetrics.infiniteCounts,
-                                                   outlierCounts: currentMetrics.outlierCounts,
-                                                   rangeViolations: currentMetrics.rangeViolations,
-                                                   nullCounts: currentMetrics.nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(
+      dataCompleteness: currentMetrics.dataCompleteness,
+      timestampValidity: currentMetrics.timestampValidity,
+      bridgeIDValidity: currentMetrics.bridgeIDValidity,
+      speedDataValidity: currentMetrics.speedDataValidity,
+      duplicateCount: currentMetrics.duplicateCount,
+      missingFieldsCount: currentMetrics.missingFieldsCount,
+      nanCounts: currentMetrics.nanCounts,
+      infiniteCounts: currentMetrics.infiniteCounts,
+      outlierCounts: currentMetrics.outlierCounts,
+      rangeViolations: currentMetrics.rangeViolations,
+      nullCounts: currentMetrics.nullCounts)
 
     return result
   }
@@ -792,7 +825,8 @@ public class DataValidationService {
           outlierCounts[field] = outlierCount
           let percentage = Double(outlierCount) / Double(values.count) * 100
           if percentage > 10 {
-            result.warnings.append("High outlier rate for \(field): \(String(format: "%.1f", percentage))%")
+            result.warnings.append(
+              "High outlier rate for \(field): \(String(format: "%.1f", percentage))%")
           }
         }
       }
@@ -800,17 +834,18 @@ public class DataValidationService {
 
     // Update data quality metrics with outlier counts
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
-                                                   timestampValidity: currentMetrics.timestampValidity,
-                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
-                                                   speedDataValidity: currentMetrics.speedDataValidity,
-                                                   duplicateCount: currentMetrics.duplicateCount,
-                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
-                                                   nanCounts: currentMetrics.nanCounts,
-                                                   infiniteCounts: currentMetrics.infiniteCounts,
-                                                   outlierCounts: outlierCounts,
-                                                   rangeViolations: currentMetrics.rangeViolations,
-                                                   nullCounts: currentMetrics.nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(
+      dataCompleteness: currentMetrics.dataCompleteness,
+      timestampValidity: currentMetrics.timestampValidity,
+      bridgeIDValidity: currentMetrics.bridgeIDValidity,
+      speedDataValidity: currentMetrics.speedDataValidity,
+      duplicateCount: currentMetrics.duplicateCount,
+      missingFieldsCount: currentMetrics.missingFieldsCount,
+      nanCounts: currentMetrics.nanCounts,
+      infiniteCounts: currentMetrics.infiniteCounts,
+      outlierCounts: outlierCounts,
+      rangeViolations: currentMetrics.rangeViolations,
+      nullCounts: currentMetrics.nullCounts)
     return result
   }
 
@@ -821,18 +856,17 @@ public class DataValidationService {
 
     for feature in features {
       // Check cyclical features (should be in [-1, 1])
-      if abs(feature.min_sin) > 1.0 || abs(feature.min_cos) > 1.0 ||
-        abs(feature.dow_sin) > 1.0 || abs(feature.dow_cos) > 1.0
+      if abs(feature.min_sin) > 1.0 || abs(feature.min_cos) > 1.0 || abs(feature.dow_sin) > 1.0
+        || abs(feature.dow_cos) > 1.0
       {
         rangeViolations["cyclical_features", default: 0] += 1
         result.warnings.append("Cyclical feature out of range [-1, 1]")
       }
 
       // Check probability features (should be in [0, 1])
-      if feature.open_5m < 0 || feature.open_5m > 1 ||
-        feature.open_30m < 0 || feature.open_30m > 1 ||
-        feature.via_routable < 0 || feature.via_routable > 1 ||
-        feature.detour_frac < 0 || feature.detour_frac > 1
+      if feature.open_5m < 0 || feature.open_5m > 1 || feature.open_30m < 0 || feature.open_30m > 1
+        || feature.via_routable < 0 || feature.via_routable > 1 || feature.detour_frac < 0
+        || feature.detour_frac > 1
       {
         rangeViolations["probability_features", default: 0] += 1
         result.warnings.append("Probability feature out of range [0, 1]")
@@ -847,17 +881,18 @@ public class DataValidationService {
 
     // Update data quality metrics with range violations
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
-                                                   timestampValidity: currentMetrics.timestampValidity,
-                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
-                                                   speedDataValidity: currentMetrics.speedDataValidity,
-                                                   duplicateCount: currentMetrics.duplicateCount,
-                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
-                                                   nanCounts: currentMetrics.nanCounts,
-                                                   infiniteCounts: currentMetrics.infiniteCounts,
-                                                   outlierCounts: currentMetrics.outlierCounts,
-                                                   rangeViolations: rangeViolations,
-                                                   nullCounts: currentMetrics.nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(
+      dataCompleteness: currentMetrics.dataCompleteness,
+      timestampValidity: currentMetrics.timestampValidity,
+      bridgeIDValidity: currentMetrics.bridgeIDValidity,
+      speedDataValidity: currentMetrics.speedDataValidity,
+      duplicateCount: currentMetrics.duplicateCount,
+      missingFieldsCount: currentMetrics.missingFieldsCount,
+      nanCounts: currentMetrics.nanCounts,
+      infiniteCounts: currentMetrics.infiniteCounts,
+      outlierCounts: currentMetrics.outlierCounts,
+      rangeViolations: rangeViolations,
+      nullCounts: currentMetrics.nullCounts)
     return result
   }
 
@@ -887,7 +922,8 @@ public class DataValidationService {
       var infiniteCount = 0
 
       for feature in features {
-        let value = Mirror(reflecting: feature).children.first { $0.label == field }?.value as? Double
+        let value =
+          Mirror(reflecting: feature).children.first { $0.label == field }?.value as? Double
 
         if let doubleValue = value {
           if doubleValue.isNaN {
@@ -911,17 +947,18 @@ public class DataValidationService {
 
     // Update data quality metrics with NaN and infinite counts
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
-                                                   timestampValidity: currentMetrics.timestampValidity,
-                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
-                                                   speedDataValidity: currentMetrics.speedDataValidity,
-                                                   duplicateCount: currentMetrics.duplicateCount,
-                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
-                                                   nanCounts: nanCounts,
-                                                   infiniteCounts: infiniteCounts,
-                                                   outlierCounts: currentMetrics.outlierCounts,
-                                                   rangeViolations: currentMetrics.rangeViolations,
-                                                   nullCounts: currentMetrics.nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(
+      dataCompleteness: currentMetrics.dataCompleteness,
+      timestampValidity: currentMetrics.timestampValidity,
+      bridgeIDValidity: currentMetrics.bridgeIDValidity,
+      speedDataValidity: currentMetrics.speedDataValidity,
+      duplicateCount: currentMetrics.duplicateCount,
+      missingFieldsCount: currentMetrics.missingFieldsCount,
+      nanCounts: nanCounts,
+      infiniteCounts: infiniteCounts,
+      outlierCounts: currentMetrics.outlierCounts,
+      rangeViolations: currentMetrics.rangeViolations,
+      nullCounts: currentMetrics.nullCounts)
 
     return result
   }
@@ -942,7 +979,9 @@ public class DataValidationService {
     let missingHorizons = expectedHorizons.subtracting(actualHorizons)
 
     if !missingHorizons.isEmpty {
-      result.warnings.append("Missing features for horizons: \(missingHorizons.sorted().map { "\($0)min" }.joined(separator: ", "))")
+      result.warnings.append(
+        "Missing features for horizons: \(missingHorizons.sorted().map { "\($0)min" }.joined(separator: ", "))"
+      )
     }
 
     // Check for balanced distribution
@@ -950,7 +989,8 @@ public class DataValidationService {
     if let minCount = counts.min(), let maxCount = counts.max() {
       let ratio = Double(maxCount) / Double(minCount)
       if ratio > 2.0 {
-        result.warnings.append("Unbalanced horizon distribution: ratio \(String(format: "%.1f", ratio))")
+        result.warnings.append(
+          "Unbalanced horizon distribution: ratio \(String(format: "%.1f", ratio))")
       }
     }
 
@@ -961,24 +1001,29 @@ public class DataValidationService {
   /// Aggregates multiple data quality metrics into a single result
   private func aggregateDataQualityMetrics(_ metrics: [DataQualityMetrics]) -> DataQualityMetrics {
     let totalMetrics = metrics.count
-    if !isInRange(totalMetrics, 1 ... Int.max) {
-      return DataQualityMetrics(dataCompleteness: 0.0,
-                                timestampValidity: 0.0,
-                                bridgeIDValidity: 0.0,
-                                speedDataValidity: 0.0,
-                                duplicateCount: 0,
-                                missingFieldsCount: 0,
-                                nanCounts: [:],
-                                infiniteCounts: [:],
-                                outlierCounts: [:],
-                                rangeViolations: [:],
-                                nullCounts: [:])
+    if !isInRange(totalMetrics, 1...Int.max) {
+      return DataQualityMetrics(
+        dataCompleteness: 0.0,
+        timestampValidity: 0.0,
+        bridgeIDValidity: 0.0,
+        speedDataValidity: 0.0,
+        duplicateCount: 0,
+        missingFieldsCount: 0,
+        nanCounts: [:],
+        infiniteCounts: [:],
+        outlierCounts: [:],
+        rangeViolations: [:],
+        nullCounts: [:])
     }
 
-    let avgDataCompleteness = metrics.map { $0.dataCompleteness }.reduce(0.0, +) / Double(totalMetrics)
-    let avgTimestampValidity = metrics.map { $0.timestampValidity }.reduce(0.0, +) / Double(totalMetrics)
-    let avgBridgeIDValidity = metrics.map { $0.bridgeIDValidity }.reduce(0.0, +) / Double(totalMetrics)
-    let avgSpeedDataValidity = metrics.map { $0.speedDataValidity }.reduce(0.0, +) / Double(totalMetrics)
+    let avgDataCompleteness =
+      metrics.map { $0.dataCompleteness }.reduce(0.0, +) / Double(totalMetrics)
+    let avgTimestampValidity =
+      metrics.map { $0.timestampValidity }.reduce(0.0, +) / Double(totalMetrics)
+    let avgBridgeIDValidity =
+      metrics.map { $0.bridgeIDValidity }.reduce(0.0, +) / Double(totalMetrics)
+    let avgSpeedDataValidity =
+      metrics.map { $0.speedDataValidity }.reduce(0.0, +) / Double(totalMetrics)
     let totalDuplicateCount = metrics.map { $0.duplicateCount }.reduce(0, +)
     let totalMissingFieldsCount = metrics.map { $0.missingFieldsCount }.reduce(0, +)
 
@@ -1007,16 +1052,17 @@ public class DataValidationService {
       }
     }
 
-    return DataQualityMetrics(dataCompleteness: avgDataCompleteness,
-                              timestampValidity: avgTimestampValidity,
-                              bridgeIDValidity: avgBridgeIDValidity,
-                              speedDataValidity: avgSpeedDataValidity,
-                              duplicateCount: totalDuplicateCount,
-                              missingFieldsCount: totalMissingFieldsCount,
-                              nanCounts: aggregatedNanCounts,
-                              infiniteCounts: aggregatedInfiniteCounts,
-                              outlierCounts: aggregatedOutlierCounts,
-                              rangeViolations: aggregatedRangeViolations,
-                              nullCounts: aggregatedNullCounts)
+    return DataQualityMetrics(
+      dataCompleteness: avgDataCompleteness,
+      timestampValidity: avgTimestampValidity,
+      bridgeIDValidity: avgBridgeIDValidity,
+      speedDataValidity: avgSpeedDataValidity,
+      duplicateCount: totalDuplicateCount,
+      missingFieldsCount: totalMissingFieldsCount,
+      nanCounts: aggregatedNanCounts,
+      infiniteCounts: aggregatedInfiniteCounts,
+      outlierCounts: aggregatedOutlierCounts,
+      rangeViolations: aggregatedRangeViolations,
+      nullCounts: aggregatedNullCounts)
   }
 }

@@ -103,7 +103,7 @@ graph TD
 
 **For detailed project planning, implementation phases, and progress tracking, see:**
 - **Project Roadmap**: `Documentation/Seattle_Route_Optimization_Plan.md` - Complete implementation roadmap and architectural decisions
-- **Current Status**: `Documentation/refinements-integration-summary.md` - Latest refinements and integration status
+- **Current Status**: `BridgetDocumentation.docc/MultiPath_Implementation_Status.md` - Latest implementation status
 
 This document focuses on technical architecture reference. Project planning and implementation tracking is maintained in the `Documentation/` folder.
 **Rationale**:

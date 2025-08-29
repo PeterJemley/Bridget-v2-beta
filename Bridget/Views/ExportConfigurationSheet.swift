@@ -41,10 +41,11 @@ public struct ExportConfigurationSheet: View {
 }
 
 #Preview {
-  ExportConfigurationSheet(selectedDate: .constant(Date()),
-                           exportDestination: .constant("Documents"),
-                           destinations: ["Documents", "Downloads"],
-                           onExport: { date, destination in
-                             print("Exporting for \(date) to \(destination)")
-                           })
+  ExportConfigurationSheet(
+    selectedDate: .constant(Date()),
+    exportDestination: .constant("Documents"),
+    destinations: ["Documents", "Downloads"],
+    onExport: { date, destination in
+      print("Exporting for \(date) to \(destination)")
+    })
 }

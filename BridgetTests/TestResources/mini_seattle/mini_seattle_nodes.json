@@ -1,0 +1,128 @@
+[
+  {
+    "id": "ballard_center",
+    "name": "Ballard Center",
+    "latitude": 47.65980,
+    "longitude": -122.37622,
+    "type": "intersection"
+  },
+  {
+    "id": "fremont_center",
+    "name": "Fremont Center",
+    "latitude": 47.64750,
+    "longitude": -122.34967,
+    "type": "intersection"
+  },
+  {
+    "id": "university_center",
+    "name": "University Center",
+    "latitude": 47.65309,
+    "longitude": -122.32010,
+    "type": "intersection"
+  },
+  {
+    "id": "montlake_center",
+    "name": "Montlake Center",
+    "latitude": 47.64730,
+    "longitude": -122.30468,
+    "type": "intersection"
+  },
+  {
+    "id": "downtown_center",
+    "name": "Downtown Seattle",
+    "latitude": 47.60621,
+    "longitude": -122.33207,
+    "type": "intersection"
+  },
+  {
+    "id": "west_seattle_center",
+    "name": "West Seattle Center",
+    "latitude": 47.57138,
+    "longitude": -122.35336,
+    "type": "intersection"
+  },
+  {
+    "id": "ballard_north",
+    "name": "Ballard North",
+    "latitude": 47.66980,
+    "longitude": -122.37622,
+    "type": "intersection"
+  },
+  {
+    "id": "ballard_south",
+    "name": "Ballard South",
+    "latitude": 47.64980,
+    "longitude": -122.37622,
+    "type": "intersection"
+  },
+  {
+    "id": "fremont_north",
+    "name": "Fremont North",
+    "latitude": 47.65750,
+    "longitude": -122.34967,
+    "type": "intersection"
+  },
+  {
+    "id": "fremont_south",
+    "name": "Fremont South",
+    "latitude": 47.63750,
+    "longitude": -122.34967,
+    "type": "intersection"
+  },
+  {
+    "id": "university_north",
+    "name": "University North",
+    "latitude": 47.66309,
+    "longitude": -122.32010,
+    "type": "intersection"
+  },
+  {
+    "id": "university_south",
+    "name": "University South",
+    "latitude": 47.64309,
+    "longitude": -122.32010,
+    "type": "intersection"
+  },
+  {
+    "id": "montlake_north",
+    "name": "Montlake North",
+    "latitude": 47.65730,
+    "longitude": -122.30468,
+    "type": "intersection"
+  },
+  {
+    "id": "montlake_south",
+    "name": "Montlake South",
+    "latitude": 47.63730,
+    "longitude": -122.30468,
+    "type": "intersection"
+  },
+  {
+    "id": "downtown_north",
+    "name": "Downtown North",
+    "latitude": 47.61621,
+    "longitude": -122.33207,
+    "type": "intersection"
+  },
+  {
+    "id": "downtown_south",
+    "name": "Downtown South",
+    "latitude": 47.59621,
+    "longitude": -122.33207,
+    "type": "intersection"
+  },
+  {
+    "id": "west_seattle_north",
+    "name": "West Seattle North",
+    "latitude": 47.58138,
+    "longitude": -122.35336,
+    "type": "intersection"
+  },
+  {
+    "id": "west_seattle_south",
+    "name": "West Seattle South",
+    "latitude": 47.56138,
+    "longitude": -122.35336,
+    "type": "intersection"
+  }
+]

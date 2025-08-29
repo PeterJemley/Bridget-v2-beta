@@ -1,0 +1,78 @@
+[
+  {
+    "id": "ballard",
+    "name": "Ballard Bridge",
+    "latitude": 47.65980,
+    "longitude": -122.37622,
+    "type": "bascule",
+    "schedule": {
+      "weekday": {
+        "morning_rush": "07:00-09:00",
+        "evening_rush": "16:00-18:00",
+        "night_operations": "22:00-06:00"
+      },
+      "weekend": {
+        "day_operations": "10:00-18:00",
+        "night_operations": "22:00-08:00"
+      }
+    },
+    "notes": "Major arterial bridge connecting Ballard to Fremont"
+  },
+  {
+    "id": "fremont",
+    "name": "Fremont Bridge",
+    "latitude": 47.64750,
+    "longitude": -122.34967,
+    "type": "bascule",
+    "schedule": {
+      "weekday": {
+        "morning_rush": "07:00-09:00",
+        "evening_rush": "16:00-18:00",
+        "night_operations": "22:00-06:00"
+      },
+      "weekend": {
+        "day_operations": "10:00-18:00",
+        "night_operations": "22:00-08:00"
+      }
+    },
+    "notes": "Historic bridge connecting Fremont to Queen Anne"
+  },
+  {
+    "id": "university",
+    "name": "University Bridge",
+    "latitude": 47.65309,
+    "longitude": -122.32010,
+    "type": "bascule",
+    "schedule": {
+      "weekday": {
+        "morning_rush": "07:00-09:00",
+        "evening_rush": "16:00-18:00",
+        "night_operations": "22:00-06:00"
+      },
+      "weekend": {
+        "day_operations": "10:00-18:00",
+        "night_operations": "22:00-08:00"
+      }
+    },
+    "notes": "Bridge connecting University District to Eastlake"
+  },
+  {
+    "id": "montlake",
+    "name": "Montlake Bridge",
+    "latitude": 47.64730,
+    "longitude": -122.30468,
+    "type": "bascule",
+    "schedule": {
+      "weekday": {
+        "morning_rush": "07:00-09:00",
+        "evening_rush": "16:00-18:00",
+        "night_operations": "22:00-06:00"
+      },
+      "weekend": {
+        "day_operations": "10:00-18:00",
+        "night_operations": "22:00-08:00"
+      }
+    },
+    "notes": "Bridge connecting Montlake to Capitol Hill"
+  }
+]

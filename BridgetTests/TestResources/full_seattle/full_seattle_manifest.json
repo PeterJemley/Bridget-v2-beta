@@ -1,0 +1,85 @@
+{
+  "dataset": "full_seattle",
+  "version": "1.0.0",
+  "generated": "2025-08-28T10:00:00Z",
+  "description": "Full Seattle bridge network for performance testing and production validation",
+  "source": "Synthetic dataset based on real Seattle bridge locations and traffic patterns",
+  "statistics": {
+    "nodes": 156,
+    "edges": 312,
+    "bridges": 12,
+    "total_distance_km": 89.2,
+    "average_degree": 4.0
+  },
+  "bridges": [
+    "first_ave_south",
+    "ballard",
+    "fremont",
+    "montlake",
+    "lower_spokane",
+    "university",
+    "south_park",
+    "georgetown",
+    "duwamish",
+    "west_seattle",
+    "aurora",
+    "magnolia"
+  ],
+  "test_scenarios": [
+    {
+      "name": "Ballard to Downtown",
+      "start": "ballard_north",
+      "end": "downtown_center",
+      "expected_bridges": ["ballard", "fremont", "university", "montlake"],
+      "expected_travel_time_min": 18
+    },
+    {
+      "name": "West Seattle to Ballard",
+      "start": "west_seattle_south",
+      "end": "ballard_north",
+      "expected_bridges": ["west_seattle", "duwamish", "georgetown", "south_park", "first_ave_south", "fremont", "ballard"],
+      "expected_travel_time_min": 32
+    },
+    {
+      "name": "Fremont to University",
+      "start": "fremont_north",
+      "end": "university_south",
+      "expected_bridges": ["fremont", "university"],
+      "expected_travel_time_min": 12
+    },
+    {
+      "name": "East-West Ship Canal Crossing",
+      "start": "magnolia_east",
+      "end": "fremont_west",
+      "expected_bridges": ["magnolia", "ballard", "fremont"],
+      "expected_travel_time_min": 15
+    },
+    {
+      "name": "SODO to Ballard",
+      "start": "sodo_center",
+      "end": "ballard_center",
+      "expected_bridges": ["south_park", "first_ave_south", "fremont", "ballard"],
+      "expected_travel_time_min": 22
+    },
+    {
+      "name": "UW to West Seattle",
+      "start": "uw_center",
+      "end": "west_seattle_center",
+      "expected_bridges": ["university", "montlake", "lower_spokane", "georgetown", "duwamish", "west_seattle"],
+      "expected_travel_time_min": 28
+    },
+    {
+      "name": "Queen Anne to Capitol Hill",
+      "start": "queen_anne_center",
+      "end": "capitol_hill_center",
+      "expected_bridges": ["aurora", "montlake"],
+      "expected_travel_time_min": 14
+    }
+  ],
+  "files": [
+    "full_seattle_nodes.json",
+    "full_seattle_edges.json",
+    "full_seattle_bridges.json",
+    "full_seattle_manifest.json"
+  ]
+}

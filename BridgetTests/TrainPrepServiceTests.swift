@@ -10,8 +10,9 @@
 //  TrainPrepService, FeatureEngineeringService, DataValidationService, CoreMLTraining
 //
 
-@testable import Bridget
 import XCTest
+
+@testable import Bridget
 
 final class TrainPrepServiceTests: XCTestCase {
   var trainPrepService: TrainPrepService!
@@ -32,12 +33,13 @@ final class TrainPrepServiceTests: XCTestCase {
   func testRunPipelineWithValidNDJSON() async throws {
     // Create test NDJSON data
     let testData = """
-    {"v":1,"ts_utc":"2025-01-27T08:00:00Z","bridge_id":1,"cross_k":5,"cross_n":10,"via_routable":1,"via_penalty_sec":120,"gate_anom":2.5,"alternates_total":3,"alternates_avoid":1,"open_label":0,"detour_delta":30,"detour_frac":0.1}
-    {"v":1,"ts_utc":"2025-01-27T08:01:00Z","bridge_id":1,"cross_k":6,"cross_n":10,"via_routable":1,"via_penalty_sec":150,"gate_anom":2.8,"alternates_total":3,"alternates_avoid":1,"open_label":1,"detour_delta":45,"detour_frac":0.15}
-    {"v":1,"ts_utc":"2025-01-27T08:02:00Z","bridge_id":2,"cross_k":3,"cross_n":8,"via_routable":0,"via_penalty_sec":300,"gate_anom":1.5,"alternates_total":2,"alternates_avoid":0,"open_label":0,"detour_delta":-10,"detour_frac":0.05}
-    """
+      {"v":1,"ts_utc":"2025-01-27T08:00:00Z","bridge_id":1,"cross_k":5,"cross_n":10,"via_routable":1,"via_penalty_sec":120,"gate_anom":2.5,"alternates_total":3,"alternates_avoid":1,"open_label":0,"detour_delta":30,"detour_frac":0.1}
+      {"v":1,"ts_utc":"2025-01-27T08:01:00Z","bridge_id":1,"cross_k":6,"cross_n":10,"via_routable":1,"via_penalty_sec":150,"gate_anom":2.8,"alternates_total":3,"alternates_avoid":1,"open_label":1,"detour_delta":45,"detour_frac":0.15}
+      {"v":1,"ts_utc":"2025-01-27T08:02:00Z","bridge_id":2,"cross_k":3,"cross_n":8,"via_routable":0,"via_penalty_sec":300,"gate_anom":1.5,"alternates_total":2,"alternates_avoid":0,"open_label":0,"detour_delta":-10,"detour_frac":0.05}
+      """
 
-    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("test_pipeline.ndjson")
+    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(
+      "test_pipeline.ndjson")
     try testData.write(to: tempURL, atomically: true, encoding: .utf8)
 
     defer {
@@ -45,18 +47,20 @@ final class TrainPrepServiceTests: XCTestCase {
     }
 
     // Configure training
-    let config = CoreMLTrainingConfig(modelType: .neuralNetwork,
-                                      epochs: 10, // Small number for testing
-                                      learningRate: 0.01,
-                                      batchSize: 8,
-                                      useANE: false // Disable ANE for testing
+    let config = CoreMLTrainingConfig(
+      modelType: .neuralNetwork,
+      epochs: 10,  // Small number for testing
+      learningRate: 0.01,
+      batchSize: 8,
+      useANE: false  // Disable ANE for testing
     )
 
     // Execute pipeline - should fail because no base model files are provided
     do {
-      _ = try await trainPrepService.runPipeline(from: tempURL,
-                                                 config: config,
-                                                 progress: testProgressDelegate)
+      _ = try await trainPrepService.runPipeline(
+        from: tempURL,
+        config: config,
+        progress: testProgressDelegate)
       XCTFail("Should throw an error when no base model files are provided")
     } catch {
       // Expected to fail because CoreMLTraining requires base model files
@@ -73,28 +77,31 @@ final class TrainPrepServiceTests: XCTestCase {
   func testRunPipelineWithInvalidNDJSON() async throws {
     // Create invalid NDJSON data
     let invalidData = """
-    {"invalid": "json"}
-    {"missing": "required", "fields": "bridge_id"}
-    """
+      {"invalid": "json"}
+      {"missing": "required", "fields": "bridge_id"}
+      """
 
-    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("test_invalid.ndjson")
+    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(
+      "test_invalid.ndjson")
     try invalidData.write(to: tempURL, atomically: true, encoding: .utf8)
 
     defer {
       try? FileManager.default.removeItem(at: tempURL)
     }
 
-    let config = CoreMLTrainingConfig(modelType: .neuralNetwork,
-                                      epochs: 10,
-                                      learningRate: 0.01,
-                                      batchSize: 8,
-                                      useANE: false)
+    let config = CoreMLTrainingConfig(
+      modelType: .neuralNetwork,
+      epochs: 10,
+      learningRate: 0.01,
+      batchSize: 8,
+      useANE: false)
 
     // Should throw an error
     do {
-      _ = try await trainPrepService.runPipeline(from: tempURL,
-                                                 config: config,
-                                                 progress: testProgressDelegate)
+      _ = try await trainPrepService.runPipeline(
+        from: tempURL,
+        config: config,
+        progress: testProgressDelegate)
       XCTFail("Should throw an error for invalid data")
     } catch {
       // Expected to fail
@@ -112,17 +119,19 @@ final class TrainPrepServiceTests: XCTestCase {
       try? FileManager.default.removeItem(at: tempURL)
     }
 
-    let config = CoreMLTrainingConfig(modelType: .neuralNetwork,
-                                      epochs: 10,
-                                      learningRate: 0.01,
-                                      batchSize: 8,
-                                      useANE: false)
+    let config = CoreMLTrainingConfig(
+      modelType: .neuralNetwork,
+      epochs: 10,
+      learningRate: 0.01,
+      batchSize: 8,
+      useANE: false)
 
     // Should throw an error for insufficient data
     do {
-      _ = try await trainPrepService.runPipeline(from: tempURL,
-                                                 config: config,
-                                                 progress: testProgressDelegate)
+      _ = try await trainPrepService.runPipeline(
+        from: tempURL,
+        config: config,
+        progress: testProgressDelegate)
       XCTFail("Should throw an error for empty data")
     } catch {
       // Expected to fail
@@ -134,27 +143,30 @@ final class TrainPrepServiceTests: XCTestCase {
   func testRunPipelineWithoutProgressDelegate() async throws {
     // Create test NDJSON data
     let testData = """
-    {"v":1,"ts_utc":"2025-01-27T08:00:00Z","bridge_id":1,"cross_k":5,"cross_n":10,"via_routable":1,"via_penalty_sec":120,"gate_anom":2.5,"alternates_total":3,"alternates_avoid":1,"open_label":0,"detour_delta":30,"detour_frac":0.1}
-    """
+      {"v":1,"ts_utc":"2025-01-27T08:00:00Z","bridge_id":1,"cross_k":5,"cross_n":10,"via_routable":1,"via_penalty_sec":120,"gate_anom":2.5,"alternates_total":3,"alternates_avoid":1,"open_label":0,"detour_delta":30,"detour_frac":0.1}
+      """
 
-    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("test_no_progress.ndjson")
+    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(
+      "test_no_progress.ndjson")
     try testData.write(to: tempURL, atomically: true, encoding: .utf8)
 
     defer {
       try? FileManager.default.removeItem(at: tempURL)
     }
 
-    let config = CoreMLTrainingConfig(modelType: .neuralNetwork,
-                                      epochs: 10,
-                                      learningRate: 0.01,
-                                      batchSize: 8,
-                                      useANE: false)
+    let config = CoreMLTrainingConfig(
+      modelType: .neuralNetwork,
+      epochs: 10,
+      learningRate: 0.01,
+      batchSize: 8,
+      useANE: false)
 
     // Execute pipeline without progress delegate - should fail because no base model files
     do {
-      _ = try await trainPrepService.runPipeline(from: tempURL,
-                                                 config: config,
-                                                 progress: nil)
+      _ = try await trainPrepService.runPipeline(
+        from: tempURL,
+        config: config,
+        progress: nil)
       XCTFail("Should throw an error when no base model files are provided")
     } catch {
       // Expected to fail because CoreMLTraining requires base model files
@@ -205,8 +217,8 @@ class TestEnhancedProgressDelegate: EnhancedPipelineProgressDelegate {
   var stageSequence: [PipelineStage] = []
   var stageProgress: [PipelineStage: [Double]] = [:]
   var stageErrors: [PipelineStage: Error] = [:]
-  var dataQualityGateResults: [String: Bool] = [:] // Use string key for simplicity
-  var modelPerformanceGateResults: [String: Bool] = [:] // Use string key for simplicity
+  var dataQualityGateResults: [String: Bool] = [:]  // Use string key for simplicity
+  var modelPerformanceGateResults: [String: Bool] = [:]  // Use string key for simplicity
   var pipelineMetrics: [PipelineMetrics] = []
   var didComplete = false
   var didFail = false
@@ -283,30 +295,33 @@ extension TrainPrepServiceTests {
   func testEnhancedProgressReporting() async throws {
     // Create test NDJSON data
     let testData = """
-    {"v":1,"ts_utc":"2025-01-27T08:00:00Z","bridge_id":1,"cross_k":5,"cross_n":10,"via_routable":1,"via_penalty_sec":120,"gate_anom":2.5,"alternates_total":3,"alternates_avoid":1,"open_label":0,"detour_delta":30,"detour_frac":0.1}
-    {"v":1,"ts_utc":"2025-01-27T08:01:00Z","bridge_id":1,"cross_k":6,"cross_n":10,"via_routable":1,"via_penalty_sec":150,"gate_anom":2.8,"alternates_total":3,"alternates_avoid":1,"open_label":1,"detour_delta":45,"detour_frac":0.15}
-    """
+      {"v":1,"ts_utc":"2025-01-27T08:00:00Z","bridge_id":1,"cross_k":5,"cross_n":10,"via_routable":1,"via_penalty_sec":120,"gate_anom":2.5,"alternates_total":3,"alternates_avoid":1,"open_label":0,"detour_delta":30,"detour_frac":0.1}
+      {"v":1,"ts_utc":"2025-01-27T08:01:00Z","bridge_id":1,"cross_k":6,"cross_n":10,"via_routable":1,"via_penalty_sec":150,"gate_anom":2.8,"alternates_total":3,"alternates_avoid":1,"open_label":1,"detour_delta":45,"detour_frac":0.15}
+      """
 
-    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("test_enhanced_progress.ndjson")
+    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(
+      "test_enhanced_progress.ndjson")
     try testData.write(to: tempURL, atomically: true, encoding: .utf8)
 
     defer {
       try? FileManager.default.removeItem(at: tempURL)
     }
 
-    let config = CoreMLTrainingConfig(modelType: .neuralNetwork,
-                                      epochs: 10,
-                                      learningRate: 0.01,
-                                      batchSize: 8,
-                                      useANE: false)
+    let config = CoreMLTrainingConfig(
+      modelType: .neuralNetwork,
+      epochs: 10,
+      learningRate: 0.01,
+      batchSize: 8,
+      useANE: false)
 
     let enhancedDelegate = await TestEnhancedProgressDelegate()
 
     do {
-      _ = try await trainPrepService.runPipeline(from: tempURL,
-                                                 config: config,
-                                                 progress: testProgressDelegate,
-                                                 enhancedProgress: enhancedDelegate)
+      _ = try await trainPrepService.runPipeline(
+        from: tempURL,
+        config: config,
+        progress: testProgressDelegate,
+        enhancedProgress: enhancedDelegate)
       XCTFail("Pipeline should fail due to missing base model files")
     } catch {
       // Expected to fail due to missing base model files
@@ -327,7 +342,8 @@ extension TrainPrepServiceTests {
     }
 
     // Verify that dataValidation stage started (may or may not complete depending on failure point)
-    XCTAssertTrue(actualStageSequence.contains(.dataValidation), "Data validation stage should have started")
+    XCTAssertTrue(
+      actualStageSequence.contains(.dataValidation), "Data validation stage should have started")
     let dataValidationProgress = await enhancedDelegate.stageProgress[.dataValidation]
     XCTAssertNotNil(dataValidationProgress, "Data validation should have progress updates")
     if let progress = dataValidationProgress {
@@ -347,47 +363,52 @@ extension TrainPrepServiceTests {
   func testDataQualityGateEvaluation() async throws {
     // Create test NDJSON data
     let testData = """
-    {"v":1,"ts_utc":"2025-01-27T08:00:00Z","bridge_id":1,"cross_k":5,"cross_n":10,"via_routable":1,"via_penalty_sec":120,"gate_anom":2.5,"alternates_total":3,"alternates_avoid":1,"open_label":0,"detour_delta":30,"detour_frac":0.1}
-    """
+      {"v":1,"ts_utc":"2025-01-27T08:00:00Z","bridge_id":1,"cross_k":5,"cross_n":10,"via_routable":1,"via_penalty_sec":120,"gate_anom":2.5,"alternates_total":3,"alternates_avoid":1,"open_label":0,"detour_delta":30,"detour_frac":0.1}
+      """
 
-    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("test_quality_gate.ndjson")
+    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(
+      "test_quality_gate.ndjson")
     try testData.write(to: tempURL, atomically: true, encoding: .utf8)
 
     defer {
       try? FileManager.default.removeItem(at: tempURL)
     }
 
-    let config = CoreMLTrainingConfig(modelType: .neuralNetwork,
-                                      epochs: 10,
-                                      learningRate: 0.01,
-                                      batchSize: 8,
-                                      useANE: false)
+    let config = CoreMLTrainingConfig(
+      modelType: .neuralNetwork,
+      epochs: 10,
+      learningRate: 0.01,
+      batchSize: 8,
+      useANE: false)
 
     let enhancedDelegate = await TestEnhancedProgressDelegate()
 
     // Set up data quality gate to fail
-    let validationResult = DataValidationResult(totalRecords: 1,
-                                                isValid: true,
-                                                errors: [],
-                                                warnings: [],
-                                                dataQualityMetrics: DataQualityMetrics(dataCompleteness: 1.0,
-                                                                                       timestampValidity: 1.0,
-                                                                                       bridgeIDValidity: 1.0,
-                                                                                       speedDataValidity: 1.0,
-                                                                                       duplicateCount: 0,
-                                                                                       missingFieldsCount: 0,
-                                                                                       nanCounts: [:],
-                                                                                       infiniteCounts: [:],
-                                                                                       outlierCounts: [:],
-                                                                                       rangeViolations: [:],
-                                                                                       nullCounts: [:]))
+    let validationResult = DataValidationResult(
+      totalRecords: 1,
+      isValid: true,
+      errors: [],
+      warnings: [],
+      dataQualityMetrics: DataQualityMetrics(
+        dataCompleteness: 1.0,
+        timestampValidity: 1.0,
+        bridgeIDValidity: 1.0,
+        speedDataValidity: 1.0,
+        duplicateCount: 0,
+        missingFieldsCount: 0,
+        nanCounts: [:],
+        infiniteCounts: [:],
+        outlierCounts: [:],
+        rangeViolations: [:],
+        nullCounts: [:]))
     await enhancedDelegate.setDataQualityGateResult(validationResult, gateResult: false)
 
     do {
-      _ = try await trainPrepService.runPipeline(from: tempURL,
-                                                 config: config,
-                                                 progress: testProgressDelegate,
-                                                 enhancedProgress: enhancedDelegate)
+      _ = try await trainPrepService.runPipeline(
+        from: tempURL,
+        config: config,
+        progress: testProgressDelegate,
+        enhancedProgress: enhancedDelegate)
     } catch {
       // Expected to fail due to data quality gate
       let didFail = await enhancedDelegate.didFail
@@ -402,12 +423,13 @@ extension TrainPrepServiceTests {
     // For now, we'll test the structure without actual training
     let enhancedDelegate = await TestEnhancedProgressDelegate()
 
-    let metrics = ModelPerformanceMetrics(accuracy: 0.8,
-                                          loss: 0.2,
-                                          f1Score: 0.75,
-                                          precision: 0.8,
-                                          recall: 0.7,
-                                          confusionMatrix: [[80, 20], [30, 70]])
+    let metrics = ModelPerformanceMetrics(
+      accuracy: 0.8,
+      loss: 0.2,
+      f1Score: 0.75,
+      precision: 0.8,
+      recall: 0.7,
+      confusionMatrix: [[80, 20], [30, 70]])
 
     // Test that the gate can be configured
     await enhancedDelegate.setModelPerformanceGateResult(metrics, result: false)
@@ -420,29 +442,32 @@ extension TrainPrepServiceTests {
   func testPipelineMetricsCollection() async throws {
     // Create minimal test data
     let testData = """
-    {"v":1,"ts_utc":"2025-01-27T08:00:00Z","bridge_id":1,"cross_k":5,"cross_n":10,"via_routable":1,"via_penalty_sec":120,"gate_anom":2.5,"alternates_total":3,"alternates_avoid":1,"open_label":0,"detour_delta":30,"detour_frac":0.1}
-    """
+      {"v":1,"ts_utc":"2025-01-27T08:00:00Z","bridge_id":1,"cross_k":5,"cross_n":10,"via_routable":1,"via_penalty_sec":120,"gate_anom":2.5,"alternates_total":3,"alternates_avoid":1,"open_label":0,"detour_delta":30,"detour_frac":0.1}
+      """
 
-    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("test_metrics.ndjson")
+    let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(
+      "test_metrics.ndjson")
     try testData.write(to: tempURL, atomically: true, encoding: .utf8)
 
     defer {
       try? FileManager.default.removeItem(at: tempURL)
     }
 
-    let config = CoreMLTrainingConfig(modelType: .neuralNetwork,
-                                      epochs: 10,
-                                      learningRate: 0.01,
-                                      batchSize: 8,
-                                      useANE: false)
+    let config = CoreMLTrainingConfig(
+      modelType: .neuralNetwork,
+      epochs: 10,
+      learningRate: 0.01,
+      batchSize: 8,
+      useANE: false)
 
     let enhancedDelegate = await TestEnhancedProgressDelegate()
 
     do {
-      _ = try await trainPrepService.runPipeline(from: tempURL,
-                                                 config: config,
-                                                 progress: testProgressDelegate,
-                                                 enhancedProgress: enhancedDelegate)
+      _ = try await trainPrepService.runPipeline(
+        from: tempURL,
+        config: config,
+        progress: testProgressDelegate,
+        enhancedProgress: enhancedDelegate)
       XCTFail("Pipeline should fail due to missing base model files")
     } catch {
       // Expected to fail due to missing base model files

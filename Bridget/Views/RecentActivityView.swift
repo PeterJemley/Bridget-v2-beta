@@ -95,8 +95,10 @@ struct ActivityRow: View {
 }
 
 #Preview {
-  RecentActivityView(viewModel: RecentActivityViewModel(
-    backgroundManager: MLPipelineBackgroundManager.shared
-  ))
+  RecentActivityView(
+    viewModel: RecentActivityViewModel(
+      backgroundManager: MLPipelineBackgroundManager.shared
+    )
+  )
   .padding()
 }
