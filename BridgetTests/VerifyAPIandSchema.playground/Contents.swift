@@ -20,7 +20,7 @@ URLSession.shared.dataTask(with: sampleURL) { data, _, err in
 
   // 3) Inspect first record’s keys & types
   if let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
-    let first = arr.first
+     let first = arr.first
   {
     print("\nKeys and Swift types in first record:")
     for (k, v) in first {

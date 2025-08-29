@@ -25,12 +25,11 @@ struct SettingsTabView: View {
       }
       .sheet(isPresented: $showingTroubleshooting) {
         NavigationStack {
-          PipelineTroubleshootingView(
-            lastBackgroundTaskRun: MLPipelineBackgroundManager.shared.lastPopulationDate,
-            lastBackgroundTaskError: nil,  // TODO: Add error tracking to background manager
-            onRerunHealthChecks: {
-              MLPipelineBackgroundManager.shared.triggerBackgroundTask(.maintenance)
-            })
+          PipelineTroubleshootingView(lastBackgroundTaskRun: MLPipelineBackgroundManager.shared.lastPopulationDate,
+                                      lastBackgroundTaskError: nil,  // TODO: Add error tracking to background manager
+                                      onRerunHealthChecks: {
+                                        MLPipelineBackgroundManager.shared.triggerBackgroundTask(.maintenance)
+                                      })
         }
       }
     }

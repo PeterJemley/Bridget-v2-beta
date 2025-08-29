@@ -187,14 +187,12 @@ public struct Graph: Codable {
     }
 
     let isValid = errors.isEmpty
-    return GraphValidationResult(
-      isValid: isValid,
-      errors: errors,
-      warnings: warnings,
-      nodeCount: nodes.count,
-      edgeCount: allEdges.count,
-      bridgeCount: bridgeEdges.count
-    )
+    return GraphValidationResult(isValid: isValid,
+                                 errors: errors,
+                                 warnings: warnings,
+                                 nodeCount: nodes.count,
+                                 edgeCount: allEdges.count,
+                                 bridgeCount: bridgeEdges.count)
   }
 
   /// Validate graph and throw error if invalid
@@ -225,7 +223,7 @@ public struct Graph: Codable {
   /// Get the shortest path between two nodes using Dijkstra's algorithm
   /// Returns nil if no path exists
   public func shortestPath(from start: NodeID, to end: NodeID) -> RoutePath? {
-    guard contains(nodeID: start) && contains(nodeID: end) else {
+    guard contains(nodeID: start), contains(nodeID: end) else {
       return nil
     }
 
@@ -302,9 +300,9 @@ public struct Graph: Codable {
 
 // MARK: - Graph Factory Methods
 
-extension Graph {
+public extension Graph {
   /// Create a tiny test graph for validation
-  public static func createTinyTestGraph() -> Graph {
+  static func createTinyTestGraph() -> Graph {
     let nodes = [
       Node(id: "A", name: "Start", coordinates: (47.6062, -122.3321)),
       Node(id: "B", name: "Bridge", coordinates: (47.6065, -122.3325)),
@@ -327,7 +325,7 @@ extension Graph {
   }
 
   /// Create a small test graph with multiple paths
-  public static func createSmallTestGraph() -> Graph {
+  static func createSmallTestGraph() -> Graph {
     let nodes = [
       Node(id: "A", name: "Start", coordinates: (47.6062, -122.3321)),
       Node(id: "B", name: "Bridge1", coordinates: (47.6065, -122.3325)),

@@ -74,19 +74,18 @@ final class MLPipelineViewModel: CoreMLTrainingProgressDelegate, TrainPrepProgre
     let lastActivity = recentActivity.recentActivities.first?.title ?? "No recent activity"
 
     return """
-      Pipeline Status: \(healthStatus)
-      Data: \(dataStatus)
-      Last Activity: \(lastActivity)
-      """
+    Pipeline Status: \(healthStatus)
+    Data: \(dataStatus)
+    Last Activity: \(lastActivity)
+    """
   }
 
   // MARK: - Core ML Training Methods
 
-  func startTrainingPipeline(
-    ndjsonPath: String,
-    outputDirectory: String,
-    horizons _: [Int] = defaultHorizons
-  ) {
+  func startTrainingPipeline(ndjsonPath: String,
+                             outputDirectory: String,
+                             horizons _: [Int] = defaultHorizons)
+  {
     isTraining = true
     trainingProgress = 0.0
     trainingStatus = "Starting training pipeline..."
@@ -96,18 +95,16 @@ final class MLPipelineViewModel: CoreMLTrainingProgressDelegate, TrainPrepProgre
       guard let self = self else { return }
       do {
         // Use the new Step 5 orchestrator service
-        let config = CoreMLTrainingConfig(
-          modelType: .neuralNetwork,
-          epochs: 100,
-          learningRate: 0.001,
-          batchSize: 32,
-          useANE: true)
+        let config = CoreMLTrainingConfig(modelType: .neuralNetwork,
+                                          epochs: 100,
+                                          learningRate: 0.001,
+                                          batchSize: 32,
+                                          useANE: true)
 
         let url = URL(fileURLWithPath: ndjsonPath)
-        let (_, _) = try await TrainPrepService().runPipeline(
-          from: url,
-          config: config,
-          progress: self)
+        _ = try await TrainPrepService().runPipeline(from: url,
+                                                     config: config,
+                                                     progress: self)
 
         // For now, store the model path as a placeholder
         // In a real implementation, you would save the model to disk
@@ -130,11 +127,10 @@ final class MLPipelineViewModel: CoreMLTrainingProgressDelegate, TrainPrepProgre
     }
   }
 
-  func startSingleHorizonTraining(
-    csvPath: String,
-    horizon: Int,
-    outputDirectory: String
-  ) {
+  func startSingleHorizonTraining(csvPath: String,
+                                  horizon: Int,
+                                  outputDirectory: String)
+  {
     isTraining = true
     trainingProgress = 0.0
     trainingStatus = "Training model for \(horizon)-minute horizon..."
@@ -144,20 +140,18 @@ final class MLPipelineViewModel: CoreMLTrainingProgressDelegate, TrainPrepProgre
       guard let self = self else { return }
       do {
         // Use the new Step 5 orchestrator service for single horizon training
-        let config = CoreMLTrainingConfig(
-          modelType: .neuralNetwork,
-          epochs: 100,
-          learningRate: 0.001,
-          batchSize: 32,
-          useANE: true)
+        let config = CoreMLTrainingConfig(modelType: .neuralNetwork,
+                                          epochs: 100,
+                                          learningRate: 0.001,
+                                          batchSize: 32,
+                                          useANE: true)
 
         // For single horizon training, we would need to create a CSV-like input
         // For now, this is a placeholder that would need to be implemented
         let url = URL(fileURLWithPath: csvPath)
-        let (_, _) = try await TrainPrepService().runPipeline(
-          from: url,
-          config: config,
-          progress: self)
+        _ = try await TrainPrepService().runPipeline(from: url,
+                                                     config: config,
+                                                     progress: self)
 
         let modelPath = "\(outputDirectory)/BridgeLiftPredictor_horizon_\(horizon).mlmodel"
 

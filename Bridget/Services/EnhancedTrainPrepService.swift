@@ -26,8 +26,8 @@
 
 import CoreML
 import Foundation
-import OSLog
 import Observation
+import OSLog
 
 // MARK: - Enhanced Training Service
 
@@ -46,20 +46,18 @@ public class EnhancedTrainPrepService {
   private var stageStartTimes: [PipelineStage: Date] = [:]
   private var stageMetrics: PipelineMetrics
 
-  public init(
-    configuration: EnhancedPipelineConfig,
-    progressDelegate: EnhancedPipelineProgressDelegate? = nil
-  ) {
+  public init(configuration: EnhancedPipelineConfig,
+              progressDelegate: EnhancedPipelineProgressDelegate? = nil)
+  {
     self.configuration = configuration
     self.progressDelegate = progressDelegate
 
     // Initialize services
-    let retryPolicy = RetryPolicy(
-      maxAttempts: configuration.maxRetryAttempts,
-      baseDelay: 1.0,
-      maxDelay: 30.0,
-      backoffMultiplier: configuration.retryBackoffMultiplier,
-      enableJitter: true)
+    let retryPolicy = RetryPolicy(maxAttempts: configuration.maxRetryAttempts,
+                                  baseDelay: 1.0,
+                                  maxDelay: 30.0,
+                                  backoffMultiplier: configuration.retryBackoffMultiplier,
+                                  enableJitter: true)
 
     self.retryService = RetryRecoveryService(policy: retryPolicy)
 
@@ -286,9 +284,8 @@ public class EnhancedTrainPrepService {
     let sampleTicks: [ProbeTickRaw] = []
 
     let featureService = FeatureEngineeringService(
-      configuration: FeatureEngineeringConfiguration(
-        horizons: configuration.trainingConfig.horizons,
-        deterministicSeed: configuration.trainingConfig.deterministicSeed)
+      configuration: FeatureEngineeringConfiguration(horizons: configuration.trainingConfig.horizons,
+                                                     deterministicSeed: configuration.trainingConfig.deterministicSeed)
     )
 
     if configuration.enableParallelization {
@@ -298,9 +295,7 @@ public class EnhancedTrainPrepService {
     }
   }
 
-  private func executeParallelFeatureEngineering(
-    _ featureService: FeatureEngineeringService, ticks: [ProbeTickRaw]
-  ) async throws {
+  private func executeParallelFeatureEngineering(_ featureService: FeatureEngineeringService, ticks: [ProbeTickRaw]) async throws {
     logger.info(
       "Executing feature engineering in parallel with max \(self.configuration.maxConcurrentHorizons) concurrent horizons"
     )
@@ -335,8 +330,7 @@ public class EnhancedTrainPrepService {
         // Update progress
         let progress =
           Double(horizonFeatures.count) / Double(configuration.trainingConfig.horizons.count)
-        await progressDelegate?.pipelineDidUpdateStageProgress(
-          .featureEngineering, progress: progress)
+        await progressDelegate?.pipelineDidUpdateStageProgress(.featureEngineering, progress: progress)
       }
 
       let allFeatures = horizonFeatures.values.flatMap { $0 }
@@ -357,9 +351,7 @@ public class EnhancedTrainPrepService {
     }
   }
 
-  private func executeSerialFeatureEngineering(
-    _ featureService: FeatureEngineeringService, ticks: [ProbeTickRaw]
-  ) async throws {
+  private func executeSerialFeatureEngineering(_ featureService: FeatureEngineeringService, ticks: [ProbeTickRaw]) async throws {
     logger.info("Executing feature engineering serially")
 
     for (index, horizon) in configuration.trainingConfig.horizons.enumerated() {
@@ -371,8 +363,7 @@ public class EnhancedTrainPrepService {
 
       // Update progress
       let progress = Double(index + 1) / Double(configuration.trainingConfig.horizons.count)
-      await progressDelegate?.pipelineDidUpdateStageProgress(
-        .featureEngineering, progress: progress)
+      await progressDelegate?.pipelineDidUpdateStageProgress(.featureEngineering, progress: progress)
     }
   }
 
@@ -401,13 +392,12 @@ public class EnhancedTrainPrepService {
     // This would evaluate the trained models and check performance gates
 
     // For now, create sample metrics for plugin validation
-    let sampleMetrics = ModelPerformanceMetrics(
-      accuracy: 0.85,
-      loss: 0.3,
-      f1Score: 0.82,
-      precision: 0.87,
-      recall: 0.78,
-      confusionMatrix: [[85, 15], [20, 80]])
+    let sampleMetrics = ModelPerformanceMetrics(accuracy: 0.85,
+                                                loss: 0.3,
+                                                f1Score: 0.82,
+                                                precision: 0.87,
+                                                recall: 0.78,
+                                                confusionMatrix: [[85, 15], [20, 80]])
 
     // Run model performance validation plugins
     let modelValidationResults = pluginManager.validateAll(metrics: sampleMetrics)
@@ -498,9 +488,7 @@ public class EnhancedTrainPrepService {
     for (i, line) in data.split(separator: "\n").enumerated() {
       if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { continue }
 
-      if let decoded = try? JSONDecoder.bridgeDecoder().decode(
-        ProbeTickRaw.self, from: Data(line.utf8))
-      {
+      if let decoded = try? JSONDecoder.bridgeDecoder().decode(ProbeTickRaw.self, from: Data(line.utf8)) {
         result.append(decoded)
       } else {
         logger.warning("Failed to parse line \(i + 1): Could not decode ProbeTickRaw")
@@ -521,13 +509,13 @@ public enum PipelineError: LocalizedError {
 
   public var errorDescription: String? {
     switch self {
-    case .dataQualityGateFailed(let result):
+    case let .dataQualityGateFailed(result):
       return "Data quality gate failed: \(result.errors.joined(separator: ", "))"
-    case .modelPerformanceGateFailed(let metrics):
+    case let .modelPerformanceGateFailed(metrics):
       return "Model performance gate failed: accuracy \(metrics.accuracy), loss \(metrics.loss)"
-    case .checkpointNotFound(let stage):
+    case let .checkpointNotFound(stage):
       return "Checkpoint not found for stage: \(stage.displayName)"
-    case .stageExecutionFailed(let stage, let error):
+    case let .stageExecutionFailed(stage, error):
       return "Stage \(stage.displayName) failed: \(error.localizedDescription)"
     }
   }

@@ -8,7 +8,6 @@ import XCTest
 @testable import Bridget
 
 final class HistoricalBridgeDataProviderTests: XCTestCase {
-
   // MARK: - Simple Debug Tests
 
   func testSimpleBaselinePredictor() {

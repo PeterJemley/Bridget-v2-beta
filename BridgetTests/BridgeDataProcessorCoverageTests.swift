@@ -35,7 +35,6 @@ struct BridgeIDBridgeLocationsCoverageTests {
       #expect(knownBridgeIDs.contains(id), "Extra bridge location in bridgeLocations: \(id)")
     }
     // 3: Check 1-to-1 count
-    #expect(
-      knownBridgeIDs.count == bridgeLocations.count, "BridgeID and bridgeLocations count mismatch.")
+    #expect(knownBridgeIDs.count == bridgeLocations.count, "BridgeID and bridgeLocations count mismatch.")
   }
 }

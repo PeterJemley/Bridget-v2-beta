@@ -92,33 +92,30 @@ public struct PipelineTroubleshootingView: View {
 
 #Preview {
   NavigationStack {
-    PipelineTroubleshootingView(
-      lastBackgroundTaskRun: Date().addingTimeInterval(-3600),  // 1 hour ago
-      lastBackgroundTaskError: nil,
-      onRerunHealthChecks: {
-        print("Health checks triggered")
-      })
+    PipelineTroubleshootingView(lastBackgroundTaskRun: Date().addingTimeInterval(-3600),  // 1 hour ago
+                                lastBackgroundTaskError: nil,
+                                onRerunHealthChecks: {
+                                  print("Health checks triggered")
+                                })
   }
 }
 
 #Preview("With Error") {
   NavigationStack {
-    PipelineTroubleshootingView(
-      lastBackgroundTaskRun: Date().addingTimeInterval(-7200),  // 2 hours ago
-      lastBackgroundTaskError: "Network connection failed during data export",
-      onRerunHealthChecks: {
-        print("Health checks triggered")
-      })
+    PipelineTroubleshootingView(lastBackgroundTaskRun: Date().addingTimeInterval(-7200),  // 2 hours ago
+                                lastBackgroundTaskError: "Network connection failed during data export",
+                                onRerunHealthChecks: {
+                                  print("Health checks triggered")
+                                })
   }
 }
 
 #Preview("Never Run") {
   NavigationStack {
-    PipelineTroubleshootingView(
-      lastBackgroundTaskRun: nil,
-      lastBackgroundTaskError: nil,
-      onRerunHealthChecks: {
-        print("Health checks triggered")
-      })
+    PipelineTroubleshootingView(lastBackgroundTaskRun: nil,
+                                lastBackgroundTaskError: nil,
+                                onRerunHealthChecks: {
+                                  print("Health checks triggered")
+                                })
   }
 }

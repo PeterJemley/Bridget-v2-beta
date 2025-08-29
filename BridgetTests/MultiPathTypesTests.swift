@@ -14,15 +14,12 @@ import XCTest
 @testable import Bridget
 
 final class MultiPathTypesTests: XCTestCase {
-
   // MARK: - Node Tests
 
   func testNodeCreation() {
-    let node = Node(
-      id: "test_node",
-      name: "Test Node",
-      coordinates: (47.6062, -122.3321)
-    )
+    let node = Node(id: "test_node",
+                    name: "Test Node",
+                    coordinates: (47.6062, -122.3321))
 
     XCTAssertEqual(node.id, "test_node")
     XCTAssertEqual(node.name, "Test Node")
@@ -44,14 +41,12 @@ final class MultiPathTypesTests: XCTestCase {
   // MARK: - Edge Tests
 
   func testEdgeCreation() {
-    let edge = Edge(
-      from: "A",
-      to: "B",
-      travelTime: 300,
-      distance: 500,
-      isBridge: true,
-      bridgeID: "bridge1"
-    )
+    let edge = Edge(from: "A",
+                    to: "B",
+                    travelTime: 300,
+                    distance: 500,
+                    isBridge: true,
+                    bridgeID: "bridge1")
 
     XCTAssertEqual(edge.from, "A")
     XCTAssertEqual(edge.to, "B")
@@ -154,7 +149,7 @@ final class MultiPathTypesTests: XCTestCase {
     ]
 
     let edges = [
-      Edge(from: "A", to: "B", travelTime: 300, distance: 500)
+      Edge(from: "A", to: "B", travelTime: 300, distance: 500),
     ]
 
     let graph = try Graph(nodes: nodes, edges: edges)
@@ -173,14 +168,14 @@ final class MultiPathTypesTests: XCTestCase {
 
     // Valid graph
     let validEdges = [
-      Edge(from: "A", to: "B", travelTime: 300, distance: 500)
+      Edge(from: "A", to: "B", travelTime: 300, distance: 500),
     ]
 
     XCTAssertNoThrow(try Graph(nodes: nodes, edges: validEdges))
 
     // Invalid graph - edge references non-existent node
     let invalidEdges = [
-      Edge(from: "A", to: "C", travelTime: 300, distance: 500)
+      Edge(from: "A", to: "C", travelTime: 300, distance: 500),
     ]
 
     XCTAssertThrowsError(try Graph(nodes: nodes, edges: invalidEdges))
@@ -249,11 +244,9 @@ final class MultiPathTypesTests: XCTestCase {
 
   func testETACreation() {
     let date = Date()
-    let eta = ETA(
-      nodeID: "A",
-      arrivalTime: date,
-      travelTimeFromStart: 300
-    )
+    let eta = ETA(nodeID: "A",
+                  arrivalTime: date,
+                  travelTimeFromStart: 300)
 
     XCTAssertEqual(eta.nodeID, "A")
     XCTAssertEqual(eta.arrivalTime, date)

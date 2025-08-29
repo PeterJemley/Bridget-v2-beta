@@ -113,22 +113,21 @@ final class ProbeTick {
   ///   - viaEtaSec: ETA for via route (optional)
   ///   - openLabel: Bridge opening state
   ///   - isValid: Data quality flag (defaults to true)
-  init(
-    id: UUID = UUID(),
-    tsUtc: Date,
-    bridgeId: Int16,
-    crossK: Int16,
-    crossN: Int16,
-    viaRoutable: Bool,
-    viaPenaltySec: Int32,
-    gateAnom: Double,
-    alternatesTotal: Int16,
-    alternatesAvoid: Int16,
-    freeEtaSec: Int32? = nil,
-    viaEtaSec: Int32? = nil,
-    openLabel: Bool,
-    isValid: Bool = true
-  ) {
+  init(id: UUID = UUID(),
+       tsUtc: Date,
+       bridgeId: Int16,
+       crossK: Int16,
+       crossN: Int16,
+       viaRoutable: Bool,
+       viaPenaltySec: Int32,
+       gateAnom: Double,
+       alternatesTotal: Int16,
+       alternatesAvoid: Int16,
+       freeEtaSec: Int32? = nil,
+       viaEtaSec: Int32? = nil,
+       openLabel: Bool,
+       isValid: Bool = true)
+  {
     self.id = id
     self.tsUtc = tsUtc
     self.bridgeId = bridgeId

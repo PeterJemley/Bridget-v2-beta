@@ -10,7 +10,6 @@ import XCTest
 @testable import Bridget
 
 final class ETASummaryTests: XCTestCase {
-
   // MARK: - ETASummary Creation Tests
 
   func testETASummaryFromEmptyArray() {

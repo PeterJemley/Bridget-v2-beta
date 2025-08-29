@@ -200,23 +200,23 @@ final class PipelinePerformanceLogger: NSObject {
 
   private func generateReportText(totalTime: TimeInterval) -> String {
     var report = """
-      # Pipeline Performance Report
-      Generated: \(Date())
+    # Pipeline Performance Report
+    Generated: \(Date())
 
-      ## Execution Summary
-      - Total Time: \(String(format: "%.3f", totalTime))s
-      - Input Records: \(self.inputRecordCount)
-      - Output Records: \(self.outputRecordCount)
-      - Processing Rate: \(String(format: "%.1f", Double(self.outputRecordCount) / totalTime)) records/sec
+    ## Execution Summary
+    - Total Time: \(String(format: "%.3f", totalTime))s
+    - Input Records: \(self.inputRecordCount)
+    - Output Records: \(self.outputRecordCount)
+    - Processing Rate: \(String(format: "%.1f", Double(self.outputRecordCount) / totalTime)) records/sec
 
-      ## Memory Usage
-      - Baseline: \(self.formatBytes(self.memoryBaseline))
-      - Peak: \(self.formatBytes(self.memoryPeak))
-      - Final: \(self.formatBytes(self.getCurrentMemoryUsage()))
-      - Efficiency: \(String(format: "%.1f", Double(self.outputRecordCount) / Double(self.memoryPeak))) records/MB
+    ## Memory Usage
+    - Baseline: \(self.formatBytes(self.memoryBaseline))
+    - Peak: \(self.formatBytes(self.memoryPeak))
+    - Final: \(self.formatBytes(self.getCurrentMemoryUsage()))
+    - Efficiency: \(String(format: "%.1f", Double(self.outputRecordCount) / Double(self.memoryPeak))) records/MB
 
-      ## Step-by-Step Timings
-      """
+    ## Step-by-Step Timings
+    """
 
     for (stepName, duration) in self.stepTimings.sorted(by: { $0.value > $1.value }) {
       let percentage = (duration / totalTime) * 100
@@ -226,20 +226,20 @@ final class PipelinePerformanceLogger: NSObject {
 
     report += """
 
-      ## Data Quality
-      - Validation Failures: \(self.validationFailures)
-      - Corrected Rows: \(self.correctedRows)
-      - Success Rate: \(String(format: "%.1f", Double(self.outputRecordCount) / Double(self.inputRecordCount) * 100))%
+    ## Data Quality
+    - Validation Failures: \(self.validationFailures)
+    - Corrected Rows: \(self.correctedRows)
+    - Success Rate: \(String(format: "%.1f", Double(self.outputRecordCount) / Double(self.inputRecordCount) * 100))%
 
-      ## Output Artifacts
-      - File Size: \(self.formatBytes(self.outputFileSize))
-      - Records per MB: \(String(format: "%.1f", Double(self.outputFileSize) / Double(self.outputRecordCount)))
+    ## Output Artifacts
+    - File Size: \(self.formatBytes(self.outputFileSize))
+    - Records per MB: \(String(format: "%.1f", Double(self.outputFileSize) / Double(self.outputRecordCount)))
 
-      ## Performance Analysis
-      - Bottleneck Step: \(self.stepTimings.max(by: { $0.value < $1.value })?.key ?? "Unknown")
-      - Memory Pressure: \(self.memoryPeak > self.memoryBaseline * 2 ? "High" : "Normal")
-      - Efficiency Rating: \(self.getEfficiencyRating(totalTime: totalTime, recordCount: self.outputRecordCount))
-      """
+    ## Performance Analysis
+    - Bottleneck Step: \(self.stepTimings.max(by: { $0.value < $1.value })?.key ?? "Unknown")
+    - Memory Pressure: \(self.memoryPeak > self.memoryBaseline * 2 ? "High" : "Normal")
+    - Efficiency Rating: \(self.getEfficiencyRating(totalTime: totalTime, recordCount: self.outputRecordCount))
+    """
 
     return report
   }
@@ -271,11 +271,10 @@ final class PipelinePerformanceLogger: NSObject {
 
     let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
       $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-        task_info(
-          mach_task_self_,
-          task_flavor_t(MACH_TASK_BASIC_INFO),
-          $0,
-          &count)
+        task_info(mach_task_self_,
+                  task_flavor_t(MACH_TASK_BASIC_INFO),
+                  $0,
+                  &count)
       }
     }
 
@@ -299,8 +298,8 @@ final class PipelinePerformanceLogger: NSObject {
 
     switch recordsPerSecond {
     case 1000...: return "Excellent"
-    case 500..<1000: return "Good"
-    case 100..<500: return "Fair"
+    case 500 ..< 1000: return "Good"
+    case 100 ..< 500: return "Fair"
     default: return "Poor"
     }
   }

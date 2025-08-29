@@ -14,7 +14,6 @@ import XCTest
 @testable import Bridget
 
 final class PathEnumerationServiceTests: XCTestCase {
-
   var service: PathEnumerationService!
 
   override func setUp() {
@@ -69,7 +68,7 @@ final class PathEnumerationServiceTests: XCTestCase {
     XCTAssertTrue(service.validatePaths(foundPaths), "All paths should be valid")
 
     // Verify paths are sorted by travel time (shortest first)
-    for i in 0..<(foundPaths.count - 1) {
+    for i in 0 ..< (foundPaths.count - 1) {
       XCTAssertLessThanOrEqual(foundPaths[i].totalTravelTime, foundPaths[i + 1].totalTravelTime)
     }
 
@@ -101,8 +100,7 @@ final class PathEnumerationServiceTests: XCTestCase {
 
     // All paths should have positive travel time
     for path in paths {
-      XCTAssertGreaterThan(
-        path.totalTravelTime, 0, "Path \(path.nodes) should have positive travel time")
+      XCTAssertGreaterThan(path.totalTravelTime, 0, "Path \(path.nodes) should have positive travel time")
     }
   }
 
@@ -113,8 +111,7 @@ final class PathEnumerationServiceTests: XCTestCase {
 
     // All paths should have positive distance
     for path in paths {
-      XCTAssertGreaterThan(
-        path.totalDistance, 0, "Path \(path.nodes) should have positive distance")
+      XCTAssertGreaterThan(path.totalDistance, 0, "Path \(path.nodes) should have positive distance")
     }
   }
 
@@ -165,11 +162,11 @@ final class PathEnumerationServiceTests: XCTestCase {
 
   func testMaxDepthLimit() throws {
     // Create a deep graph
-    let nodes = (0...10).map { i in
+    let nodes = (0 ... 10).map { i in
       Node(id: "\(i)", name: "Node\(i)", coordinates: (Double(i), Double(i)))
     }
 
-    let edges = (0..<10).map { i in
+    let edges = (0 ..< 10).map { i in
       Edge(from: "\(i)", to: "\(i + 1)", travelTime: 100, distance: 100)
     }
 
@@ -266,7 +263,7 @@ final class PathEnumerationServiceTests: XCTestCase {
     XCTAssertEqual(results1.count, results2.count)
     XCTAssertEqual(results2.count, results3.count)
 
-    for i in 0..<results1.count {
+    for i in 0 ..< results1.count {
       XCTAssertEqual(results1[i].nodes, results2[i].nodes)
       XCTAssertEqual(results2[i].nodes, results3[i].nodes)
       XCTAssertEqual(results1[i].totalTravelTime, results2[i].totalTravelTime)
@@ -365,10 +362,8 @@ final class PathEnumerationServiceTests: XCTestCase {
 
           // All paths found with lower maxDepth should also be found with higher maxDepth
           for pathA in pathsA {
-            XCTAssertTrue(
-              pathsB.contains { $0.nodes == pathA.nodes },
-              "Path \(pathA.nodes) found with maxDepth \(configA.pathEnumeration.maxDepth) should also be found with maxDepth \(configB.pathEnumeration.maxDepth)"
-            )
+            XCTAssertTrue(pathsB.contains { $0.nodes == pathA.nodes },
+                          "Path \(pathA.nodes) found with maxDepth \(configA.pathEnumeration.maxDepth) should also be found with maxDepth \(configB.pathEnumeration.maxDepth)")
           }
         }
       }
@@ -395,10 +390,8 @@ final class PathEnumerationServiceTests: XCTestCase {
 
           // All paths found with lower maxPaths should also be found with higher maxPaths
           for pathA in pathsA {
-            XCTAssertTrue(
-              pathsB.contains { $0.nodes == pathA.nodes },
-              "Path \(pathA.nodes) found with maxPaths \(configA.pathEnumeration.maxPaths) should also be found with maxPaths \(configB.pathEnumeration.maxPaths)"
-            )
+            XCTAssertTrue(pathsB.contains { $0.nodes == pathA.nodes },
+                          "Path \(pathA.nodes) found with maxPaths \(configA.pathEnumeration.maxPaths) should also be found with maxPaths \(configB.pathEnumeration.maxPaths)")
           }
         }
       }
@@ -425,10 +418,8 @@ final class PathEnumerationServiceTests: XCTestCase {
 
           // All paths found with lower maxTimeOverShortest should also be found with higher maxTimeOverShortest
           for pathA in pathsA {
-            XCTAssertTrue(
-              pathsB.contains { $0.nodes == pathA.nodes },
-              "Path \(pathA.nodes) found with maxTimeOverShortest \(configA.pathEnumeration.maxTimeOverShortest)s should also be found with maxTimeOverShortest \(configB.pathEnumeration.maxTimeOverShortest)s"
-            )
+            XCTAssertTrue(pathsB.contains { $0.nodes == pathA.nodes },
+                          "Path \(pathA.nodes) found with maxTimeOverShortest \(configA.pathEnumeration.maxTimeOverShortest)s should also be found with maxTimeOverShortest \(configB.pathEnumeration.maxTimeOverShortest)s")
           }
         }
       }
@@ -456,16 +447,13 @@ final class PathEnumerationServiceTests: XCTestCase {
     let permissivePaths = try permissiveService.enumeratePaths(from: "A", to: "D", in: graph)
 
     // Restrictive config should find fewer or equal paths
-    XCTAssertLessThanOrEqual(
-      restrictivePaths.count, permissivePaths.count,
-      "Restrictive pruning should find fewer or equal paths")
+    XCTAssertLessThanOrEqual(restrictivePaths.count, permissivePaths.count,
+                             "Restrictive pruning should find fewer or equal paths")
 
     // All paths found with restrictive config should also be found with permissive config
     for restrictivePath in restrictivePaths {
-      XCTAssertTrue(
-        permissivePaths.contains { $0.nodes == restrictivePath.nodes },
-        "Path \(restrictivePath.nodes) found with restrictive pruning should also be found with permissive pruning"
-      )
+      XCTAssertTrue(permissivePaths.contains { $0.nodes == restrictivePath.nodes },
+                    "Path \(restrictivePath.nodes) found with restrictive pruning should also be found with permissive pruning")
     }
   }
 }

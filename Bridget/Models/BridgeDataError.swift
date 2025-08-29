@@ -18,10 +18,10 @@ enum BridgeDataError: Error, LocalizedError {
   /// Human-readable error message for the user interface.
   var errorDescription: String? {
     switch self {
-    case .decodingError(let decodingError, _):
+    case let .decodingError(decodingError, _):
       return
         "Failed to decode bridge data: \(decodingError.localizedDescription)"
-    case .processingError(let message):
+    case let .processingError(message):
       return "Bridge data processing error: \(message)"
     }
   }

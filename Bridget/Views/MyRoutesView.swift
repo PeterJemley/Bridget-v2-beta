@@ -14,26 +14,23 @@ struct MyRoutesView: View {
               .bold()
 
             // Sample saved route cards
-            SavedRouteCard(
-              name: "Home to Work",
-              from: "Fremont",
-              to: "Downtown Seattle",
-              isFavorite: true,
-              lastUsed: "Today")
+            SavedRouteCard(name: "Home to Work",
+                           from: "Fremont",
+                           to: "Downtown Seattle",
+                           isFavorite: true,
+                           lastUsed: "Today")
 
-            SavedRouteCard(
-              name: "Weekend Shopping",
-              from: "Ballard",
-              to: "University District",
-              isFavorite: false,
-              lastUsed: "Yesterday")
+            SavedRouteCard(name: "Weekend Shopping",
+                           from: "Ballard",
+                           to: "University District",
+                           isFavorite: false,
+                           lastUsed: "Yesterday")
 
-            SavedRouteCard(
-              name: "Airport Run",
-              from: "Capitol Hill",
-              to: "Sea-Tac Airport",
-              isFavorite: true,
-              lastUsed: "3 days ago")
+            SavedRouteCard(name: "Airport Run",
+                           from: "Capitol Hill",
+                           to: "Sea-Tac Airport",
+                           isFavorite: true,
+                           lastUsed: "3 days ago")
           }
           .padding()
         }

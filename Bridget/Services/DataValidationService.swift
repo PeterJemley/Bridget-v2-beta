@@ -114,7 +114,7 @@ public class DataValidationService {
 
     // Basic format validation
     guard trimmed.contains("T"),
-      trimmed.contains("Z") || trimmed.contains("+") || trimmed.contains("-")
+          trimmed.contains("Z") || trimmed.contains("+") || trimmed.contains("-")
     else {
       return nil
     }
@@ -411,18 +411,17 @@ public class DataValidationService {
     result.invalidCrossRatios = invalidCrossRatios
     // Update data quality metrics with range violations
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(
-      dataCompleteness: currentMetrics.dataCompleteness,
-      timestampValidity: currentMetrics.timestampValidity,
-      bridgeIDValidity: currentMetrics.bridgeIDValidity,
-      speedDataValidity: currentMetrics.speedDataValidity,
-      duplicateCount: currentMetrics.duplicateCount,
-      missingFieldsCount: currentMetrics.missingFieldsCount,
-      nanCounts: currentMetrics.nanCounts,
-      infiniteCounts: currentMetrics.infiniteCounts,
-      outlierCounts: currentMetrics.outlierCounts,
-      rangeViolations: rangeViolations,
-      nullCounts: currentMetrics.nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
+                                                   timestampValidity: currentMetrics.timestampValidity,
+                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
+                                                   speedDataValidity: currentMetrics.speedDataValidity,
+                                                   duplicateCount: currentMetrics.duplicateCount,
+                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
+                                                   nanCounts: currentMetrics.nanCounts,
+                                                   infiniteCounts: currentMetrics.infiniteCounts,
+                                                   outlierCounts: currentMetrics.outlierCounts,
+                                                   rangeViolations: rangeViolations,
+                                                   nullCounts: currentMetrics.nullCounts)
 
     return result
   }
@@ -437,7 +436,7 @@ public class DataValidationService {
     // Parse timestamps with sanitization and caching
     for (index, tick) in ticks.enumerated() {
       if let sanitizedTimestamp = sanitizeTimestamp(tick.ts_utc),
-        let date = Self.iso8601Formatter.date(from: sanitizedTimestamp)
+         let date = Self.iso8601Formatter.date(from: sanitizedTimestamp)
       {
         timestamps.append(date)
       } else {
@@ -593,18 +592,17 @@ public class DataValidationService {
 
     // Update data quality metrics
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(
-      dataCompleteness: currentMetrics.dataCompleteness,
-      timestampValidity: currentMetrics.timestampValidity,
-      bridgeIDValidity: currentMetrics.bridgeIDValidity,
-      speedDataValidity: currentMetrics.speedDataValidity,
-      duplicateCount: duplicateCount,
-      missingFieldsCount: currentMetrics.missingFieldsCount,
-      nanCounts: currentMetrics.nanCounts,
-      infiniteCounts: currentMetrics.infiniteCounts,
-      outlierCounts: currentMetrics.outlierCounts,
-      rangeViolations: currentMetrics.rangeViolations,
-      nullCounts: currentMetrics.nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
+                                                   timestampValidity: currentMetrics.timestampValidity,
+                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
+                                                   speedDataValidity: currentMetrics.speedDataValidity,
+                                                   duplicateCount: duplicateCount,
+                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
+                                                   nanCounts: currentMetrics.nanCounts,
+                                                   infiniteCounts: currentMetrics.infiniteCounts,
+                                                   outlierCounts: currentMetrics.outlierCounts,
+                                                   rangeViolations: currentMetrics.rangeViolations,
+                                                   nullCounts: currentMetrics.nullCounts)
 
     return result
   }
@@ -678,18 +676,17 @@ public class DataValidationService {
 
     // Update data quality metrics with null, NaN, and infinite counts
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(
-      dataCompleteness: currentMetrics.dataCompleteness,
-      timestampValidity: currentMetrics.timestampValidity,
-      bridgeIDValidity: currentMetrics.bridgeIDValidity,
-      speedDataValidity: currentMetrics.speedDataValidity,
-      duplicateCount: currentMetrics.duplicateCount,
-      missingFieldsCount: currentMetrics.missingFieldsCount,
-      nanCounts: nanCounts,
-      infiniteCounts: infiniteCounts,
-      outlierCounts: currentMetrics.outlierCounts,
-      rangeViolations: currentMetrics.rangeViolations,
-      nullCounts: nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
+                                                   timestampValidity: currentMetrics.timestampValidity,
+                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
+                                                   speedDataValidity: currentMetrics.speedDataValidity,
+                                                   duplicateCount: currentMetrics.duplicateCount,
+                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
+                                                   nanCounts: nanCounts,
+                                                   infiniteCounts: infiniteCounts,
+                                                   outlierCounts: currentMetrics.outlierCounts,
+                                                   rangeViolations: currentMetrics.rangeViolations,
+                                                   nullCounts: nullCounts)
 
     return result
   }
@@ -729,18 +726,17 @@ public class DataValidationService {
 
     // Update data quality metrics with missing ratios
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(
-      dataCompleteness: currentMetrics.dataCompleteness,
-      timestampValidity: currentMetrics.timestampValidity,
-      bridgeIDValidity: currentMetrics.bridgeIDValidity,
-      speedDataValidity: currentMetrics.speedDataValidity,
-      duplicateCount: currentMetrics.duplicateCount,
-      missingFieldsCount: currentMetrics.missingFieldsCount,
-      nanCounts: currentMetrics.nanCounts,
-      infiniteCounts: currentMetrics.infiniteCounts,
-      outlierCounts: currentMetrics.outlierCounts,
-      rangeViolations: currentMetrics.rangeViolations,
-      nullCounts: currentMetrics.nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
+                                                   timestampValidity: currentMetrics.timestampValidity,
+                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
+                                                   speedDataValidity: currentMetrics.speedDataValidity,
+                                                   duplicateCount: currentMetrics.duplicateCount,
+                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
+                                                   nanCounts: currentMetrics.nanCounts,
+                                                   infiniteCounts: currentMetrics.infiniteCounts,
+                                                   outlierCounts: currentMetrics.outlierCounts,
+                                                   rangeViolations: currentMetrics.rangeViolations,
+                                                   nullCounts: currentMetrics.nullCounts)
 
     return result
   }
@@ -834,18 +830,17 @@ public class DataValidationService {
 
     // Update data quality metrics with outlier counts
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(
-      dataCompleteness: currentMetrics.dataCompleteness,
-      timestampValidity: currentMetrics.timestampValidity,
-      bridgeIDValidity: currentMetrics.bridgeIDValidity,
-      speedDataValidity: currentMetrics.speedDataValidity,
-      duplicateCount: currentMetrics.duplicateCount,
-      missingFieldsCount: currentMetrics.missingFieldsCount,
-      nanCounts: currentMetrics.nanCounts,
-      infiniteCounts: currentMetrics.infiniteCounts,
-      outlierCounts: outlierCounts,
-      rangeViolations: currentMetrics.rangeViolations,
-      nullCounts: currentMetrics.nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
+                                                   timestampValidity: currentMetrics.timestampValidity,
+                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
+                                                   speedDataValidity: currentMetrics.speedDataValidity,
+                                                   duplicateCount: currentMetrics.duplicateCount,
+                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
+                                                   nanCounts: currentMetrics.nanCounts,
+                                                   infiniteCounts: currentMetrics.infiniteCounts,
+                                                   outlierCounts: outlierCounts,
+                                                   rangeViolations: currentMetrics.rangeViolations,
+                                                   nullCounts: currentMetrics.nullCounts)
     return result
   }
 
@@ -881,18 +876,17 @@ public class DataValidationService {
 
     // Update data quality metrics with range violations
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(
-      dataCompleteness: currentMetrics.dataCompleteness,
-      timestampValidity: currentMetrics.timestampValidity,
-      bridgeIDValidity: currentMetrics.bridgeIDValidity,
-      speedDataValidity: currentMetrics.speedDataValidity,
-      duplicateCount: currentMetrics.duplicateCount,
-      missingFieldsCount: currentMetrics.missingFieldsCount,
-      nanCounts: currentMetrics.nanCounts,
-      infiniteCounts: currentMetrics.infiniteCounts,
-      outlierCounts: currentMetrics.outlierCounts,
-      rangeViolations: rangeViolations,
-      nullCounts: currentMetrics.nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
+                                                   timestampValidity: currentMetrics.timestampValidity,
+                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
+                                                   speedDataValidity: currentMetrics.speedDataValidity,
+                                                   duplicateCount: currentMetrics.duplicateCount,
+                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
+                                                   nanCounts: currentMetrics.nanCounts,
+                                                   infiniteCounts: currentMetrics.infiniteCounts,
+                                                   outlierCounts: currentMetrics.outlierCounts,
+                                                   rangeViolations: rangeViolations,
+                                                   nullCounts: currentMetrics.nullCounts)
     return result
   }
 
@@ -947,18 +941,17 @@ public class DataValidationService {
 
     // Update data quality metrics with NaN and infinite counts
     let currentMetrics = result.dataQualityMetrics
-    result.dataQualityMetrics = DataQualityMetrics(
-      dataCompleteness: currentMetrics.dataCompleteness,
-      timestampValidity: currentMetrics.timestampValidity,
-      bridgeIDValidity: currentMetrics.bridgeIDValidity,
-      speedDataValidity: currentMetrics.speedDataValidity,
-      duplicateCount: currentMetrics.duplicateCount,
-      missingFieldsCount: currentMetrics.missingFieldsCount,
-      nanCounts: nanCounts,
-      infiniteCounts: infiniteCounts,
-      outlierCounts: currentMetrics.outlierCounts,
-      rangeViolations: currentMetrics.rangeViolations,
-      nullCounts: currentMetrics.nullCounts)
+    result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
+                                                   timestampValidity: currentMetrics.timestampValidity,
+                                                   bridgeIDValidity: currentMetrics.bridgeIDValidity,
+                                                   speedDataValidity: currentMetrics.speedDataValidity,
+                                                   duplicateCount: currentMetrics.duplicateCount,
+                                                   missingFieldsCount: currentMetrics.missingFieldsCount,
+                                                   nanCounts: nanCounts,
+                                                   infiniteCounts: infiniteCounts,
+                                                   outlierCounts: currentMetrics.outlierCounts,
+                                                   rangeViolations: currentMetrics.rangeViolations,
+                                                   nullCounts: currentMetrics.nullCounts)
 
     return result
   }
@@ -1001,19 +994,18 @@ public class DataValidationService {
   /// Aggregates multiple data quality metrics into a single result
   private func aggregateDataQualityMetrics(_ metrics: [DataQualityMetrics]) -> DataQualityMetrics {
     let totalMetrics = metrics.count
-    if !isInRange(totalMetrics, 1...Int.max) {
-      return DataQualityMetrics(
-        dataCompleteness: 0.0,
-        timestampValidity: 0.0,
-        bridgeIDValidity: 0.0,
-        speedDataValidity: 0.0,
-        duplicateCount: 0,
-        missingFieldsCount: 0,
-        nanCounts: [:],
-        infiniteCounts: [:],
-        outlierCounts: [:],
-        rangeViolations: [:],
-        nullCounts: [:])
+    if !isInRange(totalMetrics, 1 ... Int.max) {
+      return DataQualityMetrics(dataCompleteness: 0.0,
+                                timestampValidity: 0.0,
+                                bridgeIDValidity: 0.0,
+                                speedDataValidity: 0.0,
+                                duplicateCount: 0,
+                                missingFieldsCount: 0,
+                                nanCounts: [:],
+                                infiniteCounts: [:],
+                                outlierCounts: [:],
+                                rangeViolations: [:],
+                                nullCounts: [:])
     }
 
     let avgDataCompleteness =
@@ -1052,17 +1044,16 @@ public class DataValidationService {
       }
     }
 
-    return DataQualityMetrics(
-      dataCompleteness: avgDataCompleteness,
-      timestampValidity: avgTimestampValidity,
-      bridgeIDValidity: avgBridgeIDValidity,
-      speedDataValidity: avgSpeedDataValidity,
-      duplicateCount: totalDuplicateCount,
-      missingFieldsCount: totalMissingFieldsCount,
-      nanCounts: aggregatedNanCounts,
-      infiniteCounts: aggregatedInfiniteCounts,
-      outlierCounts: aggregatedOutlierCounts,
-      rangeViolations: aggregatedRangeViolations,
-      nullCounts: aggregatedNullCounts)
+    return DataQualityMetrics(dataCompleteness: avgDataCompleteness,
+                              timestampValidity: avgTimestampValidity,
+                              bridgeIDValidity: avgBridgeIDValidity,
+                              speedDataValidity: avgSpeedDataValidity,
+                              duplicateCount: totalDuplicateCount,
+                              missingFieldsCount: totalMissingFieldsCount,
+                              nanCounts: aggregatedNanCounts,
+                              infiniteCounts: aggregatedInfiniteCounts,
+                              outlierCounts: aggregatedOutlierCounts,
+                              rangeViolations: aggregatedRangeViolations,
+                              nullCounts: aggregatedNullCounts)
   }
 }

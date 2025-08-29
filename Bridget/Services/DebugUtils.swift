@@ -7,6 +7,6 @@ import Foundation
 
   import CoreLocation
 
-// BridgeCoordinateVerifier removed - use SeattleDrawbridges for coordinate verification
+  // BridgeCoordinateVerifier removed - use SeattleDrawbridges for coordinate verification
 
 #endif

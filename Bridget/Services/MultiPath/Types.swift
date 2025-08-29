@@ -61,20 +61,19 @@ public struct Edge: Hashable, Codable {
   public let isBridge: Bool
   public let bridgeID: String?  // nil if not a bridge
 
-  public init(
-    from: NodeID,
-    to: NodeID,
-    travelTime: TimeInterval,
-    distance: Double,
-    isBridge: Bool = false,
-    bridgeID: String? = nil
-  ) {
+  public init(from: NodeID,
+              to: NodeID,
+              travelTime: TimeInterval,
+              distance: Double,
+              isBridge: Bool = false,
+              bridgeID: String? = nil)
+  {
     self.from = from
     self.to = to
     self.travelTime = travelTime
     self.distance = distance
     self.isBridge = isBridge
-    
+
     // Validate bridge ID against SeattleDrawbridges as single source of truth
     if isBridge {
       if let bridgeID = bridgeID {
@@ -140,7 +139,7 @@ public struct RoutePath: Hashable, Codable {
     }
 
     // Check that edges connect nodes in sequence
-    for i in 0..<edges.count {
+    for i in 0 ..< edges.count {
       let edge = edges[i]
       let expectedFrom = nodes[i]
       let expectedTo = nodes[i + 1]
@@ -170,12 +169,11 @@ public struct PathScore: Codable {
   public let linearProbability: Double  // clamped to [0, 1]
   public let bridgeProbabilities: [String: Double]  // bridgeID -> probability
 
-  public init(
-    path: RoutePath,
-    logProbability: Double,
-    linearProbability: Double,
-    bridgeProbabilities: [String: Double]
-  ) {
+  public init(path: RoutePath,
+              logProbability: Double,
+              linearProbability: Double,
+              bridgeProbabilities: [String: Double])
+  {
     self.path = path
     self.logProbability = logProbability
     self.linearProbability = max(0.0, min(1.0, linearProbability))  // clamp
@@ -194,15 +192,14 @@ public struct JourneyAnalysis: Codable {
   public let bestPathProbability: Double
   public let totalPathsAnalyzed: Int
 
-  public init(
-    startNode: NodeID,
-    endNode: NodeID,
-    departureTime: Date,
-    pathScores: [PathScore],
-    networkProbability: Double,
-    bestPathProbability: Double,
-    totalPathsAnalyzed: Int
-  ) {
+  public init(startNode: NodeID,
+              endNode: NodeID,
+              departureTime: Date,
+              pathScores: [PathScore],
+              networkProbability: Double,
+              bestPathProbability: Double,
+              totalPathsAnalyzed: Int)
+  {
     self.startNode = startNode
     self.endNode = endNode
     self.departureTime = departureTime
@@ -286,14 +283,13 @@ public struct GraphValidationResult: Codable {
   public let edgeCount: Int
   public let bridgeCount: Int
 
-  public init(
-    isValid: Bool,
-    errors: [String] = [],
-    warnings: [String] = [],
-    nodeCount: Int = 0,
-    edgeCount: Int = 0,
-    bridgeCount: Int = 0
-  ) {
+  public init(isValid: Bool,
+              errors: [String] = [],
+              warnings: [String] = [],
+              nodeCount: Int = 0,
+              edgeCount: Int = 0,
+              bridgeCount: Int = 0)
+  {
     self.isValid = isValid
     self.errors = errors
     self.warnings = warnings
@@ -317,19 +313,19 @@ public enum MultiPathError: Error, LocalizedError, Equatable {
 
   public var errorDescription: String? {
     switch self {
-    case .invalidGraph(let reason):
+    case let .invalidGraph(reason):
       return "Invalid graph: \(reason)"
-    case .invalidPath(let reason):
+    case let .invalidPath(reason):
       return "Invalid path: \(reason)"
-    case .nodeNotFound(let nodeID):
+    case let .nodeNotFound(nodeID):
       return "Node not found: \(nodeID)"
-    case .noPathExists(let from, let to):
+    case let .noPathExists(from, to):
       return "No path exists from \(from) to \(to)"
-    case .invalidConfiguration(let reason):
+    case let .invalidConfiguration(reason):
       return "Invalid configuration: \(reason)"
-    case .predictionFailed(let reason):
+    case let .predictionFailed(reason):
       return "Prediction failed: \(reason)"
-    case .numericalError(let reason):
+    case let .numericalError(reason):
       return "Numerical error: \(reason)"
     }
   }

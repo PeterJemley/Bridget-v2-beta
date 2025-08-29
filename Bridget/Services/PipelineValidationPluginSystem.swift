@@ -1,6 +1,6 @@
 import Foundation
-import OSLog
 import Observation
+import OSLog
 
 // MARK: - Plugin Protocol
 
@@ -126,9 +126,7 @@ public class PipelineValidationPluginManager {
   /// Run all enabled validators on probe tick data
   /// - Parameter ticks: Array of probe ticks to validate
   /// - Returns: Combined validation results and statistics artifacts
-  public func validateAll(ticks: [ProbeTickRaw]) -> (
-    results: [String: DataValidationResult], artifacts: [String: BridgeDataStatistics]
-  ) {
+  public func validateAll(ticks: [ProbeTickRaw]) -> (results: [String: DataValidationResult], artifacts: [String: BridgeDataStatistics]) {
     if !pluginsEnabled {
       logger.info("Plugins disabled, skipping validation")
       return ([:], [:])
@@ -160,9 +158,7 @@ public class PipelineValidationPluginManager {
   /// Run all enabled validators on feature vectors
   /// - Parameter features: Array of feature vectors to validate
   /// - Returns: Combined validation results and statistics artifacts
-  public func validateAll(features: [FeatureVector]) -> (
-    results: [String: DataValidationResult], artifacts: [String: BridgeDataStatistics]
-  ) {
+  public func validateAll(features: [FeatureVector]) -> (results: [String: DataValidationResult], artifacts: [String: BridgeDataStatistics]) {
     if !pluginsEnabled {
       logger.info("Plugins disabled, skipping validation")
       return ([:], [:])
@@ -299,13 +295,13 @@ public class PipelineValidationPluginManager {
     let totalArtifacts = lastStatisticsArtifacts.count
 
     return """
-      Validation Summary:
-      - Total Validators: \(totalValidators)
-      - Passed: \(passedValidators)
-      - Failed: \(totalValidators - passedValidators)
-      - Statistics Artifacts: \(totalArtifacts)
-      - Overall Status: \(overallValidationStatus ? "PASS" : "FAIL")
-      """
+    Validation Summary:
+    - Total Validators: \(totalValidators)
+    - Passed: \(passedValidators)
+    - Failed: \(totalValidators - passedValidators)
+    - Statistics Artifacts: \(totalArtifacts)
+    - Overall Status: \(overallValidationStatus ? "PASS" : "FAIL")
+    """
   }
 
   /// Clear all validation results and artifacts
@@ -370,36 +366,32 @@ public struct NoMissingGateAnomValidator: PipelineValidator {
     let missing = ticks.filter { $0.gate_anom == nil }
 
     if !missing.isEmpty {
-      return DataValidationResult(
-        totalRecords: total,
-        isValid: false,
-        errors: ["Missing gate_anom in \(missing.count) records"],
-        warnings: [])
+      return DataValidationResult(totalRecords: total,
+                                  isValid: false,
+                                  errors: ["Missing gate_anom in \(missing.count) records"],
+                                  warnings: [])
     } else {
-      return DataValidationResult(
-        totalRecords: total,
-        isValid: true,
-        errors: [],
-        warnings: [])
+      return DataValidationResult(totalRecords: total,
+                                  isValid: true,
+                                  errors: [],
+                                  warnings: [])
     }
   }
 
   public func validate(features: [FeatureVector]) -> DataValidationResult {
     // Not applicable for features
-    return DataValidationResult(
-      totalRecords: features.count,
-      isValid: true,
-      errors: [],
-      warnings: ["Gate anomaly validation not applicable to feature vectors"])
+    return DataValidationResult(totalRecords: features.count,
+                                isValid: true,
+                                errors: [],
+                                warnings: ["Gate anomaly validation not applicable to feature vectors"])
   }
 
   public func validate(metrics _: ModelPerformanceMetrics) -> DataValidationResult {
     // Not applicable for model metrics
-    return DataValidationResult(
-      totalRecords: 1,
-      isValid: true,
-      errors: [],
-      warnings: ["Gate anomaly validation not applicable to model metrics"])
+    return DataValidationResult(totalRecords: 1,
+                                isValid: true,
+                                errors: [],
+                                warnings: ["Gate anomaly validation not applicable to model metrics"])
   }
 
   public func getConfiguration() -> [String: Any] {
@@ -442,38 +434,34 @@ public class DetourDeltaRangeValidator: PipelineValidator {
     }
 
     if !outOfRange.isEmpty {
-      return DataValidationResult(
-        totalRecords: total,
-        isValid: false,
-        errors: [
-          "\(outOfRange.count) records have detour_delta outside valid range [\(minDetourDelta), \(maxDetourDelta)]"
-        ],
-        warnings: [])
+      return DataValidationResult(totalRecords: total,
+                                  isValid: false,
+                                  errors: [
+                                    "\(outOfRange.count) records have detour_delta outside valid range [\(minDetourDelta), \(maxDetourDelta)]",
+                                  ],
+                                  warnings: [])
     } else {
-      return DataValidationResult(
-        totalRecords: total,
-        isValid: true,
-        errors: [],
-        warnings: [])
+      return DataValidationResult(totalRecords: total,
+                                  isValid: true,
+                                  errors: [],
+                                  warnings: [])
     }
   }
 
   public func validate(features: [FeatureVector]) -> DataValidationResult {
     // Not applicable for features
-    return DataValidationResult(
-      totalRecords: features.count,
-      isValid: true,
-      errors: [],
-      warnings: ["Detour delta validation not applicable to feature vectors"])
+    return DataValidationResult(totalRecords: features.count,
+                                isValid: true,
+                                errors: [],
+                                warnings: ["Detour delta validation not applicable to feature vectors"])
   }
 
   public func validate(metrics _: ModelPerformanceMetrics) -> DataValidationResult {
     // Not applicable for model metrics
-    return DataValidationResult(
-      totalRecords: 1,
-      isValid: true,
-      errors: [],
-      warnings: ["Detour delta validation not applicable to model metrics"])
+    return DataValidationResult(totalRecords: 1,
+                                isValid: true,
+                                errors: [],
+                                warnings: ["Detour delta validation not applicable to model metrics"])
   }
 
   public func getConfiguration() -> [String: Any] {
@@ -555,11 +543,10 @@ public struct DataQualityValidator: PipelineValidator {
 
     let isValid = errorCount == 0
 
-    return DataValidationResult(
-      totalRecords: total,
-      isValid: isValid,
-      errors: errors,
-      warnings: warnings)
+    return DataValidationResult(totalRecords: total,
+                                isValid: isValid,
+                                errors: errors,
+                                warnings: warnings)
   }
 
   public func validate(features: [FeatureVector]) -> DataValidationResult {
@@ -587,11 +574,10 @@ public struct DataQualityValidator: PipelineValidator {
 
     let isValid = errorCount == 0
 
-    return DataValidationResult(
-      totalRecords: total,
-      isValid: isValid,
-      errors: errors,
-      warnings: [])
+    return DataValidationResult(totalRecords: total,
+                                isValid: isValid,
+                                errors: errors,
+                                warnings: [])
   }
 
   public func validate(metrics: ModelPerformanceMetrics) -> DataValidationResult {
@@ -627,11 +613,10 @@ public struct DataQualityValidator: PipelineValidator {
 
     let isValid = errorCount == 0
 
-    return DataValidationResult(
-      totalRecords: total,
-      isValid: isValid,
-      errors: errors,
-      warnings: warnings)
+    return DataValidationResult(totalRecords: total,
+                                isValid: isValid,
+                                errors: errors,
+                                warnings: warnings)
   }
 
   public func getConfiguration() -> [String: Any] {
@@ -698,9 +683,7 @@ public struct SpeedRangeValidator: PipelineValidator {
     let currentSpeedViolations = ticks.compactMap { tick -> (ProbeTickRaw, String)? in
       guard let speed = tick.current_traffic_speed else { return nil }
       if speed < minSpeed || speed > maxSpeed {
-        return (
-          tick, "Current traffic speed \(speed) mph outside valid range [\(minSpeed), \(maxSpeed)]"
-        )
+        return (tick, "Current traffic speed \(speed) mph outside valid range [\(minSpeed), \(maxSpeed)]")
       }
       return nil
     }
@@ -709,9 +692,7 @@ public struct SpeedRangeValidator: PipelineValidator {
     let normalSpeedViolations = ticks.compactMap { tick -> (ProbeTickRaw, String)? in
       guard let speed = tick.normal_traffic_speed else { return nil }
       if speed < minSpeed || speed > maxSpeed {
-        return (
-          tick, "Normal traffic speed \(speed) mph outside valid range [\(minSpeed), \(maxSpeed)]"
-        )
+        return (tick, "Normal traffic speed \(speed) mph outside valid range [\(minSpeed), \(maxSpeed)]")
       }
       return nil
     }
@@ -719,15 +700,13 @@ public struct SpeedRangeValidator: PipelineValidator {
     // Check for speed ratio anomalies
     let speedRatioViolations = ticks.compactMap { tick -> (ProbeTickRaw, String)? in
       guard let current = tick.current_traffic_speed,
-        let normal = tick.normal_traffic_speed,
-        normal > 0
+            let normal = tick.normal_traffic_speed,
+            normal > 0
       else { return nil }
 
       let ratio = current / normal
       if ratio < 0.1 || ratio > 3.0 {  // Speed ratio should be reasonable
-        return (
-          tick, "Speed ratio \(String(format: "%.2f", ratio)) outside reasonable bounds [0.1, 3.0]"
-        )
+        return (tick, "Speed ratio \(String(format: "%.2f", ratio)) outside reasonable bounds [0.1, 3.0]")
       }
       return nil
     }
@@ -766,11 +745,10 @@ public struct SpeedRangeValidator: PipelineValidator {
 
     let isValid = errorCount == 0
 
-    return DataValidationResult(
-      totalRecords: total,
-      isValid: isValid,
-      errors: errors,
-      warnings: warnings)
+    return DataValidationResult(totalRecords: total,
+                                isValid: isValid,
+                                errors: errors,
+                                warnings: warnings)
   }
 
   public func validate(features: [FeatureVector]) -> DataValidationResult {
@@ -826,20 +804,18 @@ public struct SpeedRangeValidator: PipelineValidator {
 
     let isValid = errorCount == 0
 
-    return DataValidationResult(
-      totalRecords: total,
-      isValid: isValid,
-      errors: errors,
-      warnings: warnings)
+    return DataValidationResult(totalRecords: total,
+                                isValid: isValid,
+                                errors: errors,
+                                warnings: warnings)
   }
 
   public func validate(metrics _: ModelPerformanceMetrics) -> DataValidationResult {
     // Not applicable for model metrics
-    return DataValidationResult(
-      totalRecords: 1,
-      isValid: true,
-      errors: [],
-      warnings: ["Speed validation not applicable to model metrics"])
+    return DataValidationResult(totalRecords: 1,
+                                isValid: true,
+                                errors: [],
+                                warnings: ["Speed validation not applicable to model metrics"])
   }
 
   public func getConfiguration() -> [String: Any] {
@@ -898,7 +874,7 @@ public struct TimestampMonotonicityValidator: PipelineValidator {
     // Sort ticks by timestamp for monotonicity check
     let sortedTicks = ticks.sorted { tick1, tick2 in
       guard let ts1 = ISO8601DateFormatter().date(from: tick1.ts_utc),
-        let ts2 = ISO8601DateFormatter().date(from: tick2.ts_utc)
+            let ts2 = ISO8601DateFormatter().date(from: tick2.ts_utc)
       else {
         return false
       }
@@ -950,29 +926,26 @@ public struct TimestampMonotonicityValidator: PipelineValidator {
 
     let isValid = errorCount == 0
 
-    return DataValidationResult(
-      totalRecords: total,
-      isValid: isValid,
-      errors: errors,
-      warnings: warnings)
+    return DataValidationResult(totalRecords: total,
+                                isValid: isValid,
+                                errors: errors,
+                                warnings: warnings)
   }
 
   public func validate(features: [FeatureVector]) -> DataValidationResult {
     // Not applicable for features (they don't have timestamps)
-    return DataValidationResult(
-      totalRecords: features.count,
-      isValid: true,
-      errors: [],
-      warnings: ["Timestamp monotonicity validation not applicable to feature vectors"])
+    return DataValidationResult(totalRecords: features.count,
+                                isValid: true,
+                                errors: [],
+                                warnings: ["Timestamp monotonicity validation not applicable to feature vectors"])
   }
 
   public func validate(metrics _: ModelPerformanceMetrics) -> DataValidationResult {
     // Not applicable for model metrics
-    return DataValidationResult(
-      totalRecords: 1,
-      isValid: true,
-      errors: [],
-      warnings: ["Timestamp monotonicity validation not applicable to model metrics"])
+    return DataValidationResult(totalRecords: 1,
+                                isValid: true,
+                                errors: [],
+                                warnings: ["Timestamp monotonicity validation not applicable to model metrics"])
   }
 
   public func getConfiguration() -> [String: Any] {
@@ -1037,11 +1010,10 @@ public struct HorizonCoverageValidator: PipelineValidator {
     if availableHorizons.isEmpty {
       errorCount += 1
       errors.append("No horizon data detected in probe ticks")
-      return DataValidationResult(
-        totalRecords: total,
-        isValid: false,
-        errors: errors,
-        warnings: warnings)
+      return DataValidationResult(totalRecords: total,
+                                  isValid: false,
+                                  errors: errors,
+                                  warnings: warnings)
     }
 
     // Check minimum horizon count
@@ -1068,8 +1040,7 @@ public struct HorizonCoverageValidator: PipelineValidator {
 
       // Check time-based coverage patterns
       let hourlyGroups = Dictionary(grouping: bridgeTicks) { tick in
-        Calendar.current.component(
-          .hour, from: ISO8601DateFormatter().date(from: tick.ts_utc) ?? Date())
+        Calendar.current.component(.hour, from: ISO8601DateFormatter().date(from: tick.ts_utc) ?? Date())
       }
 
       let hoursWithData = hourlyGroups.keys.count
@@ -1099,11 +1070,10 @@ public struct HorizonCoverageValidator: PipelineValidator {
 
     let isValid = errorCount == 0
 
-    return DataValidationResult(
-      totalRecords: total,
-      isValid: isValid,
-      errors: errors,
-      warnings: warnings)
+    return DataValidationResult(totalRecords: total,
+                                isValid: isValid,
+                                errors: errors,
+                                warnings: warnings)
   }
 
   public func validate(features: [FeatureVector]) -> DataValidationResult {
@@ -1119,11 +1089,10 @@ public struct HorizonCoverageValidator: PipelineValidator {
     if availableHorizons.isEmpty {
       errorCount += 1
       errors.append("No horizon data detected in features")
-      return DataValidationResult(
-        totalRecords: total,
-        isValid: false,
-        errors: errors,
-        warnings: warnings)
+      return DataValidationResult(totalRecords: total,
+                                  isValid: false,
+                                  errors: errors,
+                                  warnings: warnings)
     }
 
     // Check minimum horizon count
@@ -1188,20 +1157,18 @@ public struct HorizonCoverageValidator: PipelineValidator {
 
     let isValid = errorCount == 0
 
-    return DataValidationResult(
-      totalRecords: total,
-      isValid: isValid,
-      errors: errors,
-      warnings: warnings)
+    return DataValidationResult(totalRecords: total,
+                                isValid: isValid,
+                                errors: errors,
+                                warnings: warnings)
   }
 
   public func validate(metrics _: ModelPerformanceMetrics) -> DataValidationResult {
     // Not applicable for model metrics
-    return DataValidationResult(
-      totalRecords: 1,
-      isValid: true,
-      errors: [],
-      warnings: ["Horizon coverage validation not applicable to model metrics"])
+    return DataValidationResult(totalRecords: 1,
+                                isValid: true,
+                                errors: [],
+                                warnings: ["Horizon coverage validation not applicable to model metrics"])
   }
 
   public func getConfiguration() -> [String: Any] {
@@ -1246,7 +1213,7 @@ public struct HorizonCoverageValidator: PipelineValidator {
     var gaps: [Int] = []
     let sorted = horizons.sorted()
 
-    for i in 0..<(sorted.count - 1) {
+    for i in 0 ..< (sorted.count - 1) {
       let current = sorted[i]
       let next = sorted[i + 1]
       let expectedNext = current + 3  // Assuming 3-minute intervals
@@ -1310,11 +1277,10 @@ public struct NaNInfValidator: PipelineValidator {
 
     let isValid = errorCount == 0
 
-    return DataValidationResult(
-      totalRecords: total,
-      isValid: isValid,
-      errors: errors,
-      warnings: [])
+    return DataValidationResult(totalRecords: total,
+                                isValid: isValid,
+                                errors: errors,
+                                warnings: [])
   }
 
   public func validate(features: [FeatureVector]) -> DataValidationResult {
@@ -1345,11 +1311,10 @@ public struct NaNInfValidator: PipelineValidator {
 
     let isValid = errorCount == 0
 
-    return DataValidationResult(
-      totalRecords: total,
-      isValid: isValid,
-      errors: errors,
-      warnings: [])
+    return DataValidationResult(totalRecords: total,
+                                isValid: isValid,
+                                errors: errors,
+                                warnings: [])
   }
 
   public func validate(metrics: ModelPerformanceMetrics) -> DataValidationResult {
@@ -1374,11 +1339,10 @@ public struct NaNInfValidator: PipelineValidator {
 
     let isValid = errorCount == 0
 
-    return DataValidationResult(
-      totalRecords: total,
-      isValid: isValid,
-      errors: errors,
-      warnings: [])
+    return DataValidationResult(totalRecords: total,
+                                isValid: isValid,
+                                errors: errors,
+                                warnings: [])
   }
 
   public func getConfiguration() -> [String: Any] {
@@ -1408,9 +1372,9 @@ public enum ValidationError: Error, LocalizedError {
 
   public var errorDescription: String? {
     switch self {
-    case .invalidConfiguration(let message):
+    case let .invalidConfiguration(message):
       return "Invalid configuration: \(message)"
-    case .validatorNotFound(let name):
+    case let .validatorNotFound(name):
       return "Validator with name '\(name)' not found."
     }
   }

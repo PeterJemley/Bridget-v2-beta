@@ -3,21 +3,18 @@ import XCTest
 @testable import Bridget
 
 final class BackwardCompatibilityTests: XCTestCase {
-
   // MARK: - PipelineMetricsData Backward Compatibility
 
   func testPipelineMetricsDataBackwardCompatibility() {
     // Test that old-style PipelineMetricsData still works
-    let oldData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: nil
-    )
+    let oldData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: nil)
 
     // Verify old fields still work
     XCTAssertNotNil(oldData.timestamp)
@@ -38,34 +35,26 @@ final class BackwardCompatibilityTests: XCTestCase {
 
   func testPipelineMetricsDataWithNewFeatures() {
     // Test that new-style PipelineMetricsData works with statistical metrics
-    let statisticalMetrics = StatisticalTrainingMetrics(
-      trainingLossStats: ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15),
-      validationLossStats: ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18),
-      predictionAccuracyStats: ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88),
-      etaPredictionVariance: ETASummary(mean: 120.0, variance: 25.0, min: 90.0, max: 150.0),
-      performanceConfidenceIntervals: PerformanceConfidenceIntervals(
-        accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
-        f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
-        meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)
-      ),
-      errorDistribution: ErrorDistributionMetrics(
-        absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
-        relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
-        withinOneStdDev: 68.2,
-        withinTwoStdDev: 95.4
-      )
-    )
+    let statisticalMetrics = StatisticalTrainingMetrics(trainingLossStats: ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15),
+                                                        validationLossStats: ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18),
+                                                        predictionAccuracyStats: ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88),
+                                                        etaPredictionVariance: ETASummary(mean: 120.0, variance: 25.0, min: 90.0, max: 150.0),
+                                                        performanceConfidenceIntervals: PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
+                                                                                                                       f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
+                                                                                                                       meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)),
+                                                        errorDistribution: ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
+                                                                                                    relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
+                                                                                                    withinOneStdDev: 68.2,
+                                                                                                    withinTwoStdDev: 95.4))
 
-    let newData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: statisticalMetrics
-    )
+    let newData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: statisticalMetrics)
 
     // Verify old fields still work
     XCTAssertNotNil(newData.timestamp)
@@ -79,8 +68,7 @@ final class BackwardCompatibilityTests: XCTestCase {
     // Verify new field works
     XCTAssertNotNil(newData.statisticalMetrics)
     XCTAssertEqual(newData.statisticalMetrics?.trainingLossStats.mean ?? 0.0, 0.1, accuracy: 0.001)
-    XCTAssertEqual(
-      newData.statisticalMetrics?.predictionAccuracyStats.mean ?? 0.0, 0.85, accuracy: 0.001)
+    XCTAssertEqual(newData.statisticalMetrics?.predictionAccuracyStats.mean ?? 0.0, 0.85, accuracy: 0.001)
 
     // Verify computed properties still work
     XCTAssertEqual(newData.stageMetrics.count, 1)
@@ -112,16 +100,14 @@ final class BackwardCompatibilityTests: XCTestCase {
     // Test that UI components handle missing statistical metrics gracefully
 
     // Create data without statistical metrics (old format)
-    let oldData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: nil
-    )
+    let oldData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: nil)
 
     // Verify UI can handle old data
     XCTAssertNil(oldData.statisticalMetrics)
@@ -136,16 +122,14 @@ final class BackwardCompatibilityTests: XCTestCase {
   func testSerializationBackwardCompatibility() {
     // Test that old data can still be serialized/deserialized
 
-    let oldData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: nil
-    )
+    let oldData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: nil)
 
     // Test JSON encoding/decoding
     do {
@@ -156,9 +140,8 @@ final class BackwardCompatibilityTests: XCTestCase {
       let decodedData = try decoder.decode(PipelineMetricsData.self, from: data)
 
       // Verify all fields are preserved
-      XCTAssertEqual(
-        oldData.timestamp.timeIntervalSince1970, decodedData.timestamp.timeIntervalSince1970,
-        accuracy: 1.0)
+      XCTAssertEqual(oldData.timestamp.timeIntervalSince1970, decodedData.timestamp.timeIntervalSince1970,
+                     accuracy: 1.0)
       XCTAssertEqual(oldData.stageDurations, decodedData.stageDurations)
       XCTAssertEqual(oldData.memoryUsage, decodedData.memoryUsage)
       XCTAssertEqual(oldData.validationRates, decodedData.validationRates)
@@ -175,34 +158,26 @@ final class BackwardCompatibilityTests: XCTestCase {
   func testSerializationWithNewFeatures() {
     // Test that new data with statistical metrics can be serialized/deserialized
 
-    let statisticalMetrics = StatisticalTrainingMetrics(
-      trainingLossStats: ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15),
-      validationLossStats: ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18),
-      predictionAccuracyStats: ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88),
-      etaPredictionVariance: ETASummary(mean: 120.0, variance: 25.0, min: 90.0, max: 150.0),
-      performanceConfidenceIntervals: PerformanceConfidenceIntervals(
-        accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
-        f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
-        meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)
-      ),
-      errorDistribution: ErrorDistributionMetrics(
-        absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
-        relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
-        withinOneStdDev: 68.2,
-        withinTwoStdDev: 95.4
-      )
-    )
+    let statisticalMetrics = StatisticalTrainingMetrics(trainingLossStats: ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15),
+                                                        validationLossStats: ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18),
+                                                        predictionAccuracyStats: ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88),
+                                                        etaPredictionVariance: ETASummary(mean: 120.0, variance: 25.0, min: 90.0, max: 150.0),
+                                                        performanceConfidenceIntervals: PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
+                                                                                                                       f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
+                                                                                                                       meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)),
+                                                        errorDistribution: ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
+                                                                                                    relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
+                                                                                                    withinOneStdDev: 68.2,
+                                                                                                    withinTwoStdDev: 95.4))
 
-    let newData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: statisticalMetrics
-    )
+    let newData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: statisticalMetrics)
 
     // Test JSON encoding/decoding
     do {
@@ -213,9 +188,8 @@ final class BackwardCompatibilityTests: XCTestCase {
       let decodedData = try decoder.decode(PipelineMetricsData.self, from: data)
 
       // Verify all fields are preserved
-      XCTAssertEqual(
-        newData.timestamp.timeIntervalSince1970, decodedData.timestamp.timeIntervalSince1970,
-        accuracy: 1.0)
+      XCTAssertEqual(newData.timestamp.timeIntervalSince1970, decodedData.timestamp.timeIntervalSince1970,
+                     accuracy: 1.0)
       XCTAssertEqual(newData.stageDurations, decodedData.stageDurations)
       XCTAssertEqual(newData.memoryUsage, decodedData.memoryUsage)
       XCTAssertEqual(newData.validationRates, decodedData.validationRates)
@@ -225,12 +199,10 @@ final class BackwardCompatibilityTests: XCTestCase {
 
       // Verify statistical metrics are preserved
       XCTAssertNotNil(decodedData.statisticalMetrics)
-      XCTAssertEqual(
-        newData.statisticalMetrics?.trainingLossStats.mean ?? 0.0,
-        decodedData.statisticalMetrics?.trainingLossStats.mean ?? 0.0, accuracy: 0.001)
-      XCTAssertEqual(
-        newData.statisticalMetrics?.predictionAccuracyStats.mean ?? 0.0,
-        decodedData.statisticalMetrics?.predictionAccuracyStats.mean ?? 0.0, accuracy: 0.001)
+      XCTAssertEqual(newData.statisticalMetrics?.trainingLossStats.mean ?? 0.0,
+                     decodedData.statisticalMetrics?.trainingLossStats.mean ?? 0.0, accuracy: 0.001)
+      XCTAssertEqual(newData.statisticalMetrics?.predictionAccuracyStats.mean ?? 0.0,
+                     decodedData.statisticalMetrics?.predictionAccuracyStats.mean ?? 0.0, accuracy: 0.001)
 
     } catch {
       XCTFail("Serialization failed: \(error)")
@@ -242,16 +214,14 @@ final class BackwardCompatibilityTests: XCTestCase {
   func testOptionalFeatureHandling() {
     // Test that applications can safely handle optional statistical metrics
 
-    let oldData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: nil
-    )
+    let oldData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: nil)
 
     // Safe access pattern
     if let stats = oldData.statisticalMetrics {
@@ -270,16 +240,14 @@ final class BackwardCompatibilityTests: XCTestCase {
   func testGracefulDegradation() {
     // Test that applications can gracefully handle missing statistical metrics
 
-    let oldData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: nil
-    )
+    let oldData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: nil)
 
     // Simulate application logic that works with or without statistical metrics
     func processMetrics(_ data: PipelineMetricsData) -> String {

@@ -52,12 +52,10 @@ struct PipelineSettingsView: View {
     .sheet(isPresented: $settingsViewModel.showingTimePicker) {
       NavigationStack {
         VStack {
-          DatePicker(
-            "Export Time", selection: $settingsViewModel.tempTime,
-            displayedComponents: .hourAndMinute
-          )
-          .datePickerStyle(.wheel)
-          .padding()
+          DatePicker("Export Time", selection: $settingsViewModel.tempTime,
+                     displayedComponents: .hourAndMinute)
+            .datePickerStyle(.wheel)
+            .padding()
         }
         .navigationTitle("Set Export Time")
         .navigationBarTitleDisplayMode(.inline)

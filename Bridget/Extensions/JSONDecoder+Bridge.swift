@@ -105,19 +105,16 @@ extension JSONDecoder {
     decoder.dateDecodingStrategy = .custom { decoder in
       let container = try decoder.singleValueContainer()
       if container.decodeNil() {
-        throw DecodingError.typeMismatch(
-          Date.self,
-          DecodingError.Context(
-            codingPath: container.codingPath,
-            debugDescription: "Date value was null"))
+        throw DecodingError.typeMismatch(Date.self,
+                                         DecodingError.Context(codingPath: container.codingPath,
+                                                               debugDescription: "Date value was null"))
       }
       let dateString = try container.decode(String.self)
       if let date = dateParser.parse(dateString) {
         return date
       }
-      throw DecodingError.dataCorruptedError(
-        in: container,
-        debugDescription: "Invalid date format: \(dateString)")
+      throw DecodingError.dataCorruptedError(in: container,
+                                             debugDescription: "Invalid date format: \(dateString)")
     }
     return decoder
   }

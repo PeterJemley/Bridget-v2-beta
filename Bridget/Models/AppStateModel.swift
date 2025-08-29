@@ -94,14 +94,13 @@ class AppStateModel {
   ///   - modelContext: The SwiftData ModelContext used for local data persistence.
   ///   - bridgeEventPersistence: The persistence service for BridgeEvent entities.
   ///     Optional. If not provided, a `BridgeEventPersistenceService` will be created with the given `modelContext`.
-  init(
-    modelContext: ModelContext,
-    bridgeEventPersistence: BridgeEventPersistenceServiceProtocol? = nil
-  ) {
+  init(modelContext: ModelContext,
+       bridgeEventPersistence: BridgeEventPersistenceServiceProtocol? = nil)
+  {
     self.modelContext = modelContext
     self.bridgeEventPersistence =
       bridgeEventPersistence
-      ?? BridgeEventPersistenceService(modelContext: modelContext)
+        ?? BridgeEventPersistenceService(modelContext: modelContext)
     self.isLoading = false
     self.error = nil
     self.validationFailures = []
@@ -126,10 +125,8 @@ class AppStateModel {
         isStoredInMemoryOnly: true
       )
       do {
-        let container = try ModelContainer(
-          for: schema,
-          configurations: [modelConfiguration]
-        )
+        let container = try ModelContainer(for: schema,
+                                           configurations: [modelConfiguration])
         self.init(modelContext: container.mainContext)
       } catch {
         fatalError(
@@ -159,10 +156,10 @@ class AppStateModel {
     validationFailures = []
 
     #if DEBUG
-  // Verify bridge coordinates during development
-  // Note: Use SeattleDrawbridges for coordinate verification
-  // await SeattleDrawbridges.verifyCoordinates() // TODO: Implement if needed
-#endif
+      // Verify bridge coordinates during development
+      // Note: Use SeattleDrawbridges for coordinate verification
+      // await SeattleDrawbridges.verifyCoordinates() // TODO: Implement if needed
+    #endif
 
     // Load persisted BridgeEvent entities via persistence service
     var persistedBridgeEvents: [BridgeEvent] = []
@@ -186,7 +183,7 @@ class AppStateModel {
       )
 
       if apiBridgeIDs.isSubset(of: persistedBridgeIDs),
-        !persistedBridgeEvents.isEmpty
+         !persistedBridgeEvents.isEmpty
       {
         // Persisted data is complete or newer, no UI update needed here
         isLoading = false
@@ -198,10 +195,8 @@ class AppStateModel {
         do {
           try bridgeEventPersistence.deleteAllEvents()
         } catch {
-          print(
-            "Failed to clear persisted BridgeEvents before inserting new ones:",
-            error
-          )
+          print("Failed to clear persisted BridgeEvents before inserting new ones:",
+                error)
         }
 
         // Persist bridge events fetched from API via persistence service
@@ -210,13 +205,12 @@ class AppStateModel {
             model in
             // TODO: Populate minutesOpen, latitude, longitude with real values if available
             model.historicalOpenings.map {
-              BridgeEvent(
-                bridgeID: model.apiBridgeID?.rawValue ?? "",
-                bridgeName: model.bridgeName,
-                openDateTime: $0,
-                minutesOpen: 0,  // TODO: Provide correct duration
-                latitude: 0.0,  // TODO: Provide correct latitude
-                longitude: 0.0  // TODO: Provide correct longitude
+              BridgeEvent(bridgeID: model.apiBridgeID?.rawValue ?? "",
+                          bridgeName: model.bridgeName,
+                          openDateTime: $0,
+                          minutesOpen: 0,  // TODO: Provide correct duration
+                          latitude: 0.0,  // TODO: Provide correct latitude
+                          longitude: 0.0  // TODO: Provide correct longitude
               )
             }
           }
@@ -267,10 +261,8 @@ class AppStateModel {
     do {
       try bridgeEventPersistence.deleteAllEvents()
     } catch {
-      print(
-        "Failed to clear persisted BridgeEvents during refresh:",
-        error
-      )
+      print("Failed to clear persisted BridgeEvents during refresh:",
+            error)
     }
 
     // Load fresh data (will fetch from API and persist)

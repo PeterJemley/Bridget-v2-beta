@@ -11,11 +11,10 @@ final class QuickActionsViewModel {
   var errorMessage: String?
   var lastOperationResult: String?
 
-  init(
-    modelContext: ModelContext,
-    backgroundManager: MLPipelineBackgroundManager = .shared,
-    notificationManager: MLPipelineNotificationManager = .shared
-  ) {
+  init(modelContext: ModelContext,
+       backgroundManager: MLPipelineBackgroundManager = .shared,
+       notificationManager: MLPipelineNotificationManager = .shared)
+  {
     self.modelContext = modelContext
     self.backgroundManager = backgroundManager
     self.notificationManager = notificationManager
@@ -36,16 +35,14 @@ final class QuickActionsViewModel {
     backgroundManager.updateLastPopulationDate()
 
     // Add activity to recent activities
-    backgroundManager.addActivity(
-      title: "Data Population",
-      description: "Populated today's probe tick data",
-      type: .dataPopulation)
+    backgroundManager.addActivity(title: "Data Population",
+                                  description: "Populated today's probe tick data",
+                                  type: .dataPopulation)
 
     // Show success notification
-    notificationManager.showSuccessNotification(
-      title: "Data Population Complete",
-      body: "Today's data has been successfully populated.",
-      operation: .dataPopulation)
+    notificationManager.showSuccessNotification(title: "Data Population Complete",
+                                                body: "Today's data has been successfully populated.",
+                                                operation: .dataPopulation)
 
     lastOperationResult = "Today's data populated successfully."
 
@@ -62,16 +59,14 @@ final class QuickActionsViewModel {
     backgroundManager.triggerBackgroundTask(.maintenance)
 
     // Add activity to recent activities
-    backgroundManager.addActivity(
-      title: "Maintenance",
-      description: "Ran pipeline maintenance tasks",
-      type: .maintenance)
+    backgroundManager.addActivity(title: "Maintenance",
+                                  description: "Ran pipeline maintenance tasks",
+                                  type: .maintenance)
 
     // Show success notification
-    notificationManager.showSuccessNotification(
-      title: "Maintenance Complete",
-      body: "Pipeline maintenance tasks completed successfully.",
-      operation: .maintenance)
+    notificationManager.showSuccessNotification(title: "Maintenance Complete",
+                                                body: "Pipeline maintenance tasks completed successfully.",
+                                                operation: .maintenance)
 
     lastOperationResult = "Maintenance completed successfully."
 

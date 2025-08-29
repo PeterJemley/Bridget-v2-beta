@@ -168,7 +168,7 @@ final class CoreMLTrainingTests: XCTestCase {
       XCTFail("Expected training to fail since actual training requires base model")
     } catch {
       // Then: Should throw training failed error (since we don't have a base model)
-      guard case CoreMLTrainingError.trainingFailed(let reason, _) = error else {
+      guard case let CoreMLTrainingError.trainingFailed(reason, _) = error else {
         XCTFail("Expected trainingFailed error, got \(error)")
         return
       }
@@ -209,7 +209,7 @@ final class CoreMLTrainingTests: XCTestCase {
       XCTFail("Expected training to fail")
     } catch {
       // Should fail due to training implementation requiring base model
-      guard case CoreMLTrainingError.trainingFailed(let reason, _) = error else {
+      guard case let CoreMLTrainingError.trainingFailed(reason, _) = error else {
         XCTFail("Expected trainingFailed error, got \(error)")
         return
       }
@@ -249,17 +249,16 @@ final class CoreMLTrainingTests: XCTestCase {
 
   func testCoreMLTrainingConfigInitialization() throws {
     // Given: Configuration parameters
-    let config = CoreMLTrainingConfig(
-      modelType: .neuralNetwork,
-      inputShape: [1, 14],
-      outputShape: [1, 1],
-      epochs: 50,
-      learningRate: 0.01,
-      batchSize: 16,
-      shuffleSeed: 123,
-      useANE: true,
-      earlyStoppingPatience: 5,
-      validationSplitRatio: 0.25)
+    let config = CoreMLTrainingConfig(modelType: .neuralNetwork,
+                                      inputShape: [1, 14],
+                                      outputShape: [1, 1],
+                                      epochs: 50,
+                                      learningRate: 0.01,
+                                      batchSize: 16,
+                                      shuffleSeed: 123,
+                                      useANE: true,
+                                      earlyStoppingPatience: 5,
+                                      validationSplitRatio: 0.25)
 
     // Then: All properties should be set correctly
     XCTAssertEqual(config.modelType, .neuralNetwork)
@@ -292,10 +291,8 @@ final class CoreMLTrainingTests: XCTestCase {
   func testCoreMLTrainingErrorDescriptions() throws {
     // Given: Various error cases
     let shapeError = CoreMLTrainingError.shapeMismatch(expected: [14], found: [12], context: "test")
-    let driftError = CoreMLTrainingError.featureDrift(
-      description: "test drift", expectedCount: 14, actualCount: 12)
-    let trainingError = CoreMLTrainingError.trainingFailed(
-      reason: "test failure", underlyingError: nil)
+    let driftError = CoreMLTrainingError.featureDrift(description: "test drift", expectedCount: 14, actualCount: 12)
+    let trainingError = CoreMLTrainingError.trainingFailed(reason: "test failure", underlyingError: nil)
 
     // Then: Error descriptions should be meaningful
     XCTAssertTrue(shapeError.errorDescription?.contains("Shape mismatch") ?? false)
@@ -306,8 +303,7 @@ final class CoreMLTrainingTests: XCTestCase {
   func testRecursionTriggerErrors() throws {
     // Given: Errors that should trigger recursion
     let shapeError = CoreMLTrainingError.shapeMismatch(expected: [14], found: [12], context: "test")
-    let driftError = CoreMLTrainingError.featureDrift(
-      description: "test", expectedCount: 14, actualCount: 12)
+    let driftError = CoreMLTrainingError.featureDrift(description: "test", expectedCount: 14, actualCount: 12)
     let invalidError = CoreMLTrainingError.invalidFeatureVector(index: 0, reason: "test")
 
     // Then: Should trigger recursion
@@ -318,9 +314,8 @@ final class CoreMLTrainingTests: XCTestCase {
     // Given: Errors that should not trigger recursion
     let trainingError = CoreMLTrainingError.trainingFailed(reason: "test", underlyingError: nil)
     let validationError = CoreMLTrainingError.validationFailed(
-      metrics: CoreMLModelValidationResult(
-        accuracy: 0.5, loss: 0.5, f1Score: 0.5, precision: 0.5, recall: 0.5,
-        confusionMatrix: [[1, 1], [1, 1]]))
+      metrics: CoreMLModelValidationResult(accuracy: 0.5, loss: 0.5, f1Score: 0.5, precision: 0.5, recall: 0.5,
+                                           confusionMatrix: [[1, 1], [1, 1]]))
 
     // Then: Should not trigger recursion
     XCTAssertFalse(trainingError.shouldTriggerRecursion)
@@ -370,7 +365,7 @@ final class CoreMLTrainingTests: XCTestCase {
     // Then: Should be identical (deterministic)
     XCTAssertEqual(features1.count, features2.count)
 
-    for i in 0..<features1.count {
+    for i in 0 ..< features1.count {
       XCTAssertEqual(features1[i].bridge_id, features2[i].bridge_id)
       XCTAssertEqual(features1[i].horizon_min, features2[i].horizon_min)
       XCTAssertEqual(features1[i].min_sin, features2[i].min_sin, accuracy: 1e-10)
@@ -382,21 +377,20 @@ final class CoreMLTrainingTests: XCTestCase {
 
   func testCoreMLModelValidationResultInitialization() throws {
     // Given: Validation metrics
-    let metrics = CoreMLModelValidationResult(
-      accuracy: 0.85,
-      loss: 0.3,
-      f1Score: 0.82,
-      precision: 0.87,
-      recall: 0.78,
-      confusionMatrix: [[85, 15], [20, 80]],
-      lossTrend: [0.5, 0.4, 0.3],
-      validationAccuracy: 0.83,
-      validationLoss: 0.32,
-      isOverfitting: false,
-      hasConverged: true,
-      isValid: true,
-      inputShape: [1, 14],
-      outputShape: [1, 1])
+    let metrics = CoreMLModelValidationResult(accuracy: 0.85,
+                                              loss: 0.3,
+                                              f1Score: 0.82,
+                                              precision: 0.87,
+                                              recall: 0.78,
+                                              confusionMatrix: [[85, 15], [20, 80]],
+                                              lossTrend: [0.5, 0.4, 0.3],
+                                              validationAccuracy: 0.83,
+                                              validationLoss: 0.32,
+                                              isOverfitting: false,
+                                              hasConverged: true,
+                                              isValid: true,
+                                              inputShape: [1, 14],
+                                              outputShape: [1, 1])
 
     // Then: All properties should be set correctly
     XCTAssertEqual(metrics.accuracy, 0.85)
