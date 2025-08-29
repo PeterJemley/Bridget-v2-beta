@@ -159,9 +159,10 @@ class AppStateModel {
     validationFailures = []
 
     #if DEBUG
-      // Verify bridge coordinates during development
-      await BridgesCanonicalData.verifyCoordinates()
-    #endif
+  // Verify bridge coordinates during development
+  // Note: Use SeattleDrawbridges for coordinate verification
+  // await SeattleDrawbridges.verifyCoordinates() // TODO: Implement if needed
+#endif
 
     // Load persisted BridgeEvent entities via persistence service
     var persistedBridgeEvents: [BridgeEvent] = []

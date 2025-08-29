@@ -26,7 +26,23 @@ public class MockBridgePredictor: BridgeOpenPredictor {
   ) {
     self.seed = seed
     self.defaultProbability = defaultProbability
-    self.supportedBridges = supportedBridges
+    
+    // Validate that all provided bridge IDs are canonical Seattle bridges
+    if !supportedBridges.isEmpty {
+      let canonicalIDs = Set(SeattleDrawbridges.BridgeID.allIDs)
+      let nonCanonicalIDs = supportedBridges.subtracting(canonicalIDs)
+      
+      if !nonCanonicalIDs.isEmpty {
+        print("⚠️ MockBridgePredictor: Non-canonical bridge IDs detected: \(nonCanonicalIDs). Using canonical Seattle bridges only.")
+      }
+      
+      // Only use IDs that are canonical Seattle bridges
+      self.supportedBridges = supportedBridges.intersection(canonicalIDs)
+    } else {
+      // Default to all canonical Seattle bridges
+      self.supportedBridges = Set(SeattleDrawbridges.BridgeID.allIDs)
+    }
+    
     self.randomGenerator = SeededRandomGenerator(seed: seed)
   }
 
@@ -94,7 +110,14 @@ public class MockBridgePredictor: BridgeOpenPredictor {
   }
 
   public func supports(bridgeID: String) -> Bool {
-    return supportedBridges.isEmpty || supportedBridges.contains(bridgeID)
+    // First check if it's in our supported bridges set
+    let isSupported = supportedBridges.isEmpty || supportedBridges.contains(bridgeID)
+    
+    // Then validate against SeattleDrawbridges as the single source of truth
+    let isCanonical = SeattleDrawbridges.isValidBridgeID(bridgeID)
+    
+    // Only support bridges that are both in our set AND canonical
+    return isSupported && isCanonical
   }
 
   // MARK: - Private Methods

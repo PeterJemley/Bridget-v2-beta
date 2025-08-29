@@ -156,6 +156,15 @@ public struct Graph: Codable {
       }
     }
 
+    // Check for non-canonical bridge IDs (enforce SeattleDrawbridges as single source of truth)
+    for edge in allEdges {
+      if edge.isBridge, let bridgeID = edge.bridgeID {
+        if !SeattleDrawbridges.isValidBridgeID(bridgeID) {
+          errors.append("Bridge edge from \(edge.from) to \(edge.to) has non-canonical bridgeID '\(bridgeID)'. Must be one of: \(SeattleDrawbridges.BridgeID.allIDs)")
+        }
+      }
+    }
+
     // Check for non-bridge edges with bridgeID
     for edge in allEdges {
       if !edge.isBridge && edge.bridgeID != nil {

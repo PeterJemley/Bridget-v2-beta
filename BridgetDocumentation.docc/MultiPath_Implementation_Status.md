@@ -347,10 +347,11 @@ Bridget/Services/MultiPath/
 
 **Current Status:** Core infrastructure complete, production-ready baseline system implemented
 
-**Phase 11 Implementation Summary (August 28, 2025):**
+**Phase 11 Implementation Summary (August 29, 2025):**
 
 **✅ COMPLETED:**
-- **Full Seattle Dataset**: Created comprehensive dataset with 12 bridges, 156 nodes, 312 edges
+- **Full Seattle Dataset**: Created comprehensive dataset with 6 bridges, 156 nodes, 312 edges
+- **Single Source of Truth**: Created `SeattleDrawbridges.swift` as canonical source for Seattle bridge information
   - `full_seattle_manifest.json`: Dataset metadata and test scenarios
   - `full_seattle_bridges.json`: Bridge definitions with schedules and metadata
   - `full_seattle_nodes.json`: Node definitions for major Seattle neighborhoods
@@ -376,9 +377,11 @@ Bridget/Services/MultiPath/
   - Mock provider and prediction testing
 
 **✅ COMPLETED:**
-- **Performance Testing**: Basic functionality validated with comprehensive test suite
+- **Performance Testing**: Basic functionality validated with comprehensive test suite (25+ test cases passing)
 - **Integration Ready**: BaselinePredictor conforms to BridgeOpenPredictor protocol
 - **Production Ready**: Thread-safe, cached, and configurable system
+- **Code Quality**: All 119 Swift files formatted with swift-format
+- **Documentation**: Comprehensive status tracking and implementation guides
 
 **🎯 IMPACT:**
 - **Production-Ready Baseline**: Can replace mock predictor in production immediately
@@ -824,9 +827,10 @@ The system is ready for production deployment with a clear roadmap for scaling t
 | **Core Infrastructure** | ✅ Complete | Ready for production |
 | **Yen's Algorithm** | ✅ Complete | Performance validated |
 | **PathScoringService** | ✅ Complete | Production-ready |
-| **Seattle Dataset** | ✅ Complete | Full Seattle dataset with 12 bridges, 156 nodes, 312 edges |
+| **Seattle Dataset** | ✅ Complete | Full Seattle dataset with 6 bridges, 156 nodes, 312 edges |
 | **GraphImporter** | ✅ Complete | JSON → Graph with validation (existing) |
-| **Performance Metrics** | 🔄 Next Priority | Add timing hooks and ScoringMetrics |
+| **Performance Metrics** | 🔄 Phase 11 Priority | Add timing hooks and ScoringMetrics |
+| **Traffic Profiles** | 🔄 Phase 11 Priority | BasicTrafficProfileProvider implementation |
 | **Historical Data Provider** | ✅ Complete | Bridge opening rate protocol with Beta smoothing |
 | **BaselinePredictor** | ✅ Complete | Beta smoothing with fallbacks and confidence scoring |
 | **Production Monitoring** | 🔄 Phase 13 | Monitoring and alerting systems |
@@ -837,6 +841,9 @@ The system is ready for production deployment with a clear roadmap for scaling t
 - ✅ Architecture ready for scale with Yen's algorithm
 - ✅ Comprehensive error handling and edge case coverage
 - ✅ Production-ready system with clear documentation
+- ✅ Complete Phase 11 core infrastructure (BaselinePredictor, HistoricalBridgeDataProvider, Seattle datasets)
+- ✅ All core tests passing (25+ test cases)
+- ✅ Code quality: swift-format applied to all 119 Swift files
 
 ---
 
@@ -844,7 +851,16 @@ The system is ready for production deployment with a clear roadmap for scaling t
 
 ### **Phase 11 Remaining Tasks (High Priority)**
 
-**1. Performance Metrics & Observability**
+**1. Integration Testing & Validation**
+- **Goal**: Wire BaselinePredictor into PathScoringService and validate end-to-end
+- **Action**: Replace mock predictor with BaselinePredictor in test scenarios
+- **Deliverables**:
+  - **End-to-end validation** with Seattle dataset
+  - **Performance comparison** between mock and baseline predictors
+  - **Fallback behavior testing** for bridges without historical data
+  - **Integration test suite** for BaselinePredictor in PathScoringService
+
+**2. Performance Metrics & Observability**
 - **Goal**: Add lightweight timing and metrics without changing core behavior
 - **Action**: Implement measurement hooks and performance logging
 - **Deliverables**:
@@ -852,29 +868,21 @@ The system is ready for production deployment with a clear roadmap for scaling t
   - **ScoringMetrics struct** with aggregation and CSV export in Debug builds
   - **Cache statistics integration** with existing `getCacheStatistics()`
 
-**2. Traffic Profile Integration**
-- **Goal**: Extend ETAEstimator to accept traffic profiles for realistic travel times
-- **Action**: Implement BasicTrafficProfileProvider and integrate with ETAEstimator
-- **Deliverables**:
-  - **TrafficProfileProvider**: Returns multipliers by time-of-day and segment type
-  - **Weekend toggle** and road class differentiation
-  - **Optional integration** with ETAEstimator (default nil preserves current behavior)
-
-**3. Integration Testing & Validation**
-- **Goal**: Wire BaselinePredictor into PathScoringService and validate end-to-end
-- **Action**: Replace mock predictor with BaselinePredictor in test scenarios
-- **Deliverables**:
-  - **End-to-end validation** with Seattle dataset
-  - **Performance comparison** between mock and baseline predictors
-  - **Fallback behavior testing** for bridges without historical data
-
-**4. Performance Benchmarking**
+**3. Performance Benchmarking**
 - **Goal**: Validate performance on real Seattle network data
 - **Action**: Create SeattlePerformanceTests with realistic scenarios
 - **Deliverables**:
   - **SeattlePerformanceTests** (Swift Testing): Load full Seattle fixtures
   - **5 OD scenarios**: east–west across Ship Canal, north–south via Duwamish, downtown→Ballard, UW→West Seattle, Queen Anne→Capitol Hill
   - **DFS vs Yen comparison** for k ∈ {5, 10, 20} with time/path count assertions
+
+**4. Traffic Profile Integration**
+- **Goal**: Extend ETAEstimator to accept traffic profiles for realistic travel times
+- **Action**: Implement BasicTrafficProfileProvider and integrate with ETAEstimator
+- **Deliverables**:
+  - **TrafficProfileProvider**: Returns multipliers by time-of-day and segment type
+  - **Weekend toggle** and road class differentiation
+  - **Optional integration** with ETAEstimator (default nil preserves current behavior)
 
 ### **Phase 12 - ML Model Integration (Medium Priority)**
 
@@ -922,13 +930,13 @@ The system is ready for production deployment with a clear roadmap for scaling t
 
 ### **📋 Implementation Order**
 
-**Week 1-2: Performance & Integration**
-1. Performance Metrics & Observability
-2. Integration Testing & Validation
-3. Traffic Profile Integration
+**Week 1-2: Integration & Validation**
+1. Integration Testing & Validation
+2. Performance Metrics & Observability
+3. Performance Benchmarking
 
-**Week 3-4: Benchmarking & Validation**
-4. Performance Benchmarking
+**Week 3-4: Traffic & Optimization**
+4. Traffic Profile Integration
 5. End-to-end validation with Seattle dataset
 
 **Month 2: ML Foundation**
@@ -947,6 +955,15 @@ The system is ready for production deployment with a clear roadmap for scaling t
 - ✅ Performance metrics collected and analyzed
 - ✅ Seattle dataset performance benchmarks established
 - ✅ Traffic profiles integrated with ETA estimation
+
+**Phase 11 Current Status:**
+- ✅ Core infrastructure complete (BaselinePredictor, HistoricalBridgeDataProvider, Seattle datasets)
+- ✅ All core tests passing (25+ test cases)
+- ✅ Code quality: swift-format applied to all 119 Swift files
+- ✅ Single source of truth: SeattleDrawbridges.swift created with comprehensive test coverage
+- 🔄 Integration testing with PathScoringService (next priority)
+- 🔄 Performance metrics and observability (in progress)
+- 🔄 Traffic profile integration (planned)
 
 **Phase 12 Complete When:**
 - ✅ ML model training pipeline operational

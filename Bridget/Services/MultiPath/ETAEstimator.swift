@@ -108,6 +108,12 @@ public class ETAEstimator {
 
     for (index, edge) in path.edges.enumerated() {
       if edge.isBridge, let bridgeID = edge.bridgeID {
+        // Validate bridge ID against SeattleDrawbridges as single source of truth
+        if !SeattleDrawbridges.isValidBridgeID(bridgeID) {
+          print("⚠️ ETAEstimator: Non-canonical bridge ID '\(bridgeID)' detected in path. Skipping bridge ETA calculation.")
+          continue
+        }
+        
         let destinationNodeIndex = index + 1
         if destinationNodeIndex < allETAs.count {
           bridgeETAs.append((bridgeID: bridgeID, eta: allETAs[destinationNodeIndex]))

@@ -27,24 +27,7 @@ import Foundation
 /// - ID validation and mapping
 /// - Business logic referencing
 /// - UI display of bridge names
-///
-/// ### Discussion
-/// Referencing bridge IDs using this enum improves data quality, reduces typos, and simplifies future migrations or
-/// maintenance. If a new bridge is added, update this enum and related logic accordingly.
-enum BridgeID: String, CaseIterable, Equatable {
-  case firstAveSouth = "1"
-  case ballard = "2"
-  case fremont = "3"
-  case montlake = "4"
-  case lowerSpokane = "6"
-  case university = "21"
-  case southPark = "29"
 
-  /// All known IDs as a Set (for efficient lookup)
-  static var allIDs: Set<String> {
-    Set(allCases.map { $0.rawValue })
-  }
-}
 
 // MARK: - ValidationFailureReason Enum
 
@@ -73,17 +56,9 @@ class BridgeDataProcessor {
   // MARK: - Properties
 
   /// Known bridge IDs for validation.
-  private let knownBridgeIDs = BridgeID.allIDs
+  private let knownBridgeIDs = SeattleDrawbridges.BridgeID.allIDs
 
-  private let bridgeLocations: [String: (lat: Double, lon: Double)] = [
-    "1": (47.542213439941406, -122.33446502685547),  // 1st Ave South
-    "2": (47.65981674194336, -122.37619018554688),  // Ballard
-    "3": (47.64760208129883, -122.3497314453125),  // Fremont
-    "4": (47.64728546142578, -122.3045883178711),  // Montlake
-    "6": (47.57137680053711, -122.35354614257812),  // Lower Spokane St
-    "21": (47.652652740478516, -122.32042694091797),  // University
-    "29": (47.52923583984375, -122.31411743164062),  // South Park
-  ]
+  private let bridgeLocations: [String: (lat: Double, lon: Double)] = SeattleDrawbridges.bridgeLocations
 
   private let validEntityTypes = Set(["Bridge"])  // Expand as needed
 
@@ -137,7 +112,7 @@ class BridgeDataProcessor {
       }
     }
     let models: [BridgeStatusModel] = modelMap.compactMap { id, val in
-      if let bridgeID = BridgeID(rawValue: id), isNotEmpty(val.name) {
+      if let bridgeID = SeattleDrawbridges.BridgeID(rawValue: id), isNotEmpty(val.name) {
         let sortedOpenings = val.openings.sorted()
         return BridgeStatusModel(
           bridgeName: val.name, apiBridgeID: bridgeID, historicalOpenings: sortedOpenings)

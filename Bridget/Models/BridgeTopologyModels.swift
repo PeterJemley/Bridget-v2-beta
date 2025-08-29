@@ -90,7 +90,7 @@ struct LiftFeatures {
   ///
   /// This field identifies which bridge the features represent. When converting
   /// to ML model input, this is mapped to a 0-based integer index for stability.
-  let bridgeId: BridgeID
+  let bridgeId: SeattleDrawbridges.BridgeID
 
   /// Minutes from now until arrival at the bridge (0-20 minutes)
   ///
@@ -230,7 +230,7 @@ extension LiftFeatures {
   /// - Returns: Array of 14 Double values representing the feature vector
   func packedVector() -> [Double] {
     let bridgeIndex = Double(
-      BridgeID.allCases.firstIndex(of: bridgeId) ?? -1
+      SeattleDrawbridges.BridgeID.allCases.firstIndex(of: bridgeId) ?? -1
     )
     return [
       bridgeIndex,

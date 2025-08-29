@@ -1,24 +1,5 @@
 [
   {
-    "id": "first_ave_south",
-    "name": "First Avenue South Bridge",
-    "latitude": 47.5980,
-    "longitude": -122.3320,
-    "type": "bascule",
-    "schedule": {
-      "weekday": {
-        "morning_rush": "07:00-09:00",
-        "evening_rush": "16:00-18:00",
-        "night_operations": "22:00-06:00"
-      },
-      "weekend": {
-        "day_operations": "10:00-18:00",
-        "night_operations": "22:00-08:00"
-      }
-    },
-    "notes": "Major arterial bridge connecting SODO to Georgetown"
-  },
-  {
     "id": "ballard",
     "name": "Ballard Bridge",
     "latitude": 47.6598,
@@ -35,7 +16,7 @@
         "night_operations": "22:00-08:00"
       }
     },
-    "notes": "Major arterial bridge connecting Ballard to Fremont"
+    "notes": "15th Avenue NW bridge connecting Ballard to Interbay across Lake Washington Ship Canal"
   },
   {
     "id": "fremont",
@@ -54,7 +35,7 @@
         "night_operations": "22:00-08:00"
       }
     },
-    "notes": "Historic bridge connecting Fremont to Queen Anne"
+    "notes": "Historic bridge connecting Fremont to Queen Anne across Lake Washington Ship Canal"
   },
   {
     "id": "montlake",
@@ -73,7 +54,45 @@
         "night_operations": "22:00-08:00"
       }
     },
-    "notes": "Bridge connecting Montlake to Capitol Hill"
+    "notes": "Bridge connecting Montlake to University District across Lake Washington Ship Canal"
+  },
+  {
+    "id": "university",
+    "name": "University Bridge",
+    "latitude": 47.6531,
+    "longitude": -122.3200,
+    "type": "bascule",
+    "schedule": {
+      "weekday": {
+        "morning_rush": "07:00-09:00",
+        "evening_rush": "16:00-18:00",
+        "night_operations": "22:00-06:00"
+      },
+      "weekend": {
+        "day_operations": "10:00-18:00",
+        "night_operations": "22:00-08:00"
+      }
+    },
+    "notes": "Bridge connecting University District to Eastlake across Lake Washington Ship Canal"
+  },
+  {
+    "id": "first_ave_south",
+    "name": "First Avenue South Bridge",
+    "latitude": 47.5980,
+    "longitude": -122.3320,
+    "type": "bascule",
+    "schedule": {
+      "weekday": {
+        "morning_rush": "07:00-09:00",
+        "evening_rush": "16:00-18:00",
+        "night_operations": "22:00-06:00"
+      },
+      "weekend": {
+        "day_operations": "10:00-18:00",
+        "night_operations": "22:00-08:00"
+      }
+    },
+    "notes": "Major arterial bridge connecting SODO to Georgetown across Duwamish Waterway"
   },
   {
     "id": "lower_spokane",
@@ -92,119 +111,6 @@
         "night_operations": "22:00-08:00"
       }
     },
-    "notes": "Bridge connecting Georgetown to South Park"
-  },
-  {
-    "id": "university",
-    "name": "University Bridge",
-    "latitude": 47.6531,
-    "longitude": -122.3201,
-    "type": "bascule",
-    "schedule": {
-      "weekday": {
-        "morning_rush": "07:00-09:00",
-        "evening_rush": "16:00-18:00",
-        "night_operations": "22:00-06:00"
-      },
-      "weekend": {
-        "day_operations": "10:00-18:00",
-        "night_operations": "22:00-08:00"
-      }
-    },
-    "notes": "Bridge connecting University District to Eastlake"
-  },
-  {
-    "id": "south_park",
-    "name": "South Park Bridge",
-    "latitude": 47.5300,
-    "longitude": -122.3200,
-    "type": "bascule",
-    "schedule": {
-      "weekday": {
-        "morning_rush": "07:00-09:00",
-        "evening_rush": "16:00-18:00",
-        "night_operations": "22:00-06:00"
-      },
-      "weekend": {
-        "day_operations": "10:00-18:00",
-        "night_operations": "22:00-08:00"
-      }
-    },
-    "notes": "Bridge connecting South Park to Georgetown"
-  },
-  {
-    "id": "georgetown",
-    "name": "Georgetown Bridge",
-    "latitude": 47.5400,
-    "longitude": -122.3300,
-    "type": "bascule",
-    "schedule": {
-      "weekday": {
-        "morning_rush": "07:00-09:00",
-        "evening_rush": "16:00-18:00",
-        "night_operations": "22:00-06:00"
-      },
-      "weekend": {
-        "day_operations": "10:00-18:00",
-        "night_operations": "22:00-08:00"
-      }
-    },
-    "notes": "Bridge connecting Georgetown to SODO"
-  },
-  {
-    "id": "duwamish",
-    "name": "Duwamish Bridge",
-    "latitude": 47.5500,
-    "longitude": -122.3400,
-    "type": "bascule",
-    "schedule": {
-      "weekday": {
-        "morning_rush": "07:00-09:00",
-        "evening_rush": "16:00-18:00",
-        "night_operations": "22:00-06:00"
-      },
-      "weekend": {
-        "day_operations": "10:00-18:00",
-        "night_operations": "22:00-08:00"
-      }
-    },
-    "notes": "Bridge connecting West Seattle to Georgetown"
-  },
-  {
-    "id": "west_seattle",
-    "name": "West Seattle Bridge",
-    "latitude": 47.5714,
-    "longitude": -122.3534,
-    "type": "highway",
-    "schedule": null,
-    "notes": "Highway bridge connecting West Seattle to downtown (no scheduled openings)"
-  },
-  {
-    "id": "aurora",
-    "name": "Aurora Bridge",
-    "latitude": 47.6500,
-    "longitude": -122.3500,
-    "type": "fixed",
-    "schedule": null,
-    "notes": "Fixed bridge connecting Queen Anne to Fremont (no openings)"
-  },
-  {
-    "id": "magnolia",
-    "name": "Magnolia Bridge",
-    "latitude": 47.6600,
-    "longitude": -122.4000,
-    "type": "bascule",
-    "schedule": {
-      "weekday": {
-        "morning_rush": "07:00-09:00",
-        "evening_rush": "16:00-18:00",
-        "night_operations": "22:00-06:00"
-      },
-      "weekend": {
-        "day_operations": "10:00-18:00",
-        "night_operations": "22:00-08:00"
-      }
-    },
-    "notes": "Bridge connecting Magnolia to Ballard"
+    "notes": "Spokane Street Swing Bridge connecting West Seattle (Delridge/Pigeon Point) to Harbor Island/SODO"
   }
 ]

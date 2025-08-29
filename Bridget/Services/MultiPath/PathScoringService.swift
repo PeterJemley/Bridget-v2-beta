@@ -290,6 +290,15 @@ public class PathScoringService {
       departureTime: departureTime
     )
 
+    // Validate that all bridge IDs are canonical Seattle bridges
+    let nonCanonicalBridgeIDs = bridgeETAs.compactMap { eta in
+      SeattleDrawbridges.isValidBridgeID(eta.bridgeID) ? nil : eta.bridgeID
+    }
+    
+    if !nonCanonicalBridgeIDs.isEmpty {
+      throw PathScoringError.unsupportedBridges(nonCanonicalBridgeIDs)
+    }
+
     guard !bridgeETAs.isEmpty else {
       // Path has no bridges, so probability is 1.0 (always passable)
       return PathScore(

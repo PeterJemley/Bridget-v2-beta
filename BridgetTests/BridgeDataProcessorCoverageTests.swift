@@ -14,7 +14,7 @@ struct BridgeIDBridgeLocationsCoverageTests {
   @Test
   func allBridgeIDsHaveLocationsAndNoExtras() async throws {
     // Access the knownBridgeIDs and bridgeLocations as used in BridgeDataProcessor
-    let knownBridgeIDs = Set(BridgeID.allIDs)
+    let knownBridgeIDs = Set(SeattleDrawbridges.BridgeID.allIDs)
     // Duplicate the mapping here as in BridgeDataProcessor
     let bridgeLocations: [String: (lat: Double, lon: Double)] = [
       "1": (47.542213439941406, -122.33446502685547),  // 1st Ave South

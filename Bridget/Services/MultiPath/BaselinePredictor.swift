@@ -67,11 +67,21 @@ public class BaselinePredictor: BridgeOpenPredictor {
     self.historicalProvider = historicalProvider
     self.config = config
 
-    // If no supported bridge IDs provided, use all available from historical provider
+    // If no supported bridge IDs provided, use SeattleDrawbridges as the single source of truth
     if let supported = supportedBridgeIDs {
-      self.supportedBridgeIDs = supported
+      // Validate that all provided IDs are canonical Seattle bridges
+      let canonicalIDs = Set(SeattleDrawbridges.BridgeID.allIDs)
+      let nonCanonicalIDs = supported.subtracting(canonicalIDs)
+      
+      if !nonCanonicalIDs.isEmpty {
+        print("⚠️ BaselinePredictor: Non-canonical bridge IDs detected: \(nonCanonicalIDs). Using canonical Seattle bridges only.")
+      }
+      
+      // Only use IDs that are both supported and canonical
+      self.supportedBridgeIDs = supported.intersection(canonicalIDs)
     } else {
-      self.supportedBridgeIDs = Set(historicalProvider.getAvailableBridgeIDs())
+      // Default to all canonical Seattle bridges
+      self.supportedBridgeIDs = Set(SeattleDrawbridges.BridgeID.allIDs)
     }
   }
 

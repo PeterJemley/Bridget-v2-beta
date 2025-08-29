@@ -74,7 +74,21 @@ public struct Edge: Hashable, Codable {
     self.travelTime = travelTime
     self.distance = distance
     self.isBridge = isBridge
-    self.bridgeID = bridgeID
+    
+    // Validate bridge ID against SeattleDrawbridges as single source of truth
+    if isBridge {
+      if let bridgeID = bridgeID {
+        if !SeattleDrawbridges.isValidBridgeID(bridgeID) {
+          print("⚠️ Edge: Non-canonical bridge ID '\(bridgeID)' detected. This should be one of: \(SeattleDrawbridges.BridgeID.allIDs)")
+        }
+        self.bridgeID = bridgeID
+      } else {
+        print("⚠️ Edge: Bridge edge missing bridgeID. Setting to nil.")
+        self.bridgeID = nil
+      }
+    } else {
+      self.bridgeID = bridgeID
+    }
   }
 
   // MARK: - Hashable

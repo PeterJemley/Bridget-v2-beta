@@ -140,8 +140,8 @@ public final class BridgeEvent {
   }
 
   /// A convenience accessor for the BridgeID enum if the ID is recognized.
-  var bridgeIDEnum: BridgeID? {
-    return BridgeID(rawValue: bridgeID)
+  var bridgeIDEnum: SeattleDrawbridges.BridgeID? {
+    return SeattleDrawbridges.BridgeID(rawValue: bridgeID)
   }
 }
 

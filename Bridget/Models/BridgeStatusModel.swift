@@ -39,7 +39,7 @@ class BridgeStatusModel: Codable {
   /// The raw API identifier for the bridge, used for traceability and mapping to API data.
   ///
   /// This optional property stores the numeric or string ID used by the API to uniquely identify the bridge.
-  var apiBridgeID: BridgeID?
+  var apiBridgeID: SeattleDrawbridges.BridgeID?
 
   /// The list of past dates and times when the bridge was recorded as open.
   var historicalOpenings: [Date]
@@ -72,7 +72,7 @@ class BridgeStatusModel: Codable {
   ///   - realTimeDelay: An optional time interval indicating real-time delay (in seconds).
   init(
     bridgeName: String,
-    apiBridgeID: BridgeID? = nil,
+    apiBridgeID: SeattleDrawbridges.BridgeID? = nil,
     historicalOpenings: [Date] = [],
     realTimeDelay: TimeInterval? = nil
   ) {
@@ -113,7 +113,7 @@ class BridgeStatusModel: Codable {
       forKey: .apiBridgeID
     )
     if let rawValue = apiBridgeIDString {
-      apiBridgeID = BridgeID(rawValue: rawValue)
+              apiBridgeID = SeattleDrawbridges.BridgeID(rawValue: rawValue)
     } else {
       apiBridgeID = nil
     }
