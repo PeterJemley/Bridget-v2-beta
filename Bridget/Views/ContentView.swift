@@ -179,13 +179,12 @@ struct ContentView: View {
 #if DEBUG
   #Preview {
     ContentView()
-      .modelContainer(
-        for: [
-          BridgeEvent.self,
-          RoutePreference.self,
-          TrafficInferenceCache.self,
-          UserRouteHistory.self,
-          ProbeTick.self,
-        ], inMemory: true)
+      .modelContainer(for: [
+        BridgeEvent.self,
+        RoutePreference.self,
+        TrafficInferenceCache.self,
+        UserRouteHistory.self,
+        ProbeTick.self,
+      ], inMemory: true)
   }
 #endif

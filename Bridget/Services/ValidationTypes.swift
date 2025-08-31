@@ -77,8 +77,7 @@ public enum ValidationFailureReason: CustomStringConvertible, Equatable {
   case malformedLatitude(String)
   case malformedLongitude(String)
   case malformedMinutesOpen(String)
-  case geospatialMismatch(
-    expectedLat: Double, expectedLon: Double, actualLat: Double, actualLon: Double)
+  case geospatialMismatch(expectedLat: Double, expectedLon: Double, actualLat: Double, actualLon: Double)
   case missingRequiredField(String)
   case duplicateRecord
   case other(String)
@@ -91,43 +90,43 @@ public enum ValidationFailureReason: CustomStringConvertible, Equatable {
       return "Empty entityname"
     case .emptyEntityType:
       return "Empty entitytype"
-    case .invalidEntityType(let value):
+    case let .invalidEntityType(value):
       return "Invalid entitytype: \(value)"
-    case .unknownBridgeID(let id):
+    case let .unknownBridgeID(id):
       return "Unknown bridge ID: \(id)"
-    case .malformedOpenDate(let value):
+    case let .malformedOpenDate(value):
       return "Malformed open date: \(value)"
-    case .outOfRangeOpenDate(let date):
+    case let .outOfRangeOpenDate(date):
       return "Open date out of allowed range: \(date)"
-    case .malformedCloseDate(let value):
+    case let .malformedCloseDate(value):
       return "Malformed close date: \(value)"
-    case .outOfRangeCloseDate(let date):
+    case let .outOfRangeCloseDate(date):
       return "Close date out of allowed range: \(date)"
-    case .closeDateNotAfterOpenDate(let open, let close):
+    case let .closeDateNotAfterOpenDate(open, close):
       return "Close date (\(close)) is not after open date (\(open))"
-    case .invalidLatitude(let value):
+    case let .invalidLatitude(value):
       return "Invalid latitude: \(String(describing: value)) (must be between -90 and 90)"
-    case .invalidLongitude(let value):
+    case let .invalidLongitude(value):
       return "Invalid longitude: \(String(describing: value)) (must be between -180 and 180)"
-    case .negativeMinutesOpen(let value):
+    case let .negativeMinutesOpen(value):
       return "Negative minutes open: \(String(describing: value))"
-    case .minutesOpenMismatch(let reported, let actual):
+    case let .minutesOpenMismatch(reported, actual):
       return "minutesopen mismatch: reported \(reported), actual \(actual) "
         + "(should match the difference between open/close times)"
-    case .malformedLatitude(let raw):
+    case let .malformedLatitude(raw):
       return "Malformed latitude: \(raw) (not a valid number)"
-    case .malformedLongitude(let raw):
+    case let .malformedLongitude(raw):
       return "Malformed longitude: \(raw) (not a valid number)"
-    case .malformedMinutesOpen(let raw):
+    case let .malformedMinutesOpen(raw):
       return "Malformed minutesopen: \(raw) (not a valid number)"
-    case .geospatialMismatch(let expectedLat, let expectedLon, let actualLat, let actualLon):
+    case let .geospatialMismatch(expectedLat, expectedLon, actualLat, actualLon):
       return "Geospatial mismatch: expected (\(expectedLat), \(expectedLon)), "
         + "got (\(actualLat), \(actualLon)) (too far from known location)"
-    case .missingRequiredField(let name):
+    case let .missingRequiredField(name):
       return "Missing required field: \(name)"
     case .duplicateRecord:
       return "Duplicate record detected"
-    case .other(let message):
+    case let .other(message):
       return message
     }
   }
@@ -142,8 +141,8 @@ public enum DateValidationError: Error, CustomStringConvertible, Equatable {
   public var description: String {
     switch self {
     case .emptyOrNull: return "Date string is empty or null."
-    case .invalidFormat(let str): return "Invalid date format: \(str)"
-    case .valueOutOfRange(let message): return "Value out of range: \(message)"
+    case let .invalidFormat(str): return "Invalid date format: \(str)"
+    case let .valueOutOfRange(message): return "Value out of range: \(message)"
     }
   }
 }
@@ -173,8 +172,7 @@ public protocol DateValidationErrorReporter {
 
 /// Console reporter for date validation errors.
 public struct ConsoleDateValidationErrorReporter: DateValidationErrorReporter {
-  public func report(_ error: DateValidationError, level: LogLevel, context: DateValidationContext)
-  {
+  public func report(_ error: DateValidationError, level: LogLevel, context: DateValidationContext) {
     let id = context.recordID.map { "RecordID: \($0)" } ?? "RecordID: N/A"
     let src = context.source ?? ""
     let ts = ISO8601DateFormatter().string(from: context.timestamp)

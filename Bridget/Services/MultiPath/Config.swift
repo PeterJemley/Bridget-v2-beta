@@ -20,12 +20,11 @@ public struct MultiPathConfig: Codable {
   public let performance: MultiPathPerformanceConfig
   public let prediction: PredictionConfig
 
-  public init(
-    pathEnumeration: PathEnumConfig = PathEnumConfig(),
-    scoring: ScoringConfig = ScoringConfig(),
-    performance: MultiPathPerformanceConfig = MultiPathPerformanceConfig(),
-    prediction: PredictionConfig = PredictionConfig()
-  ) {
+  public init(pathEnumeration: PathEnumConfig = PathEnumConfig(),
+              scoring: ScoringConfig = ScoringConfig(),
+              performance: MultiPathPerformanceConfig = MultiPathPerformanceConfig(),
+              prediction: PredictionConfig = PredictionConfig())
+  {
     self.pathEnumeration = pathEnumeration
     self.scoring = scoring
     self.performance = performance
@@ -46,17 +45,16 @@ public struct PathEnumConfig: Codable {
   public var randomSeed: UInt64
   public var maxTimeOverShortest: TimeInterval
 
-  public init(
-    maxPaths: Int = 100,
-    maxDepth: Int = 20,
-    maxTravelTime: TimeInterval = 3600,
-    allowCycles: Bool = false,
-    useBidirectionalSearch: Bool = false,
-    enumerationMode: PathEnumerationMode = .dfs,
-    kShortestPaths: Int = 10,
-    randomSeed: UInt64 = 42,
-    maxTimeOverShortest: TimeInterval = 300
-  ) {
+  public init(maxPaths: Int = 100,
+              maxDepth: Int = 20,
+              maxTravelTime: TimeInterval = 3600,
+              allowCycles: Bool = false,
+              useBidirectionalSearch: Bool = false,
+              enumerationMode: PathEnumerationMode = .dfs,
+              kShortestPaths: Int = 10,
+              randomSeed: UInt64 = 42,
+              maxTimeOverShortest: TimeInterval = 300)
+  {
     self.maxPaths = maxPaths
     self.maxDepth = maxDepth
     self.maxTravelTime = maxTravelTime
@@ -98,15 +96,14 @@ public struct ScoringConfig: Codable {
   public let bridgeWeight: Double
   public let timeWeight: Double
 
-  public init(
-    minProbability: Double = 1e-10,
-    maxProbability: Double = 1.0 - 1e-10,
-    logThreshold: Double = -20.0,
-    useLogDomain: Bool = true,
-    clampBounds: ClampBounds = ClampBounds(min: 0.0, max: 1.0),
-    bridgeWeight: Double = 0.7,
-    timeWeight: Double = 0.3
-  ) {
+  public init(minProbability: Double = 1e-10,
+              maxProbability: Double = 1.0 - 1e-10,
+              logThreshold: Double = -20.0,
+              useLogDomain: Bool = true,
+              clampBounds: ClampBounds = ClampBounds(min: 0.0, max: 1.0),
+              bridgeWeight: Double = 0.7,
+              timeWeight: Double = 0.3)
+  {
     self.minProbability = minProbability
     self.maxProbability = maxProbability
     self.logThreshold = logThreshold
@@ -134,15 +131,14 @@ public struct MultiPathPerformanceConfig: Codable {
   public let cacheExpirationTime: TimeInterval
   public let logVerbosity: LogVerbosity
 
-  public init(
-    maxEnumerationTime: TimeInterval = 30.0,
-    maxScoringTime: TimeInterval = 10.0,
-    maxMemoryUsage: Int64 = 100 * 1024 * 1024,
-    enablePerformanceLogging: Bool = true,
-    enableCaching: Bool = true,
-    cacheExpirationTime: TimeInterval = 300,
-    logVerbosity: LogVerbosity = .warnings
-  ) {
+  public init(maxEnumerationTime: TimeInterval = 30.0,
+              maxScoringTime: TimeInterval = 10.0,
+              maxMemoryUsage: Int64 = 100 * 1024 * 1024,
+              enablePerformanceLogging: Bool = true,
+              enableCaching: Bool = true,
+              cacheExpirationTime: TimeInterval = 300,
+              logVerbosity: LogVerbosity = .warnings)
+  {
     self.maxEnumerationTime = maxEnumerationTime
     self.maxScoringTime = maxScoringTime
     self.maxMemoryUsage = maxMemoryUsage
@@ -167,18 +163,17 @@ public struct PredictionConfig: Codable {
   public let priorBeta: Double
   public let enableMetricsLogging: Bool
 
-  public init(
-    defaultBridgeProbability: Double = 0.8,
-    useBatchPrediction: Bool = true,
-    batchSize: Int = 50,
-    enablePredictionCache: Bool = true,
-    predictionCacheExpiration: TimeInterval = 60,
-    mockPredictorSeed: UInt64 = 12345,
-    predictionMode: PredictionMode = .baseline,
-    priorAlpha: Double = 1.0,
-    priorBeta: Double = 9.0,
-    enableMetricsLogging: Bool = false
-  ) {
+  public init(defaultBridgeProbability: Double = 0.8,
+              useBatchPrediction: Bool = true,
+              batchSize: Int = 50,
+              enablePredictionCache: Bool = true,
+              predictionCacheExpiration: TimeInterval = 60,
+              mockPredictorSeed: UInt64 = 12345,
+              predictionMode: PredictionMode = .baseline,
+              priorAlpha: Double = 1.0,
+              priorBeta: Double = 9.0,
+              enableMetricsLogging: Bool = false)
+  {
     self.defaultBridgeProbability = defaultBridgeProbability
     self.useBatchPrediction = useBatchPrediction
     self.batchSize = batchSize
@@ -200,72 +195,57 @@ public enum PredictionMode: String, Codable, CaseIterable {
 
 // MARK: - Default Configurations
 
-extension MultiPathConfig {
-  public static let development = MultiPathConfig(
-    pathEnumeration: PathEnumConfig(
-      maxPaths: 50,
-      maxDepth: 10,
-      maxTravelTime: 1800,
-      randomSeed: 42),
-    scoring: ScoringConfig(
-      useLogDomain: true,
-      bridgeWeight: 0.7,
-      timeWeight: 0.3),
-    performance: MultiPathPerformanceConfig(
-      maxEnumerationTime: 10.0,
-      maxScoringTime: 5.0,
-      enablePerformanceLogging: true,
-      enableCaching: true,
-      logVerbosity: .warnings),
-    prediction: PredictionConfig(
-      defaultBridgeProbability: 0.8,
-      useBatchPrediction: true,
-      batchSize: 25,
-      mockPredictorSeed: 42))
+public extension MultiPathConfig {
+  static let development = MultiPathConfig(pathEnumeration: PathEnumConfig(maxPaths: 50,
+                                                                           maxDepth: 10,
+                                                                           maxTravelTime: 1800,
+                                                                           randomSeed: 42),
+                                           scoring: ScoringConfig(useLogDomain: true,
+                                                                  bridgeWeight: 0.7,
+                                                                  timeWeight: 0.3),
+                                           performance: MultiPathPerformanceConfig(maxEnumerationTime: 10.0,
+                                                                                   maxScoringTime: 5.0,
+                                                                                   enablePerformanceLogging: true,
+                                                                                   enableCaching: true,
+                                                                                   logVerbosity: .warnings),
+                                           prediction: PredictionConfig(defaultBridgeProbability: 0.8,
+                                                                        useBatchPrediction: true,
+                                                                        batchSize: 25,
+                                                                        mockPredictorSeed: 42))
 
-  public static let production = MultiPathConfig(
-    pathEnumeration: PathEnumConfig(
-      maxPaths: 100,
-      maxDepth: 20,
-      maxTravelTime: 3600,
-      randomSeed: 0),
-    scoring: ScoringConfig(
-      useLogDomain: true,
-      bridgeWeight: 0.7,
-      timeWeight: 0.3),
-    performance: MultiPathPerformanceConfig(
-      maxEnumerationTime: 30.0,
-      maxScoringTime: 10.0,
-      enablePerformanceLogging: false,
-      enableCaching: true,
-      logVerbosity: .warnings),
-    prediction: PredictionConfig(
-      defaultBridgeProbability: 0.8,
-      useBatchPrediction: true,
-      batchSize: 50,
-      enablePredictionCache: true))
+  static let production = MultiPathConfig(pathEnumeration: PathEnumConfig(maxPaths: 100,
+                                                                          maxDepth: 20,
+                                                                          maxTravelTime: 3600,
+                                                                          randomSeed: 0),
+                                          scoring: ScoringConfig(useLogDomain: true,
+                                                                 bridgeWeight: 0.7,
+                                                                 timeWeight: 0.3),
+                                          performance: MultiPathPerformanceConfig(maxEnumerationTime: 30.0,
+                                                                                  maxScoringTime: 10.0,
+                                                                                  enablePerformanceLogging: false,
+                                                                                  enableCaching: true,
+                                                                                  logVerbosity: .warnings),
+                                          prediction: PredictionConfig(defaultBridgeProbability: 0.8,
+                                                                       useBatchPrediction: true,
+                                                                       batchSize: 50,
+                                                                       enablePredictionCache: true))
 
-  public static let testing = MultiPathConfig(
-    pathEnumeration: PathEnumConfig(
-      maxPaths: 10,
-      maxDepth: 5,
-      maxTravelTime: 600,
-      randomSeed: 42,
-      maxTimeOverShortest: 120),
-    scoring: ScoringConfig(
-      useLogDomain: true,
-      bridgeWeight: 0.5,
-      timeWeight: 0.5),
-    performance: MultiPathPerformanceConfig(
-      maxEnumerationTime: 5.0,
-      maxScoringTime: 2.0,
-      enablePerformanceLogging: true,
-      enableCaching: false,
-      logVerbosity: .warnings),
-    prediction: PredictionConfig(
-      defaultBridgeProbability: 0.5,
-      useBatchPrediction: false,
-      batchSize: 1,
-      enablePredictionCache: false,
-      mockPredictorSeed: 42))
+  static let testing = MultiPathConfig(pathEnumeration: PathEnumConfig(maxPaths: 10,
+                                                                       maxDepth: 5,
+                                                                       maxTravelTime: 600,
+                                                                       randomSeed: 42,
+                                                                       maxTimeOverShortest: 120),
+                                       scoring: ScoringConfig(useLogDomain: true,
+                                                              bridgeWeight: 0.5,
+                                                              timeWeight: 0.5),
+                                       performance: MultiPathPerformanceConfig(maxEnumerationTime: 5.0,
+                                                                               maxScoringTime: 2.0,
+                                                                               enablePerformanceLogging: true,
+                                                                               enableCaching: false,
+                                                                               logVerbosity: .warnings),
+                                       prediction: PredictionConfig(defaultBridgeProbability: 0.5,
+                                                                    useBatchPrediction: false,
+                                                                    batchSize: 1,
+                                                                    enablePredictionCache: false,
+                                                                    mockPredictorSeed: 42))
 }

@@ -34,11 +34,11 @@ public class PathEnumerationService {
   private let logger = Logger(subsystem: "com.peterjemley.Bridget", category: "PathEnumeration")
 
   // MARK: - Cache Storage (optional, feature-gated)
+
   // Thread-safe in-memory cache for path enumeration results.
   // Enabled only when config.performance.enableCaching == true.
   private var pathCache: [String: [RoutePath]] = [:]
-  private let cacheQueue = DispatchQueue(
-    label: "com.peterjemley.Bridget.pathCache", attributes: .concurrent)
+  private let cacheQueue = DispatchQueue(label: "com.peterjemley.Bridget.pathCache", attributes: .concurrent)
 
   public init(config: MultiPathConfig = .testing) {
     self.config = config
@@ -49,11 +49,10 @@ public class PathEnumerationService {
   /// Enumerate all valid paths from start to end node
   /// Returns paths sorted by total travel time (shortest first)
   /// Phase 10: Supports both DFS and Yen's K-shortest paths algorithms
-  public func enumeratePaths(
-    from start: NodeID,
-    to end: NodeID,
-    in graph: Graph
-  ) throws -> [RoutePath] {
+  public func enumeratePaths(from start: NodeID,
+                             to end: NodeID,
+                             in graph: Graph) throws -> [RoutePath]
+  {
     logger.info(
       "Enumerating paths from \(start) to \(end) using \(self.config.pathEnumeration.enumerationMode.rawValue)"
     )
@@ -74,7 +73,7 @@ public class PathEnumerationService {
     let cachingEnabled = config.performance.enableCaching
     let cacheKey =
       cachingEnabled
-      ? makeCacheKey(start: start, end: end, algorithm: algorithm, graph: graph) : nil
+        ? makeCacheKey(start: start, end: end, algorithm: algorithm, graph: graph) : nil
 
     if cachingEnabled, let key = cacheKey {
       if let cached: [RoutePath] = cacheQueue.sync(execute: { pathCache[key] }) {
@@ -106,11 +105,10 @@ public class PathEnumerationService {
   }
 
   /// Get the shortest path between two nodes
-  public func shortestPath(
-    from start: NodeID,
-    to end: NodeID,
-    in graph: Graph
-  ) throws -> RoutePath? {
+  public func shortestPath(from start: NodeID,
+                           to end: NodeID,
+                           in graph: Graph) throws -> RoutePath?
+  {
     return try enumeratePaths(from: start, to: end, in: graph).first
   }
 
@@ -141,10 +139,9 @@ public class PathEnumerationService {
 
   /// Compare found paths with expected "golden" paths by node sequences.
   /// Returns a result indicating success and a human-readable description of differences.
-  public func compareWithGoldenPaths(
-    found: [RoutePath],
-    expected: [RoutePath]
-  ) -> GoldenComparisonResult {
+  public func compareWithGoldenPaths(found: [RoutePath],
+                                     expected: [RoutePath]) -> GoldenComparisonResult
+  {
     // Compare by node sequences to avoid edge equality nuances
     let foundSet = Set(found.map { $0.nodes })
     let expectedSet = Set(expected.map { $0.nodes })
@@ -163,9 +160,8 @@ public class PathEnumerationService {
           orderingNote = " (Note: Found paths are not strictly sorted by travel time)"
         }
       }
-      return GoldenComparisonResult(
-        isSuccess: true,
-        description: "Found paths match expected\(orderingNote).")
+      return GoldenComparisonResult(isSuccess: true,
+                                    description: "Found paths match expected\(orderingNote).")
     }
 
     var lines: [String] = []
@@ -176,9 +172,8 @@ public class PathEnumerationService {
       lines.append("Unexpected extra paths: \(extra.map { $0.joined(separator: "->") }.sorted())")
     }
 
-    return GoldenComparisonResult(
-      isSuccess: false,
-      description: lines.joined(separator: " | "))
+    return GoldenComparisonResult(isSuccess: false,
+                                  description: lines.joined(separator: " | "))
   }
 
   // MARK: - Private Implementation
@@ -207,9 +202,7 @@ public class PathEnumerationService {
   }
 
   /// Build a deterministic cache key for enumeration results
-  private func makeCacheKey(
-    start: NodeID, end: NodeID, algorithm: PathEnumerationMode, graph: Graph
-  ) -> String {
+  private func makeCacheKey(start: NodeID, end: NodeID, algorithm: PathEnumerationMode, graph: Graph) -> String {
     // Graph signature: sorted edges by (from,to,travelTime,distance,isBridge,bridgeID?)
     // For small graphs this is fine; for large graphs consider precomputed signatures.
     var parts: [String] = []
@@ -245,11 +238,10 @@ public class PathEnumerationService {
   }
 
   /// Enumerate paths using DFS (original implementation)
-  private func enumeratePathsDFS(
-    from start: NodeID,
-    to end: NodeID,
-    in graph: Graph
-  ) throws -> [RoutePath] {
+  private func enumeratePathsDFS(from start: NodeID,
+                                 to end: NodeID,
+                                 in graph: Graph) throws -> [RoutePath]
+  {
     // Phase 2: Find shortest path first for pruning baseline
     let shortestPath = findShortestPathDijkstra(from: start, to: end, in: graph)
     let shortestPathTime = shortestPath?.totalTravelTime ?? Double.infinity
@@ -257,13 +249,12 @@ public class PathEnumerationService {
     logger.info("DFS: Shortest path time: \(shortestPathTime)s")
 
     // Use DFS with Phase 2 pruning
-    let paths = try enumeratePathsDFSWithPruning(
-      from: start,
-      to: end,
-      in: graph,
-      maxDepth: config.pathEnumeration.maxDepth,
-      maxPaths: config.pathEnumeration.maxPaths,
-      shortestPathTime: shortestPathTime)
+    let paths = try enumeratePathsDFSWithPruning(from: start,
+                                                 to: end,
+                                                 in: graph,
+                                                 maxDepth: config.pathEnumeration.maxDepth,
+                                                 maxPaths: config.pathEnumeration.maxPaths,
+                                                 shortestPathTime: shortestPathTime)
 
     // Sort by total travel time (shortest first)
     let sortedPaths = paths.sorted { $0.totalTravelTime < $1.totalTravelTime }
@@ -274,13 +265,12 @@ public class PathEnumerationService {
 
   /// Depth-first search path enumeration
   /// Deterministic and suitable for Phase 1 testing
-  private func enumeratePathsDFS(
-    from start: NodeID,
-    to end: NodeID,
-    in graph: Graph,
-    maxDepth: Int,
-    maxPaths: Int
-  ) throws -> [RoutePath] {
+  private func enumeratePathsDFS(from start: NodeID,
+                                 to end: NodeID,
+                                 in graph: Graph,
+                                 maxDepth: Int,
+                                 maxPaths: Int) throws -> [RoutePath]
+  {
     var paths: [RoutePath] = []
     var visited: Set<NodeID> = []
 
@@ -348,14 +338,13 @@ public class PathEnumerationService {
 
   /// Depth-first search path enumeration with Phase 2 pruning
   /// Includes pruning based on maxTimeOverShortest configuration
-  private func enumeratePathsDFSWithPruning(
-    from start: NodeID,
-    to end: NodeID,
-    in graph: Graph,
-    maxDepth: Int,
-    maxPaths: Int,
-    shortestPathTime: Double
-  ) throws -> [RoutePath] {
+  private func enumeratePathsDFSWithPruning(from start: NodeID,
+                                            to end: NodeID,
+                                            in graph: Graph,
+                                            maxDepth: Int,
+                                            maxPaths: Int,
+                                            shortestPathTime: Double) throws -> [RoutePath]
+  {
     var paths: [RoutePath] = []
     var visited: Set<NodeID> = []
 
@@ -417,9 +406,8 @@ public class PathEnumerationService {
         var newEdges = edges
         newEdges.append(edge)
 
-        dfs(
-          current: nextNode, path: newPath, edges: newEdges, depth: depth + 1,
-          currentTime: currentTime + edge.travelTime)
+        dfs(current: nextNode, path: newPath, edges: newEdges, depth: depth + 1,
+            currentTime: currentTime + edge.travelTime)
       }
 
       // Backtrack
@@ -441,11 +429,10 @@ public class PathEnumerationService {
   ///   - end: The ending node ID
   ///   - graph: The graph to search
   /// - Returns: The RoutePath for the shortest path, or nil if no path exists
-  private func findShortestPathDijkstra(
-    from start: NodeID,
-    to end: NodeID,
-    in graph: Graph
-  ) -> RoutePath? {
+  private func findShortestPathDijkstra(from start: NodeID,
+                                        to end: NodeID,
+                                        in graph: Graph) -> RoutePath?
+  {
     // Priority queue: (totalTravelTime, [NodeID], [Edge])
     var queue: [(Double, [NodeID], [Edge])] = [(0, [start], [])]
     var visited: Set<NodeID> = []
@@ -488,11 +475,10 @@ public class PathEnumerationService {
 
   /// Enumerate paths using Yen's K-shortest paths algorithm
   /// More efficient than DFS for finding the top K shortest paths
-  private func enumeratePathsYens(
-    from start: NodeID,
-    to end: NodeID,
-    in graph: Graph
-  ) throws -> [RoutePath] {
+  private func enumeratePathsYens(from start: NodeID,
+                                  to end: NodeID,
+                                  in graph: Graph) throws -> [RoutePath]
+  {
     logger.info(
       "Yen's: Finding \(self.config.pathEnumeration.kShortestPaths) shortest paths from \(start) to \(end)"
     )
@@ -511,13 +497,13 @@ public class PathEnumerationService {
       "Yen's: Found shortest path: \(shortestPath.nodes) (time: \(shortestPath.totalTravelTime)s)")
 
     // Find K-1 more shortest paths
-    for k in 1..<config.pathEnumeration.kShortestPaths {
+    for k in 1 ..< config.pathEnumeration.kShortestPaths {
       // For each node in the (k-1)th shortest path, find spur paths
       let previousPath = kShortestPaths[k - 1]
       logger.debug("Yen's: Iteration \(k). Previous path: \(previousPath.nodes)")
 
       // Iterate spur index along previousPath
-      for i in 0..<(previousPath.nodes.count - 1) {
+      for i in 0 ..< (previousPath.nodes.count - 1) {
         let spurNode = previousPath.nodes[i]
         let rootPathNodes = Array(previousPath.nodes.prefix(i + 1))
         let rootEdges = Array(previousPath.edges.prefix(i))  // edges before spur edge
@@ -528,8 +514,8 @@ public class PathEnumerationService {
         var deviationEdgesToRemove: Set<Edge> = []
         for accepted in kShortestPaths {
           if accepted.nodes.count > i,
-            Array(accepted.nodes.prefix(i + 1)) == rootPathNodes,
-            accepted.edges.count > i
+             Array(accepted.nodes.prefix(i + 1)) == rootPathNodes,
+             accepted.edges.count > i
           {
             let deviationEdge = accepted.edges[i]
             deviationEdgesToRemove.insert(deviationEdge)  // Edge equality is (from,to)
@@ -537,8 +523,7 @@ public class PathEnumerationService {
         }
 
         // Create spur graph by excluding only the specified edges
-        let spurGraph = try createSpurGraph(
-          from: graph, excludingEdgesByEndpoints: deviationEdgesToRemove)
+        let spurGraph = try createSpurGraph(from: graph, excludingEdgesByEndpoints: deviationEdgesToRemove)
 
         // Optional: avoid revisiting root prefix nodes (except spurNode) in spur path
         let blockedNodes = Set(rootPathNodes.dropLast())  // all root nodes before spurNode
@@ -546,8 +531,7 @@ public class PathEnumerationService {
         if blockedNodes.isEmpty {
           spurPath = findShortestPathDijkstra(from: spurNode, to: end, in: spurGraph)
         } else {
-          spurPath = findShortestPathDijkstraAvoiding(
-            from: spurNode, to: end, in: spurGraph, blocked: blockedNodes)
+          spurPath = findShortestPathDijkstraAvoiding(from: spurNode, to: end, in: spurGraph, blocked: blockedNodes)
         }
 
         if let spurPath = spurPath {
@@ -555,13 +539,12 @@ public class PathEnumerationService {
             "Yen's:   Spur path from \(spurNode) to \(end): \(spurPath.nodes) (time: \(spurPath.totalTravelTime)s)"
           )
           // Combine root path with spur path
-          let totalPath = combinePaths(
-            rootPath: rootPathNodes, rootEdges: rootEdges, spurPath: spurPath)
+          let totalPath = combinePaths(rootPath: rootPathNodes, rootEdges: rootEdges, spurPath: spurPath)
 
           // Check if this path is valid and not already found
-          if isValidPath(totalPath, in: graph)
-            && !kShortestPaths.contains(totalPath)
-            && !candidatePaths.contains(totalPath)
+          if isValidPath(totalPath, in: graph),
+             !kShortestPaths.contains(totalPath),
+             !candidatePaths.contains(totalPath)
           {
             candidatePaths.append(totalPath)
             logger.debug(
@@ -613,15 +596,13 @@ public class PathEnumerationService {
   }
 
   /// Create a spur graph by temporarily removing only the specified edges (by endpoints).
-  private func createSpurGraph(
-    from graph: Graph, excludingEdgesByEndpoints edgesToRemove: Set<Edge>
-  ) throws -> Graph {
+  private func createSpurGraph(from graph: Graph, excludingEdgesByEndpoints edgesToRemove: Set<Edge>) throws -> Graph {
     if edgesToRemove.isEmpty {
       return graph
     }
     let remainingEdges = graph.allEdges.filter { edge in
       // Edge equality is (from,to); Set<Edge> uses the same semantics
-      return !edgesToRemove.contains(edge)
+      !edgesToRemove.contains(edge)
     }
     let removedCount = graph.allEdges.count - remainingEdges.count
     logger.debug(
@@ -631,12 +612,11 @@ public class PathEnumerationService {
   }
 
   /// Dijkstra variant that avoids traversing through a set of blocked nodes (no outgoing edges from them).
-  private func findShortestPathDijkstraAvoiding(
-    from start: NodeID,
-    to end: NodeID,
-    in graph: Graph,
-    blocked: Set<NodeID>
-  ) -> RoutePath? {
+  private func findShortestPathDijkstraAvoiding(from start: NodeID,
+                                                to end: NodeID,
+                                                in graph: Graph,
+                                                blocked: Set<NodeID>) -> RoutePath?
+  {
     // Priority queue: (totalTravelTime, [NodeID], [Edge])
     var queue: [(Double, [NodeID], [Edge])] = [(0, [start], [])]
     var visited: Set<NodeID> = []
@@ -675,8 +655,7 @@ public class PathEnumerationService {
   }
 
   /// Combine root path with spur path
-  private func combinePaths(rootPath: [NodeID], rootEdges: [Edge], spurPath: RoutePath) -> RoutePath
-  {
+  private func combinePaths(rootPath: [NodeID], rootEdges: [Edge], spurPath: RoutePath) -> RoutePath {
     // Remove duplicate node at the junction
     let spurNodes = Array(spurPath.nodes.dropFirst())
     // Keep all spur edges; the first spur edge is required to connect at spurNode
@@ -711,10 +690,10 @@ public class PathEnumerationService {
 
 // MARK: - Phase 1 Test Fixtures
 
-extension PathEnumerationService {
+public extension PathEnumerationService {
   /// Create a deterministic test fixture for Phase 1
   /// Returns a simple graph with known paths for testing
-  public static func createPhase1TestFixture() -> (graph: Graph, expectedPaths: [RoutePath]) {
+  static func createPhase1TestFixture() -> (graph: Graph, expectedPaths: [RoutePath]) {
     // Create a simple test graph: A -> B -> C and A -> D -> C
     let nodes = [
       Node(id: "A", name: "Start", coordinates: (47.6062, -122.3321)),
@@ -736,27 +715,23 @@ extension PathEnumerationService {
     let graph = try! Graph(nodes: nodes, edges: edges)
 
     // Create expected paths (golden test data)
-    let expectedPath1 = RoutePath(
-      nodes: ["A", "B", "C"],
-      edges: [
-        Edge(
-          from: "A", to: "B", travelTime: 300, distance: 500, isBridge: true, bridgeID: "bridge1"),
-        Edge(from: "B", to: "C", travelTime: 200, distance: 300, isBridge: false),
-      ])
+    let expectedPath1 = RoutePath(nodes: ["A", "B", "C"],
+                                  edges: [
+                                    Edge(from: "A", to: "B", travelTime: 300, distance: 500, isBridge: true, bridgeID: "bridge1"),
+                                    Edge(from: "B", to: "C", travelTime: 200, distance: 300, isBridge: false),
+                                  ])
 
-    let expectedPath2 = RoutePath(
-      nodes: ["A", "D", "C"],
-      edges: [
-        Edge(
-          from: "A", to: "D", travelTime: 400, distance: 600, isBridge: true, bridgeID: "bridge2"),
-        Edge(from: "D", to: "C", travelTime: 150, distance: 250, isBridge: false),
-      ])
+    let expectedPath2 = RoutePath(nodes: ["A", "D", "C"],
+                                  edges: [
+                                    Edge(from: "A", to: "D", travelTime: 400, distance: 600, isBridge: true, bridgeID: "bridge2"),
+                                    Edge(from: "D", to: "C", travelTime: 150, distance: 250, isBridge: false),
+                                  ])
 
     return (graph: graph, expectedPaths: [expectedPath1, expectedPath2])
   }
 
   /// Create a more complex test fixture for edge case testing
-  public static func createPhase1ComplexFixture() -> (graph: Graph, expectedPaths: [RoutePath]) {
+  static func createPhase1ComplexFixture() -> (graph: Graph, expectedPaths: [RoutePath]) {
     // Create a graph with multiple paths and some cycles
     let nodes = [
       Node(id: "A", name: "Start", coordinates: (47.6062, -122.3321)),
@@ -791,34 +766,28 @@ extension PathEnumerationService {
     // Expected paths (sorted by travel time)
     let expectedPaths = [
       // A -> E -> D (550s)
-      RoutePath(
-        nodes: ["A", "E", "D"],
-        edges: [
-          Edge(from: "A", to: "E", travelTime: 200, distance: 350, isBridge: false),
-          Edge(from: "E", to: "D", travelTime: 350, distance: 500, isBridge: false),
-        ]),
+      RoutePath(nodes: ["A", "E", "D"],
+                edges: [
+                  Edge(from: "A", to: "E", travelTime: 200, distance: 350, isBridge: false),
+                  Edge(from: "E", to: "D", travelTime: 350, distance: 500, isBridge: false),
+                ]),
       // A -> C -> D (550s)
-      RoutePath(
-        nodes: ["A", "C", "D"],
-        edges: [
-          Edge(
-            from: "A", to: "C", travelTime: 250, distance: 400, isBridge: true, bridgeID: "bridge2"),
-          Edge(from: "C", to: "D", travelTime: 300, distance: 450, isBridge: false),
-        ]),
+      RoutePath(nodes: ["A", "C", "D"],
+                edges: [
+                  Edge(from: "A", to: "C", travelTime: 250, distance: 400, isBridge: true, bridgeID: "bridge2"),
+                  Edge(from: "C", to: "D", travelTime: 300, distance: 450, isBridge: false),
+                ]),
       // A -> B -> D (500s)
-      RoutePath(
-        nodes: ["A", "B", "D"],
-        edges: [
-          Edge(
-            from: "A", to: "B", travelTime: 300, distance: 500, isBridge: true, bridgeID: "bridge1"),
-          Edge(from: "B", to: "D", travelTime: 200, distance: 300, isBridge: false),
-        ]),
+      RoutePath(nodes: ["A", "B", "D"],
+                edges: [
+                  Edge(from: "A", to: "B", travelTime: 300, distance: 500, isBridge: true, bridgeID: "bridge1"),
+                  Edge(from: "B", to: "D", travelTime: 200, distance: 300, isBridge: false),
+                ]),
       // A -> D (600s)
-      RoutePath(
-        nodes: ["A", "D"],
-        edges: [
-          Edge(from: "A", to: "D", travelTime: 600, distance: 800, isBridge: false)
-        ]),
+      RoutePath(nodes: ["A", "D"],
+                edges: [
+                  Edge(from: "A", to: "D", travelTime: 600, distance: 800, isBridge: false),
+                ]),
     ]
 
     return (graph: graph, expectedPaths: expectedPaths)

@@ -65,23 +65,22 @@ public struct ProbeTickRaw: Codable {
   public let current_traffic_speed: Double?
   public let normal_traffic_speed: Double?
 
-  public init(
-    v: Int?,
-    ts_utc: String,
-    bridge_id: Int,
-    cross_k: Double?,
-    cross_n: Double?,
-    via_routable: Double?,
-    via_penalty_sec: Double?,
-    gate_anom: Double?,
-    alternates_total: Double?,
-    alternates_avoid: Double?,
-    open_label: Int,
-    detour_delta: Double?,
-    detour_frac: Double?,
-    current_traffic_speed: Double? = nil,
-    normal_traffic_speed: Double? = nil
-  ) {
+  public init(v: Int?,
+              ts_utc: String,
+              bridge_id: Int,
+              cross_k: Double?,
+              cross_n: Double?,
+              via_routable: Double?,
+              via_penalty_sec: Double?,
+              gate_anom: Double?,
+              alternates_total: Double?,
+              alternates_avoid: Double?,
+              open_label: Int,
+              detour_delta: Double?,
+              detour_frac: Double?,
+              current_traffic_speed: Double? = nil,
+              normal_traffic_speed: Double? = nil)
+  {
     self.v = v
     self.ts_utc = ts_utc
     self.bridge_id = bridge_id
@@ -121,25 +120,24 @@ public struct FeatureVector {
   public let normal_speed: Double
   public let target: Int
 
-  public init(
-    bridge_id: Int,
-    horizon_min: Int,
-    min_sin: Double,
-    min_cos: Double,
-    dow_sin: Double,
-    dow_cos: Double,
-    open_5m: Double,
-    open_30m: Double,
-    detour_delta: Double,
-    cross_rate: Double,
-    via_routable: Double,
-    via_penalty: Double,
-    gate_anom: Double,
-    detour_frac: Double,
-    current_speed: Double,
-    normal_speed: Double,
-    target: Int
-  ) {
+  public init(bridge_id: Int,
+              horizon_min: Int,
+              min_sin: Double,
+              min_cos: Double,
+              dow_sin: Double,
+              dow_cos: Double,
+              open_5m: Double,
+              open_30m: Double,
+              detour_delta: Double,
+              cross_rate: Double,
+              via_routable: Double,
+              via_penalty: Double,
+              gate_anom: Double,
+              detour_frac: Double,
+              current_speed: Double,
+              normal_speed: Double,
+              target: Int)
+  {
     self.bridge_id = bridge_id
     self.horizon_min = horizon_min
     self.min_sin = min_sin
@@ -173,9 +171,8 @@ public struct FeatureVector {
       current_speed, normal_speed,
     ]
 
-    let array = try MLMultiArray(
-      shape: [1, NSNumber(value: features.count)],
-      dataType: .double)
+    let array = try MLMultiArray(shape: [1, NSNumber(value: features.count)],
+                                 dataType: .double)
 
     for (i, value) in features.enumerated() {
       array[[0, i] as [NSNumber]] = NSNumber(value: value)
@@ -234,14 +231,13 @@ public struct ETASummary: Codable, Equatable {
   public let p10: Double?
   public let p90: Double?
 
-  public init(
-    mean: Double,
-    variance: Double,
-    min: Double,
-    max: Double,
-    p10: Double? = nil,
-    p90: Double? = nil
-  ) {
+  public init(mean: Double,
+              variance: Double,
+              min: Double,
+              max: Double,
+              p10: Double? = nil,
+              p90: Double? = nil)
+  {
     self.mean = mean
     self.variance = variance
     self.stdDev = sqrt(variance)
@@ -260,13 +256,12 @@ public struct ETASummary: Codable, Equatable {
     // Handle single value case (variance = 0)
     guard values.count > 1 else {
       let singleValue = values[0]
-      return ETASummary(
-        mean: singleValue,
-        variance: 0.0,
-        min: singleValue,
-        max: singleValue,
-        p10: singleValue,
-        p90: singleValue)
+      return ETASummary(mean: singleValue,
+                        variance: 0.0,
+                        min: singleValue,
+                        max: singleValue,
+                        p10: singleValue,
+                        p90: singleValue)
     }
 
     let mean = values.reduce(0, +) / Double(values.count)
@@ -279,13 +274,12 @@ public struct ETASummary: Codable, Equatable {
     let p10 = values.count >= 10 ? sorted[Int(Double(values.count) * 0.10)] : nil
     let p90 = values.count >= 10 ? sorted[Int(Double(values.count) * 0.90)] : nil
 
-    return ETASummary(
-      mean: mean,
-      variance: variance,
-      min: min,
-      max: max,
-      p10: p10,
-      p90: p90)
+    return ETASummary(mean: mean,
+                      variance: variance,
+                      min: min,
+                      max: max,
+                      p10: p10,
+                      p90: p90)
   }
 
   /// Returns a confidence interval for the specified confidence level
@@ -315,20 +309,20 @@ public struct ETASummary: Codable, Equatable {
     let ci95 = confidenceInterval(level: 0.95)
     let ciString =
       ci95.map { "95% CI: \(String(format: "%.1f", $0.lower))-\(String(format: "%.1f", $0.upper))" }
-      ?? "CI: N/A"
+        ?? "CI: N/A"
 
     return """
-      Mean: \(String(format: "%.1f", mean))
-      Std Dev: \(String(format: "%.1f", stdDev))
-      Range: \(String(format: "%.1f", min))-\(String(format: "%.1f", max))
-      \(ciString)
-      """
+    Mean: \(String(format: "%.1f", mean))
+    Std Dev: \(String(format: "%.1f", stdDev))
+    Range: \(String(format: "%.1f", min))-\(String(format: "%.1f", max))
+    \(ciString)
+    """
   }
 }
 
 // MARK: - Array Extensions for Statistical Calculations
 
-extension Array where Element == Double {
+public extension Array where Element == Double {
   /// Converts an array of Double values to an ETASummary
   ///
   /// ## Examples
@@ -339,7 +333,7 @@ extension Array where Element == Double {
   /// ```
   ///
   /// - Returns: ETASummary with computed statistics, or nil if array is empty
-  public func toETASummary() -> ETASummary? {
+  func toETASummary() -> ETASummary? {
     return ETASummary.from(self)
   }
 
@@ -354,9 +348,7 @@ extension Array where Element == Double {
   /// ```
   ///
   /// - Returns: Tuple of (mean, variance, stdDev, min, max) or nil if empty
-  public func basicStatistics() -> (
-    mean: Double, variance: Double, stdDev: Double, min: Double, max: Double
-  )? {
+  func basicStatistics() -> (mean: Double, variance: Double, stdDev: Double, min: Double, max: Double)? {
     guard !isEmpty else { return nil }
 
     // Handle single value case
@@ -388,7 +380,7 @@ public enum CoreMLError: Error, LocalizedError {
     switch self {
     case .invalidModel:
       return "Invalid Core ML model"
-    case .trainingFailed(let reason):
+    case let .trainingFailed(reason):
       return "Training failed: \(reason)"
     case .dataConversionFailed:
       return "Failed to convert data to MLMultiArray format"
@@ -415,44 +407,41 @@ public struct DataValidationResult {
   public var warnings: [String] = []
   public var timestampRange: (first: Date?, last: Date?) = (nil, nil)
   public var horizonCoverage: [Int: Int] = [:]
-  public var dataQualityMetrics: DataQualityMetrics = .init(
-    dataCompleteness: 0.0,
-    timestampValidity: 0.0,
-    bridgeIDValidity: 0.0,
-    speedDataValidity: 0.0,
-    duplicateCount: 0,
-    missingFieldsCount: 0,
-    nanCounts: [:],
-    infiniteCounts: [:],
-    outlierCounts: [:],
-    rangeViolations: [:],
-    nullCounts: [:])
+  public var dataQualityMetrics: DataQualityMetrics = .init(dataCompleteness: 0.0,
+                                                            timestampValidity: 0.0,
+                                                            bridgeIDValidity: 0.0,
+                                                            speedDataValidity: 0.0,
+                                                            duplicateCount: 0,
+                                                            missingFieldsCount: 0,
+                                                            nanCounts: [:],
+                                                            infiniteCounts: [:],
+                                                            outlierCounts: [:],
+                                                            rangeViolations: [:],
+                                                            nullCounts: [:])
 
-  public init(
-    totalRecords: Int = 0,
-    bridgeCount: Int = 0,
-    invalidBridgeIds: Int = 0,
-    invalidOpenLabels: Int = 0,
-    invalidCrossRatios: Int = 0,
-    recordsPerBridge: [Int: Int] = [:],
-    isValid: Bool = false,
-    errors: [String] = [],
-    warnings: [String] = [],
-    timestampRange: (first: Date?, last: Date?) = (nil, nil),
-    horizonCoverage: [Int: Int] = [:],
-    dataQualityMetrics: DataQualityMetrics = DataQualityMetrics(
-      dataCompleteness: 0.0,
-      timestampValidity: 0.0,
-      bridgeIDValidity: 0.0,
-      speedDataValidity: 0.0,
-      duplicateCount: 0,
-      missingFieldsCount: 0,
-      nanCounts: [:],
-      infiniteCounts: [:],
-      outlierCounts: [:],
-      rangeViolations: [:],
-      nullCounts: [:])
-  ) {
+  public init(totalRecords: Int = 0,
+              bridgeCount: Int = 0,
+              invalidBridgeIds: Int = 0,
+              invalidOpenLabels: Int = 0,
+              invalidCrossRatios: Int = 0,
+              recordsPerBridge: [Int: Int] = [:],
+              isValid: Bool = false,
+              errors: [String] = [],
+              warnings: [String] = [],
+              timestampRange: (first: Date?, last: Date?) = (nil, nil),
+              horizonCoverage: [Int: Int] = [:],
+              dataQualityMetrics: DataQualityMetrics = DataQualityMetrics(dataCompleteness: 0.0,
+                                                                          timestampValidity: 0.0,
+                                                                          bridgeIDValidity: 0.0,
+                                                                          speedDataValidity: 0.0,
+                                                                          duplicateCount: 0,
+                                                                          missingFieldsCount: 0,
+                                                                          nanCounts: [:],
+                                                                          infiniteCounts: [:],
+                                                                          outlierCounts: [:],
+                                                                          rangeViolations: [:],
+                                                                          nullCounts: [:]))
+  {
     self.totalRecords = totalRecords
     self.bridgeCount = bridgeCount
     self.invalidBridgeIds = invalidBridgeIds
@@ -517,12 +506,11 @@ public struct ModelValidationResult {
   public var samplePrediction: MLFeatureProvider?
   public var isValid: Bool = false
 
-  public init(
-    modelPath: String = "",
-    modelDescription: MLModelDescription? = nil,
-    samplePrediction: MLFeatureProvider? = nil,
-    isValid: Bool = false
-  ) {
+  public init(modelPath: String = "",
+              modelDescription: MLModelDescription? = nil,
+              samplePrediction: MLFeatureProvider? = nil,
+              isValid: Bool = false)
+  {
     self.modelPath = modelPath
     self.modelDescription = modelDescription
     self.samplePrediction = samplePrediction
@@ -585,11 +573,10 @@ public struct FeatureEngineeringConfiguration {
   public let deterministicSeed: UInt64
   public let enableProgressReporting: Bool
 
-  public init(
-    horizons: [Int] = defaultHorizons,
-    deterministicSeed: UInt64 = 42,
-    enableProgressReporting: Bool = true
-  ) {
+  public init(horizons: [Int] = defaultHorizons,
+              deterministicSeed: UInt64 = 42,
+              enableProgressReporting: Bool = true)
+  {
     self.horizons = horizons
     self.deterministicSeed = deterministicSeed
     self.enableProgressReporting = enableProgressReporting
@@ -629,25 +616,24 @@ public struct EnhancedPipelineConfig: Codable {
   public let enableProgressReporting: Bool
   public let memoryOptimizationLevel: MemoryOptimizationLevel
 
-  public init(
-    inputPath: String = "minutes_2025-01-27.ndjson",
-    outputDirectory: String = FileManagerUtils.temporaryDirectory().path,
-    trainingConfig: TrainingConfig = .production,
-    enableParallelization: Bool = true,
-    maxConcurrentHorizons: Int = 4,
-    batchSize: Int = 1000,
-    maxRetryAttempts: Int = 3,
-    retryBackoffMultiplier: Double = 2.0,
-    enableCheckpointing: Bool = true,
-    checkpointDirectory: String? = nil,
-    dataQualityThresholds: DataQualityThresholds = .default,
-    modelPerformanceThresholds: ModelPerformanceThresholds = .default,
-    enableDetailedLogging: Bool = true,
-    enableMetricsExport: Bool = false,
-    metricsExportPath: String? = nil,
-    enableProgressReporting: Bool = true,
-    memoryOptimizationLevel: MemoryOptimizationLevel = .balanced
-  ) {
+  public init(inputPath: String = "minutes_2025-01-27.ndjson",
+              outputDirectory: String = FileManagerUtils.temporaryDirectory().path,
+              trainingConfig: TrainingConfig = .production,
+              enableParallelization: Bool = true,
+              maxConcurrentHorizons: Int = 4,
+              batchSize: Int = 1000,
+              maxRetryAttempts: Int = 3,
+              retryBackoffMultiplier: Double = 2.0,
+              enableCheckpointing: Bool = true,
+              checkpointDirectory: String? = nil,
+              dataQualityThresholds: DataQualityThresholds = .default,
+              modelPerformanceThresholds: ModelPerformanceThresholds = .default,
+              enableDetailedLogging: Bool = true,
+              enableMetricsExport: Bool = false,
+              metricsExportPath: String? = nil,
+              enableProgressReporting: Bool = true,
+              memoryOptimizationLevel: MemoryOptimizationLevel = .balanced)
+  {
     self.inputPath = inputPath
     self.outputDirectory = outputDirectory
     self.trainingConfig = trainingConfig
@@ -670,9 +656,8 @@ public struct EnhancedPipelineConfig: Codable {
   /// Load configuration from JSON file
   public static func load(from path: String) throws -> EnhancedPipelineConfig {
     let data = try Data(contentsOf: URL(fileURLWithPath: path))
-    return try JSONDecoder.bridgeDecoder().decode(
-      EnhancedPipelineConfig.self,
-      from: data)
+    return try JSONDecoder.bridgeDecoder().decode(EnhancedPipelineConfig.self,
+                                                  from: data)
   }
 
   /// Save configuration to JSON file
@@ -689,18 +674,16 @@ public struct DataQualityThresholds: Codable {
   public let maxInvalidRecordRate: Double
   public let minDataVolume: Int
 
-  public static let `default` = DataQualityThresholds(
-    maxNaNRate: 0.05,
-    minValidationRate: 0.95,
-    maxInvalidRecordRate: 0.02,
-    minDataVolume: 1000)
+  public static let `default` = DataQualityThresholds(maxNaNRate: 0.05,
+                                                      minValidationRate: 0.95,
+                                                      maxInvalidRecordRate: 0.02,
+                                                      minDataVolume: 1000)
 
-  public init(
-    maxNaNRate: Double = 0.05,
-    minValidationRate: Double = 0.95,
-    maxInvalidRecordRate: Double = 0.02,
-    minDataVolume: Int = 1000
-  ) {
+  public init(maxNaNRate: Double = 0.05,
+              minValidationRate: Double = 0.95,
+              maxInvalidRecordRate: Double = 0.02,
+              minDataVolume: Int = 1000)
+  {
     self.maxNaNRate = maxNaNRate
     self.minValidationRate = minValidationRate
     self.maxInvalidRecordRate = maxInvalidRecordRate
@@ -714,16 +697,14 @@ public struct ModelPerformanceThresholds: Codable {
   public let maxLoss: Double
   public let minF1Score: Double
 
-  public static let `default` = ModelPerformanceThresholds(
-    minAccuracy: 0.75,
-    maxLoss: 0.5,
-    minF1Score: 0.70)
+  public static let `default` = ModelPerformanceThresholds(minAccuracy: 0.75,
+                                                           maxLoss: 0.5,
+                                                           minF1Score: 0.70)
 
-  public init(
-    minAccuracy: Double = 0.75,
-    maxLoss: Double = 0.5,
-    minF1Score: Double = 0.70
-  ) {
+  public init(minAccuracy: Double = 0.75,
+              maxLoss: Double = 0.5,
+              minF1Score: Double = 0.70)
+  {
     self.minAccuracy = minAccuracy
     self.maxLoss = maxLoss
     self.minF1Score = minF1Score
@@ -756,16 +737,15 @@ public struct PipelineExecutionState: Codable {
   public var error: String?
   public var metadata: [String: String]
 
-  public init(
-    pipelineId: String,
-    startTime: Date = Date(),
-    lastCheckpoint: Date? = nil,
-    completedStages: Set<PipelineStage> = [],
-    currentStage: PipelineStage? = nil,
-    stageProgress: Double = 0.0,
-    error: String? = nil,
-    metadata: [String: String] = [:]
-  ) {
+  public init(pipelineId: String,
+              startTime: Date = Date(),
+              lastCheckpoint: Date? = nil,
+              completedStages: Set<PipelineStage> = [],
+              currentStage: PipelineStage? = nil,
+              stageProgress: Double = 0.0,
+              error: String? = nil,
+              metadata: [String: String] = [:])
+  {
     self.pipelineId = pipelineId
     self.startTime = startTime
     self.lastCheckpoint = lastCheckpoint
@@ -821,16 +801,15 @@ public struct TrainingReport: Codable {
   /// Statistical uncertainty metrics for model predictions (Phase 3 enhancement)
   public let statisticalMetrics: StatisticalTrainingMetrics?
 
-  public init(
-    timings: PipelineTimings,
-    dataQuality: DataQualityMetrics,
-    modelPerformance: CoreMLModelValidationResult,
-    configuration: CoreMLTrainingConfig,
-    seeds: TrainingSeeds,
-    shapes: ModelShapes,
-    metadata: TrainingMetadata,
-    statisticalMetrics: StatisticalTrainingMetrics? = nil
-  ) {
+  public init(timings: PipelineTimings,
+              dataQuality: DataQualityMetrics,
+              modelPerformance: CoreMLModelValidationResult,
+              configuration: CoreMLTrainingConfig,
+              seeds: TrainingSeeds,
+              shapes: ModelShapes,
+              metadata: TrainingMetadata,
+              statisticalMetrics: StatisticalTrainingMetrics? = nil)
+  {
     self.timings = timings
     self.dataQuality = dataQuality
     self.modelPerformance = modelPerformance
@@ -851,14 +830,13 @@ public struct PipelineTimings: Codable {
   public var trainingTime: TimeInterval
   public var validationTime: TimeInterval
 
-  public init(
-    totalDuration: TimeInterval,
-    dataLoadingTime: TimeInterval,
-    dataValidationTime: TimeInterval,
-    featureEngineeringTime: TimeInterval,
-    trainingTime: TimeInterval,
-    validationTime: TimeInterval
-  ) {
+  public init(totalDuration: TimeInterval,
+              dataLoadingTime: TimeInterval,
+              dataValidationTime: TimeInterval,
+              featureEngineeringTime: TimeInterval,
+              trainingTime: TimeInterval,
+              validationTime: TimeInterval)
+  {
     self.totalDuration = totalDuration
     self.dataLoadingTime = dataLoadingTime
     self.dataValidationTime = dataValidationTime
@@ -874,11 +852,10 @@ public struct TrainingSeeds: Codable {
   public let trainingSeed: Int
   public let validationSeed: Int
 
-  public init(
-    featureEngineeringSeed: Int,
-    trainingSeed: Int,
-    validationSeed: Int
-  ) {
+  public init(featureEngineeringSeed: Int,
+              trainingSeed: Int,
+              validationSeed: Int)
+  {
     self.featureEngineeringSeed = featureEngineeringSeed
     self.trainingSeed = trainingSeed
     self.validationSeed = validationSeed
@@ -892,12 +869,11 @@ public struct ModelShapes: Codable {
   public let featureCount: Int
   public let targetCount: Int
 
-  public init(
-    inputShape: [Int],
-    outputShape: [Int],
-    featureCount: Int,
-    targetCount: Int
-  ) {
+  public init(inputShape: [Int],
+              outputShape: [Int],
+              featureCount: Int,
+              targetCount: Int)
+  {
     self.inputShape = inputShape
     self.outputShape = outputShape
     self.featureCount = featureCount
@@ -916,16 +892,15 @@ public struct TrainingMetadata: Codable {
   public let bridgeCount: Int
   public let horizons: [Int]
 
-  public init(
-    startTime: Date,
-    endTime: Date,
-    deviceInfo: String,
-    osVersion: String,
-    appVersion: String,
-    recordCount: Int,
-    bridgeCount: Int,
-    horizons: [Int]
-  ) {
+  public init(startTime: Date,
+              endTime: Date,
+              deviceInfo: String,
+              osVersion: String,
+              appVersion: String,
+              recordCount: Int,
+              bridgeCount: Int,
+              horizons: [Int])
+  {
     self.startTime = startTime
     self.endTime = endTime
     self.deviceInfo = deviceInfo
@@ -955,14 +930,13 @@ public struct StatisticalTrainingMetrics: Codable, Equatable {
   /// Distribution analysis of prediction errors
   public let errorDistribution: ErrorDistributionMetrics
 
-  public init(
-    trainingLossStats: ETASummary,
-    validationLossStats: ETASummary,
-    predictionAccuracyStats: ETASummary,
-    etaPredictionVariance: ETASummary,
-    performanceConfidenceIntervals: PerformanceConfidenceIntervals,
-    errorDistribution: ErrorDistributionMetrics
-  ) {
+  public init(trainingLossStats: ETASummary,
+              validationLossStats: ETASummary,
+              predictionAccuracyStats: ETASummary,
+              etaPredictionVariance: ETASummary,
+              performanceConfidenceIntervals: PerformanceConfidenceIntervals,
+              errorDistribution: ErrorDistributionMetrics)
+  {
     self.trainingLossStats = trainingLossStats
     self.validationLossStats = validationLossStats
     self.predictionAccuracyStats = predictionAccuracyStats
@@ -981,11 +955,10 @@ public struct PerformanceConfidenceIntervals: Codable, Equatable {
   /// 95% confidence interval for mean prediction error
   public let meanError95CI: ConfidenceInterval
 
-  public init(
-    accuracy95CI: ConfidenceInterval,
-    f1Score95CI: ConfidenceInterval,
-    meanError95CI: ConfidenceInterval
-  ) {
+  public init(accuracy95CI: ConfidenceInterval,
+              f1Score95CI: ConfidenceInterval,
+              meanError95CI: ConfidenceInterval)
+  {
     self.accuracy95CI = accuracy95CI
     self.f1Score95CI = f1Score95CI
     self.meanError95CI = meanError95CI
@@ -1014,12 +987,11 @@ public struct ErrorDistributionMetrics: Codable, Equatable {
   /// Percentage of predictions within 2 standard deviations of actual
   public let withinTwoStdDev: Double
 
-  public init(
-    absoluteErrorStats: ETASummary,
-    relativeErrorStats: ETASummary,
-    withinOneStdDev: Double,
-    withinTwoStdDev: Double
-  ) {
+  public init(absoluteErrorStats: ETASummary,
+              relativeErrorStats: ETASummary,
+              withinOneStdDev: Double,
+              withinTwoStdDev: Double)
+  {
     self.absoluteErrorStats = absoluteErrorStats
     self.relativeErrorStats = relativeErrorStats
     self.withinOneStdDev = withinOneStdDev

@@ -5,8 +5,8 @@ import Testing
 
 @Suite("Seattle Performance Tests")
 struct SeattlePerformanceTests {
-
   // MARK: - Test Configuration
+
   private var testHarness: MultiPathTestHarness
   private var performanceMetrics: PerformanceMetrics
 
@@ -25,8 +25,7 @@ struct SeattlePerformanceTests {
     #expect(result.isValid, "Fixture graph must be valid: \(result.errors)")
     #expect(result.nodeCount == 4, "Expected 4 nodes in Phase 1 fixture, got \(result.nodeCount)")
     #expect(result.edgeCount == 4, "Expected 4 edges in Phase 1 fixture, got \(result.edgeCount)")
-    #expect(
-      result.bridgeCount == 2, "Expected 2 bridges in Phase 1 fixture, got \(result.bridgeCount)")
+    #expect(result.bridgeCount == 2, "Expected 2 bridges in Phase 1 fixture, got \(result.bridgeCount)")
 
     // Temporary diagnostics: print bridge IDs present in the fixture
     let bridgeEdges = testHarness.fixtureGraph.bridgeEdges
@@ -36,32 +35,25 @@ struct SeattlePerformanceTests {
     // Bridge ID acceptance policy
     for edge in bridgeEdges {
       let id = edge.bridgeID ?? ""
-      #expect(
-        !id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-        "Bridge edge missing ID (isBridge == true requires non-empty bridgeID)"
-      )
-      #expect(
-        SeattleDrawbridges.isAcceptedBridgeID(id, allowSynthetic: true),
-        "Bridge ID should be accepted by policy (canonical or synthetic): '\(id)'"
-      )
+      #expect(!id.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              "Bridge edge missing ID (isBridge == true requires non-empty bridgeID)")
+      #expect(SeattleDrawbridges.isAcceptedBridgeID(id, allowSynthetic: true),
+              "Bridge ID should be accepted by policy (canonical or synthetic): '\(id)'")
     }
   }
 
   @Test("Golden path comparison: A -> C matches expected paths")
   func goldenPathComparison() throws {
     let fixture = PathEnumerationService.createPhase1TestFixture()
-    let found = try testHarness.pathEnumerationService.enumeratePaths(
-      from: "A", to: "C", in: testHarness.fixtureGraph)
+    let found = try testHarness.pathEnumerationService.enumeratePaths(from: "A", to: "C", in: testHarness.fixtureGraph)
 
-    let comparison = testHarness.pathEnumerationService.compareWithGoldenPaths(
-      found: found, expected: fixture.expectedPaths)
+    let comparison = testHarness.pathEnumerationService.compareWithGoldenPaths(found: found, expected: fixture.expectedPaths)
     #expect(comparison.isSuccess, "Golden comparison failed: \(comparison.description)")
   }
 
   @Test("Shortest path correctness: A -> C")
   func shortestPathCorrectness() throws {
-    let shortest = try testHarness.pathEnumerationService.shortestPath(
-      from: "A", to: "C", in: testHarness.fixtureGraph)
+    let shortest = try testHarness.pathEnumerationService.shortestPath(from: "A", to: "C", in: testHarness.fixtureGraph)
     #expect(shortest != nil, "Expected a shortest path A->C")
     // In the fixture, A->D->C is 400 + 150 = 550s, A->B->C is 300 + 200 = 500s (from createPhase1TestFixture)
     // Note: In createPhase1TestFixture, expectedPath1 (A->B->C) is 300+200=500s and expectedPath2 (A->D->C) is 400+150=550s.
@@ -79,11 +71,9 @@ struct SeattlePerformanceTests {
     ]
 
     for (start, end) in pairs {
-      let paths = try testHarness.pathEnumerationService.enumeratePaths(
-        from: start, to: end, in: testHarness.fixtureGraph)
+      let paths = try testHarness.pathEnumerationService.enumeratePaths(from: start, to: end, in: testHarness.fixtureGraph)
       #expect(paths.isEmpty, "Expected no paths from \(start) to \(end)")
-      let shortest = try testHarness.pathEnumerationService.shortestPath(
-        from: start, to: end, in: testHarness.fixtureGraph)
+      let shortest = try testHarness.pathEnumerationService.shortestPath(from: start, to: end, in: testHarness.fixtureGraph)
       #expect(shortest == nil, "Expected no shortest path from \(start) to \(end)")
     }
   }
@@ -95,8 +85,8 @@ struct SeattlePerformanceTests {
     dfsConfig.pathEnumeration.enumerationMode = .dfs
     dfsConfig.pathEnumeration.kShortestPaths = 2
     // Set permissive bounds to ensure both valid fixture paths are allowed
-    dfsConfig.pathEnumeration.maxTimeOverShortest = 1_000
-    dfsConfig.pathEnumeration.maxTravelTime = 10_000
+    dfsConfig.pathEnumeration.maxTimeOverShortest = 1000
+    dfsConfig.pathEnumeration.maxTravelTime = 10000
     dfsConfig.pathEnumeration.maxDepth = 10
     dfsConfig.pathEnumeration.maxPaths = 10
     let dfsEnum = PathEnumerationService(config: dfsConfig)
@@ -113,8 +103,7 @@ struct SeattlePerformanceTests {
     let dfsSet = Set(dfsPaths.map { $0.nodes })
     let yensSet = Set(yensPaths.map { $0.nodes })
 
-    #expect(
-      dfsSet == yensSet, "DFS and Yen's should return the same set of paths for K=2 on the fixture")
+    #expect(dfsSet == yensSet, "DFS and Yen's should return the same set of paths for K=2 on the fixture")
   }
 
   @Test("Pruning behavior: Tight maxTimeOverShortest leaves only the shortest path")
@@ -125,8 +114,7 @@ struct SeattlePerformanceTests {
     config.pathEnumeration.maxTimeOverShortest = 0
     let prunedEnum = PathEnumerationService(config: config)
 
-    let prunedPaths = try prunedEnum.enumeratePaths(
-      from: "A", to: "C", in: testHarness.fixtureGraph)
+    let prunedPaths = try prunedEnum.enumeratePaths(from: "A", to: "C", in: testHarness.fixtureGraph)
     #expect(prunedPaths.count == 1, "Expected only the shortest path to remain with tight pruning")
     #expect(prunedPaths.first?.nodes == ["A", "B", "C"])
   }
@@ -173,12 +161,10 @@ struct SeattlePerformanceTests {
 
     for (start, end, maxPaths, expectedCount) in testCases {
       do {
-        let paths = try testHarness.pathEnumerationService.enumeratePaths(
-          from: start, to: end, in: testHarness.fixtureGraph)
+        let paths = try testHarness.pathEnumerationService.enumeratePaths(from: start, to: end, in: testHarness.fixtureGraph)
         let clamped = Array(paths.prefix(maxPaths))
-        #expect(
-          clamped.count == expectedCount,
-          "Expected \(expectedCount) paths from \(start) to \(end), got \(clamped.count)")
+        #expect(clamped.count == expectedCount,
+                "Expected \(expectedCount) paths from \(start) to \(end), got \(clamped.count)")
         #expect(clamped.allSatisfy { $0.isContiguous() })
       } catch {
         Issue.record("Enumeration failed for \(start) -> \(end): \(error)")
@@ -201,8 +187,7 @@ struct SeattlePerformanceTests {
         config.pathEnumeration.enumerationMode = .dfs
         let enumSvc = PathEnumerationService(config: config)
 
-        let dfsPaths = try enumSvc.enumeratePaths(
-          from: origin, to: destination, in: testHarness.fixtureGraph)
+        let dfsPaths = try enumSvc.enumeratePaths(from: origin, to: destination, in: testHarness.fixtureGraph)
         #expect(dfsPaths.count <= k)
         #expect(dfsPaths.allSatisfy { $0.isContiguous() })
       } catch {
@@ -217,35 +202,28 @@ struct SeattlePerformanceTests {
   @Test("Cache performance (feature cache only): second run faster and hit rate improves")
   func cachePerformance_featureCacheOnly() async throws {
     // Build a path enumeration service WITHOUT its own memoization to isolate feature cache
-    let enumConfig = MultiPathConfig(
-      pathEnumeration: PathEnumConfig(maxPaths: 10, maxDepth: 10),
-      scoring: ScoringConfig(),
-      performance: MultiPathPerformanceConfig(enableCaching: false),  // disable path memoization
-      prediction: PredictionConfig()
-    )
+    let enumConfig = MultiPathConfig(pathEnumeration: PathEnumConfig(maxPaths: 10, maxDepth: 10),
+                                     scoring: ScoringConfig(),
+                                     performance: MultiPathPerformanceConfig(enableCaching: false),  // disable path memoization
+                                     prediction: PredictionConfig())
     let enumService = PathEnumerationService(config: enumConfig)
 
     // Fresh scoring service so its feature cache starts empty
     let mockHistoricalProvider = MockHistoricalBridgeDataProvider()
-    let predictor = BaselinePredictor(
-      historicalProvider: mockHistoricalProvider,
-      config: BaselinePredictorConfig(),
-      supportedBridgeIDs: nil
-    )
+    let predictor = BaselinePredictor(historicalProvider: mockHistoricalProvider,
+                                      config: BaselinePredictorConfig(),
+                                      supportedBridgeIDs: nil)
     let etaEstimator = ETAEstimator(config: MultiPathConfig())
-    let scoringService = try PathScoringService(
-      predictor: predictor,
-      etaEstimator: etaEstimator,
-      config: MultiPathConfig()
-    )
+    let scoringService = try PathScoringService(predictor: predictor,
+                                                etaEstimator: etaEstimator,
+                                                config: MultiPathConfig())
 
     // Ensure caches are empty
     scoringService.clearCaches()
     let fixedDeparture = fixedTopOfHour()
 
     // Warm-up enumerate only (do not score) to avoid pre-filling feature cache
-    let warmupPaths = try enumService.enumeratePaths(
-      from: "A", to: "C", in: testHarness.fixtureGraph)
+    let warmupPaths = try enumService.enumeratePaths(from: "A", to: "C", in: testHarness.fixtureGraph)
     #expect(!warmupPaths.isEmpty)
 
     // Run 1: cold feature cache
@@ -282,10 +260,8 @@ struct SeattlePerformanceTests {
 
     // Timing with tolerance (small workloads are noisy). Allow 20% margin.
     let tolerance = run1 * 0.2
-    #expect(
-      run2 <= run1 + tolerance,
-      "Expected second run to be faster or within 20% tolerance. run1=\(run1*1000)ms, run2=\(run2*1000)ms"
-    )
+    #expect(run2 <= run1 + tolerance,
+            "Expected second run to be faster or within 20% tolerance. run1=\(run1 * 1000)ms, run2=\(run2 * 1000)ms")
   }
 
   // MARK: - Cache Performance (isolated path memoization)
@@ -293,12 +269,10 @@ struct SeattlePerformanceTests {
   @Test("Cache performance (path memoization only): hot enumeratePaths faster")
   func cachePerformance_pathMemoizationOnly() throws {
     // Build enumeration with memoization enabled and skip scoring
-    let enumConfig = MultiPathConfig(
-      pathEnumeration: PathEnumConfig(maxPaths: 10, maxDepth: 10),
-      scoring: ScoringConfig(),
-      performance: MultiPathPerformanceConfig(enableCaching: true),  // enable path memoization
-      prediction: PredictionConfig()
-    )
+    let enumConfig = MultiPathConfig(pathEnumeration: PathEnumConfig(maxPaths: 10, maxDepth: 10),
+                                     scoring: ScoringConfig(),
+                                     performance: MultiPathPerformanceConfig(enableCaching: true),  // enable path memoization
+                                     prediction: PredictionConfig())
     let enumService = PathEnumerationService(config: enumConfig)
 
     // Ensure first timed run is a cold miss: do NOT enumerate during warm-up
@@ -319,10 +293,8 @@ struct SeattlePerformanceTests {
 
     // Timing with tolerance (20%)
     let tolerance = run1 * 0.2
-    #expect(
-      run2 <= run1 + tolerance,
-      "Expected enumeratePaths second run to be faster or within 20% tolerance. run1=\(run1*1000)ms, run2=\(run2*1000)ms"
-    )
+    #expect(run2 <= run1 + tolerance,
+            "Expected enumeratePaths second run to be faster or within 20% tolerance. run1=\(run1 * 1000)ms, run2=\(run2 * 1000)ms")
   }
 
   @Test("Memory stability across repeated enumeration + scoring (Phase 1 fixture)")
@@ -330,19 +302,17 @@ struct SeattlePerformanceTests {
     let fixedDeparture = fixedTopOfHour()
 
     // Warm-up loop to stabilize memory before measuring
-    for _ in 0..<3 {
-      let warmupPaths = try testHarness.pathEnumerationService.enumeratePaths(
-        from: "A", to: "C", in: testHarness.fixtureGraph)
-      let _ = try await testHarness.scorePaths(warmupPaths, departureTime: fixedDeparture)
+    for _ in 0 ..< 3 {
+      let warmupPaths = try testHarness.pathEnumerationService.enumeratePaths(from: "A", to: "C", in: testHarness.fixtureGraph)
+      _ = try await testHarness.scorePaths(warmupPaths, departureTime: fixedDeparture)
     }
 
     let initialMemory = getCurrentMemoryUsage()
     var memoryReadings: [UInt64] = [initialMemory]
 
     // Measure over multiple iterations and average
-    for i in 0..<5 {
-      let paths = try testHarness.pathEnumerationService.enumeratePaths(
-        from: "A", to: "C", in: testHarness.fixtureGraph)
+    for i in 0 ..< 5 {
+      let paths = try testHarness.pathEnumerationService.enumeratePaths(from: "A", to: "C", in: testHarness.fixtureGraph)
       let scores = try await testHarness.scorePaths(paths, departureTime: fixedDeparture)
       #expect(!paths.isEmpty && !scores.isEmpty)
 
@@ -377,8 +347,7 @@ struct SeattlePerformanceTests {
 
     for (start, end, maxPaths) in testScenarios {
       do {
-        let paths = try testHarness.pathEnumerationService.enumeratePaths(
-          from: start, to: end, in: testHarness.fixtureGraph)
+        let paths = try testHarness.pathEnumerationService.enumeratePaths(from: start, to: end, in: testHarness.fixtureGraph)
         let clamped = Array(paths.prefix(maxPaths))
         #expect(clamped.count > 0)
         #expect(clamped.count <= maxPaths)
@@ -410,27 +379,21 @@ private struct MultiPathTestHarness {
   init() {
     // Use the project’s MockHistoricalBridgeDataProvider
     let mockHistoricalProvider = MockHistoricalBridgeDataProvider()
-    let predictor = BaselinePredictor(
-      historicalProvider: mockHistoricalProvider,
-      config: BaselinePredictorConfig(),
-      supportedBridgeIDs: nil
-    )
+    let predictor = BaselinePredictor(historicalProvider: mockHistoricalProvider,
+                                      config: BaselinePredictorConfig(),
+                                      supportedBridgeIDs: nil)
     let etaEstimator = ETAEstimator(config: MultiPathConfig())
 
-    self.config = MultiPathConfig(
-      pathEnumeration: PathEnumConfig(maxPaths: 50, maxDepth: 10),
-      scoring: ScoringConfig(),
-      performance: MultiPathPerformanceConfig(),
-      prediction: PredictionConfig()
-    )
+    self.config = MultiPathConfig(pathEnumeration: PathEnumConfig(maxPaths: 50, maxDepth: 10),
+                                  scoring: ScoringConfig(),
+                                  performance: MultiPathPerformanceConfig(),
+                                  prediction: PredictionConfig())
 
     self.pathEnumerationService = PathEnumerationService(config: config)
     do {
-      self.pathScoringService = try PathScoringService(
-        predictor: predictor,
-        etaEstimator: etaEstimator,
-        config: config
-      )
+      self.pathScoringService = try PathScoringService(predictor: predictor,
+                                                       etaEstimator: etaEstimator,
+                                                       config: config)
     } catch {
       fatalError("Failed to initialize PathScoringService: \(error)")
     }
@@ -477,12 +440,10 @@ private func getCurrentMemoryUsage() -> UInt64 {
 
   let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
     $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-      task_info(
-        mach_task_self_,
-        task_flavor_t(MACH_TASK_BASIC_INFO),
-        $0,
-        &count
-      )
+      task_info(mach_task_self_,
+                task_flavor_t(MACH_TASK_BASIC_INFO),
+                $0,
+                &count)
     }
   }
 

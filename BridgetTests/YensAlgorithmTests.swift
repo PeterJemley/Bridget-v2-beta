@@ -22,16 +22,15 @@ final class YensAlgorithmTests: XCTestCase {
 
     // Create configuration with Yen's algorithm enabled
     let config = MultiPathConfig(
-      pathEnumeration: PathEnumConfig(
-        maxPaths: 20,
-        maxDepth: 10,
-        maxTravelTime: 3600,
-        allowCycles: false,
-        useBidirectionalSearch: false,
-        enumerationMode: .yensKShortest,
-        kShortestPaths: 5,
-        randomSeed: 42,
-        maxTimeOverShortest: 300)
+      pathEnumeration: PathEnumConfig(maxPaths: 20,
+                                      maxDepth: 10,
+                                      maxTravelTime: 3600,
+                                      allowCycles: false,
+                                      useBidirectionalSearch: false,
+                                      enumerationMode: .yensKShortest,
+                                      kShortestPaths: 5,
+                                      randomSeed: 42,
+                                      maxTimeOverShortest: 300)
     )
 
     pathEnumerationService = PathEnumerationService(config: config)
@@ -83,29 +82,26 @@ final class YensAlgorithmTests: XCTestCase {
 
   func testYensAlgorithmFindsKShortestPaths() throws {
     // Test that Yen's algorithm finds the correct number of shortest paths
-    let paths = try pathEnumerationService.enumeratePaths(
-      from: "A",
-      to: "E",
-      in: testGraph)
+    let paths = try pathEnumerationService.enumeratePaths(from: "A",
+                                                          to: "E",
+                                                          in: testGraph)
 
     // Should find up to kShortestPaths (5) paths
     XCTAssertLessThanOrEqual(paths.count, 5, "Should not exceed kShortestPaths")
     XCTAssertGreaterThan(paths.count, 0, "Should find at least one path")
 
     // Verify paths are sorted by travel time (shortest first)
-    for i in 1..<paths.count {
-      XCTAssertLessThanOrEqual(
-        paths[i - 1].totalTravelTime,
-        paths[i].totalTravelTime,
-        "Paths should be sorted by travel time")
+    for i in 1 ..< paths.count {
+      XCTAssertLessThanOrEqual(paths[i - 1].totalTravelTime,
+                               paths[i].totalTravelTime,
+                               "Paths should be sorted by travel time")
     }
   }
 
   func testYensAlgorithmCorrectness() throws {
-    let paths = try pathEnumerationService.enumeratePaths(
-      from: "A",
-      to: "E",
-      in: testGraph)
+    let paths = try pathEnumerationService.enumeratePaths(from: "A",
+                                                          to: "E",
+                                                          in: testGraph)
 
     // Verify the shortest path is correct
     guard let shortestPath = paths.first else {
@@ -129,30 +125,27 @@ final class YensAlgorithmTests: XCTestCase {
   func testYensAlgorithmWithDFSComparison() throws {
     // Create DFS configuration for comparison
     let dfsConfig = MultiPathConfig(
-      pathEnumeration: PathEnumConfig(
-        maxPaths: 20,
-        maxDepth: 10,
-        maxTravelTime: 3600,
-        allowCycles: false,
-        useBidirectionalSearch: false,
-        enumerationMode: .dfs,
-        kShortestPaths: 5,
-        randomSeed: 42,
-        maxTimeOverShortest: 300)
+      pathEnumeration: PathEnumConfig(maxPaths: 20,
+                                      maxDepth: 10,
+                                      maxTravelTime: 3600,
+                                      allowCycles: false,
+                                      useBidirectionalSearch: false,
+                                      enumerationMode: .dfs,
+                                      kShortestPaths: 5,
+                                      randomSeed: 42,
+                                      maxTimeOverShortest: 300)
     )
 
     let dfsService = PathEnumerationService(config: dfsConfig)
 
     // Get paths using both algorithms
-    let yensPaths = try pathEnumerationService.enumeratePaths(
-      from: "A",
-      to: "E",
-      in: testGraph)
+    let yensPaths = try pathEnumerationService.enumeratePaths(from: "A",
+                                                              to: "E",
+                                                              in: testGraph)
 
-    let dfsPaths = try dfsService.enumeratePaths(
-      from: "A",
-      to: "E",
-      in: testGraph)
+    let dfsPaths = try dfsService.enumeratePaths(from: "A",
+                                                 to: "E",
+                                                 in: testGraph)
 
     // Both should find valid paths
     XCTAssertGreaterThan(yensPaths.count, 0)
@@ -167,59 +160,54 @@ final class YensAlgorithmTests: XCTestCase {
   func testYensAlgorithmWithAutoMode() throws {
     // Test auto mode selection
     let autoConfig = MultiPathConfig(
-      pathEnumeration: PathEnumConfig(
-        maxPaths: 20,
-        maxDepth: 10,
-        maxTravelTime: 3600,
-        allowCycles: false,
-        useBidirectionalSearch: false,
-        enumerationMode: .auto,
-        kShortestPaths: 3,  // Small K should favor Yen's
-        randomSeed: 42,
-        maxTimeOverShortest: 300)
+      pathEnumeration: PathEnumConfig(maxPaths: 20,
+                                      maxDepth: 10,
+                                      maxTravelTime: 3600,
+                                      allowCycles: false,
+                                      useBidirectionalSearch: false,
+                                      enumerationMode: .auto,
+                                      kShortestPaths: 3,  // Small K should favor Yen's
+                                      randomSeed: 42,
+                                      maxTimeOverShortest: 300)
     )
 
     let autoService = PathEnumerationService(config: autoConfig)
 
-    let paths = try autoService.enumeratePaths(
-      from: "A",
-      to: "E",
-      in: testGraph)
+    let paths = try autoService.enumeratePaths(from: "A",
+                                               to: "E",
+                                               in: testGraph)
 
     // Should find valid paths regardless of algorithm selection
     XCTAssertGreaterThan(paths.count, 0)
 
     // Verify paths are sorted
-    for i in 1..<paths.count {
-      XCTAssertLessThanOrEqual(
-        paths[i - 1].totalTravelTime,
-        paths[i].totalTravelTime,
-        "Paths should be sorted by travel time")
+    for i in 1 ..< paths.count {
+      XCTAssertLessThanOrEqual(paths[i - 1].totalTravelTime,
+                               paths[i].totalTravelTime,
+                               "Paths should be sorted by travel time")
     }
   }
 
   func testYensAlgorithmWithConstraints() throws {
     // Test that constraints are properly applied
     let constrainedConfig = MultiPathConfig(
-      pathEnumeration: PathEnumConfig(
-        maxPaths: 20,
-        maxDepth: 10,
-        maxTravelTime: 550,  // Only allow paths up to 550s
-        allowCycles: false,
-        useBidirectionalSearch: false,
-        enumerationMode: .yensKShortest,
-        kShortestPaths: 10,
-        randomSeed: 42,
-        maxTimeOverShortest: 100  // Only allow paths within 100s of shortest
+      pathEnumeration: PathEnumConfig(maxPaths: 20,
+                                      maxDepth: 10,
+                                      maxTravelTime: 550,  // Only allow paths up to 550s
+                                      allowCycles: false,
+                                      useBidirectionalSearch: false,
+                                      enumerationMode: .yensKShortest,
+                                      kShortestPaths: 10,
+                                      randomSeed: 42,
+                                      maxTimeOverShortest: 100  // Only allow paths within 100s of shortest
       )
     )
 
     let constrainedService = PathEnumerationService(config: constrainedConfig)
 
-    let paths = try constrainedService.enumeratePaths(
-      from: "A",
-      to: "E",
-      in: testGraph)
+    let paths = try constrainedService.enumeratePaths(from: "A",
+                                                      to: "E",
+                                                      in: testGraph)
 
     // All paths should respect the constraints
     for path in paths {
@@ -227,8 +215,7 @@ final class YensAlgorithmTests: XCTestCase {
 
       if let shortestTime = paths.first?.totalTravelTime {
         let maxAllowedTime = shortestTime + 100
-        XCTAssertLessThanOrEqual(
-          path.totalTravelTime, maxAllowedTime, "Should respect maxTimeOverShortest")
+        XCTAssertLessThanOrEqual(path.totalTravelTime, maxAllowedTime, "Should respect maxTimeOverShortest")
       }
     }
   }
@@ -237,17 +224,15 @@ final class YensAlgorithmTests: XCTestCase {
     // Simple performance test to ensure Yen's is reasonably fast
     let startTime = CFAbsoluteTimeGetCurrent()
 
-    _ = try pathEnumerationService.enumeratePaths(
-      from: "A",
-      to: "E",
-      in: testGraph)
+    _ = try pathEnumerationService.enumeratePaths(from: "A",
+                                                  to: "E",
+                                                  in: testGraph)
 
     let endTime = CFAbsoluteTimeGetCurrent()
     let executionTime = endTime - startTime
 
     // Should complete within reasonable time (1 second)
-    XCTAssertLessThan(
-      executionTime, 1.0, "Yen's algorithm should complete within 1 second for small graphs")
+    XCTAssertLessThan(executionTime, 1.0, "Yen's algorithm should complete within 1 second for small graphs")
   }
 
   func testYensAlgorithmWithNoPath() throws {
@@ -257,10 +242,9 @@ final class YensAlgorithmTests: XCTestCase {
 
     // This should throw an error because "A" doesn't exist in the graph
     XCTAssertThrowsError(
-      try pathEnumerationService.enumeratePaths(
-        from: "A",
-        to: "Z",
-        in: isolatedGraph)
+      try pathEnumerationService.enumeratePaths(from: "A",
+                                                to: "Z",
+                                                in: isolatedGraph)
     ) { error in
       // Should throw nodeNotFound error
       XCTAssertTrue(error is MultiPathError)

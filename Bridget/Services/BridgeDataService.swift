@@ -80,9 +80,8 @@ class BridgeDataService {
   /// ```
   func loadHistoricalData() async throws -> ([BridgeStatusModel], [ValidationFailure]) {
     // Check cache first - return valid cached data if available
-    if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache(
-      [BridgeStatusModel].self,
-      for: "historical_bridges"),
+    if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache([BridgeStatusModel].self,
+                                                                           for: "historical_bridges"),
       cacheService.isCacheValid(for: "historical_bridges")
     {
       // Update cache metadata for all bridges
@@ -116,9 +115,8 @@ class BridgeDataService {
       return (cleanedBridges, validationFailures)
     } catch {
       // Graceful degradation: return stale cache if network failed
-      if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache(
-        [BridgeStatusModel].self,
-        for: "historical_bridges")
+      if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache([BridgeStatusModel].self,
+                                                                             for: "historical_bridges")
       {
         cachedBridges.forEach { $0.markAsStale() }
         return (cachedBridges, [])
@@ -258,9 +256,8 @@ class BridgeDataService {
   /// ```
   func generateRoutes(from bridges: [BridgeStatusModel]) -> [RouteModel] {
     // Check cache first for generated routes
-    if let cachedRoutes: [RouteModel] = cacheService.loadFromCache(
-      [RouteModel].self,
-      for: "generated_routes"),
+    if let cachedRoutes: [RouteModel] = cacheService.loadFromCache([RouteModel].self,
+                                                                   for: "generated_routes"),
       cacheService.isCacheValid(for: "generated_routes")
     {
       return cachedRoutes

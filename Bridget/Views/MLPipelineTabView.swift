@@ -178,12 +178,10 @@ struct MLPipelineTabView: View {
         Text("Individual Horizon Training")
           .font(.subheadline.bold())
 
-        LazyVGrid(
-          columns: [
-            GridItem(.flexible()),
-            GridItem(.flexible()),
-          ], spacing: 8
-        ) {
+        LazyVGrid(columns: [
+          GridItem(.flexible()),
+          GridItem(.flexible()),
+        ], spacing: 8) {
           ForEach(defaultHorizons, id: \.self) { horizon in
             Button(action: {
               startSingleHorizonTraining(horizon: horizon)
@@ -273,9 +271,8 @@ struct MLPipelineTabView: View {
     let sampleNDJSONPath = "/path/to/sample_data.ndjson"
     let outputDirectory = FileManagerUtils.temporaryDirectory().path
 
-    viewModel.startTrainingPipeline(
-      ndjsonPath: sampleNDJSONPath,
-      outputDirectory: outputDirectory)
+    viewModel.startTrainingPipeline(ndjsonPath: sampleNDJSONPath,
+                                    outputDirectory: outputDirectory)
   }
 
   private func startSingleHorizonTraining(horizon: Int) {
@@ -284,10 +281,9 @@ struct MLPipelineTabView: View {
     let sampleCSVPath = "/path/to/training_data_horizon_\(horizon).csv"
     let outputDirectory = FileManagerUtils.temporaryDirectory().path
 
-    viewModel.startSingleHorizonTraining(
-      csvPath: sampleCSVPath,
-      horizon: horizon,
-      outputDirectory: outputDirectory)
+    viewModel.startSingleHorizonTraining(csvPath: sampleCSVPath,
+                                         horizon: horizon,
+                                         outputDirectory: outputDirectory)
   }
 }
 

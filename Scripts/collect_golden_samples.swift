@@ -51,8 +51,7 @@ class GoldenSampleCollector {
     // Use a recent Sunday for weekend patterns
     let calendar = Calendar.current
     let today = Date()
-    let lastSunday = calendar.date(
-      byAdding: .day, value: -calendar.component(.weekday, from: today), to: today)!
+    let lastSunday = calendar.date(byAdding: .day, value: -calendar.component(.weekday, from: today), to: today)!
 
     let sampleData = generateWeekendSampleData(for: lastSunday)
     let filename = "weekend_sample_\(formatDate(lastSunday)).ndjson"
@@ -116,7 +115,7 @@ class GoldenSampleCollector {
     let startOfDay = calendar.startOfDay(for: date)
 
     // Weekend has different traffic patterns
-    for minuteOffset in 0..<1440 {  // 24 hours * 60 minutes
+    for minuteOffset in 0 ..< 1440 {  // 24 hours * 60 minutes
       let currentTime = calendar.date(byAdding: .minute, value: minuteOffset, to: startOfDay)!
       let hour = calendar.component(.hour, from: currentTime)
 
@@ -124,11 +123,10 @@ class GoldenSampleCollector {
       let isRushHour = (hour >= 9 && hour <= 11) || (hour >= 16 && hour <= 18)
       let trafficMultiplier = isRushHour ? 0.6 : 0.3  // Reduced weekend traffic
 
-      for bridgeId in 1...3 {
-        let record = createSampleRecord(
-          timestamp: currentTime,
-          bridgeId: bridgeId,
-          trafficMultiplier: trafficMultiplier)
+      for bridgeId in 1 ... 3 {
+        let record = createSampleRecord(timestamp: currentTime,
+                                        bridgeId: bridgeId,
+                                        trafficMultiplier: trafficMultiplier)
         data.append(record)
       }
     }
@@ -143,7 +141,7 @@ class GoldenSampleCollector {
     let startOfDay = calendar.startOfDay(for: date)
 
     // DST transition day - handle timezone changes
-    for minuteOffset in 0..<1440 {  // 24 hours * 60 minutes
+    for minuteOffset in 0 ..< 1440 {  // 24 hours * 60 minutes
       let currentTime = calendar.date(byAdding: .minute, value: minuteOffset, to: startOfDay)!
       let hour = calendar.component(.hour, from: currentTime)
 
@@ -151,11 +149,10 @@ class GoldenSampleCollector {
       let isRushHour = (hour >= 7 && hour <= 9) || (hour >= 16 && hour <= 18)
       let trafficMultiplier = isRushHour ? 1.0 : 0.5
 
-      for bridgeId in 1...3 {
-        let record = createSampleRecord(
-          timestamp: currentTime,
-          bridgeId: bridgeId,
-          trafficMultiplier: trafficMultiplier)
+      for bridgeId in 1 ... 3 {
+        let record = createSampleRecord(timestamp: currentTime,
+                                        bridgeId: bridgeId,
+                                        trafficMultiplier: trafficMultiplier)
         data.append(record)
       }
     }
@@ -172,8 +169,8 @@ class GoldenSampleCollector {
     let minute = calendar.component(.minute, from: timestamp)
 
     // Base traffic values
-    let baseCrossK = Int16.random(in: 0...100)
-    let baseCrossN = Int16.random(in: 1...200)
+    let baseCrossK = Int16.random(in: 0 ... 100)
+    let baseCrossN = Int16.random(in: 1 ... 200)
 
     // Apply traffic multiplier and time-based variations
     let crossK = Int16(Double(baseCrossK) * trafficMultiplier)
@@ -181,10 +178,10 @@ class GoldenSampleCollector {
 
     // Weekend-specific patterns
     let viaRoutable = Bool.random() && trafficMultiplier > 0.4
-    let viaPenaltySec = viaRoutable ? Int32.random(in: 0...300) : 0
+    let viaPenaltySec = viaRoutable ? Int32.random(in: 0 ... 300) : 0
 
     // Anomaly detection (lower on weekends)
-    let gateAnom = Double.random(in: 0...1) * (trafficMultiplier > 0.5 ? 1.0 : 0.7)
+    let gateAnom = Double.random(in: 0 ... 1) * (trafficMultiplier > 0.5 ? 1.0 : 0.7)
 
     return [
       "v": 1,
@@ -195,10 +192,10 @@ class GoldenSampleCollector {
       "via_routable": viaRoutable ? 1 : 0,
       "via_penalty_sec": viaPenaltySec,
       "gate_anom": gateAnom,
-      "alternates_total": Int16.random(in: 1...5),
-      "alternates_avoid_span": Int16.random(in: 0...2),
+      "alternates_total": Int16.random(in: 1 ... 5),
+      "alternates_avoid_span": Int16.random(in: 0 ... 2),
       "free_eta_sec": NSNull(),
-      "via_eta_sec": viaRoutable ? Int32.random(in: 60...600) : NSNull(),
+      "via_eta_sec": viaRoutable ? Int32.random(in: 60 ... 600) : NSNull(),
       "open_label": Bool.random() ? 1 : 0,
     ]
   }
@@ -293,7 +290,7 @@ func main() async {
   var outputDir = "Samples/ndjson"
 
   // Parse command line arguments
-  for i in 0..<args.count {
+  for i in 0 ..< args.count {
     if args[i] == "--output-dir", i + 1 < args.count {
       outputDir = args[i + 1]
     }

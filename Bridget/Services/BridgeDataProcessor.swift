@@ -71,12 +71,11 @@ class BridgeDataProcessor {
     let calendar = Calendar.current
     let minDate = calendar.date(byAdding: .year, value: -10, to: now) ?? now
     let maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
-    validator = BridgeRecordValidator(
-      knownBridgeIDs: knownBridgeIDs,
-      bridgeLocations: bridgeLocations,
-      validEntityTypes: validEntityTypes,
-      minDate: minDate,
-      maxDate: maxDate)
+    validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
+                                      bridgeLocations: bridgeLocations,
+                                      validEntityTypes: validEntityTypes,
+                                      minDate: minDate,
+                                      maxDate: maxDate)
   }
 
   // MARK: - Data Processing
@@ -114,8 +113,7 @@ class BridgeDataProcessor {
     let models: [BridgeStatusModel] = modelMap.compactMap { id, val in
       if let bridgeID = SeattleDrawbridges.BridgeID(rawValue: id), isNotEmpty(val.name) {
         let sortedOpenings = val.openings.sorted()
-        return BridgeStatusModel(
-          bridgeName: val.name, apiBridgeID: bridgeID, historicalOpenings: sortedOpenings)
+        return BridgeStatusModel(bridgeName: val.name, apiBridgeID: bridgeID, historicalOpenings: sortedOpenings)
       }
       return nil
     }

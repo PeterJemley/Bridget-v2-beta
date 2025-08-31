@@ -8,7 +8,6 @@
 import Foundation
 
 enum TestDiagnostics {
-
   // Gate verbose output via env var or pass verbose: true explicitly
   static var defaultVerbose: Bool {
     if let v = ProcessInfo.processInfo.environment["BRIDGET_VERBOSE_DIAGNOSTICS"] {

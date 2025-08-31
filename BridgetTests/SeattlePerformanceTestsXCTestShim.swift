@@ -1,12 +1,11 @@
 #if canImport(Testing)
-  import XCTest
-  import Testing
   @testable import Bridget
+  import Testing
+  import XCTest
 
   /// XCTestCase shim to run Swift Testing tests through Xcode
   /// This allows you to keep using Swift Testing syntax while running tests in Xcode
   final class SeattlePerformanceTestsXCTestShim: XCTestCase {
-
     // MARK: - Test Execution
 
     func testFixtureIntegrity() throws {
@@ -79,11 +78,10 @@
 
       let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
         $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-          task_info(
-            mach_task_self_,
-            task_flavor_t(MACH_TASK_BASIC_INFO),
-            $0,
-            &count)
+          task_info(mach_task_self_,
+                    task_flavor_t(MACH_TASK_BASIC_INFO),
+                    $0,
+                    &count)
         }
       }
 

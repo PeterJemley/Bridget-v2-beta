@@ -33,14 +33,13 @@ public struct BaselinePredictorConfig: Codable, Equatable {
   /// Blending weight for historical data (0.0 = use default, 1.0 = use historical)
   public let historicalWeight: Double
 
-  public init(
-    priorAlpha: Double = 1.0,
-    priorBeta: Double = 9.0,
-    defaultProbability: Double = 0.1,
-    minSampleCount: Int = 10,
-    enableBlending: Bool = true,
-    historicalWeight: Double = 0.8
-  ) {
+  public init(priorAlpha: Double = 1.0,
+              priorBeta: Double = 9.0,
+              defaultProbability: Double = 0.1,
+              minSampleCount: Int = 10,
+              enableBlending: Bool = true,
+              historicalWeight: Double = 0.8)
+  {
     self.priorAlpha = priorAlpha
     self.priorBeta = priorBeta
     self.defaultProbability = max(0.0, min(1.0, defaultProbability))
@@ -59,11 +58,10 @@ public class BaselinePredictor: BridgeOpenPredictor {
   private let config: BaselinePredictorConfig
   private let supportedBridgeIDs: Set<String>
 
-  public init(
-    historicalProvider: HistoricalBridgeDataProvider,
-    config: BaselinePredictorConfig = BaselinePredictorConfig(),
-    supportedBridgeIDs: Set<String>? = nil
-  ) {
+  public init(historicalProvider: HistoricalBridgeDataProvider,
+              config: BaselinePredictorConfig = BaselinePredictorConfig(),
+              supportedBridgeIDs: Set<String>? = nil)
+  {
     self.historicalProvider = historicalProvider
     self.config = config
 
@@ -109,43 +107,35 @@ public class BaselinePredictor: BridgeOpenPredictor {
     return results
   }
 
-  public func predictBatch(_ inputs: [BridgePredictionInput]) async throws -> BatchPredictionResult
-  {
+  public func predictBatch(_ inputs: [BridgePredictionInput]) async throws -> BatchPredictionResult {
     let startTime = Date()
     var predictions: [BridgePredictionResult] = []
 
     for input in inputs {
       guard supports(bridgeID: input.bridgeID) else {
         // Create a result with default probability for unsupported bridges
-        let result = BridgePredictionResult(
-          bridgeID: input.bridgeID,
-          eta: input.eta,
-          openProbability: config.defaultProbability,
-          confidence: 0.0
-        )
+        let result = BridgePredictionResult(bridgeID: input.bridgeID,
+                                            eta: input.eta,
+                                            openProbability: config.defaultProbability,
+                                            confidence: 0.0)
         predictions.append(result)
         continue
       }
 
-      let probability = predictOpenProbability(
-        for: input.bridgeID, bucket: DateBucket(from: input.eta))
+      let probability = predictOpenProbability(for: input.bridgeID, bucket: DateBucket(from: input.eta))
       let (_, confidence, _) = predictWithConfidence(for: input.bridgeID, at: input.eta)
 
-      let result = BridgePredictionResult(
-        bridgeID: input.bridgeID,
-        eta: input.eta,
-        openProbability: probability,
-        confidence: confidence
-      )
+      let result = BridgePredictionResult(bridgeID: input.bridgeID,
+                                          eta: input.eta,
+                                          openProbability: probability,
+                                          confidence: confidence)
       predictions.append(result)
     }
 
     let processingTime = Date().timeIntervalSince(startTime)
-    return BatchPredictionResult(
-      predictions: predictions,
-      processingTime: processingTime,
-      batchSize: inputs.count
-    )
+    return BatchPredictionResult(predictions: predictions,
+                                 processingTime: processingTime,
+                                 batchSize: inputs.count)
   }
 
   public func supports(bridgeID: String) -> Bool {
@@ -180,10 +170,8 @@ public class BaselinePredictor: BridgeOpenPredictor {
 
     // If blending is enabled and we have some data, blend historical with default
     if config.enableBlending && stats.sampleCount > 0 {
-      let historicalProb = stats.smoothedProbability(
-        alpha: config.priorAlpha, beta: config.priorBeta)
-      let weight = min(
-        config.historicalWeight, Double(stats.sampleCount) / Double(config.minSampleCount))
+      let historicalProb = stats.smoothedProbability(alpha: config.priorAlpha, beta: config.priorBeta)
+      let weight = min(config.historicalWeight, Double(stats.sampleCount) / Double(config.minSampleCount))
       return historicalProb * weight + config.defaultProbability * (1.0 - weight)
     }
 
@@ -198,9 +186,7 @@ public class BaselinePredictor: BridgeOpenPredictor {
   ///   - bridgeID: The bridge identifier
   ///   - time: The prediction time
   /// - Returns: Tuple of (probability, confidence, dataSource)
-  public func predictWithConfidence(for bridgeID: String, at time: Date) -> (
-    probability: Double, confidence: Double, dataSource: String
-  ) {
+  public func predictWithConfidence(for bridgeID: String, at time: Date) -> (probability: Double, confidence: Double, dataSource: String) {
     guard supports(bridgeID: bridgeID) else {
       return (config.defaultProbability, 0.0, "default")
     }
@@ -230,12 +216,11 @@ public class BaselinePredictor: BridgeOpenPredictor {
   ///   - endTime: End time for predictions
   ///   - intervalMinutes: Interval between predictions (default: 5 minutes)
   /// - Returns: Array of (time, probability, confidence) tuples
-  public func predictTimeSeries(
-    for bridgeID: String,
-    from startTime: Date,
-    to endTime: Date,
-    intervalMinutes: Int = 5
-  ) -> [(time: Date, probability: Double, confidence: Double)] {
+  public func predictTimeSeries(for bridgeID: String,
+                                from startTime: Date,
+                                to endTime: Date,
+                                intervalMinutes: Int = 5) -> [(time: Date, probability: Double, confidence: Double)]
+  {
     guard supports(bridgeID: bridgeID) else {
       return []
     }
@@ -250,7 +235,7 @@ public class BaselinePredictor: BridgeOpenPredictor {
 
       currentTime =
         Calendar.current.date(byAdding: .minute, value: intervalMinutes, to: currentTime)
-        ?? currentTime
+          ?? currentTime
     }
 
     return results
@@ -261,7 +246,7 @@ public class BaselinePredictor: BridgeOpenPredictor {
   /// - Returns: Summary statistics for the bridge
   public func getPredictionSummary(for bridgeID: String) -> BridgePredictionSummary? {
     guard supports(bridgeID: bridgeID),
-      let historicalData = historicalProvider.getHistoricalData(for: bridgeID)
+          let historicalData = historicalProvider.getHistoricalData(for: bridgeID)
     else {
       return nil
     }
@@ -276,8 +261,7 @@ public class BaselinePredictor: BridgeOpenPredictor {
     var bucketCount = 0
 
     for bucket in buckets {
-      let (probability, confidence, _) = predictWithConfidence(
-        for: bridgeID, at: createDateFromBucket(bucket))
+      let (probability, confidence, _) = predictWithConfidence(for: bridgeID, at: createDateFromBucket(bucket))
       totalProbability += probability
       totalConfidence += confidence
       bucketCount += 1
@@ -286,13 +270,12 @@ public class BaselinePredictor: BridgeOpenPredictor {
     let averageProbability = totalProbability / Double(bucketCount)
     let averageConfidence = totalConfidence / Double(bucketCount)
 
-    return BridgePredictionSummary(
-      bridgeID: bridgeID,
-      averageProbability: averageProbability,
-      averageConfidence: averageConfidence,
-      bucketCount: bucketCount,
-      totalSamples: historicalData.totalSamples,
-      lastUpdated: historicalData.lastUpdated)
+    return BridgePredictionSummary(bridgeID: bridgeID,
+                                   averageProbability: averageProbability,
+                                   averageConfidence: averageConfidence,
+                                   bucketCount: bucketCount,
+                                   totalSamples: historicalData.totalSamples,
+                                   lastUpdated: historicalData.lastUpdated)
   }
 
   // MARK: - Utility Methods
@@ -350,14 +333,13 @@ public struct BridgePredictionSummary: Codable, Equatable {
   public let totalSamples: Int
   public let lastUpdated: Date
 
-  public init(
-    bridgeID: String,
-    averageProbability: Double,
-    averageConfidence: Double,
-    bucketCount: Int,
-    totalSamples: Int,
-    lastUpdated: Date
-  ) {
+  public init(bridgeID: String,
+              averageProbability: Double,
+              averageConfidence: Double,
+              bucketCount: Int,
+              totalSamples: Int,
+              lastUpdated: Date)
+  {
     self.bridgeID = bridgeID
     self.averageProbability = averageProbability
     self.averageConfidence = averageConfidence
@@ -369,53 +351,48 @@ public struct BridgePredictionSummary: Codable, Equatable {
 
 // MARK: - Factory Methods
 
-extension BaselinePredictor {
+public extension BaselinePredictor {
   /// Create a BaselinePredictor with default configuration
   /// - Parameter historicalProvider: The historical data provider
   /// - Returns: Configured BaselinePredictor instance
-  public static func createDefault(historicalProvider: HistoricalBridgeDataProvider)
+  static func createDefault(historicalProvider: HistoricalBridgeDataProvider)
     -> BaselinePredictor
   {
-    return BaselinePredictor(
-      historicalProvider: historicalProvider,
-      config: BaselinePredictorConfig())
+    return BaselinePredictor(historicalProvider: historicalProvider,
+                             config: BaselinePredictorConfig())
   }
 
   /// Create a BaselinePredictor with conservative configuration (higher default probability)
   /// - Parameter historicalProvider: The historical data provider
   /// - Returns: Configured BaselinePredictor instance
-  public static func createConservative(historicalProvider: HistoricalBridgeDataProvider)
+  static func createConservative(historicalProvider: HistoricalBridgeDataProvider)
     -> BaselinePredictor
   {
-    let config = BaselinePredictorConfig(
-      priorAlpha: 2.0,
-      priorBeta: 8.0,
-      defaultProbability: 0.15,
-      minSampleCount: 15,
-      enableBlending: true,
-      historicalWeight: 0.9)
+    let config = BaselinePredictorConfig(priorAlpha: 2.0,
+                                         priorBeta: 8.0,
+                                         defaultProbability: 0.15,
+                                         minSampleCount: 15,
+                                         enableBlending: true,
+                                         historicalWeight: 0.9)
 
-    return BaselinePredictor(
-      historicalProvider: historicalProvider,
-      config: config)
+    return BaselinePredictor(historicalProvider: historicalProvider,
+                             config: config)
   }
 
   /// Create a BaselinePredictor with aggressive configuration (lower default probability)
   /// - Parameter historicalProvider: The historical data provider
   /// - Returns: Configured BaselinePredictor instance
-  public static func createAggressive(historicalProvider: HistoricalBridgeDataProvider)
+  static func createAggressive(historicalProvider: HistoricalBridgeDataProvider)
     -> BaselinePredictor
   {
-    let config = BaselinePredictorConfig(
-      priorAlpha: 0.5,
-      priorBeta: 9.5,
-      defaultProbability: 0.05,
-      minSampleCount: 5,
-      enableBlending: true,
-      historicalWeight: 0.7)
+    let config = BaselinePredictorConfig(priorAlpha: 0.5,
+                                         priorBeta: 9.5,
+                                         defaultProbability: 0.05,
+                                         minSampleCount: 5,
+                                         enableBlending: true,
+                                         historicalWeight: 0.7)
 
-    return BaselinePredictor(
-      historicalProvider: historicalProvider,
-      config: config)
+    return BaselinePredictor(historicalProvider: historicalProvider,
+                             config: config)
   }
 }

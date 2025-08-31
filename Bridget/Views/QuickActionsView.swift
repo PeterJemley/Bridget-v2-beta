@@ -30,14 +30,12 @@ struct QuickActionsView: View {
           Task {
             viewModel.backgroundManager.triggerBackgroundTask(.dataExport)
             viewModel.backgroundManager.updateLastExportDate()
-            viewModel.backgroundManager.addActivity(
-              title: "Data Export",
-              description: "Exported today's probe tick data",
-              type: .dataExport)
-            viewModel.notificationManager.showSuccessNotification(
-              title: "Data Export Complete",
-              body: "Today's data has been successfully exported.",
-              operation: .dataExport)
+            viewModel.backgroundManager.addActivity(title: "Data Export",
+                                                    description: "Exported today's probe tick data",
+                                                    type: .dataExport)
+            viewModel.notificationManager.showSuccessNotification(title: "Data Export Complete",
+                                                                  body: "Today's data has been successfully exported.",
+                                                                  operation: .dataExport)
             viewModel.lastOperationResult = "Today's data exported successfully."
           }
         } label: {
@@ -94,10 +92,9 @@ struct QuickActionsView: View {
 
 #Preview {
   QuickActionsView(
-    viewModel: QuickActionsViewModel(
-      modelContext: try! ModelContainer(for: ProbeTick.self).mainContext,
-      backgroundManager: MLPipelineBackgroundManager.shared,
-      notificationManager: MLPipelineNotificationManager.shared)
+    viewModel: QuickActionsViewModel(modelContext: try! ModelContainer(for: ProbeTick.self).mainContext,
+                                     backgroundManager: MLPipelineBackgroundManager.shared,
+                                     notificationManager: MLPipelineNotificationManager.shared)
   )
   .padding()
 }

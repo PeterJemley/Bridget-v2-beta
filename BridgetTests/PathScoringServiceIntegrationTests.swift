@@ -5,45 +5,39 @@ import Testing
 
 @Suite("PathScoringService Integration Tests for Bridge ID Policy")
 struct PathScoringServiceIntegrationTests {
-
   // Helper to build a simple path with one bridge edge
   private func makePath(withBridgeID bridgeID: String) -> RoutePath {
     let nodes: [NodeID] = ["A", "B"]
-    let edge = Edge(
-      from: "A",
-      to: "B",
-      travelTime: 60,
-      distance: 100.0,
-      isBridge: true,
-      bridgeID: bridgeID)
+    let edge = Edge(from: "A",
+                    to: "B",
+                    travelTime: 60,
+                    distance: 100.0,
+                    isBridge: true,
+                    bridgeID: bridgeID)
     return RoutePath(nodes: nodes, edges: [edge])
   }
 
   // Common test harness setup
-  private func makeHarness() throws -> (
-    service: PathScoringService, predictor: BridgeOpenPredictor, eta: ETAEstimator,
-    config: MultiPathConfig
-  ) {
+  private func makeHarness() throws -> (service: PathScoringService, predictor: BridgeOpenPredictor, eta: ETAEstimator,
+                                        config: MultiPathConfig)
+  {
     var config = MultiPathConfig.testing
     // Quiet logs to avoid noise in tests; keep warnings if desired
-    let perf = MultiPathPerformanceConfig(
-      maxEnumerationTime: config.performance.maxEnumerationTime,
-      maxScoringTime: config.performance.maxScoringTime,
-      maxMemoryUsage: config.performance.maxMemoryUsage,
-      enablePerformanceLogging: false,
-      enableCaching: config.performance.enableCaching,
-      cacheExpirationTime: config.performance.cacheExpirationTime,
-      logVerbosity: .warnings)
-    config = MultiPathConfig(
-      pathEnumeration: config.pathEnumeration,
-      scoring: config.scoring,
-      performance: perf,
-      prediction: PredictionConfig(
-        defaultBridgeProbability: 0.5,
-        useBatchPrediction: false,
-        batchSize: 1,
-        enablePredictionCache: false,
-        mockPredictorSeed: 42))
+    let perf = MultiPathPerformanceConfig(maxEnumerationTime: config.performance.maxEnumerationTime,
+                                          maxScoringTime: config.performance.maxScoringTime,
+                                          maxMemoryUsage: config.performance.maxMemoryUsage,
+                                          enablePerformanceLogging: false,
+                                          enableCaching: config.performance.enableCaching,
+                                          cacheExpirationTime: config.performance.cacheExpirationTime,
+                                          logVerbosity: .warnings)
+    config = MultiPathConfig(pathEnumeration: config.pathEnumeration,
+                             scoring: config.scoring,
+                             performance: perf,
+                             prediction: PredictionConfig(defaultBridgeProbability: 0.5,
+                                                          useBatchPrediction: false,
+                                                          batchSize: 1,
+                                                          enablePredictionCache: false,
+                                                          mockPredictorSeed: 42))
 
     let predictor = MockBridgePredictor.createConstant(probability: 0.9, supportedBridges: [])
     let eta = ETAEstimator(config: config)
@@ -99,10 +93,8 @@ struct PathScoringServiceIntegrationTests {
 
     // Build a path with two edges: one canonical Seattle ID "2" and one non-accepted "xyz"
     let nodes: [NodeID] = ["A", "B", "C"]
-    let edge1 = Edge(
-      from: "A", to: "B", travelTime: 60, distance: 100.0, isBridge: true, bridgeID: "2")  // canonical
-    let edge2 = Edge(
-      from: "B", to: "C", travelTime: 60, distance: 100.0, isBridge: true, bridgeID: "xyz")  // non-accepted
+    let edge1 = Edge(from: "A", to: "B", travelTime: 60, distance: 100.0, isBridge: true, bridgeID: "2")  // canonical
+    let edge2 = Edge(from: "B", to: "C", travelTime: 60, distance: 100.0, isBridge: true, bridgeID: "xyz")  // non-accepted
     let path = RoutePath(nodes: nodes, edges: [edge1, edge2])
 
     let departure = Date()

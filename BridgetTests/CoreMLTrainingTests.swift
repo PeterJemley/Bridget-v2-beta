@@ -99,7 +99,7 @@ struct CoreMLTrainingTests {
       _ = try await trainer.trainModel(with: features)
       Issue.record("Expected training to fail since actual training requires base model")
     } catch {
-      if case CoreMLTrainingError.trainingFailed(let reason, _) = error {
+      if case let CoreMLTrainingError.trainingFailed(reason, _) = error {
         #expect(reason.contains(missingBaseModelMessage))
       } else {
         Issue.record("Expected trainingFailed error, got \(String(describing: error))")
@@ -129,7 +129,7 @@ struct CoreMLTrainingTests {
       _ = try await trainer.trainModel(with: invalidFeatures)
       Issue.record("Expected training to fail")
     } catch {
-      if case CoreMLTrainingError.trainingFailed(let reason, _) = error {
+      if case let CoreMLTrainingError.trainingFailed(reason, _) = error {
         #expect(reason.contains(missingBaseModelMessage))
       } else {
         Issue.record("Expected trainingFailed error, got \(String(describing: error))")
@@ -151,17 +151,16 @@ struct CoreMLTrainingTests {
 
   @Test("CoreMLTrainingConfig initialization retains values")
   func coreMLTrainingConfigInitialization() {
-    let config = CoreMLTrainingConfig(
-      modelType: .neuralNetwork,
-      inputShape: [1, 14],
-      outputShape: [1, 1],
-      epochs: 50,
-      learningRate: 0.01,
-      batchSize: 16,
-      shuffleSeed: 123,
-      useANE: true,
-      earlyStoppingPatience: 5,
-      validationSplitRatio: 0.25)
+    let config = CoreMLTrainingConfig(modelType: .neuralNetwork,
+                                      inputShape: [1, 14],
+                                      outputShape: [1, 1],
+                                      epochs: 50,
+                                      learningRate: 0.01,
+                                      batchSize: 16,
+                                      shuffleSeed: 123,
+                                      useANE: true,
+                                      earlyStoppingPatience: 5,
+                                      validationSplitRatio: 0.25)
 
     #expect(config.modelType == .neuralNetwork)
     #expect(config.inputShape == [1, 14])
@@ -191,10 +190,8 @@ struct CoreMLTrainingTests {
   @Test("CoreMLTrainingError descriptions and recursion flags")
   func coreMLTrainingErrorDescriptions() {
     let shapeError = CoreMLTrainingError.shapeMismatch(expected: [14], found: [12], context: "test")
-    let driftError = CoreMLTrainingError.featureDrift(
-      description: "test drift", expectedCount: 14, actualCount: 12)
-    let trainingError = CoreMLTrainingError.trainingFailed(
-      reason: "test failure", underlyingError: nil)
+    let driftError = CoreMLTrainingError.featureDrift(description: "test drift", expectedCount: 14, actualCount: 12)
+    let trainingError = CoreMLTrainingError.trainingFailed(reason: "test failure", underlyingError: nil)
 
     #expect(shapeError.errorDescription?.contains("Shape mismatch") == true)
     #expect(driftError.errorDescription?.contains("Feature drift") == true)
@@ -211,9 +208,8 @@ struct CoreMLTrainingTests {
       !CoreMLTrainingError.trainingFailed(reason: "test", underlyingError: nil)
         .shouldTriggerRecursion)
     let validationError = CoreMLTrainingError.validationFailed(
-      metrics: CoreMLModelValidationResult(
-        accuracy: 0.5, loss: 0.5, f1Score: 0.5, precision: 0.5, recall: 0.5,
-        confusionMatrix: [[1, 1], [1, 1]]))
+      metrics: CoreMLModelValidationResult(accuracy: 0.5, loss: 0.5, f1Score: 0.5, precision: 0.5, recall: 0.5,
+                                           confusionMatrix: [[1, 1], [1, 1]]))
     #expect(!validationError.shouldTriggerRecursion)
   }
 
@@ -240,7 +236,7 @@ struct CoreMLTrainingTests {
     let features1 = CoreMLTraining.generateSyntheticData(count: count)
     let features2 = CoreMLTraining.generateSyntheticData(count: count)
     #expect(features1.count == features2.count)
-    for i in 0..<features1.count {
+    for i in 0 ..< features1.count {
       #expect(features1[i].bridge_id == features2[i].bridge_id)
       #expect(features1[i].horizon_min == features2[i].horizon_min)
       #expect(abs(features1[i].min_sin - features2[i].min_sin) < 1e-10)

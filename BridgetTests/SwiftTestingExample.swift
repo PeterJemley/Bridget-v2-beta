@@ -17,7 +17,6 @@ import Testing
 
 @Suite("Swift Testing Examples")
 struct SwiftTestingExamples {
-
   @Test("Basic assertion example")
   func basicAssertion() throws {
     let result = 2 + 2
@@ -84,7 +83,7 @@ struct SwiftTestingExamples {
     let bridgeIDs = Array(repeating: "1", count: 1000)
 
     let startTime = Date()
-    for _ in 0..<1000 {
+    for _ in 0 ..< 1000 {
       _ = SeattleDrawbridges.isCanonicalBridgeID("1")
     }
     let endTime = Date()
@@ -115,7 +114,6 @@ enum TestError: Error {
 // Additional test suite for bridge-specific functionality
 @Suite("Bridge Validation Tests")
 struct BridgeValidationTests {
-
   @Test("All bridge IDs are unique")
   func uniqueBridgeIDs() throws {
     let bridgeIDs = SeattleDrawbridges.BridgeID.allIDs

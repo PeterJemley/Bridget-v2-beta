@@ -38,22 +38,21 @@ import Foundation
 
 /// Feature engineering specific errors
 public enum FeatureEngineeringError: Error, LocalizedError {
-  case invalidFeatureVector(
-    bridgeId: Int,
-    timestamp: String,
-    horizon: Int,
-    description: String)
+  case invalidFeatureVector(bridgeId: Int,
+                            timestamp: String,
+                            horizon: Int,
+                            description: String)
   case invalidInputData(description: String)
   case validationFailed(description: String)
 
   public var errorDescription: String? {
     switch self {
-    case .invalidFeatureVector(let bridgeId, let timestamp, let horizon, let description):
+    case let .invalidFeatureVector(bridgeId, timestamp, horizon, description):
       return "Invalid feature vector for bridge \(bridgeId) at \(timestamp) horizon \(horizon): "
         + "\(description)"
-    case .invalidInputData(let description):
+    case let .invalidInputData(description):
       return "Invalid input data: \(description)"
-    case .validationFailed(let description):
+    case let .validationFailed(description):
       return "Validation failed: \(description)"
     }
   }
@@ -229,11 +228,10 @@ func validateFeatureVector(_ featureVector: FeatureVector) -> Bool {
 ///   //          features[1] = horizon 3 features,
 ///   //          features[2] = horizon 6 features
 ///   ```
-public func makeFeatures(
-  from ticks: [ProbeTickRaw],
-  horizons: [Int],
-  deterministicSeed _: UInt64 = 42
-) throws -> [[FeatureVector]] {
+public func makeFeatures(from ticks: [ProbeTickRaw],
+                         horizons: [Int],
+                         deterministicSeed _: UInt64 = 42) throws -> [[FeatureVector]]
+{
   // Note: deterministicSeed parameter is kept for API compatibility
   // but no random number generation is used in this pure function
 
@@ -245,7 +243,7 @@ public func makeFeatures(
   for (_, bridgeTicks) in grouped {
     let sortedTicks = bridgeTicks.sorted {
       guard let d1 = isoFormatter.date(from: $0.ts_utc),
-        let d2 = isoFormatter.date(from: $1.ts_utc)
+            let d2 = isoFormatter.date(from: $1.ts_utc)
       else {
         return false
       }
@@ -268,14 +266,12 @@ public func makeFeatures(
         let target = (targetIdx < sortedTicks.count) ? sortedTicks[targetIdx].open_label : 0
 
         let penaltyNorm =
-          min(
-            max(tick.via_penalty_sec ?? 0.0, 0.0),
-            900.0) / 900.0
+          min(max(tick.via_penalty_sec ?? 0.0, 0.0),
+              900.0) / 900.0
 
         let gateAnomNorm =
-          min(
-            max(tick.gate_anom ?? 1.0, 1.0),
-            8.0) / 8.0
+          min(max(tick.gate_anom ?? 1.0, 1.0),
+              8.0) / 8.0
 
         let crossRate: Double = {
           let k = tick.cross_k ?? 0.0
@@ -287,32 +283,30 @@ public func makeFeatures(
         let detourDelta = tick.detour_delta ?? 0.0
         let detourFrac = tick.detour_frac ?? 0.0
 
-        let fv = FeatureVector(
-          bridge_id: tick.bridge_id,
-          horizon_min: horizon,
-          min_sin: minSin,
-          min_cos: minCos,
-          dow_sin: dowSin,
-          dow_cos: dowCos,
-          open_5m: open5m[i],
-          open_30m: open30m[i],
-          detour_delta: detourDelta,
-          cross_rate: crossRate,
-          via_routable: vR,
-          via_penalty: penaltyNorm,
-          gate_anom: gateAnomNorm,
-          detour_frac: detourFrac,
-          current_speed: tick.current_traffic_speed ?? 0.0,
-          normal_speed: tick.normal_traffic_speed ?? 35.0,
-          target: target)
+        let fv = FeatureVector(bridge_id: tick.bridge_id,
+                               horizon_min: horizon,
+                               min_sin: minSin,
+                               min_cos: minCos,
+                               dow_sin: dowSin,
+                               dow_cos: dowCos,
+                               open_5m: open5m[i],
+                               open_30m: open30m[i],
+                               detour_delta: detourDelta,
+                               cross_rate: crossRate,
+                               via_routable: vR,
+                               via_penalty: penaltyNorm,
+                               gate_anom: gateAnomNorm,
+                               detour_frac: detourFrac,
+                               current_speed: tick.current_traffic_speed ?? 0.0,
+                               normal_speed: tick.normal_traffic_speed ?? 35.0,
+                               target: target)
 
         // Validate feature vector (zero NaNs/Inf as per Step 1 contracts)
         guard validateFeatureVector(fv) else {
-          throw FeatureEngineeringError.invalidFeatureVector(
-            bridgeId: tick.bridge_id,
-            timestamp: tick.ts_utc,
-            horizon: horizon,
-            description: "Feature vector contains NaN or infinite values")
+          throw FeatureEngineeringError.invalidFeatureVector(bridgeId: tick.bridge_id,
+                                                             timestamp: tick.ts_utc,
+                                                             horizon: horizon,
+                                                             description: "Feature vector contains NaN or infinite values")
         }
 
         allFeatures[hIdx].append(fv)
@@ -343,10 +337,9 @@ public class FeatureEngineeringService {
   /// - Parameters:
   ///   - configuration: Feature engineering configuration including horizons and seed
   ///   - progressDelegate: Optional delegate for progress reporting during processing
-  public init(
-    configuration: FeatureEngineeringConfiguration,
-    progressDelegate: FeatureEngineeringProgressDelegate? = nil
-  ) {
+  public init(configuration: FeatureEngineeringConfiguration,
+              progressDelegate: FeatureEngineeringProgressDelegate? = nil)
+  {
     self.configuration = configuration
     self.progressDelegate = progressDelegate
   }
@@ -369,10 +362,9 @@ public class FeatureEngineeringService {
   public func generateFeatures(from ticks: [ProbeTickRaw]) throws -> [[FeatureVector]] {
     progressDelegate?.featureEngineeringDidStart()
 
-    let allFeatures = try makeFeatures(
-      from: ticks,
-      horizons: configuration.horizons,
-      deterministicSeed: configuration.deterministicSeed)
+    let allFeatures = try makeFeatures(from: ticks,
+                                       horizons: configuration.horizons,
+                                       deterministicSeed: configuration.deterministicSeed)
 
     let totalFeatures = allFeatures.flatMap { $0 }.count
     progressDelegate?.featureEngineeringDidComplete(totalFeatures)
@@ -431,18 +423,15 @@ public class FeatureEngineeringService {
 ///
 /// - Note: This function is suitable for simple use cases where the full service
 ///         configuration is not needed. For complex pipelines, use the service class directly.
-public func generateFeatures(
-  ticks: [ProbeTickRaw],
-  horizons: [Int] = defaultHorizons,
-  deterministicSeed: UInt64 = 42,
-  progressDelegate: FeatureEngineeringProgressDelegate? = nil
-) throws -> [[FeatureVector]] {
-  let config = FeatureEngineeringConfiguration(
-    horizons: horizons,
-    deterministicSeed: deterministicSeed)
-  let service = FeatureEngineeringService(
-    configuration: config,
-    progressDelegate: progressDelegate)
+public func generateFeatures(ticks: [ProbeTickRaw],
+                             horizons: [Int] = defaultHorizons,
+                             deterministicSeed: UInt64 = 42,
+                             progressDelegate: FeatureEngineeringProgressDelegate? = nil) throws -> [[FeatureVector]]
+{
+  let config = FeatureEngineeringConfiguration(horizons: horizons,
+                                               deterministicSeed: deterministicSeed)
+  let service = FeatureEngineeringService(configuration: config,
+                                          progressDelegate: progressDelegate)
   return try service.generateFeatures(from: ticks)
 }
 

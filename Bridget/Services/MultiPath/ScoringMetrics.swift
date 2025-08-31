@@ -71,26 +71,25 @@ public struct ScoringMetrics {
 
   // MARK: - Initialization
 
-  public init(
-    totalScoringTime: TimeInterval = 0.0,
-    etaEstimationTime: TimeInterval = 0.0,
-    bridgePredictionTime: TimeInterval = 0.0,
-    aggregationTime: TimeInterval = 0.0,
-    featureGenerationTime: TimeInterval = 0.0,
-    pathsScored: Int = 0,
-    bridgesProcessed: Int = 0,
-    pathsPerSecond: Double = 0.0,
-    bridgesPerSecond: Double = 0.0,
-    featureCacheHitRate: Double = 0.0,
-    cacheHits: Int = 0,
-    cacheMisses: Int = 0,
-    failedPaths: Int = 0,
-    defaultProbabilityBridges: Int = 0,
-    averagePathProbability: Double = 0.0,
-    pathProbabilityStdDev: Double = 0.0,
-    peakMemoryUsage: Int64 = 0,
-    memoryPerPath: Double = 0.0
-  ) {
+  public init(totalScoringTime: TimeInterval = 0.0,
+              etaEstimationTime: TimeInterval = 0.0,
+              bridgePredictionTime: TimeInterval = 0.0,
+              aggregationTime: TimeInterval = 0.0,
+              featureGenerationTime: TimeInterval = 0.0,
+              pathsScored: Int = 0,
+              bridgesProcessed: Int = 0,
+              pathsPerSecond: Double = 0.0,
+              bridgesPerSecond: Double = 0.0,
+              featureCacheHitRate: Double = 0.0,
+              cacheHits: Int = 0,
+              cacheMisses: Int = 0,
+              failedPaths: Int = 0,
+              defaultProbabilityBridges: Int = 0,
+              averagePathProbability: Double = 0.0,
+              pathProbabilityStdDev: Double = 0.0,
+              peakMemoryUsage: Int64 = 0,
+              memoryPerPath: Double = 0.0)
+  {
     self.totalScoringTime = totalScoringTime
     self.etaEstimationTime = etaEstimationTime
     self.bridgePredictionTime = bridgePredictionTime
@@ -272,33 +271,30 @@ public final class ScoringMetricsAggregator {
 
       let avgPathProbability =
         pathProbabilities.isEmpty
-        ? 0.0 : pathProbabilities.reduce(0, +) / Double(pathProbabilities.count)
-      let pathProbabilityStdDev = calculateStandardDeviation(
-        pathProbabilities, mean: avgPathProbability)
+          ? 0.0 : pathProbabilities.reduce(0, +) / Double(pathProbabilities.count)
+      let pathProbabilityStdDev = calculateStandardDeviation(pathProbabilities, mean: avgPathProbability)
 
       let avgMemoryPerPath =
         totalPathsScored > 0 ? Double(peakMemoryUsage) / Double(totalPathsScored) : 0.0
 
-      return ScoringMetrics(
-        totalScoringTime: avgScoringTime,
-        etaEstimationTime: avgEtaEstimationTime,
-        bridgePredictionTime: avgBridgePredictionTime,
-        aggregationTime: avgAggregationTime,
-        featureGenerationTime: avgFeatureGenerationTime,
-        pathsScored: avgPathsScored,
-        bridgesProcessed: avgBridgesProcessed,
-        pathsPerSecond: avgScoringTime > 0 ? Double(avgPathsScored) / avgScoringTime : 0.0,
-        bridgesPerSecond: avgScoringTime > 0 ? Double(avgBridgesProcessed) / avgScoringTime : 0.0,
-        featureCacheHitRate: avgCacheHitRate,
-        cacheHits: totalCacheHits,
-        cacheMisses: totalCacheMisses,
-        failedPaths: avgFailedPaths,
-        defaultProbabilityBridges: avgDefaultProbabilityBridges,
-        averagePathProbability: avgPathProbability,
-        pathProbabilityStdDev: pathProbabilityStdDev,
-        peakMemoryUsage: peakMemoryUsage,
-        memoryPerPath: avgMemoryPerPath
-      )
+      return ScoringMetrics(totalScoringTime: avgScoringTime,
+                            etaEstimationTime: avgEtaEstimationTime,
+                            bridgePredictionTime: avgBridgePredictionTime,
+                            aggregationTime: avgAggregationTime,
+                            featureGenerationTime: avgFeatureGenerationTime,
+                            pathsScored: avgPathsScored,
+                            bridgesProcessed: avgBridgesProcessed,
+                            pathsPerSecond: avgScoringTime > 0 ? Double(avgPathsScored) / avgScoringTime : 0.0,
+                            bridgesPerSecond: avgScoringTime > 0 ? Double(avgBridgesProcessed) / avgScoringTime : 0.0,
+                            featureCacheHitRate: avgCacheHitRate,
+                            cacheHits: totalCacheHits,
+                            cacheMisses: totalCacheMisses,
+                            failedPaths: avgFailedPaths,
+                            defaultProbabilityBridges: avgDefaultProbabilityBridges,
+                            averagePathProbability: avgPathProbability,
+                            pathProbabilityStdDev: pathProbabilityStdDev,
+                            peakMemoryUsage: peakMemoryUsage,
+                            memoryPerPath: avgMemoryPerPath)
     }
   }
 
@@ -311,8 +307,7 @@ public final class ScoringMetricsAggregator {
         csvData.joined(separator: "\n")
       }
 
-      let documentsPath = try FileManager.default.url(
-        for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+      let documentsPath = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
       let csvURL = documentsPath.appendingPathComponent(filename)
 
       try csvContent.write(to: csvURL, atomically: true, encoding: .utf8)

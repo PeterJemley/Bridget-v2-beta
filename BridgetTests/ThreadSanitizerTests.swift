@@ -4,11 +4,10 @@ import Testing
 @testable import Bridget
 
 final class ThreadSanitizerTests {
-
   /// Test to verify Thread Sanitizer is working correctly
   /// This test will pass when TSan is disabled and fail when TSan is enabled
   @Test("Thread Sanitizer detects data race")
-  func testDataRaceDetection() async throws {
+  func dataRaceDetection() async throws {
     // Skip this test if TSan is not enabled
     guard isThreadSanitizerEnabled() else {
       #expect(true, "TSan not enabled - skipping race detection test")
@@ -21,9 +20,9 @@ final class ThreadSanitizerTests {
 
     // Create multiple tasks that concurrently access the shared counter
     await withTaskGroup(of: Void.self) { group in
-      for _ in 0..<10 {
+      for _ in 0 ..< 10 {
         group.addTask {
-          for _ in 0..<iterations {
+          for _ in 0 ..< iterations {
             counter += 1  // This will cause a data race
           }
         }
@@ -37,15 +36,15 @@ final class ThreadSanitizerTests {
 
   /// Test to verify that actor-isolated code works correctly with TSan
   @Test("Actor isolation prevents data races")
-  func testActorIsolation() async throws {
+  func actorIsolation() async throws {
     let actor = TestActor()
     let iterations = 1000
 
     // Create multiple tasks that access the actor
     await withTaskGroup(of: Void.self) { group in
-      for _ in 0..<10 {
+      for _ in 0 ..< 10 {
         group.addTask {
-          for _ in 0..<iterations {
+          for _ in 0 ..< iterations {
             await actor.increment()
           }
         }
@@ -53,22 +52,21 @@ final class ThreadSanitizerTests {
     }
 
     let finalValue = await actor.getValue()
-    #expect(
-      finalValue == 10 * iterations,
-      "Actor should maintain correct count: expected \(10 * iterations), got \(finalValue)")
+    #expect(finalValue == 10 * iterations,
+            "Actor should maintain correct count: expected \(10 * iterations), got \(finalValue)")
   }
 
   /// Test to verify that proper synchronization prevents data races
   @Test("Synchronized access prevents data races")
-  func testSynchronizedAccess() async throws {
+  func synchronizedAccess() async throws {
     let synchronizedCounter = SynchronizedCounter()
     let iterations = 1000
 
     // Create multiple tasks that access the synchronized counter
     await withTaskGroup(of: Void.self) { group in
-      for _ in 0..<10 {
+      for _ in 0 ..< 10 {
         group.addTask {
-          for _ in 0..<iterations {
+          for _ in 0 ..< iterations {
             synchronizedCounter.increment()
           }
         }
@@ -76,10 +74,8 @@ final class ThreadSanitizerTests {
     }
 
     let finalValue = synchronizedCounter.getValue()
-    #expect(
-      finalValue == 10 * iterations,
-      "Synchronized counter should maintain correct count: expected \(10 * iterations), got \(finalValue)"
-    )
+    #expect(finalValue == 10 * iterations,
+            "Synchronized counter should maintain correct count: expected \(10 * iterations), got \(finalValue)")
   }
 
   /// Helper function to check if Thread Sanitizer is enabled

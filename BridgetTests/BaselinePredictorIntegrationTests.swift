@@ -16,98 +16,77 @@ import Testing
 
 @Suite("BaselinePredictor Integration Tests")
 struct BaselinePredictorIntegrationTests {
-
   // MARK: - Test Configuration
 
   private func makeTestConfig() -> MultiPathConfig {
-    return MultiPathConfig(
-      pathEnumeration: PathEnumConfig(
-        maxPaths: 10,
-        maxDepth: 5,
-        maxTravelTime: 1800,  // 30 minutes
-        allowCycles: false,
-        useBidirectionalSearch: false,
-        enumerationMode: .dfs,
-        kShortestPaths: 5,
-        randomSeed: 12345,
-        maxTimeOverShortest: 1.5
-      ),
-      scoring: ScoringConfig(
-        minProbability: 0.05,
-        maxProbability: 0.99,
-        logThreshold: 0.01,
-        useLogDomain: true,
-        clampBounds: ClampBounds(min: 0.05, max: 0.99),
-        bridgeWeight: 1.0,
-        timeWeight: 1.0
-      ),
-      performance: MultiPathPerformanceConfig(
-        maxEnumerationTime: 10.0,
-        maxScoringTime: 10.0,
-        maxMemoryUsage: 100 * 1024 * 1024,  // 100MB
-        enablePerformanceLogging: true,
-        enableCaching: true,
-        cacheExpirationTime: 300.0,
-        logVerbosity: .warnings
-      ),
-      prediction: PredictionConfig(
-        defaultBridgeProbability: 0.8,
-        useBatchPrediction: true,
-        batchSize: 10,
-        enablePredictionCache: true,
-        predictionCacheExpiration: 60.0,
-        mockPredictorSeed: 12345,
-        predictionMode: .baseline,
-        priorAlpha: 1.0,
-        priorBeta: 9.0,
-        enableMetricsLogging: true
-      )
-    )
+    return MultiPathConfig(pathEnumeration: PathEnumConfig(maxPaths: 10,
+                                                           maxDepth: 5,
+                                                           maxTravelTime: 1800,  // 30 minutes
+                                                           allowCycles: false,
+                                                           useBidirectionalSearch: false,
+                                                           enumerationMode: .dfs,
+                                                           kShortestPaths: 5,
+                                                           randomSeed: 12345,
+                                                           maxTimeOverShortest: 1.5),
+                           scoring: ScoringConfig(minProbability: 0.05,
+                                                  maxProbability: 0.99,
+                                                  logThreshold: 0.01,
+                                                  useLogDomain: true,
+                                                  clampBounds: ClampBounds(min: 0.05, max: 0.99),
+                                                  bridgeWeight: 1.0,
+                                                  timeWeight: 1.0),
+                           performance: MultiPathPerformanceConfig(maxEnumerationTime: 10.0,
+                                                                   maxScoringTime: 10.0,
+                                                                   maxMemoryUsage: 100 * 1024 * 1024,  // 100MB
+                                                                   enablePerformanceLogging: true,
+                                                                   enableCaching: true,
+                                                                   cacheExpirationTime: 300.0,
+                                                                   logVerbosity: .warnings),
+                           prediction: PredictionConfig(defaultBridgeProbability: 0.8,
+                                                        useBatchPrediction: true,
+                                                        batchSize: 10,
+                                                        enablePredictionCache: true,
+                                                        predictionCacheExpiration: 60.0,
+                                                        mockPredictorSeed: 12345,
+                                                        predictionMode: .baseline,
+                                                        priorAlpha: 1.0,
+                                                        priorBeta: 9.0,
+                                                        enableMetricsLogging: true))
   }
 
   // MARK: - Test Harness Setup
 
-  private func makeBaselineHarness() throws -> (
-    service: PathScoringService, predictor: BaselinePredictor, eta: ETAEstimator,
-    config: MultiPathConfig
-  ) {
+  private func makeBaselineHarness() throws -> (service: PathScoringService, predictor: BaselinePredictor, eta: ETAEstimator,
+                                                config: MultiPathConfig)
+  {
     let config = makeTestConfig()
 
     // Create BaselinePredictor with historical data provider
     let dataProvider = MockHistoricalBridgeDataProvider()
-    let predictorConfig = BaselinePredictorConfig(
-      priorAlpha: config.prediction.priorAlpha,
-      priorBeta: config.prediction.priorBeta,
-      defaultProbability: config.prediction.defaultBridgeProbability
-    )
-    let predictor = BaselinePredictor(
-      historicalProvider: dataProvider,
-      config: predictorConfig
-    )
+    let predictorConfig = BaselinePredictorConfig(priorAlpha: config.prediction.priorAlpha,
+                                                  priorBeta: config.prediction.priorBeta,
+                                                  defaultProbability: config.prediction.defaultBridgeProbability)
+    let predictor = BaselinePredictor(historicalProvider: dataProvider,
+                                      config: predictorConfig)
 
     let eta = ETAEstimator(config: config)
-    let service = try PathScoringService(
-      predictor: predictor,
-      etaEstimator: eta,
-      config: config
-    )
+    let service = try PathScoringService(predictor: predictor,
+                                         etaEstimator: eta,
+                                         config: config)
 
     return (service, predictor, eta, config)
   }
 
-  private func makeMockHarness() throws -> (
-    service: PathScoringService, predictor: MockBridgePredictor, eta: ETAEstimator,
-    config: MultiPathConfig
-  ) {
+  private func makeMockHarness() throws -> (service: PathScoringService, predictor: MockBridgePredictor, eta: ETAEstimator,
+                                            config: MultiPathConfig)
+  {
     let config = makeTestConfig()
 
     let predictor = MockBridgePredictor(seed: 12345)
     let eta = ETAEstimator(config: config)
-    let service = try PathScoringService(
-      predictor: predictor,
-      etaEstimator: eta,
-      config: config
-    )
+    let service = try PathScoringService(predictor: predictor,
+                                         etaEstimator: eta,
+                                         config: config)
 
     return (service, predictor, eta, config)
   }
@@ -131,9 +110,8 @@ struct BaselinePredictorIntegrationTests {
       if SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) {
         // Valid bridge ID - create bridge edge
         edges.append(
-          Edge(
-            from: fromNode, to: toNode, travelTime: 600, distance: 2000, isBridge: true,
-            bridgeID: bridgeID))
+          Edge(from: fromNode, to: toNode, travelTime: 600, distance: 2000, isBridge: true,
+               bridgeID: bridgeID))
       } else {
         // Invalid bridge ID - create road edge instead (fallback behavior)
         edges.append(
@@ -158,24 +136,18 @@ struct BaselinePredictorIntegrationTests {
 
     // Create BaselinePredictor with historical data provider
     let dataProvider = MockHistoricalBridgeDataProvider()
-    let predictorConfig = BaselinePredictorConfig(
-      priorAlpha: config.prediction.priorAlpha,
-      priorBeta: config.prediction.priorBeta,
-      defaultProbability: config.prediction.defaultBridgeProbability
-    )
-    let predictor = BaselinePredictor(
-      historicalProvider: dataProvider,
-      config: predictorConfig
-    )
+    let predictorConfig = BaselinePredictorConfig(priorAlpha: config.prediction.priorAlpha,
+                                                  priorBeta: config.prediction.priorBeta,
+                                                  defaultProbability: config.prediction.defaultBridgeProbability)
+    let predictor = BaselinePredictor(historicalProvider: dataProvider,
+                                      config: predictorConfig)
 
     let eta = ETAEstimator(config: config)
 
     // This should not throw
-    let service = try PathScoringService(
-      predictor: predictor,
-      etaEstimator: eta,
-      config: config
-    )
+    let service = try PathScoringService(predictor: predictor,
+                                         etaEstimator: eta,
+                                         config: config)
 
     // Basic validation that service was created successfully
     print("✅ PathScoringService created successfully with BaselinePredictor")
@@ -184,15 +156,11 @@ struct BaselinePredictorIntegrationTests {
   @Test("BaselinePredictor basic functionality")
   func baselinePredictorBasic() async throws {
     let dataProvider = MockHistoricalBridgeDataProvider()
-    let predictorConfig = BaselinePredictorConfig(
-      priorAlpha: 1.0,
-      priorBeta: 9.0,
-      defaultProbability: 0.1
-    )
-    let predictor = BaselinePredictor(
-      historicalProvider: dataProvider,
-      config: predictorConfig
-    )
+    let predictorConfig = BaselinePredictorConfig(priorAlpha: 1.0,
+                                                  priorBeta: 9.0,
+                                                  defaultProbability: 0.1)
+    let predictor = BaselinePredictor(historicalProvider: dataProvider,
+                                      config: predictorConfig)
 
     // Test basic prediction
     let bridgeID = "2"  // Ballard Bridge
@@ -212,15 +180,11 @@ struct BaselinePredictorIntegrationTests {
   @Test("BaselinePredictor performance metrics")
   func baselinePredictorPerformance() async throws {
     let dataProvider = MockHistoricalBridgeDataProvider()
-    let predictorConfig = BaselinePredictorConfig(
-      priorAlpha: 1.0,
-      priorBeta: 9.0,
-      defaultProbability: 0.1
-    )
-    let predictor = BaselinePredictor(
-      historicalProvider: dataProvider,
-      config: predictorConfig
-    )
+    let predictorConfig = BaselinePredictorConfig(priorAlpha: 1.0,
+                                                  priorBeta: 9.0,
+                                                  defaultProbability: 0.1)
+    let predictor = BaselinePredictor(historicalProvider: dataProvider,
+                                      config: predictorConfig)
 
     // Test single prediction performance
     let bridgeID = "2"  // Ballard Bridge
@@ -332,8 +296,7 @@ struct BaselinePredictorIntegrationTests {
 
     // Time BaselinePredictor
     let baselineStart = Date()
-    let baselineScore = try await baselineHarness.service.scorePath(
-      path, departureTime: departureTime)
+    let baselineScore = try await baselineHarness.service.scorePath(path, departureTime: departureTime)
     let baselineTime = Date().timeIntervalSince(baselineStart)
 
     // Time MockBridgePredictor
@@ -346,9 +309,8 @@ struct BaselinePredictorIntegrationTests {
     #expect(mockScore.linearProbability.isFinite)
 
     // BaselinePredictor should be reasonably fast (within 5x of mock)
-    #expect(
-      baselineTime < mockTime * 5.0,
-      "BaselinePredictor took \(baselineTime)s vs MockBridgePredictor \(mockTime)s")
+    #expect(baselineTime < mockTime * 5.0,
+            "BaselinePredictor took \(baselineTime)s vs MockBridgePredictor \(mockTime)s")
 
     // Log performance metrics
     print("📊 Performance Comparison:")
@@ -375,22 +337,16 @@ struct BaselinePredictorIntegrationTests {
     var results: [String: Double] = [:]
 
     for (alpha, beta, name) in testCases {
-      let predictorConfig = BaselinePredictorConfig(
-        priorAlpha: alpha,
-        priorBeta: beta,
-        defaultProbability: config.prediction.defaultBridgeProbability
-      )
-      let predictor = BaselinePredictor(
-        historicalProvider: dataProvider,
-        config: predictorConfig
-      )
+      let predictorConfig = BaselinePredictorConfig(priorAlpha: alpha,
+                                                    priorBeta: beta,
+                                                    defaultProbability: config.prediction.defaultBridgeProbability)
+      let predictor = BaselinePredictor(historicalProvider: dataProvider,
+                                        config: predictorConfig)
 
       let eta = ETAEstimator(config: config)
-      let service = try PathScoringService(
-        predictor: predictor,
-        etaEstimator: eta,
-        config: config
-      )
+      let service = try PathScoringService(predictor: predictor,
+                                           etaEstimator: eta,
+                                           config: config)
 
       let score = try await service.scorePath(path, departureTime: departureTime)
       results[name] = score.bridgeProbabilities["2"]!

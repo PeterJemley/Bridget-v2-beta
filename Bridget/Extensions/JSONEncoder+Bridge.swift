@@ -47,11 +47,10 @@ extension JSONEncoder {
   ///
   /// ## Extending Defaults
   /// To change default encoding strategies, update this factory and audit usage project-wide for unintended consequences. See the `Bridge` project policy for more information.
-  static func bridgeEncoder(
-    dateEncodingStrategy: DateEncodingStrategy = .iso8601,
-    keyEncodingStrategy: KeyEncodingStrategy = .useDefaultKeys,
-    outputFormatting: OutputFormatting = []
-  ) -> JSONEncoder {
+  static func bridgeEncoder(dateEncodingStrategy: DateEncodingStrategy = .iso8601,
+                            keyEncodingStrategy: KeyEncodingStrategy = .useDefaultKeys,
+                            outputFormatting: OutputFormatting = []) -> JSONEncoder
+  {
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = dateEncodingStrategy
     encoder.keyEncodingStrategy = keyEncodingStrategy

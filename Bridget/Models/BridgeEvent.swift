@@ -104,17 +104,16 @@ public final class BridgeEvent {
   ///   - longitude: Bridge longitude coordinate
   ///   - entityType: API entity type (defaults to "Bridge")
   ///   - isValidated: Whether this event passed validation (defaults to true)
-  init(
-    bridgeID: String,
-    bridgeName: String,
-    openDateTime: Date,
-    closeDateTime: Date? = nil,
-    minutesOpen: Int,
-    latitude: Double,
-    longitude: Double,
-    entityType: String = "Bridge",
-    isValidated: Bool = true
-  ) {
+  init(bridgeID: String,
+       bridgeName: String,
+       openDateTime: Date,
+       closeDateTime: Date? = nil,
+       minutesOpen: Int,
+       latitude: Double,
+       longitude: Double,
+       entityType: String = "Bridge",
+       isValidated: Bool = true)
+  {
     self.bridgeID = bridgeID
     self.bridgeName = bridgeName
     self.openDateTime = openDateTime
@@ -157,27 +156,25 @@ extension BridgeEvent {
   ///   - record: The raw API record to convert
   ///   - isValidated: Whether the record passed validation (defaults to true)
   /// - Returns: A new BridgeEvent instance, or nil if required data is missing
-  static func from(
-    record: BridgeOpeningRecord,
-    isValidated: Bool = true
-  ) -> BridgeEvent? {
+  static func from(record: BridgeOpeningRecord,
+                   isValidated: Bool = true) -> BridgeEvent?
+  {
     guard let openDate = record.openDate,
-      let latitude = record.latitudeValue,
-      let longitude = record.longitudeValue,
-      let minutesOpen = record.minutesOpenValue
+          let latitude = record.latitudeValue,
+          let longitude = record.longitudeValue,
+          let minutesOpen = record.minutesOpenValue
     else {
       return nil
     }
 
-    return BridgeEvent(
-      bridgeID: record.entityid,
-      bridgeName: record.entityname,
-      openDateTime: openDate,
-      closeDateTime: record.closeDate,
-      minutesOpen: minutesOpen,
-      latitude: latitude,
-      longitude: longitude,
-      entityType: record.entitytype,
-      isValidated: isValidated)
+    return BridgeEvent(bridgeID: record.entityid,
+                       bridgeName: record.entityname,
+                       openDateTime: openDate,
+                       closeDateTime: record.closeDate,
+                       minutesOpen: minutesOpen,
+                       latitude: latitude,
+                       longitude: longitude,
+                       entityType: record.entitytype,
+                       isValidated: isValidated)
   }
 }

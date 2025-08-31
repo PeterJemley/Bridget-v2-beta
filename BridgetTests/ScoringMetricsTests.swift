@@ -16,44 +16,31 @@ import Testing
 
 @Suite("Scoring Metrics Tests")
 struct ScoringMetricsTests {
-
   // MARK: - Test Configuration
 
   private func makeTestConfig() -> MultiPathConfig {
-    return MultiPathConfig(
-      pathEnumeration: PathEnumConfig(maxPaths: 10, maxDepth: 5),
-      scoring: ScoringConfig(useLogDomain: true, bridgeWeight: 0.7),
-      performance: MultiPathPerformanceConfig(
-        enablePerformanceLogging: true,
-        enableCaching: true,
-        logVerbosity: .verbose
-      ),
-      prediction: PredictionConfig(
-        predictionMode: .baseline,
-        enableMetricsLogging: true
-      )
-    )
+    return MultiPathConfig(pathEnumeration: PathEnumConfig(maxPaths: 10, maxDepth: 5),
+                           scoring: ScoringConfig(useLogDomain: true, bridgeWeight: 0.7),
+                           performance: MultiPathPerformanceConfig(enablePerformanceLogging: true,
+                                                                   enableCaching: true,
+                                                                   logVerbosity: .verbose),
+                           prediction: PredictionConfig(predictionMode: .baseline,
+                                                        enableMetricsLogging: true))
   }
 
   private func makeTestHarness() throws -> PathScoringService {
     let config = makeTestConfig()
     let dataProvider = MockHistoricalBridgeDataProvider()
-    let predictorConfig = BaselinePredictorConfig(
-      priorAlpha: 1.0,
-      priorBeta: 9.0,
-      defaultProbability: 0.1
-    )
-    let predictor = BaselinePredictor(
-      historicalProvider: dataProvider,
-      config: predictorConfig
-    )
+    let predictorConfig = BaselinePredictorConfig(priorAlpha: 1.0,
+                                                  priorBeta: 9.0,
+                                                  defaultProbability: 0.1)
+    let predictor = BaselinePredictor(historicalProvider: dataProvider,
+                                      config: predictorConfig)
     let etaEstimator = ETAEstimator(config: config)
 
-    return try PathScoringService(
-      predictor: predictor,
-      etaEstimator: etaEstimator,
-      config: config
-    )
+    return try PathScoringService(predictor: predictor,
+                                  etaEstimator: etaEstimator,
+                                  config: config)
   }
 
   private func makeSeattlePath(withBridgeIDs bridgeIDs: [String]) -> RoutePath {
@@ -73,9 +60,8 @@ struct ScoringMetricsTests {
       if SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) {
         // Valid bridge ID - create bridge edge
         edges.append(
-          Edge(
-            from: fromNode, to: toNode, travelTime: 600, distance: 2000, isBridge: true,
-            bridgeID: bridgeID))
+          Edge(from: fromNode, to: toNode, travelTime: 600, distance: 2000, isBridge: true,
+               bridgeID: bridgeID))
       } else {
         // Invalid bridge ID - create road edge instead (fallback behavior)
         edges.append(
@@ -120,26 +106,24 @@ struct ScoringMetricsTests {
 
   @Test("ScoringMetrics initialization with custom values")
   func scoringMetricsCustomInitialization() {
-    let metrics = ScoringMetrics(
-      totalScoringTime: 1.5,
-      etaEstimationTime: 0.2,
-      bridgePredictionTime: 0.8,
-      aggregationTime: 0.3,
-      featureGenerationTime: 0.2,
-      pathsScored: 5,
-      bridgesProcessed: 15,
-      pathsPerSecond: 3.33,
-      bridgesPerSecond: 10.0,
-      featureCacheHitRate: 0.85,
-      cacheHits: 17,
-      cacheMisses: 3,
-      failedPaths: 0,
-      defaultProbabilityBridges: 2,
-      averagePathProbability: 0.75,
-      pathProbabilityStdDev: 0.1,
-      peakMemoryUsage: 1024 * 1024,
-      memoryPerPath: 204800.0
-    )
+    let metrics = ScoringMetrics(totalScoringTime: 1.5,
+                                 etaEstimationTime: 0.2,
+                                 bridgePredictionTime: 0.8,
+                                 aggregationTime: 0.3,
+                                 featureGenerationTime: 0.2,
+                                 pathsScored: 5,
+                                 bridgesProcessed: 15,
+                                 pathsPerSecond: 3.33,
+                                 bridgesPerSecond: 10.0,
+                                 featureCacheHitRate: 0.85,
+                                 cacheHits: 17,
+                                 cacheMisses: 3,
+                                 failedPaths: 0,
+                                 defaultProbabilityBridges: 2,
+                                 averagePathProbability: 0.75,
+                                 pathProbabilityStdDev: 0.1,
+                                 peakMemoryUsage: 1024 * 1024,
+                                 memoryPerPath: 204_800.0)
 
     #expect(metrics.totalScoringTime == 1.5)
     #expect(metrics.etaEstimationTime == 0.2)
@@ -158,7 +142,7 @@ struct ScoringMetricsTests {
     #expect(metrics.averagePathProbability == 0.75)
     #expect(metrics.pathProbabilityStdDev == 0.1)
     #expect(metrics.peakMemoryUsage == 1024 * 1024)
-    #expect(metrics.memoryPerPath == 204800.0)
+    #expect(metrics.memoryPerPath == 204_800.0)
   }
 
   // MARK: - ScoringMetricsAggregator Tests
@@ -180,25 +164,21 @@ struct ScoringMetricsTests {
     let aggregator = ScoringMetricsAggregator()
 
     // Record first set of metrics
-    let metrics1 = ScoringMetrics(
-      totalScoringTime: 1.0,
-      pathsScored: 2,
-      bridgesProcessed: 6,
-      cacheHits: 5,
-      cacheMisses: 1,
-      averagePathProbability: 0.8
-    )
+    let metrics1 = ScoringMetrics(totalScoringTime: 1.0,
+                                  pathsScored: 2,
+                                  bridgesProcessed: 6,
+                                  cacheHits: 5,
+                                  cacheMisses: 1,
+                                  averagePathProbability: 0.8)
     aggregator.recordMetrics(metrics1)
 
     // Record second set of metrics
-    let metrics2 = ScoringMetrics(
-      totalScoringTime: 2.0,
-      pathsScored: 3,
-      bridgesProcessed: 9,
-      cacheHits: 8,
-      cacheMisses: 2,
-      averagePathProbability: 0.6
-    )
+    let metrics2 = ScoringMetrics(totalScoringTime: 2.0,
+                                  pathsScored: 3,
+                                  bridgesProcessed: 9,
+                                  cacheHits: 8,
+                                  cacheMisses: 2,
+                                  averagePathProbability: 0.6)
     aggregator.recordMetrics(metrics2)
 
     // Get aggregated metrics
@@ -217,13 +197,11 @@ struct ScoringMetricsTests {
     let aggregator = ScoringMetricsAggregator()
 
     // Record some metrics
-    let metrics = ScoringMetrics(
-      totalScoringTime: 1.0,
-      pathsScored: 2,
-      bridgesProcessed: 6,
-      cacheHits: 5,
-      cacheMisses: 1
-    )
+    let metrics = ScoringMetrics(totalScoringTime: 1.0,
+                                 pathsScored: 2,
+                                 bridgesProcessed: 6,
+                                 cacheHits: 5,
+                                 cacheMisses: 1)
     aggregator.recordMetrics(metrics)
 
     // Verify metrics were recorded
@@ -370,37 +348,25 @@ struct ScoringMetricsTests {
     globalScoringMetrics.reset()
 
     // Create config with performance logging disabled
-    let config = MultiPathConfig(
-      pathEnumeration: PathEnumConfig(maxPaths: 10, maxDepth: 5),
-      scoring: ScoringConfig(useLogDomain: true, bridgeWeight: 0.7),
-      performance: MultiPathPerformanceConfig(
-        enablePerformanceLogging: false,  // Disabled
-        enableCaching: true,
-        logVerbosity: .silent
-      ),
-      prediction: PredictionConfig(
-        predictionMode: .baseline,
-        enableMetricsLogging: false
-      )
-    )
+    let config = MultiPathConfig(pathEnumeration: PathEnumConfig(maxPaths: 10, maxDepth: 5),
+                                 scoring: ScoringConfig(useLogDomain: true, bridgeWeight: 0.7),
+                                 performance: MultiPathPerformanceConfig(enablePerformanceLogging: false,  // Disabled
+                                                                         enableCaching: true,
+                                                                         logVerbosity: .silent),
+                                 prediction: PredictionConfig(predictionMode: .baseline,
+                                                              enableMetricsLogging: false))
 
     let dataProvider = MockHistoricalBridgeDataProvider()
-    let predictorConfig = BaselinePredictorConfig(
-      priorAlpha: 1.0,
-      priorBeta: 9.0,
-      defaultProbability: 0.1
-    )
-    let predictor = BaselinePredictor(
-      historicalProvider: dataProvider,
-      config: predictorConfig
-    )
+    let predictorConfig = BaselinePredictorConfig(priorAlpha: 1.0,
+                                                  priorBeta: 9.0,
+                                                  defaultProbability: 0.1)
+    let predictor = BaselinePredictor(historicalProvider: dataProvider,
+                                      config: predictorConfig)
     let etaEstimator = ETAEstimator(config: config)
 
-    let service = try PathScoringService(
-      predictor: predictor,
-      etaEstimator: etaEstimator,
-      config: config
-    )
+    let service = try PathScoringService(predictor: predictor,
+                                         etaEstimator: etaEstimator,
+                                         config: config)
 
     let path = makeSeattlePath(withBridgeIDs: ["2"])
     let departureTime = Date()
@@ -463,26 +429,24 @@ struct ScoringMetricsTests {
       let aggregator = ScoringMetricsAggregator()
 
       // Record some test metrics
-      let metrics = ScoringMetrics(
-        totalScoringTime: 1.5,
-        etaEstimationTime: 0.2,
-        bridgePredictionTime: 0.8,
-        aggregationTime: 0.3,
-        featureGenerationTime: 0.2,
-        pathsScored: 3,
-        bridgesProcessed: 9,
-        pathsPerSecond: 2.0,
-        bridgesPerSecond: 6.0,
-        featureCacheHitRate: 0.85,
-        cacheHits: 17,
-        cacheMisses: 3,
-        failedPaths: 0,
-        defaultProbabilityBridges: 1,
-        averagePathProbability: 0.75,
-        pathProbabilityStdDev: 0.1,
-        peakMemoryUsage: 1024 * 1024,
-        memoryPerPath: 341333.33
-      )
+      let metrics = ScoringMetrics(totalScoringTime: 1.5,
+                                   etaEstimationTime: 0.2,
+                                   bridgePredictionTime: 0.8,
+                                   aggregationTime: 0.3,
+                                   featureGenerationTime: 0.2,
+                                   pathsScored: 3,
+                                   bridgesProcessed: 9,
+                                   pathsPerSecond: 2.0,
+                                   bridgesPerSecond: 6.0,
+                                   featureCacheHitRate: 0.85,
+                                   cacheHits: 17,
+                                   cacheMisses: 3,
+                                   failedPaths: 0,
+                                   defaultProbabilityBridges: 1,
+                                   averagePathProbability: 0.75,
+                                   pathProbabilityStdDev: 0.1,
+                                   peakMemoryUsage: 1024 * 1024,
+                                   memoryPerPath: 341_333.33)
 
       aggregator.recordMetrics(metrics)
 
@@ -491,8 +455,7 @@ struct ScoringMetricsTests {
       try aggregator.exportToCSV(filename: filename)
 
       // Verify file was created
-      let documentsPath = try FileManager.default.url(
-        for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+      let documentsPath = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
       let csvURL = documentsPath.appendingPathComponent(filename)
 
       #expect(FileManager.default.fileExists(atPath: csvURL.path))

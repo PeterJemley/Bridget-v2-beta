@@ -128,21 +128,20 @@ final class RoutePreference {
   ///   - enableBridgeNotifications: Whether to enable bridge opening notifications
   ///   - maxDetourMinutes: Maximum detour time to avoid bridges
   ///   - preferenceLabel: Optional label for this preference set
-  init(
-    preferenceID: String = UUID().uuidString,
-    preferredRouteIDs: [String] = [],
-    avoidedBridgeIDs: [String] = [],
-    preferredBridgeIDs: [String] = [],
-    timeWeight: Double = 0.5,
-    reliabilityWeight: Double = 0.5,
-    bridgeAvoidanceWeight: Double = 0.7,
-    trafficAvoidanceWeight: Double = 0.8,
-    preferFewerBridges: Bool = false,
-    enableRealTimeUpdates: Bool = true,
-    enableBridgeNotifications: Bool = true,
-    maxDetourMinutes: Int = 10,
-    preferenceLabel: String? = nil
-  ) {
+  init(preferenceID: String = UUID().uuidString,
+       preferredRouteIDs: [String] = [],
+       avoidedBridgeIDs: [String] = [],
+       preferredBridgeIDs: [String] = [],
+       timeWeight: Double = 0.5,
+       reliabilityWeight: Double = 0.5,
+       bridgeAvoidanceWeight: Double = 0.7,
+       trafficAvoidanceWeight: Double = 0.8,
+       preferFewerBridges: Bool = false,
+       enableRealTimeUpdates: Bool = true,
+       enableBridgeNotifications: Bool = true,
+       maxDetourMinutes: Int = 10,
+       preferenceLabel: String? = nil)
+  {
     self.preferenceID = preferenceID
     self.preferredRouteIDs = preferredRouteIDs
 
@@ -265,25 +264,23 @@ final class RoutePreference {
 extension RoutePreference {
   /// Creates a default preference configuration optimized for commuting
   static func defaultCommutingPreferences() -> RoutePreference {
-    return RoutePreference(
-      timeWeight: 0.8,
-      reliabilityWeight: 0.9,
-      bridgeAvoidanceWeight: 0.8,
-      trafficAvoidanceWeight: 0.9,
-      preferFewerBridges: true,
-      maxDetourMinutes: 15,
-      preferenceLabel: "Commuting")
+    return RoutePreference(timeWeight: 0.8,
+                           reliabilityWeight: 0.9,
+                           bridgeAvoidanceWeight: 0.8,
+                           trafficAvoidanceWeight: 0.9,
+                           preferFewerBridges: true,
+                           maxDetourMinutes: 15,
+                           preferenceLabel: "Commuting")
   }
 
   /// Creates a preference configuration optimized for leisure travel
   static func leisurePreferences() -> RoutePreference {
-    return RoutePreference(
-      timeWeight: 0.4,
-      reliabilityWeight: 0.6,
-      bridgeAvoidanceWeight: 0.5,
-      trafficAvoidanceWeight: 0.6,
-      preferFewerBridges: false,
-      maxDetourMinutes: 20,
-      preferenceLabel: "Leisure")
+    return RoutePreference(timeWeight: 0.4,
+                           reliabilityWeight: 0.6,
+                           bridgeAvoidanceWeight: 0.5,
+                           trafficAvoidanceWeight: 0.6,
+                           preferFewerBridges: false,
+                           maxDetourMinutes: 20,
+                           preferenceLabel: "Leisure")
   }
 }

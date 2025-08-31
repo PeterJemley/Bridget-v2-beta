@@ -132,20 +132,19 @@ final class TrafficInferenceCache {
   ///   - algorithmVersion: Version of inference algorithm
   ///   - cacheLifetimeMinutes: How long to cache this inference
   ///   - notes: Additional context or notes
-  init(
-    bridgeID: String,
-    isLikelyOpen: Bool,
-    confidence: Double,
-    currentTrafficSpeed: Double? = nil,
-    normalTrafficSpeed: Double? = nil,
-    vehicleCount: Int? = nil,
-    congestionLevel: Double? = nil,
-    patternDuration: TimeInterval? = nil,
-    dataSource: String = "iOS Maps",
-    algorithmVersion: String = "1.0",
-    cacheLifetimeMinutes: Int = 5,
-    notes: String? = nil
-  ) {
+  init(bridgeID: String,
+       isLikelyOpen: Bool,
+       confidence: Double,
+       currentTrafficSpeed: Double? = nil,
+       normalTrafficSpeed: Double? = nil,
+       vehicleCount: Int? = nil,
+       congestionLevel: Double? = nil,
+       patternDuration: TimeInterval? = nil,
+       dataSource: String = "iOS Maps",
+       algorithmVersion: String = "1.0",
+       cacheLifetimeMinutes: Int = 5,
+       notes: String? = nil)
+  {
     self.inferenceID = UUID().uuidString
     self.bridgeID = bridgeID
     self.isLikelyOpen = isLikelyOpen
@@ -181,8 +180,8 @@ final class TrafficInferenceCache {
   /// Speed ratio compared to normal traffic (1.0 = normal, < 1.0 = slower)
   var speedRatio: Double? {
     guard let current = currentTrafficSpeed,
-      let normal = normalTrafficSpeed,
-      normal > 0
+          let normal = normalTrafficSpeed,
+          normal > 0
     else { return nil }
     return current / normal
   }
@@ -235,40 +234,34 @@ extension TrafficInferenceCache {
 
 extension TrafficInferenceCache {
   /// Creates a high-confidence inference for bridge likely open
-  static func bridgeLikelyOpen(
-    bridgeID: String,
-    currentSpeed: Double,
-    normalSpeed: Double,
-    confidence: Double = 0.9
-  ) -> TrafficInferenceCache {
-    return TrafficInferenceCache(
-      bridgeID: bridgeID,
-      isLikelyOpen: false,  // Slow traffic suggests bridge might be open
-      confidence: confidence,
-      currentTrafficSpeed: currentSpeed,
-      normalTrafficSpeed: normalSpeed,
-      congestionLevel: max(
-        0.0,
-        min(1.0, 1.0 - (currentSpeed / normalSpeed))),
-      notes: "Significant traffic slowdown detected")
+  static func bridgeLikelyOpen(bridgeID: String,
+                               currentSpeed: Double,
+                               normalSpeed: Double,
+                               confidence: Double = 0.9) -> TrafficInferenceCache
+  {
+    return TrafficInferenceCache(bridgeID: bridgeID,
+                                 isLikelyOpen: false,  // Slow traffic suggests bridge might be open
+                                 confidence: confidence,
+                                 currentTrafficSpeed: currentSpeed,
+                                 normalTrafficSpeed: normalSpeed,
+                                 congestionLevel: max(0.0,
+                                                      min(1.0, 1.0 - (currentSpeed / normalSpeed))),
+                                 notes: "Significant traffic slowdown detected")
   }
 
   /// Creates a high-confidence inference for bridge likely closed
-  static func bridgeLikelyClosed(
-    bridgeID: String,
-    currentSpeed: Double,
-    normalSpeed: Double,
-    confidence: Double = 0.85
-  ) -> TrafficInferenceCache {
-    return TrafficInferenceCache(
-      bridgeID: bridgeID,
-      isLikelyOpen: false,
-      confidence: confidence,
-      currentTrafficSpeed: currentSpeed,
-      normalTrafficSpeed: normalSpeed,
-      congestionLevel: max(
-        0.0,
-        min(1.0, 1.0 - (currentSpeed / normalSpeed))),
-      notes: "Normal traffic flow, bridge likely closed")
+  static func bridgeLikelyClosed(bridgeID: String,
+                                 currentSpeed: Double,
+                                 normalSpeed: Double,
+                                 confidence: Double = 0.85) -> TrafficInferenceCache
+  {
+    return TrafficInferenceCache(bridgeID: bridgeID,
+                                 isLikelyOpen: false,
+                                 confidence: confidence,
+                                 currentTrafficSpeed: currentSpeed,
+                                 normalTrafficSpeed: normalSpeed,
+                                 congestionLevel: max(0.0,
+                                                      min(1.0, 1.0 - (currentSpeed / normalSpeed))),
+                                 notes: "Normal traffic flow, bridge likely closed")
   }
 }

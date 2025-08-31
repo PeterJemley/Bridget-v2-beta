@@ -12,20 +12,18 @@ import Testing
 
 @Suite("Backward Compatibility Tests")
 struct BackwardCompatibilityTests {
-
   // MARK: - PipelineMetricsData Backward Compatibility
 
   @Test("Old-style PipelineMetricsData still works")
   func pipelineMetricsDataBackwardCompatibility() {
-    let oldData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: nil)
+    let oldData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: nil)
 
     #expect(oldData.stageDurations["DataProcessing"] == 1.0)
     #expect(oldData.memoryUsage["DataProcessing"] == 100)
@@ -44,30 +42,26 @@ struct BackwardCompatibilityTests {
 
   @Test("New-style PipelineMetricsData with statistical metrics works")
   func pipelineMetricsDataWithNewFeatures() {
-    let statisticalMetrics = StatisticalTrainingMetrics(
-      trainingLossStats: ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15),
-      validationLossStats: ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18),
-      predictionAccuracyStats: ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88),
-      etaPredictionVariance: ETASummary(mean: 120.0, variance: 25.0, min: 90.0, max: 150.0),
-      performanceConfidenceIntervals: PerformanceConfidenceIntervals(
-        accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
-        f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
-        meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)),
-      errorDistribution: ErrorDistributionMetrics(
-        absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
-        relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
-        withinOneStdDev: 68.2,
-        withinTwoStdDev: 95.4))
+    let statisticalMetrics = StatisticalTrainingMetrics(trainingLossStats: ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15),
+                                                        validationLossStats: ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18),
+                                                        predictionAccuracyStats: ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88),
+                                                        etaPredictionVariance: ETASummary(mean: 120.0, variance: 25.0, min: 90.0, max: 150.0),
+                                                        performanceConfidenceIntervals: PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
+                                                                                                                       f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
+                                                                                                                       meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)),
+                                                        errorDistribution: ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
+                                                                                                    relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
+                                                                                                    withinOneStdDev: 68.2,
+                                                                                                    withinTwoStdDev: 95.4))
 
-    let newData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: statisticalMetrics)
+    let newData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: statisticalMetrics)
 
     #expect(newData.stageDurations["DataProcessing"] == 1.0)
     #expect(newData.memoryUsage["DataProcessing"] == 100)
@@ -106,15 +100,14 @@ struct BackwardCompatibilityTests {
 
   @Test("UI-facing data structures handle nil statistical metrics")
   func uiBackwardCompatibility() {
-    let oldData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: nil)
+    let oldData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: nil)
 
     #expect(oldData.statisticalMetrics == nil)
     #expect(oldData.stageMetrics.count == 1)
@@ -124,15 +117,14 @@ struct BackwardCompatibilityTests {
 
   @Test("Old data encodes/decodes without statistical metrics")
   func serializationBackwardCompatibility() throws {
-    let oldData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: nil)
+    let oldData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: nil)
 
     let encoder = JSONEncoder()
     let data = try encoder.encode(oldData)
@@ -152,30 +144,26 @@ struct BackwardCompatibilityTests {
 
   @Test("New data with statistical metrics encodes/decodes")
   func serializationWithNewFeatures() throws {
-    let statisticalMetrics = StatisticalTrainingMetrics(
-      trainingLossStats: ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15),
-      validationLossStats: ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18),
-      predictionAccuracyStats: ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88),
-      etaPredictionVariance: ETASummary(mean: 120.0, variance: 25.0, min: 90.0, max: 150.0),
-      performanceConfidenceIntervals: PerformanceConfidenceIntervals(
-        accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
-        f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
-        meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)),
-      errorDistribution: ErrorDistributionMetrics(
-        absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
-        relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
-        withinOneStdDev: 68.2,
-        withinTwoStdDev: 95.4))
+    let statisticalMetrics = StatisticalTrainingMetrics(trainingLossStats: ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15),
+                                                        validationLossStats: ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18),
+                                                        predictionAccuracyStats: ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88),
+                                                        etaPredictionVariance: ETASummary(mean: 120.0, variance: 25.0, min: 90.0, max: 150.0),
+                                                        performanceConfidenceIntervals: PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
+                                                                                                                       f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
+                                                                                                                       meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)),
+                                                        errorDistribution: ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
+                                                                                                    relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
+                                                                                                    withinOneStdDev: 68.2,
+                                                                                                    withinTwoStdDev: 95.4))
 
-    let newData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: statisticalMetrics)
+    let newData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: statisticalMetrics)
 
     let encoder = JSONEncoder()
     let data = try encoder.encode(newData)
@@ -199,15 +187,14 @@ struct BackwardCompatibilityTests {
 
   @Test("Optional feature handling and graceful degradation")
   func optionalFeatureHandling() {
-    let oldData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: nil)
+    let oldData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: nil)
 
     // Safe access pattern
     if oldData.statisticalMetrics != nil {
@@ -222,15 +209,14 @@ struct BackwardCompatibilityTests {
 
   @Test("Graceful degradation in processing function")
   func gracefulDegradation() {
-    let oldData = PipelineMetricsData(
-      timestamp: Date(),
-      stageDurations: ["DataProcessing": 1.0],
-      memoryUsage: ["DataProcessing": 100],
-      validationRates: ["Validator": 0.95],
-      errorCounts: ["DataProcessing": 0],
-      recordCounts: ["DataProcessing": 1000],
-      customValidationResults: nil,
-      statisticalMetrics: nil)
+    let oldData = PipelineMetricsData(timestamp: Date(),
+                                      stageDurations: ["DataProcessing": 1.0],
+                                      memoryUsage: ["DataProcessing": 100],
+                                      validationRates: ["Validator": 0.95],
+                                      errorCounts: ["DataProcessing": 0],
+                                      recordCounts: ["DataProcessing": 1000],
+                                      customValidationResults: nil,
+                                      statisticalMetrics: nil)
 
     func processMetrics(_ data: PipelineMetricsData) -> String {
       var result = "Core metrics: "

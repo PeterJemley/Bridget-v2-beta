@@ -41,16 +41,15 @@ public struct ImportEdge: Codable {
   public let laneCount: Int
   public let speedLimit: Int
 
-  public init(
-    from: String,
-    to: String,
-    travelTimeSec: TimeInterval,
-    distanceM: Double,
-    isBridge: Bool,
-    bridgeID: String?,
-    laneCount: Int,
-    speedLimit: Int
-  ) {
+  public init(from: String,
+              to: String,
+              travelTimeSec: TimeInterval,
+              distanceM: Double,
+              isBridge: Bool,
+              bridgeID: String?,
+              laneCount: Int,
+              speedLimit: Int)
+  {
     self.from = from
     self.to = to
     self.travelTimeSec = travelTimeSec
@@ -72,15 +71,14 @@ public struct ImportBridge: Codable {
   public let schedule: BridgeSchedule?
   public let notes: String?
 
-  public init(
-    id: String,
-    name: String,
-    latitude: Double,
-    longitude: Double,
-    type: String,
-    schedule: BridgeSchedule?,
-    notes: String?
-  ) {
+  public init(id: String,
+              name: String,
+              latitude: Double,
+              longitude: Double,
+              type: String,
+              schedule: BridgeSchedule?,
+              notes: String?)
+  {
     self.id = id
     self.name = name
     self.latitude = latitude
@@ -116,9 +114,7 @@ public struct DaySchedule: Codable {
     case dayOperations = "day_operations"
   }
 
-  public init(
-    morningRush: String?, eveningRush: String?, nightOperations: String?, dayOperations: String?
-  ) {
+  public init(morningRush: String?, eveningRush: String?, nightOperations: String?, dayOperations: String?) {
     self.morningRush = morningRush
     self.eveningRush = eveningRush
     self.nightOperations = nightOperations
@@ -143,17 +139,16 @@ public struct DatasetManifest: Codable {
     case testScenarios = "test_scenarios"
   }
 
-  public init(
-    dataset: String,
-    version: String,
-    generated: String,
-    description: String,
-    source: String,
-    statistics: DatasetStatistics,
-    bridges: [String],
-    testScenarios: [TestScenario],
-    files: [String]
-  ) {
+  public init(dataset: String,
+              version: String,
+              generated: String,
+              description: String,
+              source: String,
+              statistics: DatasetStatistics,
+              bridges: [String],
+              testScenarios: [TestScenario],
+              files: [String])
+  {
     self.dataset = dataset
     self.version = version
     self.generated = generated
@@ -180,8 +175,7 @@ public struct DatasetStatistics: Codable {
     case averageDegree = "average_degree"
   }
 
-  public init(nodes: Int, edges: Int, bridges: Int, totalDistanceKm: Double, averageDegree: Double)
-  {
+  public init(nodes: Int, edges: Int, bridges: Int, totalDistanceKm: Double, averageDegree: Double) {
     self.nodes = nodes
     self.edges = edges
     self.bridges = bridges
@@ -204,9 +198,7 @@ public struct TestScenario: Codable {
     case expectedTravelTimeMin = "expected_travel_time_min"
   }
 
-  public init(
-    name: String, start: String, end: String, expectedBridges: [String], expectedTravelTimeMin: Int
-  ) {
+  public init(name: String, start: String, end: String, expectedBridges: [String], expectedTravelTimeMin: Int) {
     self.name = name
     self.start = start
     self.end = end
@@ -226,11 +218,10 @@ public class GraphImporter {
   ///   - bridgesURL: URL to bridges JSON file
   /// - Returns: Validated Graph instance
   /// - Throws: MultiPathError if validation fails
-  public static func importGraph(
-    nodesURL: URL,
-    edgesURL: URL,
-    bridgesURL: URL
-  ) throws -> Graph {
+  public static func importGraph(nodesURL: URL,
+                                 edgesURL: URL,
+                                 bridgesURL: URL) throws -> Graph
+  {
     // Load JSON data
     let nodesData = try Data(contentsOf: nodesURL)
     let edgesData = try Data(contentsOf: edgesURL)
@@ -243,27 +234,24 @@ public class GraphImporter {
 
     // Convert to domain types
     let nodes = importNodes.map { importNode in
-      Node(
-        id: importNode.id,
-        name: importNode.name,
-        coordinates: (latitude: importNode.latitude, longitude: importNode.longitude))
+      Node(id: importNode.id,
+           name: importNode.name,
+           coordinates: (latitude: importNode.latitude, longitude: importNode.longitude))
     }
 
     let edges = importEdges.map { importEdge in
-      Edge(
-        from: importEdge.from,
-        to: importEdge.to,
-        travelTime: importEdge.travelTimeSec,
-        distance: importEdge.distanceM,
-        isBridge: importEdge.isBridge,
-        bridgeID: importEdge.bridgeID)
+      Edge(from: importEdge.from,
+           to: importEdge.to,
+           travelTime: importEdge.travelTimeSec,
+           distance: importEdge.distanceM,
+           isBridge: importEdge.isBridge,
+           bridgeID: importEdge.bridgeID)
     }
 
     // Validate data integrity
-    try validateImportData(
-      nodes: nodes,
-      edges: edges,
-      bridges: importBridges)
+    try validateImportData(nodes: nodes,
+                           edges: edges,
+                           bridges: importBridges)
 
     // Create and return graph
     return try Graph(nodes: nodes, edges: edges)
@@ -299,11 +287,10 @@ public class GraphImporter {
   ///   - edges: Array of domain Edge objects
   ///   - bridges: Array of import Bridge objects
   /// - Throws: MultiPathError if validation fails
-  private static func validateImportData(
-    nodes: [Node],
-    edges: [Edge],
-    bridges: [ImportBridge]
-  ) throws {
+  private static func validateImportData(nodes: [Node],
+                                         edges: [Edge],
+                                         bridges: [ImportBridge]) throws
+  {
     // Create sets for efficient lookup
     let nodeIDs = Set(nodes.map { $0.id })
     let bridgeIDs = Set(bridges.map { $0.id })
@@ -369,11 +356,10 @@ public class GraphImporter {
   ///   - edges: Array of domain Edge objects
   ///   - bridges: Array of import Bridge objects
   /// - Returns: String report with statistics
-  public static func generateDatasetReport(
-    nodes: [Node],
-    edges: [Edge],
-    bridges: [ImportBridge]
-  ) -> String {
+  public static func generateDatasetReport(nodes: [Node],
+                                           edges: [Edge],
+                                           bridges: [ImportBridge]) -> String
+  {
     let nodeCount = nodes.count
     let edgeCount = edges.count
     let bridgeCount = bridges.count
@@ -386,19 +372,19 @@ public class GraphImporter {
     let averageSpeed = totalDistance > 0 ? totalDistance / totalTravelTime : 0
 
     var report = """
-      Dataset Report:
-      ===============
-      Nodes: \(nodeCount)
-      Edges: \(edgeCount)
-      Bridges: \(bridgeCount)
-      Bridge Edges: \(bridgeEdges)
-      Total Distance: \(String(format: "%.1f", totalDistance / 1000)) km
-      Total Travel Time: \(String(format: "%.1f", totalTravelTime / 60)) minutes
-      Average Degree: \(String(format: "%.1f", averageDegree))
-      Average Speed: \(String(format: "%.1f", averageSpeed)) m/s
+    Dataset Report:
+    ===============
+    Nodes: \(nodeCount)
+    Edges: \(edgeCount)
+    Bridges: \(bridgeCount)
+    Bridge Edges: \(bridgeEdges)
+    Total Distance: \(String(format: "%.1f", totalDistance / 1000)) km
+    Total Travel Time: \(String(format: "%.1f", totalTravelTime / 60)) minutes
+    Average Degree: \(String(format: "%.1f", averageDegree))
+    Average Speed: \(String(format: "%.1f", averageSpeed)) m/s
 
-      Bridge Details:
-      """
+    Bridge Details:
+    """
 
     for bridge in bridges {
       report += "\n- \(bridge.name) (\(bridge.id)): \(bridge.type)"

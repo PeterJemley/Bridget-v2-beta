@@ -26,11 +26,10 @@ public struct TrafficIncident {
   public let description: String
   public let severity: IncidentSeverity
 
-  public init(
-    type: IncidentType,
-    description: String,
-    severity: IncidentSeverity
-  ) {
+  public init(type: IncidentType,
+              description: String,
+              severity: IncidentSeverity)
+  {
     self.type = type
     self.description = description
     self.severity = severity
@@ -56,16 +55,15 @@ public struct TrafficStatus {
   /// Score (0-1) reflecting confidence in congestion/passability inference.
   public let confidence: Double?
 
-  public init(
-    bridgeID: String,
-    lastUpdated: Date,
-    congestion: CongestionLevel,
-    isPassable: Bool,
-    mapRegion: MKCoordinateRegion,
-    estimatedDelay: TimeInterval?,
-    incidents: [TrafficIncident],
-    confidence: Double?
-  ) {
+  public init(bridgeID: String,
+              lastUpdated: Date,
+              congestion: CongestionLevel,
+              isPassable: Bool,
+              mapRegion: MKCoordinateRegion,
+              estimatedDelay: TimeInterval?,
+              incidents: [TrafficIncident],
+              confidence: Double?)
+  {
     self.bridgeID = bridgeID
     self.lastUpdated = lastUpdated
     self.congestion = congestion

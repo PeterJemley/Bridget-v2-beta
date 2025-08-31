@@ -63,9 +63,8 @@ final class CalibrationVM {
         await MainActor.run { rows[i].state = .running }
         do {
           let cr = try await calibrator.discoverCrossRoute(bridge: b)
-          let q = String(
-            format: "center=%.0fm, n=%d, geo=%.2f",
-            cr.quality.minCenterDistanceM, cr.quality.sampleCount, cr.quality.geocodeConfidence)
+          let q = String(format: "center=%.0fm, n=%d, geo=%.2f",
+                         cr.quality.minCenterDistanceM, cr.quality.sampleCount, cr.quality.geocodeConfidence)
           await MainActor.run {
             rows[i].state = .success
             rows[i].qualityText = q
@@ -91,10 +90,9 @@ final class CalibrationVM {
 final class DefaultBridgeCalibrator: BridgeCalibrator {
   func discoverCrossRoute(bridge _: BridgeStatusModel) async throws -> CrossRouteResult {
     // Replace this mock logic with real calibration/calculation/ML, etc.
-    let simulatedQuality = CrossRouteQuality(
-      minCenterDistanceM: Double.random(in: 20...100),
-      sampleCount: Int.random(in: 10...100),
-      geocodeConfidence: Double.random(in: 0.7...1.0))
+    let simulatedQuality = CrossRouteQuality(minCenterDistanceM: Double.random(in: 20 ... 100),
+                                             sampleCount: Int.random(in: 10 ... 100),
+                                             geocodeConfidence: Double.random(in: 0.7 ... 1.0))
     // Simulate calibration time
     try await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
     return CrossRouteResult(quality: simulatedQuality, lastValidatedAt: Date())

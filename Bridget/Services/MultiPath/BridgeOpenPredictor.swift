@@ -85,15 +85,15 @@ public enum BridgePredictionError: Error, LocalizedError {
 
   public var errorDescription: String? {
     switch self {
-    case .unsupportedBridge(let bridgeID):
+    case let .unsupportedBridge(bridgeID):
       return "Bridge not supported: \(bridgeID)"
-    case .invalidFeatures(let reason):
+    case let .invalidFeatures(reason):
       return "Invalid features: \(reason)"
-    case .predictionFailed(let reason):
+    case let .predictionFailed(reason):
       return "Prediction failed: \(reason)"
-    case .batchSizeExceeded(let requested, let max):
+    case let .batchSizeExceeded(requested, max):
       return "Batch size \(requested) exceeds maximum \(max)"
-    case .modelNotLoaded(let reason):
+    case let .modelNotLoaded(reason):
       return "Model not loaded: \(reason)"
     }
   }
@@ -101,9 +101,9 @@ public enum BridgePredictionError: Error, LocalizedError {
 
 // MARK: - Default Implementation
 
-extension BridgeOpenPredictor {
+public extension BridgeOpenPredictor {
   /// Default implementation of single prediction using batch
-  public func predict(bridgeID: String, eta: Date, features: [Double]) async throws
+  func predict(bridgeID: String, eta: Date, features: [Double]) async throws
     -> BridgePredictionResult
   {
     let input = BridgePredictionInput(bridgeID: bridgeID, eta: eta, features: features)
@@ -117,31 +117,28 @@ extension BridgeOpenPredictor {
   }
 
   /// Default implementation of batch prediction using single predictions
-  public func predictBatch(_ inputs: [BridgePredictionInput]) async throws -> BatchPredictionResult
-  {
+  func predictBatch(_ inputs: [BridgePredictionInput]) async throws -> BatchPredictionResult {
     let startTime = Date()
     var predictions: [BridgePredictionResult] = []
 
     for input in inputs {
-      let result = try await predict(
-        bridgeID: input.bridgeID, eta: input.eta, features: input.features)
+      let result = try await predict(bridgeID: input.bridgeID, eta: input.eta, features: input.features)
       predictions.append(result)
     }
 
     let processingTime = Date().timeIntervalSince(startTime)
-    return BatchPredictionResult(
-      predictions: predictions,
-      processingTime: processingTime,
-      batchSize: inputs.count)
+    return BatchPredictionResult(predictions: predictions,
+                                 processingTime: processingTime,
+                                 batchSize: inputs.count)
   }
 
   /// Default implementation of supports check
-  public func supports(bridgeID _: String) -> Bool {
+  func supports(bridgeID _: String) -> Bool {
     return true  // Override in specific implementations
   }
 
   /// Default maximum batch size
-  public var maxBatchSize: Int {
+  var maxBatchSize: Int {
     return 100
   }
 }

@@ -24,17 +24,15 @@ struct ETAEstimatorPhase3Tests {
 
   @Test("ETAEstimate creation and backward compatibility fields")
   func etaEstimateCreation() throws {
-    let summary = ETASummary(
-      mean: 300.0,  // 5 minutes
-      variance: 25.0,
-      min: 270.0,
-      max: 330.0)
+    let summary = ETASummary(mean: 300.0,  // 5 minutes
+                             variance: 25.0,
+                             min: 270.0,
+                             max: 330.0)
 
     let arrivalTime = Date()
-    let estimate = ETAEstimate(
-      nodeID: "test_node",
-      summary: summary,
-      arrivalTime: arrivalTime)
+    let estimate = ETAEstimate(nodeID: "test_node",
+                               summary: summary,
+                               arrivalTime: arrivalTime)
 
     #expect(estimate.nodeID == "test_node")
     #expect(estimate.summary.mean == 300.0)
@@ -45,16 +43,14 @@ struct ETAEstimatorPhase3Tests {
 
   @Test("ETAEstimate formattedETA contains minutes and ±")
   func etaEstimateFormattedETA() throws {
-    let summary = ETASummary(
-      mean: 300.0,  // 5 minutes
-      variance: 25.0,
-      min: 270.0,
-      max: 330.0)
+    let summary = ETASummary(mean: 300.0,  // 5 minutes
+                             variance: 25.0,
+                             min: 270.0,
+                             max: 330.0)
 
-    let estimate = ETAEstimate(
-      nodeID: "test_node",
-      summary: summary,
-      arrivalTime: Date())
+    let estimate = ETAEstimate(nodeID: "test_node",
+                               summary: summary,
+                               arrivalTime: Date())
 
     let formatted = estimate.formattedETA
     #expect(formatted.contains("5 min"))
@@ -67,17 +63,14 @@ struct ETAEstimatorPhase3Tests {
   func estimateETAsWithUncertainty() throws {
     let graph = PathEnumerationService.createPhase1TestFixture().0
     let path = try #require(
-      try? PathEnumerationService(config: config).enumeratePaths(
-        from: "A",
-        to: "C",
-        in: graph
-      ).first
+      try? PathEnumerationService(config: config).enumeratePaths(from: "A",
+                                                                 to: "C",
+                                                                 in: graph).first
     )
 
     let departureTime = Date()
-    let estimates = estimator.estimateETAsWithUncertainty(
-      for: path,
-      departureTime: departureTime)
+    let estimates = estimator.estimateETAsWithUncertainty(for: path,
+                                                          departureTime: departureTime)
 
     #expect(estimates.count == 3)  // A, B, C
 
@@ -103,17 +96,14 @@ struct ETAEstimatorPhase3Tests {
   func estimateBridgeETAsWithUncertainty() throws {
     let graph = PathEnumerationService.createPhase1ComplexFixture().0
     let path = try #require(
-      try? PathEnumerationService(config: config).enumeratePaths(
-        from: "A",
-        to: "D",
-        in: graph
-      ).first
+      try? PathEnumerationService(config: config).enumeratePaths(from: "A",
+                                                                 to: "D",
+                                                                 in: graph).first
     )
 
     let departureTime = Date()
-    let bridgeEstimates = estimator.estimateBridgeETAsWithUncertainty(
-      for: path,
-      departureTime: departureTime)
+    let bridgeEstimates = estimator.estimateBridgeETAsWithUncertainty(for: path,
+                                                                      departureTime: departureTime)
 
     // Should have bridge estimates for bridge crossings
     #expect(bridgeEstimates.count > 0)
@@ -128,26 +118,23 @@ struct ETAEstimatorPhase3Tests {
 
   @Test("PathTravelStatisticsWithUncertainty formatted output and compatibility")
   func pathTravelStatisticsWithUncertaintyFormattedOutput() throws {
-    let summary = ETASummary(
-      mean: 300.0,  // 5 minutes
-      variance: 25.0,
-      min: 270.0,
-      max: 330.0)
+    let summary = ETASummary(mean: 300.0,  // 5 minutes
+                             variance: 25.0,
+                             min: 270.0,
+                             max: 330.0)
 
-    let speedSummary = ETASummary(
-      mean: 13.89,  // 50 km/h in m/s
-      variance: 1.0,
-      min: 11.11,  // 40 km/h
-      max: 16.67)  // 60 km/h
+    let speedSummary = ETASummary(mean: 13.89,  // 50 km/h in m/s
+                                  variance: 1.0,
+                                  min: 11.11,  // 40 km/h
+                                  max: 16.67)  // 60 km/h
 
-    let stats = PathTravelStatisticsWithUncertainty(
-      totalTravelTime: summary,
-      totalDistance: 1000.0,
-      averageSpeed: speedSummary,
-      bridgeCount: 2,
-      estimatedArrivalTime: Date(),
-      bridgeArrivalTimes: [Date(), Date()],
-      bridgeEstimates: [])
+    let stats = PathTravelStatisticsWithUncertainty(totalTravelTime: summary,
+                                                    totalDistance: 1000.0,
+                                                    averageSpeed: speedSummary,
+                                                    bridgeCount: 2,
+                                                    estimatedArrivalTime: Date(),
+                                                    bridgeArrivalTimes: [Date(), Date()],
+                                                    bridgeEstimates: [])
 
     // Test formatted travel time
     let formattedTime = stats.formattedTravelTime
@@ -166,24 +153,20 @@ struct ETAEstimatorPhase3Tests {
   func timeOfDayUncertaintyAdjustment() throws {
     let graph = PathEnumerationService.createPhase1TestFixture().0
     let path = try #require(
-      try? PathEnumerationService(config: config).enumeratePaths(
-        from: "A",
-        to: "C",
-        in: graph
-      ).first
+      try? PathEnumerationService(config: config).enumeratePaths(from: "A",
+                                                                 to: "C",
+                                                                 in: graph).first
     )
 
     // Morning rush hour
     let morningRush = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!
-    let morningEstimates = estimator.estimateETAsWithUncertainty(
-      for: path,
-      departureTime: morningRush)
+    let morningEstimates = estimator.estimateETAsWithUncertainty(for: path,
+                                                                 departureTime: morningRush)
 
     // Late night
     let lateNight = Calendar.current.date(bySettingHour: 23, minute: 0, second: 0, of: Date())!
-    let lateNightEstimates = estimator.estimateETAsWithUncertainty(
-      for: path,
-      departureTime: lateNight)
+    let lateNightEstimates = estimator.estimateETAsWithUncertainty(for: path,
+                                                                   departureTime: lateNight)
 
     // Morning rush should have higher variance than late night
     let morningVariance = morningEstimates.last?.summary.variance ?? 0.0

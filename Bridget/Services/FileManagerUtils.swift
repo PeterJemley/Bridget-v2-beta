@@ -40,50 +40,50 @@ public enum FileManagerError: LocalizedError, Equatable {
 
   public var errorDescription: String? {
     switch self {
-    case .directoryCreationFailed(let url, let error):
+    case let .directoryCreationFailed(url, error):
       return "Failed to create directory at \(url.path): \(error.localizedDescription)"
-    case .fileReplacementFailed(let url, let error):
+    case let .fileReplacementFailed(url, error):
       return "Failed to replace file at \(url.path): \(error.localizedDescription)"
-    case .fileEnumerationFailed(let url, let error):
+    case let .fileEnumerationFailed(url, error):
       return "Failed to enumerate files in \(url.path): \(error.localizedDescription)"
-    case .fileRemovalFailed(let url, let error):
+    case let .fileRemovalFailed(url, error):
       return "Failed to remove file at \(url.path): \(error.localizedDescription)"
-    case .fileAttributesFailed(let url, let error):
+    case let .fileAttributesFailed(url, error):
       return "Failed to get attributes for \(url.path): \(error.localizedDescription)"
-    case .fileExistsCheckFailed(let url, let error):
+    case let .fileExistsCheckFailed(url, error):
       return "Failed to check existence of \(url.path): \(error.localizedDescription)"
-    case .invalidDirectory(let url):
+    case let .invalidDirectory(url):
       return "Invalid directory path: \(url.path)"
-    case .fileNotFound(let url):
+    case let .fileNotFound(url):
       return "File not found: \(url.path)"
-    case .permissionDenied(let url):
+    case let .permissionDenied(url):
       return "Permission denied for \(url.path)"
-    case .diskFull(let url):
+    case let .diskFull(url):
       return "Disk full when writing to \(url.path)"
     }
   }
 
   public static func == (lhs: FileManagerError, rhs: FileManagerError) -> Bool {
     switch (lhs, rhs) {
-    case (.directoryCreationFailed(let url1, _), .directoryCreationFailed(let url2, _)):
+    case let (.directoryCreationFailed(url1, _), .directoryCreationFailed(url2, _)):
       return url1 == url2
-    case (.fileReplacementFailed(let url1, _), .fileReplacementFailed(let url2, _)):
+    case let (.fileReplacementFailed(url1, _), .fileReplacementFailed(url2, _)):
       return url1 == url2
-    case (.fileEnumerationFailed(let url1, _), .fileEnumerationFailed(let url2, _)):
+    case let (.fileEnumerationFailed(url1, _), .fileEnumerationFailed(url2, _)):
       return url1 == url2
-    case (.fileRemovalFailed(let url1, _), .fileRemovalFailed(let url2, _)):
+    case let (.fileRemovalFailed(url1, _), .fileRemovalFailed(url2, _)):
       return url1 == url2
-    case (.fileAttributesFailed(let url1, _), .fileAttributesFailed(let url2, _)):
+    case let (.fileAttributesFailed(url1, _), .fileAttributesFailed(url2, _)):
       return url1 == url2
-    case (.fileExistsCheckFailed(let url1, _), .fileExistsCheckFailed(let url2, _)):
+    case let (.fileExistsCheckFailed(url1, _), .fileExistsCheckFailed(url2, _)):
       return url1 == url2
-    case (.invalidDirectory(let url1), .invalidDirectory(let url2)):
+    case let (.invalidDirectory(url1), .invalidDirectory(url2)):
       return url1 == url2
-    case (.fileNotFound(let url1), .fileNotFound(let url2)):
+    case let (.fileNotFound(url1), .fileNotFound(url2)):
       return url1 == url2
-    case (.permissionDenied(let url1), .permissionDenied(let url2)):
+    case let (.permissionDenied(url1), .permissionDenied(url2)):
       return url1 == url2
-    case (.diskFull(let url1), .diskFull(let url2)):
+    case let (.diskFull(url1), .diskFull(url2)):
       return url1 == url2
     default:
       return false
@@ -95,8 +95,7 @@ public enum FileManagerError: LocalizedError, Equatable {
 
 /// Centralized utility for file system operations with consistent error handling
 public enum FileManagerUtils {
-  private static let logger = Logger(
-    subsystem: "com.peterjemley.Bridget", category: "FileManagerUtils")
+  private static let logger = Logger(subsystem: "com.peterjemley.Bridget", category: "FileManagerUtils")
   private static let fileManager = FileManager.default
 
   // MARK: - Directory Operations
@@ -152,9 +151,7 @@ public enum FileManagerUtils {
   ///   - extension: Optional file extension (without the dot)
   /// - Returns: The URL of the created temporary file
   /// - Throws: `FileManagerError` if file creation fails
-  public static func createTemporaryFile(
-    in directory: URL, prefix: String = "temp", extension: String? = nil
-  ) throws -> URL {
+  public static func createTemporaryFile(in directory: URL, prefix: String = "temp", extension: String? = nil) throws -> URL {
     let filename = "\(prefix)_\(UUID().uuidString)"
     let tempURL = directory.appendingPathComponent(filename)
     let finalURL = `extension` != nil ? tempURL.appendingPathExtension(`extension`!) : tempURL
@@ -165,8 +162,7 @@ public enum FileManagerUtils {
       return finalURL
     } else {
       logger.error("Failed to create temporary file at \(finalURL.path)")
-      throw FileManagerError.fileReplacementFailed(
-        finalURL, NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: nil))
+      throw FileManagerError.fileReplacementFailed(finalURL, NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: nil))
     }
   }
 
@@ -179,8 +175,7 @@ public enum FileManagerUtils {
       logger.debug("Created marker file: \(url.path)")
     } else {
       logger.error("Failed to create marker file at \(url.path)")
-      throw FileManagerError.fileReplacementFailed(
-        url, NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: nil))
+      throw FileManagerError.fileReplacementFailed(url, NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: nil))
     }
   }
 
@@ -193,14 +188,12 @@ public enum FileManagerUtils {
   ///   - properties: Optional array of URL resource keys to fetch
   /// - Returns: Array of file URLs that match the filter
   /// - Throws: `FileManagerError` if enumeration fails
-  public static func enumerateFiles(
-    in directory: URL,
-    filter: ((URL) -> Bool)? = nil,
-    properties: [URLResourceKey]? = nil
-  ) throws -> [URL] {
+  public static func enumerateFiles(in directory: URL,
+                                    filter: ((URL) -> Bool)? = nil,
+                                    properties: [URLResourceKey]? = nil) throws -> [URL]
+  {
     do {
-      let files = try fileManager.contentsOfDirectory(
-        at: directory, includingPropertiesForKeys: properties)
+      let files = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: properties)
       let filteredFiles = filter != nil ? files.filter(filter!) : files
       logger.debug("Enumerated \(filteredFiles.count) files in \(directory.path)")
       return filteredFiles
@@ -217,11 +210,10 @@ public enum FileManagerUtils {
   ///   - properties: Optional array of URL resource keys to fetch
   /// - Returns: Array of file URLs that match the filter
   /// - Throws: `FileManagerError` if enumeration fails
-  public static func enumerateFiles(
-    at path: String,
-    filter: ((URL) -> Bool)? = nil,
-    properties: [URLResourceKey]? = nil
-  ) throws -> [URL] {
+  public static func enumerateFiles(at path: String,
+                                    filter: ((URL) -> Bool)? = nil,
+                                    properties: [URLResourceKey]? = nil) throws -> [URL]
+  {
     let url = URL(fileURLWithPath: path)
     return try enumerateFiles(in: url, filter: filter, properties: properties)
   }
@@ -255,22 +247,20 @@ public enum FileManagerUtils {
   ///   - olderThan: The cutoff date - files older than this will be removed
   ///   - filter: Optional closure to filter which files to consider for removal
   /// - Throws: `FileManagerError` if any operation fails
-  public static func removeOldFiles(
-    in directory: URL,
-    olderThan cutoffDate: Date,
-    filter: ((URL) -> Bool)? = nil
-  ) throws {
-    let files = try enumerateFiles(
-      in: directory,
-      filter: filter,
-      properties: [.creationDateKey])
+  public static func removeOldFiles(in directory: URL,
+                                    olderThan cutoffDate: Date,
+                                    filter: ((URL) -> Bool)? = nil) throws
+  {
+    let files = try enumerateFiles(in: directory,
+                                   filter: filter,
+                                   properties: [.creationDateKey])
 
     var removedCount = 0
     for file in files {
       do {
         let attributes = try fileManager.attributesOfItem(atPath: file.path)
         if let creationDate = attributes[.creationDate] as? Date,
-          creationDate < cutoffDate
+           creationDate < cutoffDate
         {
           try removeFile(at: file)
           removedCount += 1
