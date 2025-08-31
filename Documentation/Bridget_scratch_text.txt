@@ -1,17 +1,3 @@
-Open Questions for Discussion
+is MultiPath_Implementation_Status.md fully updated? 
 
-• Are there UI/UX or API needs that might drive bundling some of these capabilities together (e.g., real-time progress reporting, or explorable failure diagnostics)?
-• Do we anticipate needing to support multiple models or prediction types in the same routing run?
-• Should the orchestrator be synchronous, async/await, or support both for easier integration/testing?
-
-_______________
-
-Overall assessment
-• The codebase respects SeattleDrawbridges.swift􀰓 as the single source of truth for both the quantity (7) and locations (coordinates) of Seattle drawbridges.
-• Improvements would increase strictness against non-canonical IDs entering graph edges or preferences but are not necessary to avoid contradictions.
-
-I can propose concrete edits to:
-• Make Edge initialization fail or sanitize when an invalid bridgeID is supplied with isBridge == true.
-• Remove the redundant isValidBridgeID pass in PathScoringService.
-• Add a small validator for RoutePreference bridge ID arrays.
 

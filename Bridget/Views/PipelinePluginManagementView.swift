@@ -93,17 +93,20 @@ struct PipelinePluginManagementView: View {
 
       // Plugin statistics
       HStack(spacing: 20) {
-        StatCard(title: "Total Plugins",
-                 value: "\(pluginManager.validators.count)",
-                 color: .blue)
+        StatCard(
+          title: "Total Plugins",
+          value: "\(pluginManager.validators.count)",
+          color: .blue)
 
-        StatCard(title: "Active",
-                 value: "\(pluginManager.validators.filter { $0.isEnabled }.count)",
-                 color: .green)
+        StatCard(
+          title: "Active",
+          value: "\(pluginManager.validators.filter { $0.isEnabled }.count)",
+          color: .green)
 
-        StatCard(title: "Last Run",
-                 value: pluginManager.lastValidationResults.isEmpty ? "Never" : "Recent",
-                 color: .orange)
+        StatCard(
+          title: "Last Run",
+          value: pluginManager.lastValidationResults.isEmpty ? "Never" : "Recent",
+          color: .orange)
       }
     }
     .padding()
@@ -130,9 +133,10 @@ struct PipelinePluginManagementView: View {
   private var pluginListView: some View {
     List {
       ForEach(filteredValidators, id: \.name) { validator in
-        PluginRowView(validator: validator,
-                      lastResult: pluginManager.lastValidationResults[validator.name])
-        {
+        PluginRowView(
+          validator: validator,
+          lastResult: pluginManager.lastValidationResults[validator.name]
+        ) {
           selectedValidatorName = ValidatorNameItem(id: validator.name)
         }
       }
@@ -263,15 +267,18 @@ struct PluginRowView: View {
         }
 
         // Enable/disable toggle
-        Toggle("",
-               isOn: Binding(get: { validator.isEnabled },
-                             set: { _ in
-                               // Update validator enabled state
-                               // Note: This would need to be implemented in the validator protocol
-                               // For now, the toggle is read-only
-                             }))
-                             .toggleStyle(.switch)
-                             .scaleEffect(0.8)
+        Toggle(
+          "",
+          isOn: Binding(
+            get: { validator.isEnabled },
+            set: { _ in
+              // Update validator enabled state
+              // Note: This would need to be implemented in the validator protocol
+              // For now, the toggle is read-only
+            })
+        )
+        .toggleStyle(.switch)
+        .scaleEffect(0.8)
 
         // Chevron
         Image(systemName: "chevron.right")
@@ -353,7 +360,7 @@ struct AddValidatorView: View {
           TextField("Name", text: $customName)
           TextField("Description", text: $customDescription)
 
-          Stepper("Priority: \(priority)", value: $priority, in: 1 ... 1000)
+          Stepper("Priority: \(priority)", value: $priority, in: 1...1000)
         }
 
         Section("Preview") {

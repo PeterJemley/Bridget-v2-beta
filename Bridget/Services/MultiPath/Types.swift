@@ -61,13 +61,42 @@ public struct Edge: Hashable, Codable {
   public let isBridge: Bool
   public let bridgeID: String?  // nil if not a bridge
 
-  public init(from: NodeID,
-              to: NodeID,
-              travelTime: TimeInterval,
-              distance: Double,
-              isBridge: Bool = false,
-              bridgeID: String? = nil)
-  {
+  /// Errors that can occur during edge initialization
+  public enum EdgeInitError: Error {
+    case selfLoop
+    case nonPositiveDistance
+    case nonPositiveTravelTime
+    case missingBridgeID
+    case unexpectedBridgeID
+  }
+
+  /// Throwing initializer with comprehensive validation
+  public init(
+    validatingFrom from: NodeID, to: NodeID,
+    travelTime: TimeInterval, distance: Double,
+    isBridge: Bool, bridgeID: String?
+  ) throws {
+    guard from != to else { throw EdgeInitError.selfLoop }
+    guard distance.isFinite && distance > 0 else { throw EdgeInitError.nonPositiveDistance }
+    guard travelTime.isFinite && travelTime > 0 else { throw EdgeInitError.nonPositiveTravelTime }
+    guard isBridge == (bridgeID != nil) else {
+      throw isBridge ? EdgeInitError.missingBridgeID : EdgeInitError.unexpectedBridgeID
+    }
+
+    self.from = from
+    self.to = to
+    self.travelTime = travelTime
+    self.distance = distance
+    self.isBridge = isBridge
+    self.bridgeID = bridgeID
+  }
+
+  /// Non-throwing initializer for backward compatibility
+  /// Uses default values and warnings instead of throwing
+  public init(
+    from: NodeID, to: NodeID, travelTime: TimeInterval, distance: Double, isBridge: Bool = false,
+    bridgeID: String? = nil
+  ) {
     self.from = from
     self.to = to
     self.travelTime = travelTime
@@ -77,17 +106,66 @@ public struct Edge: Hashable, Codable {
     // Validate bridge ID against SeattleDrawbridges as single source of truth
     if isBridge {
       if let bridgeID = bridgeID {
-        if !SeattleDrawbridges.isValidBridgeID(bridgeID) {
-          print("⚠️ Edge: Non-canonical bridge ID '\(bridgeID)' detected. This should be one of: \(SeattleDrawbridges.BridgeID.allIDs)")
-        }
+        #if DEBUG
+          // In debug builds, use assertions for developer feedback
+          if !SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) {
+            assertionFailure(
+              "Edge: Non-canonical, non-synthetic bridge ID '\(bridgeID)' detected. Must be canonical Seattle bridge or synthetic test ID (bridge1, bridge2, etc.)"
+            )
+          }
+        #else
+          // In release builds, warn but continue
+          if !SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) {
+            print(
+              "⚠️ Edge: Non-canonical, non-synthetic bridge ID '\(bridgeID)' detected. Must be canonical Seattle bridge or synthetic test ID (bridge1, bridge2, etc.)"
+            )
+          }
+        #endif
         self.bridgeID = bridgeID
       } else {
-        print("⚠️ Edge: Bridge edge missing bridgeID. Setting to nil.")
+        #if DEBUG
+          assertionFailure("Edge: Bridge edge missing bridgeID")
+        #else
+          print("⚠️ Edge: Bridge edge missing bridgeID. Setting to nil.")
+        #endif
         self.bridgeID = nil
       }
     } else {
       self.bridgeID = bridgeID
     }
+  }
+
+  // MARK: - Convenience Initializers
+
+  /// Create a regular road edge (non-bridge)
+  public static func road(from: NodeID, to: NodeID, travelTime: TimeInterval, distance: Double)
+    -> Edge
+  {
+    return Edge(
+      from: from, to: to, travelTime: travelTime, distance: distance, isBridge: false, bridgeID: nil
+    )
+  }
+
+  /// Create a bridge edge with validation (returns nil if invalid)
+  public static func bridge(
+    from: NodeID, to: NodeID, travelTime: TimeInterval, distance: Double, bridgeID: String
+  ) -> Edge? {
+    guard SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) else {
+      return nil
+    }
+    // Use the non-throwing initializer for backward compatibility
+    return Edge(
+      from: from, to: to, travelTime: travelTime, distance: distance, isBridge: true,
+      bridgeID: bridgeID)
+  }
+
+  /// Create a bridge edge with throwing validation
+  public static func bridgeThrowing(
+    from: NodeID, to: NodeID, travelTime: TimeInterval, distance: Double, bridgeID: String
+  ) throws -> Edge {
+    return try Edge(
+      validatingFrom: from, to: to, travelTime: travelTime, distance: distance, isBridge: true,
+      bridgeID: bridgeID)
   }
 
   // MARK: - Hashable
@@ -99,6 +177,25 @@ public struct Edge: Hashable, Codable {
 
   public static func == (lhs: Edge, rhs: Edge) -> Bool {
     lhs.from == rhs.from && lhs.to == rhs.to
+  }
+}
+
+// MARK: - EdgeInitError Extensions
+
+extension Edge.EdgeInitError: LocalizedError {
+  public var errorDescription: String? {
+    switch self {
+    case .selfLoop:
+      return "Edge cannot connect a node to itself"
+    case .nonPositiveDistance:
+      return "Edge distance must be positive and finite"
+    case .nonPositiveTravelTime:
+      return "Edge travel time must be positive and finite"
+    case .missingBridgeID:
+      return "Bridge edge must have a bridge ID"
+    case .unexpectedBridgeID:
+      return "Non-bridge edge should not have a bridge ID"
+    }
   }
 }
 
@@ -139,7 +236,7 @@ public struct RoutePath: Hashable, Codable {
     }
 
     // Check that edges connect nodes in sequence
-    for i in 0 ..< edges.count {
+    for i in 0..<edges.count {
       let edge = edges[i]
       let expectedFrom = nodes[i]
       let expectedTo = nodes[i + 1]
@@ -169,11 +266,12 @@ public struct PathScore: Codable {
   public let linearProbability: Double  // clamped to [0, 1]
   public let bridgeProbabilities: [String: Double]  // bridgeID -> probability
 
-  public init(path: RoutePath,
-              logProbability: Double,
-              linearProbability: Double,
-              bridgeProbabilities: [String: Double])
-  {
+  public init(
+    path: RoutePath,
+    logProbability: Double,
+    linearProbability: Double,
+    bridgeProbabilities: [String: Double]
+  ) {
     self.path = path
     self.logProbability = logProbability
     self.linearProbability = max(0.0, min(1.0, linearProbability))  // clamp
@@ -192,14 +290,15 @@ public struct JourneyAnalysis: Codable {
   public let bestPathProbability: Double
   public let totalPathsAnalyzed: Int
 
-  public init(startNode: NodeID,
-              endNode: NodeID,
-              departureTime: Date,
-              pathScores: [PathScore],
-              networkProbability: Double,
-              bestPathProbability: Double,
-              totalPathsAnalyzed: Int)
-  {
+  public init(
+    startNode: NodeID,
+    endNode: NodeID,
+    departureTime: Date,
+    pathScores: [PathScore],
+    networkProbability: Double,
+    bestPathProbability: Double,
+    totalPathsAnalyzed: Int
+  ) {
     self.startNode = startNode
     self.endNode = endNode
     self.departureTime = departureTime
@@ -283,13 +382,14 @@ public struct GraphValidationResult: Codable {
   public let edgeCount: Int
   public let bridgeCount: Int
 
-  public init(isValid: Bool,
-              errors: [String] = [],
-              warnings: [String] = [],
-              nodeCount: Int = 0,
-              edgeCount: Int = 0,
-              bridgeCount: Int = 0)
-  {
+  public init(
+    isValid: Bool,
+    errors: [String] = [],
+    warnings: [String] = [],
+    nodeCount: Int = 0,
+    edgeCount: Int = 0,
+    bridgeCount: Int = 0
+  ) {
     self.isValid = isValid
     self.errors = errors
     self.warnings = warnings
@@ -313,19 +413,19 @@ public enum MultiPathError: Error, LocalizedError, Equatable {
 
   public var errorDescription: String? {
     switch self {
-    case let .invalidGraph(reason):
+    case .invalidGraph(let reason):
       return "Invalid graph: \(reason)"
-    case let .invalidPath(reason):
+    case .invalidPath(let reason):
       return "Invalid path: \(reason)"
-    case let .nodeNotFound(nodeID):
+    case .nodeNotFound(let nodeID):
       return "Node not found: \(nodeID)"
-    case let .noPathExists(from, to):
+    case .noPathExists(let from, let to):
       return "No path exists from \(from) to \(to)"
-    case let .invalidConfiguration(reason):
+    case .invalidConfiguration(let reason):
       return "Invalid configuration: \(reason)"
-    case let .predictionFailed(reason):
+    case .predictionFailed(let reason):
       return "Prediction failed: \(reason)"
-    case let .numericalError(reason):
+    case .numericalError(let reason):
       return "Numerical error: \(reason)"
     }
   }

@@ -75,7 +75,7 @@ class NetworkClient {
   func fetchData(from url: URL) async throws -> Data {
     var lastError: Error?
 
-    for attempt in 1 ... maxRetryAttempts {
+    for attempt in 1...maxRetryAttempts {
       do {
         let (data, response) = try await URLSession.shared.data(from: url)
 
@@ -117,7 +117,7 @@ class NetworkClient {
 
     // Validate content type
     guard let contentType = httpResponse.value(forHTTPHeaderField: "Content-Type"),
-          contentType.contains("application/json")
+      contentType.contains("application/json")
     else {
       throw NetworkError.invalidContentType
     }
@@ -164,7 +164,7 @@ enum NetworkError: Error, LocalizedError {
       return "Network request failed"
     case .invalidResponse:
       return "Invalid HTTP response"
-    case let .httpError(statusCode):
+    case .httpError(let statusCode):
       return "HTTP error with status code: \(statusCode)"
     case .invalidContentType:
       return "Invalid content type - expected JSON"

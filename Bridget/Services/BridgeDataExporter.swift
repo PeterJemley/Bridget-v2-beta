@@ -33,14 +33,15 @@ func clamp(_ value: Double, to range: ClosedRange<Double>) -> Double {
 /// Validates and clamps ProbeTick fields according to the business rules.
 /// - Parameter tick: The ProbeTick instance to validate.
 /// - Returns: A tuple containing the clamped/validated field values and a Bool indicating if any correction was applied.
-func validateAndClampFields(from tick: ProbeTick) -> (crossK: Int,
-                                                      crossN: Int,
-                                                      viaPenaltySec: Int,
-                                                      gateAnom: Double,
-                                                      alternatesTotal: Int,
-                                                      alternatesAvoid: Int,
-                                                      hadCorrection: Bool)
-{
+func validateAndClampFields(from tick: ProbeTick) -> (
+  crossK: Int,
+  crossN: Int,
+  viaPenaltySec: Int,
+  gateAnom: Double,
+  alternatesTotal: Int,
+  alternatesAvoid: Int,
+  hadCorrection: Bool
+) {
   var crossK = Int(tick.crossK)
   var crossN = Int(tick.crossN)
   var viaPenalty = Int(tick.viaPenaltySec)
@@ -123,7 +124,8 @@ struct NDJSONRow: Encodable {
 /// - This function is pure and has no side effects.
 /// - Validation/correction is applied to each tick's fields.
 /// - The output strings include a trailing newline character.
-func makeNDJSONRows(from ticks: [ProbeTick], isoFormatter: ISO8601DateFormatter) throws -> [String] {
+func makeNDJSONRows(from ticks: [ProbeTick], isoFormatter: ISO8601DateFormatter) throws -> [String]
+{
   let encoder = JSONEncoder.bridgeEncoder()
   encoder.outputFormatting = [.withoutEscapingSlashes]
 
@@ -134,24 +136,26 @@ func makeNDJSONRows(from ticks: [ProbeTick], isoFormatter: ISO8601DateFormatter)
     let (crossK, crossN, viaPenalty, gateAnom, alternatesTotal, alternatesAvoid, _) =
       validateAndClampFields(from: tick)
 
-    let row = NDJSONRow(v: 1,
-                        tsUtc: isoFormatter.string(from: tick.tsUtc),
-                        bridgeId: Int(tick.bridgeId),
-                        crossK: crossK,
-                        crossN: crossN,
-                        viaRoutable: tick.viaRoutable ? 1 : 0,
-                        viaPenaltySec: viaPenalty,
-                        gateAnom: gateAnom,
-                        alternatesTotal: alternatesTotal,
-                        alternatesAvoidSpan: alternatesAvoid,
-                        freeEtaSec: tick.freeEtaSec == 0 ? nil : tick.freeEtaSec.map(Int.init),
-                        viaEtaSec: tick.viaEtaSec == 0 ? nil : tick.viaEtaSec.map(Int.init),
-                        openLabel: tick.openLabel ? 1 : 0)
+    let row = NDJSONRow(
+      v: 1,
+      tsUtc: isoFormatter.string(from: tick.tsUtc),
+      bridgeId: Int(tick.bridgeId),
+      crossK: crossK,
+      crossN: crossN,
+      viaRoutable: tick.viaRoutable ? 1 : 0,
+      viaPenaltySec: viaPenalty,
+      gateAnom: gateAnom,
+      alternatesTotal: alternatesTotal,
+      alternatesAvoidSpan: alternatesAvoid,
+      freeEtaSec: tick.freeEtaSec == 0 ? nil : tick.freeEtaSec.map(Int.init),
+      viaEtaSec: tick.viaEtaSec == 0 ? nil : tick.viaEtaSec.map(Int.init),
+      openLabel: tick.openLabel ? 1 : 0)
 
     let data = try encoder.encode(row)
     guard var jsonString = String(data: data, encoding: .utf8) else {
-      throw NSError(domain: "BridgeDataExporter", code: 3,
-                    userInfo: [NSLocalizedDescriptionKey: "Failed to convert encoded data to UTF-8 string"])
+      throw NSError(
+        domain: "BridgeDataExporter", code: 3,
+        userInfo: [NSLocalizedDescriptionKey: "Failed to convert encoded data to UTF-8 string"])
     }
     jsonString.append("\n")
 
@@ -394,7 +398,8 @@ final class BridgeDataExporter {
     // The next day at midnight Pacific time
     guard let endPacific = calPacific.date(byAdding: .day, value: 1, to: startPacific) else {
       let errorMessage = "Failed to compute end of day"
-      throw NSError(domain: "BridgeDataExporter", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+      throw NSError(
+        domain: "BridgeDataExporter", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMessage])
     }
 
     // Convert the Pacific local day window to UTC bounds, accounting for DST safely
@@ -404,10 +409,11 @@ final class BridgeDataExporter {
       -TimeInterval(pacific.secondsFromGMT(for: endPacific)))
 
     // Fetch all ProbeTick within the UTC window that are valid
-    let fetchDescriptor = FetchDescriptor<ProbeTick>(predicate: #Predicate {
-      $0.tsUtc >= startUTC && $0.tsUtc < endUTC && $0.isValid
-    },
-    sortBy: [SortDescriptor(\.tsUtc), SortDescriptor(\.bridgeId)])
+    let fetchDescriptor = FetchDescriptor<ProbeTick>(
+      predicate: #Predicate {
+        $0.tsUtc >= startUTC && $0.tsUtc < endUTC && $0.isValid
+      },
+      sortBy: [SortDescriptor(\.tsUtc), SortDescriptor(\.bridgeId)])
     let ticks = try context.fetch(fetchDescriptor)
 
     // Deduplicate ticks by (bridgeId, floored minute of tsUtc), keeping the latest (max tsUtc) for each group
@@ -446,12 +452,14 @@ final class BridgeDataExporter {
     let bridgeMapURL = outputDirectory.appendingPathComponent("bridge_map.json")
 
     // Prepare a temporary file URL for atomic replacement
-    let tempURL = try FileManagerUtils.createTemporaryFile(in: outputDirectory, prefix: "export", extension: "ndjson.tmp")
+    let tempURL = try FileManagerUtils.createTemporaryFile(
+      in: outputDirectory, prefix: "export", extension: "ndjson.tmp")
 
     // Open the temp file for writing
     guard let handle = try? FileHandle(forWritingTo: tempURL) else {
       let errorMessage = "Failed to open temp file for writing"
-      throw NSError(domain: "BridgeDataExporter", code: 2, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+      throw NSError(
+        domain: "BridgeDataExporter", code: 2, userInfo: [NSLocalizedDescriptionKey: errorMessage])
     }
     try handle.truncate(atOffset: 0)
 
@@ -526,7 +534,7 @@ final class BridgeDataExporter {
     // Also include bridges with zero counts but present in bridge_map
     if FileManagerUtils.fileExists(at: bridgeMapURL) {
       if let data = try? Data(contentsOf: bridgeMapURL),
-         let bridgeMap = try? JSONDecoder.bridgeDecoder().decode([String: String].self, from: data)
+        let bridgeMap = try? JSONDecoder.bridgeDecoder().decode([String: String].self, from: data)
       {
         for bridgeIdStr in bridgeMap.keys {
           if bridgeCounts[Int(bridgeIdStr) ?? -1] == nil {
@@ -539,13 +547,14 @@ final class BridgeDataExporter {
     let metricsURL = url.deletingPathExtension().appendingPathExtension("metrics.json")
     let bridgeCountsDict = Dictionary(
       uniqueKeysWithValues: bridgeCounts.map { (String($0.key), $0.value) })
-    let metrics = Metrics(totalRows: totalRows,
-                          correctedRows: correctedRows,
-                          bridgeCounts: bridgeCountsDict,
-                          minTsUtc: minTimestamp.map { iso.string(from: $0) },
-                          maxTsUtc: maxTimestamp.map { iso.string(from: $0) },
-                          expectedMinutes: expectedMinutes,
-                          missingMinutesByBridge: missingMinutesByBridge)
+    let metrics = Metrics(
+      totalRows: totalRows,
+      correctedRows: correctedRows,
+      bridgeCounts: bridgeCountsDict,
+      minTsUtc: minTimestamp.map { iso.string(from: $0) },
+      maxTsUtc: maxTimestamp.map { iso.string(from: $0) },
+      expectedMinutes: expectedMinutes,
+      missingMinutesByBridge: missingMinutesByBridge)
     let metricsData = try JSONEncoder.bridgeEncoder().encode(metrics)
     try metricsData.write(to: metricsURL, options: .atomic)
 

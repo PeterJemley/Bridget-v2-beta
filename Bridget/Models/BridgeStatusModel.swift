@@ -70,11 +70,12 @@ class BridgeStatusModel: Codable {
   ///   - apiBridgeID: The raw API identifier of the bridge for traceability (e.g., .fremont).
   ///   - historicalOpenings: An array of dates representing previous opening events.
   ///   - realTimeDelay: An optional time interval indicating real-time delay (in seconds).
-  init(bridgeName: String,
-       apiBridgeID: SeattleDrawbridges.BridgeID? = nil,
-       historicalOpenings: [Date] = [],
-       realTimeDelay: TimeInterval? = nil)
-  {
+  init(
+    bridgeName: String,
+    apiBridgeID: SeattleDrawbridges.BridgeID? = nil,
+    historicalOpenings: [Date] = [],
+    realTimeDelay: TimeInterval? = nil
+  ) {
     self.bridgeName = bridgeName
     self.apiBridgeID = apiBridgeID
     self.historicalOpenings = historicalOpenings
@@ -107,21 +108,26 @@ class BridgeStatusModel: Codable {
   required init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     bridgeName = try container.decode(String.self, forKey: .bridgeName)
-    let apiBridgeIDString = try container.decodeIfPresent(String.self,
-                                                          forKey: .apiBridgeID)
+    let apiBridgeIDString = try container.decodeIfPresent(
+      String.self,
+      forKey: .apiBridgeID)
     if let rawValue = apiBridgeIDString {
       apiBridgeID = SeattleDrawbridges.BridgeID(rawValue: rawValue)
     } else {
       apiBridgeID = nil
     }
-    historicalOpenings = try container.decode([Date].self,
-                                              forKey: .historicalOpenings)
-    realTimeDelay = try container.decodeIfPresent(TimeInterval.self,
-                                                  forKey: .realTimeDelay)
-    lastCacheUpdate = try container.decodeIfPresent(Date.self,
-                                                    forKey: .lastCacheUpdate)
-    cacheVersion = try container.decodeIfPresent(String.self,
-                                                 forKey: .cacheVersion)
+    historicalOpenings = try container.decode(
+      [Date].self,
+      forKey: .historicalOpenings)
+    realTimeDelay = try container.decodeIfPresent(
+      TimeInterval.self,
+      forKey: .realTimeDelay)
+    lastCacheUpdate = try container.decodeIfPresent(
+      Date.self,
+      forKey: .lastCacheUpdate)
+    cacheVersion = try container.decodeIfPresent(
+      String.self,
+      forKey: .cacheVersion)
     isStale =
       try container.decodeIfPresent(Bool.self, forKey: .isStale) ?? false
   }
@@ -137,8 +143,9 @@ class BridgeStatusModel: Codable {
   func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
     try container.encode(bridgeName, forKey: .bridgeName)
-    try container.encodeIfPresent(apiBridgeID?.rawValue,
-                                  forKey: .apiBridgeID)
+    try container.encodeIfPresent(
+      apiBridgeID?.rawValue,
+      forKey: .apiBridgeID)
     try container.encode(historicalOpenings, forKey: .historicalOpenings)
     try container.encodeIfPresent(realTimeDelay, forKey: .realTimeDelay)
     try container.encodeIfPresent(lastCacheUpdate, forKey: .lastCacheUpdate)

@@ -72,9 +72,10 @@ class SimpleProbeTickService {
 
     while currentDate < calendar.date(byAdding: .day, value: 1, to: today)! {
       for event in sampleEvents {
-        let tick = createProbeTick(for: event,
-                                   at: currentDate,
-                                   from: sampleEvents)
+        let tick = createProbeTick(
+          for: event,
+          at: currentDate,
+          from: sampleEvents)
         ticks.append(tick)
       }
 
@@ -98,27 +99,29 @@ class SimpleProbeTickService {
       let morningOpen = calendar.date(byAdding: .hour, value: 8, to: date)!
       let morningClose = calendar.date(byAdding: .minute, value: 15, to: morningOpen)!
 
-      let morningEvent = SimpleBridgeEvent(bridgeID: bridgeID,
-                                           bridgeName: bridgeNames[index],
-                                           openDateTime: morningOpen,
-                                           closeDateTime: morningClose,
-                                           minutesOpen: 15,
-                                           latitude: 47.5422,
-                                           longitude: -122.3344,
-                                           isValidated: true)
+      let morningEvent = SimpleBridgeEvent(
+        bridgeID: bridgeID,
+        bridgeName: bridgeNames[index],
+        openDateTime: morningOpen,
+        closeDateTime: morningClose,
+        minutesOpen: 15,
+        latitude: 47.5422,
+        longitude: -122.3344,
+        isValidated: true)
 
       // Afternoon opening (5 PM)
       let afternoonOpen = calendar.date(byAdding: .hour, value: 17, to: date)!
       let afternoonClose = calendar.date(byAdding: .minute, value: 12, to: afternoonOpen)!
 
-      let afternoonEvent = SimpleBridgeEvent(bridgeID: bridgeID,
-                                             bridgeName: bridgeNames[index],
-                                             openDateTime: afternoonOpen,
-                                             closeDateTime: afternoonClose,
-                                             minutesOpen: 12,
-                                             latitude: 47.5422,
-                                             longitude: -122.3344,
-                                             isValidated: true)
+      let afternoonEvent = SimpleBridgeEvent(
+        bridgeID: bridgeID,
+        bridgeName: bridgeNames[index],
+        openDateTime: afternoonOpen,
+        closeDateTime: afternoonClose,
+        minutesOpen: 12,
+        latitude: 47.5422,
+        longitude: -122.3344,
+        isValidated: true)
 
       events.append(morningEvent)
       events.append(afternoonEvent)
@@ -128,10 +131,11 @@ class SimpleProbeTickService {
   }
 
   /// Creates a ProbeTick record for a specific bridge at a specific timestamp
-  private func createProbeTick(for event: SimpleBridgeEvent,
-                               at timestamp: Date,
-                               from allEvents: [SimpleBridgeEvent]) -> SimpleProbeTick
-  {
+  private func createProbeTick(
+    for event: SimpleBridgeEvent,
+    at timestamp: Date,
+    from allEvents: [SimpleBridgeEvent]
+  ) -> SimpleProbeTick {
     // Find if there's an active bridge opening at this timestamp
     let activeEvent = allEvents.first { event in
       event.openDateTime <= timestamp
@@ -142,26 +146,30 @@ class SimpleProbeTickService {
     let (crossK, crossN) = calculateCrossRate(at: timestamp, from: allEvents)
     let (viaRoutable, viaPenaltySec) = calculateViaMetrics(at: timestamp, from: allEvents)
     let gateAnom = calculateGateAnomaly(at: timestamp, from: allEvents)
-    let (alternatesTotal, alternatesAvoid) = calculateAlternateMetrics(at: timestamp, from: allEvents)
+    let (alternatesTotal, alternatesAvoid) = calculateAlternateMetrics(
+      at: timestamp, from: allEvents)
     let openLabel = activeEvent != nil
 
-    return SimpleProbeTick(tsUtc: timestamp,
-                           bridgeId: Int16(event.bridgeID) ?? 0,
-                           crossK: Int16(crossK),
-                           crossN: Int16(crossN),
-                           viaRoutable: viaRoutable,
-                           viaPenaltySec: Int32(viaPenaltySec),
-                           gateAnom: gateAnom,
-                           alternatesTotal: Int16(alternatesTotal),
-                           alternatesAvoid: Int16(alternatesAvoid),
-                           freeEtaSec: nil,
-                           viaEtaSec: nil,
-                           openLabel: openLabel,
-                           isValid: true)
+    return SimpleProbeTick(
+      tsUtc: timestamp,
+      bridgeId: Int16(event.bridgeID) ?? 0,
+      crossK: Int16(crossK),
+      crossN: Int16(crossN),
+      viaRoutable: viaRoutable,
+      viaPenaltySec: Int32(viaPenaltySec),
+      gateAnom: gateAnom,
+      alternatesTotal: Int16(alternatesTotal),
+      alternatesAvoid: Int16(alternatesAvoid),
+      freeEtaSec: nil,
+      viaEtaSec: nil,
+      openLabel: openLabel,
+      isValid: true)
   }
 
   /// Calculates the cross rate (k/n) for a specific timestamp
-  private func calculateCrossRate(at timestamp: Date, from events: [SimpleBridgeEvent]) -> (Int, Int) {
+  private func calculateCrossRate(at timestamp: Date, from events: [SimpleBridgeEvent]) -> (
+    Int, Int
+  ) {
     let calendar = Calendar.current
     let oneMinuteAgo = calendar.date(byAdding: .minute, value: -1, to: timestamp)!
 
@@ -176,7 +184,9 @@ class SimpleProbeTickService {
   }
 
   /// Calculates via routing metrics for a specific timestamp
-  private func calculateViaMetrics(at timestamp: Date, from events: [SimpleBridgeEvent]) -> (Bool, Int) {
+  private func calculateViaMetrics(at timestamp: Date, from events: [SimpleBridgeEvent]) -> (
+    Bool, Int
+  ) {
     let activeEvent = events.first { event in
       event.openDateTime <= timestamp
         && (event.closeDateTime == nil || event.closeDateTime! > timestamp)
@@ -189,14 +199,15 @@ class SimpleProbeTickService {
   }
 
   /// Calculates gate anomaly metrics for a specific timestamp
-  private func calculateGateAnomaly(at timestamp: Date, from events: [SimpleBridgeEvent]) -> Double {
+  private func calculateGateAnomaly(at timestamp: Date, from events: [SimpleBridgeEvent]) -> Double
+  {
     let calendar = Calendar.current
     let oneWeekAgo = calendar.date(byAdding: .day, value: -7, to: timestamp)!
 
     let recentEvents = events.filter { $0.openDateTime >= oneWeekAgo }
     let averageMinutesOpen =
       recentEvents.isEmpty
-        ? 5.0 : Double(recentEvents.map { $0.minutesOpen }.reduce(0, +)) / Double(recentEvents.count)
+      ? 5.0 : Double(recentEvents.map { $0.minutesOpen }.reduce(0, +)) / Double(recentEvents.count)
 
     let currentEvent = events.first { event in
       event.openDateTime <= timestamp
@@ -206,11 +217,13 @@ class SimpleProbeTickService {
     if let currentEvent = currentEvent {
       let currentMinutesOpen =
         currentEvent.closeDateTime != nil
-          ? Double(
-            calendar.dateComponents([.minute], from: currentEvent.openDateTime, to: currentEvent.closeDateTime!).minute ?? 0)
-          : Double(
-            calendar.dateComponents([.minute], from: currentEvent.openDateTime, to: timestamp).minute
-              ?? 0)
+        ? Double(
+          calendar.dateComponents(
+            [.minute], from: currentEvent.openDateTime, to: currentEvent.closeDateTime!
+          ).minute ?? 0)
+        : Double(
+          calendar.dateComponents([.minute], from: currentEvent.openDateTime, to: timestamp).minute
+            ?? 0)
 
       let ratio = currentMinutesOpen / max(averageMinutesOpen, 1.0)
       return min(max(ratio, 1.0), 8.0)
@@ -248,7 +261,8 @@ class SimpleBridgeDataExporter {
     try FileManagerUtils.ensureDirectoryExists(outputDirectory)
 
     // Prepare a temporary file for atomic replacement
-    let tempURL = try FileManagerUtils.createTemporaryFile(in: outputDirectory, prefix: "export", extension: "ndjson.tmp")
+    let tempURL = try FileManagerUtils.createTemporaryFile(
+      in: outputDirectory, prefix: "export", extension: "ndjson.tmp")
 
     // Write NDJSON data
     var totalRows = 0
@@ -386,7 +400,7 @@ func main() {
   // Parse command line arguments
   var outputDir = FileManagerUtils.temporaryDirectory().appendingPathComponent("ml_export").path
 
-  for i in 0 ..< arguments.count {
+  for i in 0..<arguments.count {
     if arguments[i] == "--output-dir", i + 1 < arguments.count {
       outputDir = arguments[i + 1]
     }

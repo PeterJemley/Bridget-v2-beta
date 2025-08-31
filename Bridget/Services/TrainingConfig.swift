@@ -54,17 +54,18 @@ public struct TrainingConfig: Codable {
   /// Prediction horizons
   public let horizons: [Int]
 
-  public init(deterministicSeed: UInt64 = 42,
-              batchSize: Int = 32,
-              maxEpochs: Int = 100,
-              learningRate: Double = 0.001,
-              earlyStoppingPatience: Int = 10,
-              useANE: Bool = true,
-              inputShape: [Int] = [1, 64],
-              outputShape: [Int] = [1, 1],
-              featureDimensions: Int = 64,
-              horizons: [Int] = defaultHorizons)
-  {
+  public init(
+    deterministicSeed: UInt64 = 42,
+    batchSize: Int = 32,
+    maxEpochs: Int = 100,
+    learningRate: Double = 0.001,
+    earlyStoppingPatience: Int = 10,
+    useANE: Bool = true,
+    inputShape: [Int] = [1, 64],
+    outputShape: [Int] = [1, 1],
+    featureDimensions: Int = 64,
+    horizons: [Int] = defaultHorizons
+  ) {
     self.deterministicSeed = deterministicSeed
     self.batchSize = batchSize
     self.maxEpochs = maxEpochs
@@ -78,41 +79,44 @@ public struct TrainingConfig: Codable {
   }
 
   /// Default configuration for production training
-  public static let production = TrainingConfig(deterministicSeed: 42,
-                                                batchSize: 32,
-                                                maxEpochs: 100,
-                                                learningRate: 0.001,
-                                                earlyStoppingPatience: 10,
-                                                useANE: true,
-                                                featureDimensions: 64,
-                                                horizons: defaultHorizons)
+  public static let production = TrainingConfig(
+    deterministicSeed: 42,
+    batchSize: 32,
+    maxEpochs: 100,
+    learningRate: 0.001,
+    earlyStoppingPatience: 10,
+    useANE: true,
+    featureDimensions: 64,
+    horizons: defaultHorizons)
 
   /// Configuration for development/testing
-  public static let development = TrainingConfig(deterministicSeed: 123,
-                                                 batchSize: 16,
-                                                 maxEpochs: 50,
-                                                 learningRate: 0.01,
-                                                 earlyStoppingPatience: 5,
-                                                 useANE: false,
-                                                 featureDimensions: 64,
-                                                 horizons: [0, 3])
+  public static let development = TrainingConfig(
+    deterministicSeed: 123,
+    batchSize: 16,
+    maxEpochs: 50,
+    learningRate: 0.01,
+    earlyStoppingPatience: 5,
+    useANE: false,
+    featureDimensions: 64,
+    horizons: [0, 3])
 
   /// Configuration for quick validation
-  public static let validation = TrainingConfig(deterministicSeed: 999,
-                                                batchSize: 8,
-                                                maxEpochs: 10,
-                                                learningRate: 0.01,
-                                                earlyStoppingPatience: 3,
-                                                useANE: false,
-                                                featureDimensions: 64,
-                                                horizons: [0])
+  public static let validation = TrainingConfig(
+    deterministicSeed: 999,
+    batchSize: 8,
+    maxEpochs: 10,
+    learningRate: 0.01,
+    earlyStoppingPatience: 3,
+    useANE: false,
+    featureDimensions: 64,
+    horizons: [0])
 }
 
 // MARK: - Core ML Configuration
 
-public extension TrainingConfig {
+extension TrainingConfig {
   /// Creates MLModelConfiguration with deterministic settings
-  func createMLModelConfiguration() -> MLModelConfiguration {
+  public func createMLModelConfiguration() -> MLModelConfiguration {
     let config = MLModelConfiguration()
 
     // Set deterministic compute units
@@ -129,7 +133,7 @@ public extension TrainingConfig {
   }
 
   /// Creates training parameters dictionary
-  func createTrainingParameters() -> [String: Any] {
+  public func createTrainingParameters() -> [String: Any] {
     return [
       "deterministicSeed": deterministicSeed,
       "batchSize": batchSize,
@@ -147,19 +151,19 @@ public extension TrainingConfig {
 
 // MARK: - Schema Hash Generation
 
-public extension TrainingConfig {
+extension TrainingConfig {
   /// Generates a schema hash for parity validation
-  func generateSchemaHash() -> String {
+  public func generateSchemaHash() -> String {
     let schemaData = """
-    featureDimensions:\(featureDimensions)
-    inputShape:\(inputShape.map(String.init).joined(separator: ","))
-    outputShape:\(outputShape.map(String.init).joined(separator: ","))
-    horizons:\(horizons.sorted().map(String.init).joined(separator: ","))
-    batchSize:\(batchSize)
-    maxEpochs:\(maxEpochs)
-    learningRate:\(learningRate)
-    useANE:\(useANE)
-    """
+      featureDimensions:\(featureDimensions)
+      inputShape:\(inputShape.map(String.init).joined(separator: ","))
+      outputShape:\(outputShape.map(String.init).joined(separator: ","))
+      horizons:\(horizons.sorted().map(String.init).joined(separator: ","))
+      batchSize:\(batchSize)
+      maxEpochs:\(maxEpochs)
+      learningRate:\(learningRate)
+      useANE:\(useANE)
+      """
 
     let data = schemaData.data(using: .utf8) ?? Data()
     let hash = data.sha256()
@@ -169,9 +173,9 @@ public extension TrainingConfig {
 
 // MARK: - Performance Budgets
 
-public extension TrainingConfig {
+extension TrainingConfig {
   /// Performance budget for training stages
-  struct PerformanceBudget {
+  public struct PerformanceBudget {
     public let parseTimeMs: Double
     public let featureEngineeringTimeMs: Double
     public let mlMultiArrayConversionTimeMs: Double
@@ -179,13 +183,14 @@ public extension TrainingConfig {
     public let validationTimeMs: Double
     public let peakMemoryMB: Double
 
-    public init(parseTimeMs: Double = 1000,
-                featureEngineeringTimeMs: Double = 5000,
-                mlMultiArrayConversionTimeMs: Double = 500,
-                trainingTimeMs: Double = 30000,
-                validationTimeMs: Double = 2000,
-                peakMemoryMB: Double = 512)
-    {
+    public init(
+      parseTimeMs: Double = 1000,
+      featureEngineeringTimeMs: Double = 5000,
+      mlMultiArrayConversionTimeMs: Double = 500,
+      trainingTimeMs: Double = 30000,
+      validationTimeMs: Double = 2000,
+      peakMemoryMB: Double = 512
+    ) {
       self.parseTimeMs = parseTimeMs
       self.featureEngineeringTimeMs = featureEngineeringTimeMs
       self.mlMultiArrayConversionTimeMs = mlMultiArrayConversionTimeMs
@@ -195,24 +200,26 @@ public extension TrainingConfig {
     }
 
     /// Default production performance budget
-    public static let production = PerformanceBudget(parseTimeMs: 1000,
-                                                     featureEngineeringTimeMs: 5000,
-                                                     mlMultiArrayConversionTimeMs: 500,
-                                                     trainingTimeMs: 30000,
-                                                     validationTimeMs: 2000,
-                                                     peakMemoryMB: 512)
+    public static let production = PerformanceBudget(
+      parseTimeMs: 1000,
+      featureEngineeringTimeMs: 5000,
+      mlMultiArrayConversionTimeMs: 500,
+      trainingTimeMs: 30000,
+      validationTimeMs: 2000,
+      peakMemoryMB: 512)
 
     /// Relaxed development performance budget
-    public static let development = PerformanceBudget(parseTimeMs: 2000,
-                                                      featureEngineeringTimeMs: 10000,
-                                                      mlMultiArrayConversionTimeMs: 1000,
-                                                      trainingTimeMs: 60000,
-                                                      validationTimeMs: 5000,
-                                                      peakMemoryMB: 1024)
+    public static let development = PerformanceBudget(
+      parseTimeMs: 2000,
+      featureEngineeringTimeMs: 10000,
+      mlMultiArrayConversionTimeMs: 1000,
+      trainingTimeMs: 60000,
+      validationTimeMs: 5000,
+      peakMemoryMB: 1024)
   }
 
   /// Returns appropriate performance budget for this configuration
-  func getPerformanceBudget() -> PerformanceBudget {
+  public func getPerformanceBudget() -> PerformanceBudget {
     if self.deterministicSeed == TrainingConfig.production.deterministicSeed
       && self.batchSize == TrainingConfig.production.batchSize
       && self.maxEpochs == TrainingConfig.production.maxEpochs
@@ -231,8 +238,8 @@ public extension TrainingConfig {
 
 // MARK: - Utility Extensions
 
-private extension Data {
-  func sha256() -> Data {
+extension Data {
+  fileprivate func sha256() -> Data {
     // Simple hash implementation for now - can be enhanced later
     var hash = Data()
     for byte in self {

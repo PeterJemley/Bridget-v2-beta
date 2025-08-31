@@ -34,24 +34,30 @@ class SampleDataProvider {
 
     // Create sample bridge data for testing
     let sampleBridges = [
-      ("Fremont Bridge",
-       [
-         calendar.date(byAdding: .hour, value: -2, to: now)!,
-         calendar.date(byAdding: .hour, value: -4, to: now)!,
-         calendar.date(byAdding: .hour, value: -6, to: now)!,
-       ]),
-      ("Ballard Bridge",
-       [
-         calendar.date(byAdding: .hour, value: -1, to: now)!,
-         calendar.date(byAdding: .hour, value: -3, to: now)!,
-         calendar.date(byAdding: .hour, value: -5, to: now)!,
-         calendar.date(byAdding: .hour, value: -7, to: now)!,
-       ]),
-      ("University Bridge",
-       [
-         calendar.date(byAdding: .hour, value: -2, to: now)!,
-         calendar.date(byAdding: .hour, value: -8, to: now)!,
-       ]),
+      (
+        "Fremont Bridge",
+        [
+          calendar.date(byAdding: .hour, value: -2, to: now)!,
+          calendar.date(byAdding: .hour, value: -4, to: now)!,
+          calendar.date(byAdding: .hour, value: -6, to: now)!,
+        ]
+      ),
+      (
+        "Ballard Bridge",
+        [
+          calendar.date(byAdding: .hour, value: -1, to: now)!,
+          calendar.date(byAdding: .hour, value: -3, to: now)!,
+          calendar.date(byAdding: .hour, value: -5, to: now)!,
+          calendar.date(byAdding: .hour, value: -7, to: now)!,
+        ]
+      ),
+      (
+        "University Bridge",
+        [
+          calendar.date(byAdding: .hour, value: -2, to: now)!,
+          calendar.date(byAdding: .hour, value: -8, to: now)!,
+        ]
+      ),
     ]
 
     return sampleBridges.map { bridgeName, openings in
@@ -67,12 +73,14 @@ class SampleDataProvider {
   /// - Returns: Array of RouteModel instances with sample route data
   func generateSampleRoutes(from bridges: [BridgeStatusModel]) -> [RouteModel] {
     return [
-      RouteModel(routeID: "Route-1",
-                 bridges: Array(bridges.prefix(2)),
-                 score: 0.0),
-      RouteModel(routeID: "Route-2",
-                 bridges: Array(bridges.suffix(2)),
-                 score: 0.0),
+      RouteModel(
+        routeID: "Route-1",
+        bridges: Array(bridges.prefix(2)),
+        score: 0.0),
+      RouteModel(
+        routeID: "Route-2",
+        bridges: Array(bridges.suffix(2)),
+        score: 0.0),
       RouteModel(routeID: "Route-3", bridges: bridges, score: 0.0),
     ]
   }

@@ -36,8 +36,9 @@ public class EnhancedPipelineExample {
     let progressDelegate = await ExampleProgressDelegate()
 
     // Create and run the enhanced service
-    let service = EnhancedTrainPrepService(configuration: config,
-                                           progressDelegate: progressDelegate)
+    let service = EnhancedTrainPrepService(
+      configuration: config,
+      progressDelegate: progressDelegate)
 
     try await service.execute()
     print("🎉 Enhanced pipeline completed successfully!")
@@ -48,36 +49,40 @@ public class EnhancedPipelineExample {
     print("🚀 Starting Enhanced ML Pipeline with Programmatic Configuration")
 
     // Create configuration programmatically
-    let config = EnhancedPipelineConfig(inputPath: "data/minutes_2025-01-27.ndjson",
-                                        outputDirectory: "output",
-                                        trainingConfig: .production,
-                                        enableParallelization: true,
-                                        maxConcurrentHorizons: 6,  // More aggressive parallelization
-                                        batchSize: 2000,  // Larger batches for better performance
-                                        maxRetryAttempts: 5,  // More retry attempts
-                                        retryBackoffMultiplier: 1.5,  // Slower backoff
-                                        enableCheckpointing: true,
-                                        checkpointDirectory: "checkpoints",
-                                        dataQualityThresholds: DataQualityThresholds(maxNaNRate: 0.03,  // Stricter data quality
-                                                                                     minValidationRate: 0.98,
-                                                                                     maxInvalidRecordRate: 0.01,
-                                                                                     minDataVolume: 2000),
-                                        modelPerformanceThresholds: ModelPerformanceThresholds(minAccuracy: 0.80,  // Higher performance requirements
-                                                                                               maxLoss: 0.4,
-                                                                                               minF1Score: 0.75),
-                                        enableDetailedLogging: true,
-                                        enableMetricsExport: true,
-                                        metricsExportPath: "metrics/enhanced_pipeline_metrics.json",
-                                        enableProgressReporting: true,
-                                        memoryOptimizationLevel: .minimal  // Fastest processing
+    let config = EnhancedPipelineConfig(
+      inputPath: "data/minutes_2025-01-27.ndjson",
+      outputDirectory: "output",
+      trainingConfig: .production,
+      enableParallelization: true,
+      maxConcurrentHorizons: 6,  // More aggressive parallelization
+      batchSize: 2000,  // Larger batches for better performance
+      maxRetryAttempts: 5,  // More retry attempts
+      retryBackoffMultiplier: 1.5,  // Slower backoff
+      enableCheckpointing: true,
+      checkpointDirectory: "checkpoints",
+      dataQualityThresholds: DataQualityThresholds(
+        maxNaNRate: 0.03,  // Stricter data quality
+        minValidationRate: 0.98,
+        maxInvalidRecordRate: 0.01,
+        minDataVolume: 2000),
+      modelPerformanceThresholds: ModelPerformanceThresholds(
+        minAccuracy: 0.80,  // Higher performance requirements
+        maxLoss: 0.4,
+        minF1Score: 0.75),
+      enableDetailedLogging: true,
+      enableMetricsExport: true,
+      metricsExportPath: "metrics/enhanced_pipeline_metrics.json",
+      enableProgressReporting: true,
+      memoryOptimizationLevel: .minimal  // Fastest processing
     )
 
     // Create progress delegate
     let progressDelegate = await ExampleProgressDelegate()
 
     // Create and run the enhanced service
-    let service = EnhancedTrainPrepService(configuration: config,
-                                           progressDelegate: progressDelegate)
+    let service = EnhancedTrainPrepService(
+      configuration: config,
+      progressDelegate: progressDelegate)
 
     try await service.execute()
     print("🎉 Enhanced pipeline completed successfully!")
@@ -88,30 +93,32 @@ public class EnhancedPipelineExample {
     print("🚀 Starting Enhanced ML Pipeline with Custom Retry Policies")
 
     // Create configuration with custom retry settings
-    let config = EnhancedPipelineConfig(inputPath: "data/minutes_2025-01-27.ndjson",
-                                        outputDirectory: "output",
-                                        trainingConfig: .production,
-                                        enableParallelization: true,
-                                        maxConcurrentHorizons: 4,
-                                        batchSize: 1000,
-                                        maxRetryAttempts: 10,  // Many retry attempts
-                                        retryBackoffMultiplier: 3.0,  // Aggressive backoff
-                                        enableCheckpointing: true,
-                                        checkpointDirectory: "checkpoints",
-                                        dataQualityThresholds: .default,
-                                        modelPerformanceThresholds: .default,
-                                        enableDetailedLogging: true,
-                                        enableMetricsExport: true,
-                                        metricsExportPath: "metrics/custom_retry_metrics.json",
-                                        enableProgressReporting: true,
-                                        memoryOptimizationLevel: .balanced)
+    let config = EnhancedPipelineConfig(
+      inputPath: "data/minutes_2025-01-27.ndjson",
+      outputDirectory: "output",
+      trainingConfig: .production,
+      enableParallelization: true,
+      maxConcurrentHorizons: 4,
+      batchSize: 1000,
+      maxRetryAttempts: 10,  // Many retry attempts
+      retryBackoffMultiplier: 3.0,  // Aggressive backoff
+      enableCheckpointing: true,
+      checkpointDirectory: "checkpoints",
+      dataQualityThresholds: .default,
+      modelPerformanceThresholds: .default,
+      enableDetailedLogging: true,
+      enableMetricsExport: true,
+      metricsExportPath: "metrics/custom_retry_metrics.json",
+      enableProgressReporting: true,
+      memoryOptimizationLevel: .balanced)
 
     // Create progress delegate
     let progressDelegate = await ExampleProgressDelegate()
 
     // Create and run the enhanced service
-    let service = EnhancedTrainPrepService(configuration: config,
-                                           progressDelegate: progressDelegate)
+    let service = EnhancedTrainPrepService(
+      configuration: config,
+      progressDelegate: progressDelegate)
 
     try await service.execute()
     print("🎉 Enhanced pipeline with custom retry policies completed!")
@@ -122,31 +129,33 @@ public class EnhancedPipelineExample {
     print("🚀 Starting Enhanced ML Pipeline with Memory Optimization")
 
     // Create configuration optimized for memory usage
-    let config = EnhancedPipelineConfig(inputPath: "data/minutes_2025-01-27.ndjson",
-                                        outputDirectory: "output",
-                                        trainingConfig: .production,
-                                        enableParallelization: false,  // Disable parallelization to save memory
-                                        maxConcurrentHorizons: 1,  // Single horizon processing
-                                        batchSize: 500,  // Smaller batches
-                                        maxRetryAttempts: 3,
-                                        retryBackoffMultiplier: 2.0,
-                                        enableCheckpointing: true,
-                                        checkpointDirectory: "checkpoints",
-                                        dataQualityThresholds: .default,
-                                        modelPerformanceThresholds: .default,
-                                        enableDetailedLogging: true,
-                                        enableMetricsExport: true,
-                                        metricsExportPath: "metrics/memory_optimized_metrics.json",
-                                        enableProgressReporting: true,
-                                        memoryOptimizationLevel: .aggressive  // Most memory-efficient
+    let config = EnhancedPipelineConfig(
+      inputPath: "data/minutes_2025-01-27.ndjson",
+      outputDirectory: "output",
+      trainingConfig: .production,
+      enableParallelization: false,  // Disable parallelization to save memory
+      maxConcurrentHorizons: 1,  // Single horizon processing
+      batchSize: 500,  // Smaller batches
+      maxRetryAttempts: 3,
+      retryBackoffMultiplier: 2.0,
+      enableCheckpointing: true,
+      checkpointDirectory: "checkpoints",
+      dataQualityThresholds: .default,
+      modelPerformanceThresholds: .default,
+      enableDetailedLogging: true,
+      enableMetricsExport: true,
+      metricsExportPath: "metrics/memory_optimized_metrics.json",
+      enableProgressReporting: true,
+      memoryOptimizationLevel: .aggressive  // Most memory-efficient
     )
 
     // Create progress delegate
     let progressDelegate = await ExampleProgressDelegate()
 
     // Create and run the enhanced service
-    let service = EnhancedTrainPrepService(configuration: config,
-                                           progressDelegate: progressDelegate)
+    let service = EnhancedTrainPrepService(
+      configuration: config,
+      progressDelegate: progressDelegate)
 
     try await service.execute()
     print("🎉 Enhanced pipeline with memory optimization completed!")

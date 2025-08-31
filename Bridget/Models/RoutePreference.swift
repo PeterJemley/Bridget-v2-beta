@@ -128,24 +128,50 @@ final class RoutePreference {
   ///   - enableBridgeNotifications: Whether to enable bridge opening notifications
   ///   - maxDetourMinutes: Maximum detour time to avoid bridges
   ///   - preferenceLabel: Optional label for this preference set
-  init(preferenceID: String = UUID().uuidString,
-       preferredRouteIDs: [String] = [],
-       avoidedBridgeIDs: [String] = [],
-       preferredBridgeIDs: [String] = [],
-       timeWeight: Double = 0.5,
-       reliabilityWeight: Double = 0.5,
-       bridgeAvoidanceWeight: Double = 0.7,
-       trafficAvoidanceWeight: Double = 0.8,
-       preferFewerBridges: Bool = false,
-       enableRealTimeUpdates: Bool = true,
-       enableBridgeNotifications: Bool = true,
-       maxDetourMinutes: Int = 10,
-       preferenceLabel: String? = nil)
-  {
+  init(
+    preferenceID: String = UUID().uuidString,
+    preferredRouteIDs: [String] = [],
+    avoidedBridgeIDs: [String] = [],
+    preferredBridgeIDs: [String] = [],
+    timeWeight: Double = 0.5,
+    reliabilityWeight: Double = 0.5,
+    bridgeAvoidanceWeight: Double = 0.7,
+    trafficAvoidanceWeight: Double = 0.8,
+    preferFewerBridges: Bool = false,
+    enableRealTimeUpdates: Bool = true,
+    enableBridgeNotifications: Bool = true,
+    maxDetourMinutes: Int = 10,
+    preferenceLabel: String? = nil
+  ) {
     self.preferenceID = preferenceID
     self.preferredRouteIDs = preferredRouteIDs
-    self.avoidedBridgeIDs = avoidedBridgeIDs
-    self.preferredBridgeIDs = preferredBridgeIDs
+
+    // Validate bridge IDs against SeattleDrawbridges as single source of truth
+    // RoutePreference only accepts canonical bridge IDs (no synthetic test IDs for user preferences)
+    let validAvoidedBridgeIDs = avoidedBridgeIDs.filter { bridgeID in
+      if SeattleDrawbridges.isCanonicalBridgeID(bridgeID) {
+        return true
+      } else {
+        print(
+          "⚠️ RoutePreference: Non-canonical avoided bridge ID '\(bridgeID)' ignored. Must be one of: \(SeattleDrawbridges.BridgeID.allIDs)"
+        )
+        return false
+      }
+    }
+
+    let validPreferredBridgeIDs = preferredBridgeIDs.filter { bridgeID in
+      if SeattleDrawbridges.isCanonicalBridgeID(bridgeID) {
+        return true
+      } else {
+        print(
+          "⚠️ RoutePreference: Non-canonical preferred bridge ID '\(bridgeID)' ignored. Must be one of: \(SeattleDrawbridges.BridgeID.allIDs)"
+        )
+        return false
+      }
+    }
+
+    self.avoidedBridgeIDs = validAvoidedBridgeIDs
+    self.preferredBridgeIDs = validPreferredBridgeIDs
     self.timeWeight = timeWeight
     self.reliabilityWeight = reliabilityWeight
     self.bridgeAvoidanceWeight = bridgeAvoidanceWeight
@@ -191,6 +217,14 @@ final class RoutePreference {
 
   /// Adds a bridge to the avoidance list if not already present
   func addAvoidedBridge(_ bridgeID: String) {
+    // Validate bridge ID against SeattleDrawbridges as single source of truth
+    guard SeattleDrawbridges.isCanonicalBridgeID(bridgeID) else {
+      print(
+        "⚠️ RoutePreference: Cannot add non-canonical bridge ID '\(bridgeID)' to avoided bridges. Must be one of: \(SeattleDrawbridges.BridgeID.allIDs)"
+      )
+      return
+    }
+
     if !avoidedBridgeIDs.contains(bridgeID) {
       avoidedBridgeIDs.append(bridgeID)
       lastUpdated = Date()
@@ -202,6 +236,28 @@ final class RoutePreference {
     avoidedBridgeIDs.removeAll { $0 == bridgeID }
     lastUpdated = Date()
   }
+
+  /// Adds a bridge to the preferred bridges list if not already present
+  func addPreferredBridge(_ bridgeID: String) {
+    // Validate bridge ID against SeattleDrawbridges as single source of truth
+    guard SeattleDrawbridges.isCanonicalBridgeID(bridgeID) else {
+      print(
+        "⚠️ RoutePreference: Cannot add non-canonical bridge ID '\(bridgeID)' to preferred bridges. Must be one of: \(SeattleDrawbridges.BridgeID.allIDs)"
+      )
+      return
+    }
+
+    if !preferredBridgeIDs.contains(bridgeID) {
+      preferredBridgeIDs.append(bridgeID)
+      lastUpdated = Date()
+    }
+  }
+
+  /// Removes a bridge from the preferred bridges list
+  func removePreferredBridge(_ bridgeID: String) {
+    preferredBridgeIDs.removeAll { $0 == bridgeID }
+    lastUpdated = Date()
+  }
 }
 
 // MARK: - Factory Methods
@@ -209,23 +265,25 @@ final class RoutePreference {
 extension RoutePreference {
   /// Creates a default preference configuration optimized for commuting
   static func defaultCommutingPreferences() -> RoutePreference {
-    return RoutePreference(timeWeight: 0.8,
-                           reliabilityWeight: 0.9,
-                           bridgeAvoidanceWeight: 0.8,
-                           trafficAvoidanceWeight: 0.9,
-                           preferFewerBridges: true,
-                           maxDetourMinutes: 15,
-                           preferenceLabel: "Commuting")
+    return RoutePreference(
+      timeWeight: 0.8,
+      reliabilityWeight: 0.9,
+      bridgeAvoidanceWeight: 0.8,
+      trafficAvoidanceWeight: 0.9,
+      preferFewerBridges: true,
+      maxDetourMinutes: 15,
+      preferenceLabel: "Commuting")
   }
 
   /// Creates a preference configuration optimized for leisure travel
   static func leisurePreferences() -> RoutePreference {
-    return RoutePreference(timeWeight: 0.4,
-                           reliabilityWeight: 0.6,
-                           bridgeAvoidanceWeight: 0.5,
-                           trafficAvoidanceWeight: 0.6,
-                           preferFewerBridges: false,
-                           maxDetourMinutes: 20,
-                           preferenceLabel: "Leisure")
+    return RoutePreference(
+      timeWeight: 0.4,
+      reliabilityWeight: 0.6,
+      bridgeAvoidanceWeight: 0.5,
+      trafficAvoidanceWeight: 0.6,
+      preferFewerBridges: false,
+      maxDetourMinutes: 20,
+      preferenceLabel: "Leisure")
   }
 }

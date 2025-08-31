@@ -38,12 +38,13 @@ public struct BridgeDataStatistics: Codable {
   /// Data quality metrics
   public let qualityMetrics: DataQualityMetrics
 
-  public init(summary: DataSummary,
-              bridgeStats: [Int: BridgeStatistics],
-              timeStats: TimeStatistics,
-              horizonStats: HorizonStatistics,
-              qualityMetrics: DataQualityMetrics)
-  {
+  public init(
+    summary: DataSummary,
+    bridgeStats: [Int: BridgeStatistics],
+    timeStats: TimeStatistics,
+    horizonStats: HorizonStatistics,
+    qualityMetrics: DataQualityMetrics
+  ) {
     self.summary = summary
     self.bridgeStats = bridgeStats
     self.timeStats = timeStats
@@ -63,11 +64,12 @@ public struct DataSummary: Codable {
   /// Data completeness percentage
   public let completenessPercentage: Double
 
-  public init(totalRecords: Int,
-              uniqueBridges: Int,
-              dateRange: DateRange,
-              completenessPercentage: Double)
-  {
+  public init(
+    totalRecords: Int,
+    uniqueBridges: Int,
+    dateRange: DateRange,
+    completenessPercentage: Double
+  ) {
     self.totalRecords = totalRecords
     self.uniqueBridges = uniqueBridges
     self.dateRange = dateRange
@@ -110,15 +112,16 @@ public struct BridgeStatistics: Codable {
   /// Data completeness for this bridge
   public let completenessPercentage: Double
 
-  public init(bridgeID: Int,
-              recordCount: Int,
-              firstTimestamp: Date,
-              lastTimestamp: Date,
-              countsByMinute: [String: Int],
-              countsByHour: [Int: Int],
-              countsByDayOfWeek: [Int: Int],
-              completenessPercentage: Double)
-  {
+  public init(
+    bridgeID: Int,
+    recordCount: Int,
+    firstTimestamp: Date,
+    lastTimestamp: Date,
+    countsByMinute: [String: Int],
+    countsByHour: [Int: Int],
+    countsByDayOfWeek: [Int: Int],
+    completenessPercentage: Double
+  ) {
     self.bridgeID = bridgeID
     self.recordCount = recordCount
     self.firstTimestamp = firstTimestamp
@@ -143,12 +146,13 @@ public struct TimeStatistics: Codable {
   /// Low activity times
   public let lowActivityTimes: [String: Int]
 
-  public init(countsByMinute: [String: Int],
-              countsByHour: [Int: Int],
-              countsByDayOfWeek: [Int: Int],
-              peakActivityTimes: [String: Int],
-              lowActivityTimes: [String: Int])
-  {
+  public init(
+    countsByMinute: [String: Int],
+    countsByHour: [Int: Int],
+    countsByDayOfWeek: [Int: Int],
+    peakActivityTimes: [String: Int],
+    lowActivityTimes: [String: Int]
+  ) {
     self.countsByMinute = countsByMinute
     self.countsByHour = countsByHour
     self.countsByDayOfWeek = countsByDayOfWeek
@@ -172,13 +176,14 @@ public struct HorizonStatistics: Codable {
   /// Overall horizon completeness
   public let overallCompleteness: Double
 
-  public init(availableHorizons: [Int],
-              coverageByHorizon: [Int: Double],
-              bridgeCoverageByHorizon: [Int: [Int: Double]],
-              missingHorizonsByBridge: [Int: [Int]],
-              horizonGaps: [Int: [Int]],
-              overallCompleteness: Double)
-  {
+  public init(
+    availableHorizons: [Int],
+    coverageByHorizon: [Int: Double],
+    bridgeCoverageByHorizon: [Int: [Int: Double]],
+    missingHorizonsByBridge: [Int: [Int]],
+    horizonGaps: [Int: [Int]],
+    overallCompleteness: Double
+  ) {
     self.availableHorizons = availableHorizons
     self.coverageByHorizon = coverageByHorizon
     self.bridgeCoverageByHorizon = bridgeCoverageByHorizon
@@ -213,18 +218,19 @@ public struct DataQualityMetrics: Codable {
   /// Count of null values by field name
   public let nullCounts: [String: Int]
 
-  public init(dataCompleteness: Double,
-              timestampValidity: Double,
-              bridgeIDValidity: Double,
-              speedDataValidity: Double,
-              duplicateCount: Int,
-              missingFieldsCount: Int,
-              nanCounts: [String: Int] = [:],
-              infiniteCounts: [String: Int] = [:],
-              outlierCounts: [String: Int] = [:],
-              rangeViolations: [String: Int] = [:],
-              nullCounts: [String: Int] = [:])
-  {
+  public init(
+    dataCompleteness: Double,
+    timestampValidity: Double,
+    bridgeIDValidity: Double,
+    speedDataValidity: Double,
+    duplicateCount: Int,
+    missingFieldsCount: Int,
+    nanCounts: [String: Int] = [:],
+    infiniteCounts: [String: Int] = [:],
+    outlierCounts: [String: Int] = [:],
+    rangeViolations: [String: Int] = [:],
+    nullCounts: [String: Int] = [:]
+  ) {
     self.dataCompleteness = dataCompleteness
     self.timestampValidity = timestampValidity
     self.bridgeIDValidity = bridgeIDValidity
@@ -253,11 +259,12 @@ public class DataStatisticsService {
     let horizonStats = generateHorizonStatistics(from: ticks)
     let qualityMetrics = generateQualityMetrics(from: ticks)
 
-    return BridgeDataStatistics(summary: summary,
-                                bridgeStats: bridgeStats,
-                                timeStats: timeStats,
-                                horizonStats: horizonStats,
-                                qualityMetrics: qualityMetrics)
+    return BridgeDataStatistics(
+      summary: summary,
+      bridgeStats: bridgeStats,
+      timeStats: timeStats,
+      horizonStats: horizonStats,
+      qualityMetrics: qualityMetrics)
   }
 
   /// Generates comprehensive statistics from feature vectors
@@ -270,11 +277,12 @@ public class DataStatisticsService {
     let horizonStats = generateHorizonStatistics(from: features)
     let qualityMetrics = generateQualityMetrics(from: features)
 
-    return BridgeDataStatistics(summary: summary,
-                                bridgeStats: bridgeStats,
-                                timeStats: timeStats,
-                                horizonStats: horizonStats,
-                                qualityMetrics: qualityMetrics)
+    return BridgeDataStatistics(
+      summary: summary,
+      bridgeStats: bridgeStats,
+      timeStats: timeStats,
+      horizonStats: horizonStats,
+      qualityMetrics: qualityMetrics)
   }
 
   // MARK: - Private Methods
@@ -287,15 +295,17 @@ public class DataStatisticsService {
       ISO8601DateFormatter().date(from: tick.ts_utc)
     }.sorted()
 
-    let dateRange = DateRange(firstTimestamp: timestamps.first ?? Date(),
-                              lastTimestamp: timestamps.last ?? Date())
+    let dateRange = DateRange(
+      firstTimestamp: timestamps.first ?? Date(),
+      lastTimestamp: timestamps.last ?? Date())
 
     let completenessPercentage = calculateCompleteness(from: ticks)
 
-    return DataSummary(totalRecords: totalRecords,
-                       uniqueBridges: uniqueBridges,
-                       dateRange: dateRange,
-                       completenessPercentage: completenessPercentage)
+    return DataSummary(
+      totalRecords: totalRecords,
+      uniqueBridges: uniqueBridges,
+      dateRange: dateRange,
+      completenessPercentage: completenessPercentage)
   }
 
   private func generateSummary(from features: [FeatureVector]) -> DataSummary {
@@ -303,15 +313,17 @@ public class DataStatisticsService {
     let uniqueBridges = Set(features.map { $0.bridge_id }).count
 
     // For features, we don't have direct timestamps, so we'll use a placeholder
-    let dateRange = DateRange(firstTimestamp: Date(),
-                              lastTimestamp: Date())
+    let dateRange = DateRange(
+      firstTimestamp: Date(),
+      lastTimestamp: Date())
 
     let completenessPercentage = calculateCompleteness(from: features)
 
-    return DataSummary(totalRecords: totalRecords,
-                       uniqueBridges: uniqueBridges,
-                       dateRange: dateRange,
-                       completenessPercentage: completenessPercentage)
+    return DataSummary(
+      totalRecords: totalRecords,
+      uniqueBridges: uniqueBridges,
+      dateRange: dateRange,
+      completenessPercentage: completenessPercentage)
   }
 
   private func generateBridgeStatistics(from ticks: [ProbeTickRaw]) -> [Int: BridgeStatistics] {
@@ -335,14 +347,15 @@ public class DataStatisticsService {
 
       let completenessPercentage = calculateBridgeCompleteness(from: bridgeTicks)
 
-      bridgeStats[bridgeID] = BridgeStatistics(bridgeID: bridgeID,
-                                               recordCount: recordCount,
-                                               firstTimestamp: firstTimestamp,
-                                               lastTimestamp: lastTimestamp,
-                                               countsByMinute: countsByMinute,
-                                               countsByHour: countsByHour,
-                                               countsByDayOfWeek: countsByDayOfWeek,
-                                               completenessPercentage: completenessPercentage)
+      bridgeStats[bridgeID] = BridgeStatistics(
+        bridgeID: bridgeID,
+        recordCount: recordCount,
+        firstTimestamp: firstTimestamp,
+        lastTimestamp: lastTimestamp,
+        countsByMinute: countsByMinute,
+        countsByHour: countsByHour,
+        countsByDayOfWeek: countsByDayOfWeek,
+        completenessPercentage: completenessPercentage)
     }
 
     return bridgeStats
@@ -366,14 +379,15 @@ public class DataStatisticsService {
 
       let completenessPercentage = calculateBridgeCompleteness(from: bridgeFeatures)
 
-      bridgeStats[bridgeID] = BridgeStatistics(bridgeID: bridgeID,
-                                               recordCount: recordCount,
-                                               firstTimestamp: firstTimestamp,
-                                               lastTimestamp: lastTimestamp,
-                                               countsByMinute: countsByMinute,
-                                               countsByHour: countsByHour,
-                                               countsByDayOfWeek: countsByDayOfWeek,
-                                               completenessPercentage: completenessPercentage)
+      bridgeStats[bridgeID] = BridgeStatistics(
+        bridgeID: bridgeID,
+        recordCount: recordCount,
+        firstTimestamp: firstTimestamp,
+        lastTimestamp: lastTimestamp,
+        countsByMinute: countsByMinute,
+        countsByHour: countsByHour,
+        countsByDayOfWeek: countsByDayOfWeek,
+        completenessPercentage: completenessPercentage)
     }
 
     return bridgeStats
@@ -387,11 +401,12 @@ public class DataStatisticsService {
     let peakActivityTimes = findPeakActivityTimes(from: countsByHour)
     let lowActivityTimes = findLowActivityTimes(from: countsByHour)
 
-    return TimeStatistics(countsByMinute: countsByMinute,
-                          countsByHour: countsByHour,
-                          countsByDayOfWeek: countsByDayOfWeek,
-                          peakActivityTimes: peakActivityTimes,
-                          lowActivityTimes: lowActivityTimes)
+    return TimeStatistics(
+      countsByMinute: countsByMinute,
+      countsByHour: countsByHour,
+      countsByDayOfWeek: countsByDayOfWeek,
+      peakActivityTimes: peakActivityTimes,
+      lowActivityTimes: lowActivityTimes)
   }
 
   private func generateTimeStatistics(from _: [FeatureVector]) -> TimeStatistics {
@@ -402,11 +417,12 @@ public class DataStatisticsService {
     let peakActivityTimes: [String: Int] = [:]
     let lowActivityTimes: [String: Int] = [:]
 
-    return TimeStatistics(countsByMinute: countsByMinute,
-                          countsByHour: countsByHour,
-                          countsByDayOfWeek: countsByDayOfWeek,
-                          peakActivityTimes: peakActivityTimes,
-                          lowActivityTimes: lowActivityTimes)
+    return TimeStatistics(
+      countsByMinute: countsByMinute,
+      countsByHour: countsByHour,
+      countsByDayOfWeek: countsByDayOfWeek,
+      peakActivityTimes: peakActivityTimes,
+      lowActivityTimes: lowActivityTimes)
   }
 
   private func generateHorizonStatistics(from ticks: [ProbeTickRaw]) -> HorizonStatistics {
@@ -414,33 +430,41 @@ public class DataStatisticsService {
     // This is a placeholder implementation - you'll need to adapt based on your actual data
     let availableHorizons = detectAvailableHorizons(from: ticks)
     let coverageByHorizon = calculateCoverageByHorizon(from: ticks, horizons: availableHorizons)
-    let bridgeCoverageByHorizon = calculateBridgeCoverageByHorizon(from: ticks, horizons: availableHorizons)
-    let missingHorizonsByBridge = calculateMissingHorizonsByBridge(from: ticks, horizons: availableHorizons)
+    let bridgeCoverageByHorizon = calculateBridgeCoverageByHorizon(
+      from: ticks, horizons: availableHorizons)
+    let missingHorizonsByBridge = calculateMissingHorizonsByBridge(
+      from: ticks, horizons: availableHorizons)
     let horizonGaps = detectHorizonGaps(in: availableHorizons)
-    let overallCompleteness = calculateOverallHorizonCompleteness(from: ticks, horizons: availableHorizons)
+    let overallCompleteness = calculateOverallHorizonCompleteness(
+      from: ticks, horizons: availableHorizons)
 
-    return HorizonStatistics(availableHorizons: availableHorizons,
-                             coverageByHorizon: coverageByHorizon,
-                             bridgeCoverageByHorizon: bridgeCoverageByHorizon,
-                             missingHorizonsByBridge: missingHorizonsByBridge,
-                             horizonGaps: horizonGaps,
-                             overallCompleteness: overallCompleteness)
+    return HorizonStatistics(
+      availableHorizons: availableHorizons,
+      coverageByHorizon: coverageByHorizon,
+      bridgeCoverageByHorizon: bridgeCoverageByHorizon,
+      missingHorizonsByBridge: missingHorizonsByBridge,
+      horizonGaps: horizonGaps,
+      overallCompleteness: overallCompleteness)
   }
 
   private func generateHorizonStatistics(from features: [FeatureVector]) -> HorizonStatistics {
     let availableHorizons = Set(features.map { $0.horizon_min }).sorted()
     let coverageByHorizon = calculateCoverageByHorizon(from: features, horizons: availableHorizons)
-    let bridgeCoverageByHorizon = calculateBridgeCoverageByHorizon(from: features, horizons: availableHorizons)
-    let missingHorizonsByBridge = calculateMissingHorizonsByBridge(from: features, horizons: availableHorizons)
+    let bridgeCoverageByHorizon = calculateBridgeCoverageByHorizon(
+      from: features, horizons: availableHorizons)
+    let missingHorizonsByBridge = calculateMissingHorizonsByBridge(
+      from: features, horizons: availableHorizons)
     let horizonGaps = detectHorizonGaps(in: availableHorizons)
-    let overallCompleteness = calculateOverallHorizonCompleteness(from: features, horizons: availableHorizons)
+    let overallCompleteness = calculateOverallHorizonCompleteness(
+      from: features, horizons: availableHorizons)
 
-    return HorizonStatistics(availableHorizons: availableHorizons,
-                             coverageByHorizon: coverageByHorizon,
-                             bridgeCoverageByHorizon: bridgeCoverageByHorizon,
-                             missingHorizonsByBridge: missingHorizonsByBridge,
-                             horizonGaps: horizonGaps,
-                             overallCompleteness: overallCompleteness)
+    return HorizonStatistics(
+      availableHorizons: availableHorizons,
+      coverageByHorizon: coverageByHorizon,
+      bridgeCoverageByHorizon: bridgeCoverageByHorizon,
+      missingHorizonsByBridge: missingHorizonsByBridge,
+      horizonGaps: horizonGaps,
+      overallCompleteness: overallCompleteness)
   }
 
   private func generateQualityMetrics(from ticks: [ProbeTickRaw]) -> DataQualityMetrics {
@@ -451,12 +475,13 @@ public class DataStatisticsService {
     let duplicateCount = calculateDuplicateCount(from: ticks)
     let missingFieldsCount = calculateMissingFieldsCount(from: ticks)
 
-    return DataQualityMetrics(dataCompleteness: dataCompleteness,
-                              timestampValidity: timestampValidity,
-                              bridgeIDValidity: bridgeIDValidity,
-                              speedDataValidity: speedDataValidity,
-                              duplicateCount: duplicateCount,
-                              missingFieldsCount: missingFieldsCount)
+    return DataQualityMetrics(
+      dataCompleteness: dataCompleteness,
+      timestampValidity: timestampValidity,
+      bridgeIDValidity: bridgeIDValidity,
+      speedDataValidity: speedDataValidity,
+      duplicateCount: duplicateCount,
+      missingFieldsCount: missingFieldsCount)
   }
 
   private func generateQualityMetrics(from features: [FeatureVector]) -> DataQualityMetrics {
@@ -467,12 +492,13 @@ public class DataStatisticsService {
     let duplicateCount = calculateDuplicateCount(from: features)
     let missingFieldsCount = calculateMissingFieldsCount(from: features)
 
-    return DataQualityMetrics(dataCompleteness: dataCompleteness,
-                              timestampValidity: timestampValidity,
-                              bridgeIDValidity: bridgeIDValidity,
-                              speedDataValidity: speedDataValidity,
-                              duplicateCount: duplicateCount,
-                              missingFieldsCount: missingFieldsCount)
+    return DataQualityMetrics(
+      dataCompleteness: dataCompleteness,
+      timestampValidity: timestampValidity,
+      bridgeIDValidity: bridgeIDValidity,
+      speedDataValidity: speedDataValidity,
+      duplicateCount: duplicateCount,
+      missingFieldsCount: missingFieldsCount)
   }
 
   // MARK: - Helper Methods
@@ -537,7 +563,8 @@ public class DataStatisticsService {
     return [0, 3, 6, 9, 12]
   }
 
-  private func calculateCoverageByHorizon(from _: [ProbeTickRaw], horizons: [Int]) -> [Int: Double] {
+  private func calculateCoverageByHorizon(from _: [ProbeTickRaw], horizons: [Int]) -> [Int: Double]
+  {
     // Placeholder implementation
     var coverage: [Int: Double] = [:]
     for horizon in horizons {
@@ -546,10 +573,9 @@ public class DataStatisticsService {
     return coverage
   }
 
-  private func calculateCoverageByHorizon(from features: [FeatureVector], horizons: [Int]) -> [
-    Int:
-      Double
-  ] {
+  private func calculateCoverageByHorizon(from features: [FeatureVector], horizons: [Int]) -> [Int:
+    Double]
+  {
     var coverage: [Int: Double] = [:]
 
     for horizon in horizons {
@@ -561,10 +587,9 @@ public class DataStatisticsService {
     return coverage
   }
 
-  private func calculateBridgeCoverageByHorizon(from _: [ProbeTickRaw], horizons _: [Int]) -> [
-    Int:
-      [Int: Double]
-  ] {
+  private func calculateBridgeCoverageByHorizon(from _: [ProbeTickRaw], horizons _: [Int]) -> [Int:
+    [Int: Double]]
+  {
     // Placeholder implementation
     return [:]
   }
@@ -590,10 +615,9 @@ public class DataStatisticsService {
     return bridgeCoverage
   }
 
-  private func calculateMissingHorizonsByBridge(from _: [ProbeTickRaw], horizons _: [Int]) -> [
-    Int:
-      [Int]
-  ] {
+  private func calculateMissingHorizonsByBridge(from _: [ProbeTickRaw], horizons _: [Int]) -> [Int:
+    [Int]]
+  {
     // Placeholder implementation
     return [:]
   }
@@ -616,7 +640,7 @@ public class DataStatisticsService {
   private func detectHorizonGaps(in horizons: [Int]) -> [Int: [Int]] {
     var gaps: [Int: [Int]] = [:]
 
-    for i in 0 ..< (horizons.count - 1) {
+    for i in 0..<(horizons.count - 1) {
       let current = horizons[i]
       let next = horizons[i + 1]
       let expectedNext = current + 3  // Assuming 3-minute intervals
@@ -755,11 +779,11 @@ public class DataStatisticsService {
 
 // MARK: - Statistics Export
 
-public extension DataStatisticsService {
+extension DataStatisticsService {
   /// Exports statistics to JSON format
   /// - Parameter statistics: The statistics to export
   /// - Returns: JSON string representation
-  func exportToJSON(_ statistics: BridgeDataStatistics) throws -> String {
+  public func exportToJSON(_ statistics: BridgeDataStatistics) throws -> String {
     let encoder = JSONEncoder.bridgeEncoder(outputFormatting: [.prettyPrinted, .sortedKeys])
 
     let data = try encoder.encode(statistics)
@@ -769,7 +793,7 @@ public extension DataStatisticsService {
   /// Exports statistics to CSV format
   /// - Parameter statistics: The statistics to export
   /// - Returns: CSV string representation
-  func exportToCSV(_ statistics: BridgeDataStatistics) -> String {
+  public func exportToCSV(_ statistics: BridgeDataStatistics) -> String {
     var csv = "Bridge ID,Record Count,First Timestamp,Last Timestamp,Completeness %\n"
 
     for (bridgeID, bridgeStat) in statistics.bridgeStats.sorted(by: { $0.key < $1.key }) {
@@ -784,7 +808,7 @@ public extension DataStatisticsService {
   /// Exports horizon coverage to CSV format
   /// - Parameter statistics: The statistics to export
   /// - Returns: CSV string representation of horizon coverage
-  func exportHorizonCoverageToCSV(_ statistics: BridgeDataStatistics) -> String {
+  public func exportHorizonCoverageToCSV(_ statistics: BridgeDataStatistics) -> String {
     var csv = "Bridge ID"
 
     // Add horizon headers

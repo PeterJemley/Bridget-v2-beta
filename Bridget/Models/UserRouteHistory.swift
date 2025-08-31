@@ -153,11 +153,12 @@ final class UserRouteHistory {
   ///   - predictedTravelTime: The predicted travel time in seconds
   ///   - routeSelectedAt: When the route was selected (defaults to now)
   ///   - algorithmVersion: Version of prediction algorithm used
-  init(routeID: String,
-       predictedTravelTime: TimeInterval,
-       routeSelectedAt: Date = Date(),
-       algorithmVersion: String = "1.0")
-  {
+  init(
+    routeID: String,
+    predictedTravelTime: TimeInterval,
+    routeSelectedAt: Date = Date(),
+    algorithmVersion: String = "1.0"
+  ) {
     self.historyID = UUID().uuidString
     self.routeID = routeID
     self.routeSelectedAt = routeSelectedAt
@@ -231,8 +232,8 @@ final class UserRouteHistory {
     switch accuracy {
     case ..<(-0.2): performanceRating = .muchBetter
     case -0.2 ..< -0.1: performanceRating = .better
-    case -0.1 ... 0.1: performanceRating = .asExpected
-    case 0.1 ..< 0.3: performanceRating = .worse
+    case -0.1...0.1: performanceRating = .asExpected
+    case 0.1..<0.3: performanceRating = .worse
     default: performanceRating = .muchWorse
     }
   }

@@ -43,7 +43,10 @@ public enum SeattleDrawbridges {
     public let waterway: String
     public let notes: String
 
-    public init(id: BridgeID, name: String, coordinate: CLLocationCoordinate2D, connections: String, waterway: String, notes: String) {
+    public init(
+      id: BridgeID, name: String, coordinate: CLLocationCoordinate2D, connections: String,
+      waterway: String, notes: String
+    ) {
       self.id = id
       self.name = name
       self.coordinate = coordinate
@@ -55,59 +58,71 @@ public enum SeattleDrawbridges {
 
   /// All Seattle drawbridges with canonical information
   public static let allBridges: [BridgeInfo] = [
-    BridgeInfo(id: .ballard,
-               name: "Ballard Bridge",
-               coordinate: CLLocationCoordinate2D(latitude: 47.6598, longitude: -122.3762),
-               connections: "Ballard ⇆ Interbay",
-               waterway: "Lake Washington Ship Canal",
-               notes: "15th Avenue NW bridge across Lake Washington Ship Canal"),
-    BridgeInfo(id: .fremont,
-               name: "Fremont Bridge",
-               coordinate: CLLocationCoordinate2D(latitude: 47.6475, longitude: -122.3497),
-               connections: "Fremont ⇆ Queen Anne",
-               waterway: "Lake Washington Ship Canal",
-               notes: "Historic bridge connecting Fremont to Queen Anne across Lake Washington Ship Canal"),
-    BridgeInfo(id: .montlake,
-               name: "Montlake Bridge",
-               coordinate: CLLocationCoordinate2D(latitude: 47.6473, longitude: -122.3047),
-               connections: "Montlake ⇆ University District",
-               waterway: "Lake Washington Ship Canal",
-               notes: "Bridge connecting Montlake to University District across Lake Washington Ship Canal"),
-    BridgeInfo(id: .university,
-               name: "University Bridge",
-               coordinate: CLLocationCoordinate2D(latitude: 47.6531, longitude: -122.3200),
-               connections: "University District ⇆ Eastlake",
-               waterway: "Lake Washington Ship Canal",
-               notes: "Bridge connecting University District to Eastlake across Lake Washington Ship Canal"),
-    BridgeInfo(id: .firstAveSouth,
-               name: "First Avenue South Bridge",
-               coordinate: CLLocationCoordinate2D(latitude: 47.5980, longitude: -122.3320),
-               connections: "SODO ⇆ Georgetown",
-               waterway: "Duwamish Waterway",
-               notes: "Major arterial bridge connecting SODO to Georgetown across Duwamish Waterway"),
-    BridgeInfo(id: .lowerSpokane,
-               name: "Lower Spokane Street Bridge",
-               coordinate: CLLocationCoordinate2D(latitude: 47.5800, longitude: -122.3500),
-               connections: "West Seattle ⇆ Harbor Island/SODO",
-               waterway: "Duwamish Waterway",
-               notes: "Spokane Street Swing Bridge connecting West Seattle (Delridge/Pigeon Point) to Harbor Island/SODO"),
-    BridgeInfo(id: .southPark,
-               name: "South Park Bridge",
-               coordinate: CLLocationCoordinate2D(latitude: 47.5293, longitude: -122.3141),
-               connections: "South Park ⇆ Georgetown",
-               waterway: "Duwamish Waterway",
-               notes: "14th Avenue South bridge connecting South Park to Georgetown across Duwamish Waterway"),
+    BridgeInfo(
+      id: .ballard,
+      name: "Ballard Bridge",
+      coordinate: CLLocationCoordinate2D(latitude: 47.6598, longitude: -122.3762),
+      connections: "Ballard ⇆ Interbay",
+      waterway: "Lake Washington Ship Canal",
+      notes: "15th Avenue NW bridge across Lake Washington Ship Canal"),
+    BridgeInfo(
+      id: .fremont,
+      name: "Fremont Bridge",
+      coordinate: CLLocationCoordinate2D(latitude: 47.6475, longitude: -122.3497),
+      connections: "Fremont ⇆ Queen Anne",
+      waterway: "Lake Washington Ship Canal",
+      notes: "Historic bridge connecting Fremont to Queen Anne across Lake Washington Ship Canal"),
+    BridgeInfo(
+      id: .montlake,
+      name: "Montlake Bridge",
+      coordinate: CLLocationCoordinate2D(latitude: 47.6473, longitude: -122.3047),
+      connections: "Montlake ⇆ University District",
+      waterway: "Lake Washington Ship Canal",
+      notes: "Bridge connecting Montlake to University District across Lake Washington Ship Canal"),
+    BridgeInfo(
+      id: .university,
+      name: "University Bridge",
+      coordinate: CLLocationCoordinate2D(latitude: 47.6531, longitude: -122.3200),
+      connections: "University District ⇆ Eastlake",
+      waterway: "Lake Washington Ship Canal",
+      notes: "Bridge connecting University District to Eastlake across Lake Washington Ship Canal"),
+    BridgeInfo(
+      id: .firstAveSouth,
+      name: "First Avenue South Bridge",
+      coordinate: CLLocationCoordinate2D(latitude: 47.5980, longitude: -122.3320),
+      connections: "SODO ⇆ Georgetown",
+      waterway: "Duwamish Waterway",
+      notes: "Major arterial bridge connecting SODO to Georgetown across Duwamish Waterway"),
+    BridgeInfo(
+      id: .lowerSpokane,
+      name: "Lower Spokane Street Bridge",
+      coordinate: CLLocationCoordinate2D(latitude: 47.5800, longitude: -122.3500),
+      connections: "West Seattle ⇆ Harbor Island/SODO",
+      waterway: "Duwamish Waterway",
+      notes:
+        "Spokane Street Swing Bridge connecting West Seattle (Delridge/Pigeon Point) to Harbor Island/SODO"
+    ),
+    BridgeInfo(
+      id: .southPark,
+      name: "South Park Bridge",
+      coordinate: CLLocationCoordinate2D(latitude: 47.5293, longitude: -122.3141),
+      connections: "South Park ⇆ Georgetown",
+      waterway: "Duwamish Waterway",
+      notes: "14th Avenue South bridge connecting South Park to Georgetown across Duwamish Waterway"
+    ),
   ]
 
   /// Bridge locations as dictionary for compatibility with existing code
-  public static let bridgeLocations: [String: (lat: Double, lon: Double)] = Dictionary(uniqueKeysWithValues: allBridges.map { bridge in
-    (bridge.id.rawValue, (lat: bridge.coordinate.latitude, lon: bridge.coordinate.longitude))
-  })
+  public static let bridgeLocations: [String: (lat: Double, lon: Double)] = Dictionary(
+    uniqueKeysWithValues: allBridges.map { bridge in
+      (bridge.id.rawValue, (lat: bridge.coordinate.latitude, lon: bridge.coordinate.longitude))
+    })
 
   /// Bridge names as dictionary for compatibility with existing code
-  public static let bridgeNames: [String: String] = Dictionary(uniqueKeysWithValues: allBridges.map { bridge in
-    (bridge.id.rawValue, bridge.name)
-  })
+  public static let bridgeNames: [String: String] = Dictionary(
+    uniqueKeysWithValues: allBridges.map { bridge in
+      (bridge.id.rawValue, bridge.name)
+    })
 
   /// Get bridge info by ID
   public static func bridgeInfo(for id: BridgeID) -> BridgeInfo? {
@@ -140,6 +155,30 @@ public enum SeattleDrawbridges {
     return false
   }
 
+  /// Check if a bridge ID is a canonical Seattle bridge ID
+  public static func isCanonicalBridgeID(_ id: String) -> Bool {
+    return BridgeID(rawValue: id) != nil
+  }
+
+  /// Check if a bridge ID is a synthetic test ID (e.g., "bridge1", "bridge2")
+  public static func isSyntheticTestBridgeID(_ id: String) -> Bool {
+    return id.hasPrefix("bridge") && id.count > 6 && id.dropFirst(6).allSatisfy({ $0.isNumber })
+  }
+
+  /// Check if a bridge ID is accepted based on policy
+  /// - Parameter id: The bridge ID to check
+  /// - Parameter allowSynthetic: Whether to accept synthetic test IDs
+  /// - Returns: True if the ID is accepted according to the policy
+  public static func isAcceptedBridgeID(_ id: String, allowSynthetic: Bool = false) -> Bool {
+    if isCanonicalBridgeID(id) {
+      return true
+    }
+    if allowSynthetic && isSyntheticTestBridgeID(id) {
+      return true
+    }
+    return false
+  }
+
   /// Get all bridge IDs as strings
   public static var allBridgeIDs: [String] {
     BridgeID.allCases.map { $0.rawValue }
@@ -151,14 +190,14 @@ public enum SeattleDrawbridges {
 
 // MARK: - Extensions for compatibility
 
-public extension SeattleDrawbridges.BridgeID {
+extension SeattleDrawbridges.BridgeID {
   /// Human-readable name for the bridge
-  var displayName: String {
+  public var displayName: String {
     SeattleDrawbridges.bridgeInfo(for: self)?.name ?? rawValue
   }
 
   /// Coordinate for the bridge
-  var coordinate: CLLocationCoordinate2D {
+  public var coordinate: CLLocationCoordinate2D {
     SeattleDrawbridges.bridgeInfo(for: self)?.coordinate ?? CLLocationCoordinate2D()
   }
 }

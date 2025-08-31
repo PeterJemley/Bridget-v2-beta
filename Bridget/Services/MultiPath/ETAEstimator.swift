@@ -22,9 +22,10 @@ public class ETAEstimator {
 
   /// Estimate arrival times for all nodes along a path
   /// Returns array of ETAs in path order
-  public func estimateETAs(for path: RoutePath,
-                           departureTime: Date) -> [ETA]
-  {
+  public func estimateETAs(
+    for path: RoutePath,
+    departureTime: Date
+  ) -> [ETA] {
     var etas: [ETA] = []
     var currentTime = departureTime
     var accumulatedTime: TimeInterval = 0
@@ -32,9 +33,10 @@ public class ETAEstimator {
     // Add departure node
     if let firstNode = path.nodes.first {
       etas.append(
-        ETA(nodeID: firstNode,
-            arrivalTime: departureTime,
-            travelTimeFromStart: 0))
+        ETA(
+          nodeID: firstNode,
+          arrivalTime: departureTime,
+          travelTimeFromStart: 0))
     }
 
     // Calculate ETAs for each subsequent node
@@ -46,9 +48,10 @@ public class ETAEstimator {
       if nextNodeIndex < path.nodes.count {
         let nextNode = path.nodes[nextNodeIndex]
         etas.append(
-          ETA(nodeID: nextNode,
-              arrivalTime: currentTime,
-              travelTimeFromStart: accumulatedTime))
+          ETA(
+            nodeID: nextNode,
+            arrivalTime: currentTime,
+            travelTimeFromStart: accumulatedTime))
       }
     }
 
@@ -57,9 +60,10 @@ public class ETAEstimator {
 
   /// Estimate ETA windows for all nodes along a path
   /// Currently returns single ETA, but extensible for min/max ranges
-  public func estimateETAWindows(for path: RoutePath,
-                                 departureTime: Date) -> [ETAWindow]
-  {
+  public func estimateETAWindows(
+    for path: RoutePath,
+    departureTime: Date
+  ) -> [ETAWindow] {
     let etas = estimateETAs(for: path, departureTime: departureTime)
 
     return etas.map { eta in
@@ -70,9 +74,10 @@ public class ETAEstimator {
 
   /// Get ETAs specifically for bridge crossings
   /// Filters path ETAs to only include bridge nodes
-  public func estimateBridgeETAs(for path: RoutePath,
-                                 departureTime: Date) -> [ETA]
-  {
+  public func estimateBridgeETAs(
+    for path: RoutePath,
+    departureTime: Date
+  ) -> [ETA] {
     let allETAs = estimateETAs(for: path, departureTime: departureTime)
 
     // Find bridge edges and their corresponding ETAs
@@ -92,17 +97,21 @@ public class ETAEstimator {
   }
 
   /// Get bridge ETAs with bridge IDs for prediction
-  public func estimateBridgeETAsWithIDs(for path: RoutePath,
-                                        departureTime: Date) -> [(bridgeID: String, eta: ETA)]
-  {
+  public func estimateBridgeETAsWithIDs(
+    for path: RoutePath,
+    departureTime: Date
+  ) -> [(bridgeID: String, eta: ETA)] {
     let allETAs = estimateETAs(for: path, departureTime: departureTime)
     var bridgeETAs: [(bridgeID: String, eta: ETA)] = []
 
     for (index, edge) in path.edges.enumerated() {
       if edge.isBridge, let bridgeID = edge.bridgeID {
-        // Validate bridge ID against SeattleDrawbridges as single source of truth
-        if !SeattleDrawbridges.isValidBridgeID(bridgeID) {
-          print("⚠️ ETAEstimator: Non-canonical bridge ID '\(bridgeID)' detected in path. Skipping bridge ETA calculation.")
+        // Validate bridge ID against SeattleDrawbridges policy:
+        // accept canonical Seattle IDs and synthetic test IDs when allowed
+        if !SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) {
+          print(
+            "⚠️ ETAEstimator: Bridge ID '\(bridgeID)' rejected by policy (neither canonical nor allowed synthetic). Skipping bridge ETA calculation."
+          )
           continue
         }
 
@@ -122,17 +131,19 @@ public class ETAEstimator {
   }
 
   /// Get the expected arrival time at the destination
-  public func estimateDestinationETA(for path: RoutePath,
-                                     departureTime: Date) -> ETA?
-  {
+  public func estimateDestinationETA(
+    for path: RoutePath,
+    departureTime: Date
+  ) -> ETA? {
     let etas = estimateETAs(for: path, departureTime: departureTime)
     return etas.last
   }
 
   /// Calculate travel time statistics for a path
-  public func calculatePathStatistics(for path: RoutePath,
-                                      departureTime: Date) -> PathTravelStatistics
-  {
+  public func calculatePathStatistics(
+    for path: RoutePath,
+    departureTime: Date
+  ) -> PathTravelStatistics {
     let etas = estimateETAs(for: path, departureTime: departureTime)
     let bridgeETAs = estimateBridgeETAs(for: path, departureTime: departureTime)
 
@@ -142,36 +153,40 @@ public class ETAEstimator {
     let bridgeCount = path.bridgeCount
     let averageTimeBetweenBridges = bridgeCount > 1 ? totalTravelTime / Double(bridgeCount - 1) : 0
 
-    return PathTravelStatistics(totalTravelTime: totalTravelTime,
-                                totalDistance: path.totalDistance,
-                                averageSpeed: averageSpeed,
-                                bridgeCount: bridgeCount,
-                                averageTimeBetweenBridges: averageTimeBetweenBridges,
-                                estimatedArrivalTime: etas.last?.arrivalTime,
-                                bridgeArrivalTimes: bridgeETAs.map { $0.arrivalTime })
+    return PathTravelStatistics(
+      totalTravelTime: totalTravelTime,
+      totalDistance: path.totalDistance,
+      averageSpeed: averageSpeed,
+      bridgeCount: bridgeCount,
+      averageTimeBetweenBridges: averageTimeBetweenBridges,
+      estimatedArrivalTime: etas.last?.arrivalTime,
+      bridgeArrivalTimes: bridgeETAs.map { $0.arrivalTime })
   }
 
   // MARK: - Phase 3: ETASummary Methods
 
   /// Estimate arrival times with statistical uncertainty for all nodes along a path
   /// Returns array of ETAEstimate with ETASummary for each node
-  public func estimateETAsWithUncertainty(for path: RoutePath,
-                                          departureTime: Date) -> [ETAEstimate]
-  {
+  public func estimateETAsWithUncertainty(
+    for path: RoutePath,
+    departureTime: Date
+  ) -> [ETAEstimate] {
     var estimates: [ETAEstimate] = []
     var currentTime = departureTime
     var accumulatedTime: TimeInterval = 0
 
     // Add departure node
     if let firstNode = path.nodes.first {
-      let departureSummary = ETASummary(mean: 0,
-                                        variance: 0,
-                                        min: 0,
-                                        max: 0)
+      let departureSummary = ETASummary(
+        mean: 0,
+        variance: 0,
+        min: 0,
+        max: 0)
       estimates.append(
-        ETAEstimate(nodeID: firstNode,
-                    summary: departureSummary,
-                    arrivalTime: departureTime))
+        ETAEstimate(
+          nodeID: firstNode,
+          summary: departureSummary,
+          arrivalTime: departureTime))
     }
 
     // Calculate ETAs with uncertainty for each subsequent node
@@ -210,18 +225,20 @@ public class ETAEstimator {
         // Calculate cumulative variance (sum of individual edge variances)
         let cumulativeVariance =
           estimates.isEmpty
-            ? adjustedVariance : (estimates.last?.summary.variance ?? 0) + adjustedVariance
+          ? adjustedVariance : (estimates.last?.summary.variance ?? 0) + adjustedVariance
 
-        let summary = ETASummary(mean: accumulatedTime,
-                                 variance: cumulativeVariance,
-                                 min: max(0, accumulatedTime * 0.7),  // 30% below mean, but not negative
-                                 max: accumulatedTime * 1.3  // 30% above mean
+        let summary = ETASummary(
+          mean: accumulatedTime,
+          variance: cumulativeVariance,
+          min: max(0, accumulatedTime * 0.7),  // 30% below mean, but not negative
+          max: accumulatedTime * 1.3  // 30% above mean
         )
 
         estimates.append(
-          ETAEstimate(nodeID: nextNode,
-                      summary: summary,
-                      arrivalTime: currentTime))
+          ETAEstimate(
+            nodeID: nextNode,
+            summary: summary,
+            arrivalTime: currentTime))
       }
     }
 
@@ -229,9 +246,10 @@ public class ETAEstimator {
   }
 
   /// Get statistical summary of bridge crossing times for a path
-  public func estimateBridgeETAsWithUncertainty(for path: RoutePath,
-                                                departureTime: Date) -> [ETAEstimate]
-  {
+  public func estimateBridgeETAsWithUncertainty(
+    for path: RoutePath,
+    departureTime: Date
+  ) -> [ETAEstimate] {
     let allEstimates = estimateETAsWithUncertainty(for: path, departureTime: departureTime)
 
     // Find bridge edges and their corresponding estimates
@@ -251,9 +269,10 @@ public class ETAEstimator {
   }
 
   /// Calculate comprehensive path statistics with uncertainty
-  public func calculatePathStatisticsWithUncertainty(for path: RoutePath,
-                                                     departureTime: Date) -> PathTravelStatisticsWithUncertainty
-  {
+  public func calculatePathStatisticsWithUncertainty(
+    for path: RoutePath,
+    departureTime: Date
+  ) -> PathTravelStatisticsWithUncertainty {
     let estimates = estimateETAsWithUncertainty(for: path, departureTime: departureTime)
     let bridgeEstimates = estimateBridgeETAsWithUncertainty(for: path, departureTime: departureTime)
 
@@ -261,10 +280,11 @@ public class ETAEstimator {
     let travelTimes = estimates.map { $0.summary.mean }
     let travelTimeSummary =
       travelTimes.toETASummary()
-        ?? ETASummary(mean: path.totalTravelTime,
-                      variance: 0,
-                      min: path.totalTravelTime,
-                      max: path.totalTravelTime)
+      ?? ETASummary(
+        mean: path.totalTravelTime,
+        variance: 0,
+        min: path.totalTravelTime,
+        max: path.totalTravelTime)
 
     // Calculate speed statistics
     let speeds = estimates.enumerated().compactMap { index, estimate -> Double? in
@@ -273,18 +293,20 @@ public class ETAEstimator {
     }
     let speedSummary =
       speeds.toETASummary()
-        ?? ETASummary(mean: path.totalDistance / path.totalTravelTime,
-                      variance: 0,
-                      min: 0,
-                      max: 0)
+      ?? ETASummary(
+        mean: path.totalDistance / path.totalTravelTime,
+        variance: 0,
+        min: 0,
+        max: 0)
 
-    return PathTravelStatisticsWithUncertainty(totalTravelTime: travelTimeSummary,
-                                               totalDistance: path.totalDistance,
-                                               averageSpeed: speedSummary,
-                                               bridgeCount: path.bridgeCount,
-                                               estimatedArrivalTime: estimates.last?.arrivalTime,
-                                               bridgeArrivalTimes: bridgeEstimates.map { $0.arrivalTime },
-                                               bridgeEstimates: bridgeEstimates)
+    return PathTravelStatisticsWithUncertainty(
+      totalTravelTime: travelTimeSummary,
+      totalDistance: path.totalDistance,
+      averageSpeed: speedSummary,
+      bridgeCount: path.bridgeCount,
+      estimatedArrivalTime: estimates.last?.arrivalTime,
+      bridgeArrivalTimes: bridgeEstimates.map { $0.arrivalTime },
+      bridgeEstimates: bridgeEstimates)
   }
 }
 
@@ -300,14 +322,15 @@ public struct PathTravelStatistics: Codable {
   public let estimatedArrivalTime: Date?
   public let bridgeArrivalTimes: [Date]
 
-  public init(totalTravelTime: TimeInterval,
-              totalDistance: Double,
-              averageSpeed: Double,
-              bridgeCount: Int,
-              averageTimeBetweenBridges: TimeInterval,
-              estimatedArrivalTime: Date?,
-              bridgeArrivalTimes: [Date])
-  {
+  public init(
+    totalTravelTime: TimeInterval,
+    totalDistance: Double,
+    averageSpeed: Double,
+    bridgeCount: Int,
+    averageTimeBetweenBridges: TimeInterval,
+    estimatedArrivalTime: Date?,
+    bridgeArrivalTimes: [Date]
+  ) {
     self.totalTravelTime = totalTravelTime
     self.totalDistance = totalDistance
     self.averageSpeed = averageSpeed
@@ -329,14 +352,15 @@ public struct PathTravelStatisticsWithUncertainty: Codable {
   public let bridgeArrivalTimes: [Date]
   public let bridgeEstimates: [ETAEstimate]
 
-  public init(totalTravelTime: ETASummary,
-              totalDistance: Double,
-              averageSpeed: ETASummary,
-              bridgeCount: Int,
-              estimatedArrivalTime: Date?,
-              bridgeArrivalTimes: [Date],
-              bridgeEstimates: [ETAEstimate])
-  {
+  public init(
+    totalTravelTime: ETASummary,
+    totalDistance: Double,
+    averageSpeed: ETASummary,
+    bridgeCount: Int,
+    estimatedArrivalTime: Date?,
+    bridgeArrivalTimes: [Date],
+    bridgeEstimates: [ETAEstimate]
+  ) {
     self.totalTravelTime = totalTravelTime
     self.totalDistance = totalDistance
     self.averageSpeed = averageSpeed
@@ -385,9 +409,9 @@ public struct PathTravelStatisticsWithUncertainty: Codable {
 
 // MARK: - ETA Utilities
 
-public extension ETAEstimator {
+extension ETAEstimator {
   /// Format travel time for display
-  static func formatTravelTime(_ timeInterval: TimeInterval) -> String {
+  public static func formatTravelTime(_ timeInterval: TimeInterval) -> String {
     let hours = Int(timeInterval) / 3600
     let minutes = Int(timeInterval) % 3600 / 60
 
@@ -399,7 +423,7 @@ public extension ETAEstimator {
   }
 
   /// Format distance for display
-  static func formatDistance(_ distance: Double) -> String {
+  public static func formatDistance(_ distance: Double) -> String {
     if distance >= 1000 {
       return String(format: "%.1f km", distance / 1000)
     } else {
@@ -408,13 +432,13 @@ public extension ETAEstimator {
   }
 
   /// Format speed for display
-  static func formatSpeed(_ speed: Double) -> String {
+  public static func formatSpeed(_ speed: Double) -> String {
     let kmh = speed * 3.6  // convert m/s to km/h
     return String(format: "%.1f km/h", kmh)
   }
 
   /// Check if a time is during rush hour
-  static func isRushHour(_ date: Date) -> Bool {
+  public static func isRushHour(_ date: Date) -> Bool {
     let hour = Calendar.current.component(.hour, from: date)
     let weekday = Calendar.current.component(.weekday, from: date)
 
@@ -429,17 +453,17 @@ public extension ETAEstimator {
   }
 
   /// Get time of day category
-  static func timeOfDayCategory(_ date: Date) -> TimeOfDay {
+  public static func timeOfDayCategory(_ date: Date) -> TimeOfDay {
     let hour = Calendar.current.component(.hour, from: date)
 
     switch hour {
-    case 5 ..< 9:
+    case 5..<9:
       return .morningRush
-    case 9 ..< 16:
+    case 9..<16:
       return .midday
-    case 16 ..< 19:
+    case 16..<19:
       return .eveningRush
-    case 19 ..< 22:
+    case 19..<22:
       return .evening
     default:
       return .lateNight

@@ -56,19 +56,20 @@ public struct CoreMLTrainingConfig: Codable {
   /// Output feature key for model predictions (defaults to "output")
   public let outputKey: String
 
-  public init(modelType: ModelType = .neuralNetwork,
-              modelURL: URL? = nil,
-              inputShape: [Int] = defaultInputShape,
-              outputShape: [Int] = defaultOutputShape,
-              epochs: Int = 100,
-              learningRate: Double = 0.001,
-              batchSize: Int = 32,
-              shuffleSeed: UInt64? = 42,
-              useANE: Bool = true,
-              earlyStoppingPatience: Int = 10,
-              validationSplitRatio: Double = 0.2,
-              outputKey: String = "output")
-  {
+  public init(
+    modelType: ModelType = .neuralNetwork,
+    modelURL: URL? = nil,
+    inputShape: [Int] = defaultInputShape,
+    outputShape: [Int] = defaultOutputShape,
+    epochs: Int = 100,
+    learningRate: Double = 0.001,
+    batchSize: Int = 32,
+    shuffleSeed: UInt64? = 42,
+    useANE: Bool = true,
+    earlyStoppingPatience: Int = 10,
+    validationSplitRatio: Double = 0.2,
+    outputKey: String = "output"
+  ) {
     self.modelType = modelType
     self.modelURL = modelURL
     self.inputShape = inputShape
@@ -84,13 +85,14 @@ public struct CoreMLTrainingConfig: Codable {
   }
 
   /// Configuration for quick validation
-  public static let validation = CoreMLTrainingConfig(modelType: .neuralNetwork,
-                                                      epochs: 10,
-                                                      learningRate: 0.01,
-                                                      batchSize: 8,
-                                                      useANE: false,
-                                                      earlyStoppingPatience: 3,
-                                                      validationSplitRatio: 0.3)
+  public static let validation = CoreMLTrainingConfig(
+    modelType: .neuralNetwork,
+    epochs: 10,
+    learningRate: 0.01,
+    batchSize: 8,
+    useANE: false,
+    earlyStoppingPatience: 3,
+    validationSplitRatio: 0.3)
 }
 
 /// Supported model types for Core ML training
@@ -123,29 +125,29 @@ public enum CoreMLTrainingError: Error, LocalizedError {
 
   public var errorDescription: String? {
     switch self {
-    case let .shapeMismatch(expected, found, context):
+    case .shapeMismatch(let expected, let found, let context):
       return
         "Shape mismatch in \(context): expected \(expected), found \(found)"
-    case let .featureDrift(description, expected, actual):
+    case .featureDrift(let description, let expected, let actual):
       return
         "Feature drift: \(description) (expected \(expected), actual \(actual))"
-    case let .invalidFeatureVector(index, reason):
+    case .invalidFeatureVector(let index, let reason):
       return "Invalid feature vector at index \(index): \(reason)"
-    case let .trainingFailed(reason, underlyingError):
+    case .trainingFailed(let reason, let underlyingError):
       if let underlying = underlyingError {
         return
           "Training failed: \(reason) - \(underlying.localizedDescription)"
       }
       return "Training failed: \(reason)"
-    case let .validationFailed(metrics):
+    case .validationFailed(let metrics):
       return
         "Validation failed: accuracy \(metrics.accuracy), loss \(metrics.loss)"
-    case let .modelCreationFailed(reason):
+    case .modelCreationFailed(let reason):
       return "Model creation failed: \(reason)"
-    case let .insufficientData(required, available):
+    case .insufficientData(let required, let available):
       return
         "Insufficient data: required \(required), available \(available)"
-    case let .batchSizeTooLarge(batchSize, maxSize):
+    case .batchSizeTooLarge(let batchSize, let maxSize):
       return "Batch size too large: \(batchSize) > \(maxSize)"
     }
   }
@@ -156,7 +158,7 @@ public enum CoreMLTrainingError: Error, LocalizedError {
     case .shapeMismatch, .featureDrift, .invalidFeatureVector:
       return true
     case .trainingFailed, .validationFailed, .modelCreationFailed,
-         .insufficientData, .batchSizeTooLarge:
+      .insufficientData, .batchSizeTooLarge:
       return false
     }
   }
@@ -191,21 +193,22 @@ public struct CoreMLModelValidationResult: Codable {
   public let inputShape: [Int]
   public let outputShape: [Int]
 
-  public init(accuracy: Double,
-              loss: Double,
-              f1Score: Double,
-              precision: Double,
-              recall: Double,
-              confusionMatrix: [[Int]],
-              lossTrend: [Double] = [],
-              validationAccuracy: Double = 0.0,
-              validationLoss: Double = 0.0,
-              isOverfitting: Bool = false,
-              hasConverged: Bool = false,
-              isValid: Bool = true,
-              inputShape: [Int] = [],
-              outputShape: [Int] = [])
-  {
+  public init(
+    accuracy: Double,
+    loss: Double,
+    f1Score: Double,
+    precision: Double,
+    recall: Double,
+    confusionMatrix: [[Int]],
+    lossTrend: [Double] = [],
+    validationAccuracy: Double = 0.0,
+    validationLoss: Double = 0.0,
+    isOverfitting: Bool = false,
+    hasConverged: Bool = false,
+    isValid: Bool = true,
+    inputShape: [Int] = [],
+    outputShape: [Int] = []
+  ) {
     self.accuracy = accuracy
     self.loss = loss
     self.f1Score = f1Score
@@ -229,12 +232,14 @@ public struct CoreMLModelValidationResult: Codable {
 public class CoreMLTraining {
   private let config: CoreMLTrainingConfig
   private weak var progressDelegate: CoreMLTrainingProgressDelegate?
-  private let logger = Logger(subsystem: "com.peterjemley.Bridget",
-                              category: "CoreMLTraining")
+  private let logger = Logger(
+    subsystem: "com.peterjemley.Bridget",
+    category: "CoreMLTraining")
 
-  public init(config: CoreMLTrainingConfig,
-              progressDelegate: CoreMLTrainingProgressDelegate? = nil)
-  {
+  public init(
+    config: CoreMLTrainingConfig,
+    progressDelegate: CoreMLTrainingProgressDelegate? = nil
+  ) {
     self.config = config
     self.progressDelegate = progressDelegate
   }
@@ -249,8 +254,9 @@ public class CoreMLTraining {
     -> MLMultiArray
   {
     guard !features.isEmpty else {
-      throw CoreMLTrainingError.insufficientData(required: 1,
-                                                 available: 0)
+      throw CoreMLTrainingError.insufficientData(
+        required: 1,
+        available: 0)
     }
 
     // Validate all vectors have identical feature count
@@ -274,9 +280,10 @@ public class CoreMLTraining {
       ]
 
       guard actualFeatures.count == expectedFeatureCount else {
-        throw CoreMLTrainingError.shapeMismatch(expected: [expectedFeatureCount],
-                                                found: [actualFeatures.count],
-                                                context: "feature vector at index \(index)")
+        throw CoreMLTrainingError.shapeMismatch(
+          expected: [expectedFeatureCount],
+          found: [actualFeatures.count],
+          context: "feature vector at index \(index)")
       }
     }
 
@@ -322,26 +329,29 @@ public class CoreMLTraining {
   ///   - features: Array of feature vectors to batch
   ///   - batchSize: Size of each batch
   /// - Returns: Array of MLMultiArray batches with batch indices for traceability
-  public static func batchedArrays(from features: [FeatureVector],
-                                   batchSize: Int) throws -> [(batchIndex: Int, array: MLMultiArray)]
-  {
+  public static func batchedArrays(
+    from features: [FeatureVector],
+    batchSize: Int
+  ) throws -> [(batchIndex: Int, array: MLMultiArray)] {
     guard batchSize > 0 else {
-      throw CoreMLTrainingError.batchSizeTooLarge(batchSize: batchSize,
-                                                  maxSize: 0)
+      throw CoreMLTrainingError.batchSizeTooLarge(
+        batchSize: batchSize,
+        maxSize: 0)
     }
 
     guard batchSize <= features.count else {
-      throw CoreMLTrainingError.batchSizeTooLarge(batchSize: batchSize,
-                                                  maxSize: features.count)
+      throw CoreMLTrainingError.batchSizeTooLarge(
+        batchSize: batchSize,
+        maxSize: features.count)
     }
 
     var batches: [(batchIndex: Int, array: MLMultiArray)] = []
     let totalBatches = (features.count + batchSize - 1) / batchSize  // Ceiling division
 
-    for batchIndex in 0 ..< totalBatches {
+    for batchIndex in 0..<totalBatches {
       let startIndex = batchIndex * batchSize
       let endIndex = min(startIndex + batchSize, features.count)
-      let batchFeatures = Array(features[startIndex ..< endIndex])
+      let batchFeatures = Array(features[startIndex..<endIndex])
 
       let batchArray = try toMLMultiArray(batchFeatures)
       batches.append((batchIndex: batchIndex, array: batchArray))
@@ -358,9 +368,10 @@ public class CoreMLTraining {
   ///   - progress: Optional progress delegate for training updates
   /// - Returns: Trained MLModel
   /// - Throws: CoreMLTrainingError for training failures and validation issues
-  public func trainModel(with features: [FeatureVector],
-                         progress: CoreMLTrainingProgressDelegate? = nil) async throws -> MLModel
-  {
+  public func trainModel(
+    with features: [FeatureVector],
+    progress: CoreMLTrainingProgressDelegate? = nil
+  ) async throws -> MLModel {
     let progressDelegate = progress ?? self.progressDelegate
 
     await progressDelegate?.trainingDidStart()
@@ -381,10 +392,11 @@ public class CoreMLTraining {
       let modelConfig = createMLModelConfiguration()
 
       // Perform training
-      let model = try await performTraining(inputs: inputs,
-                                            targets: targets,
-                                            configuration: modelConfig,
-                                            progressDelegate: progressDelegate)
+      let model = try await performTraining(
+        inputs: inputs,
+        targets: targets,
+        configuration: modelConfig,
+        progressDelegate: progressDelegate)
 
       await progressDelegate?.trainingDidComplete("trained_model.mlmodel")
       return model
@@ -402,12 +414,14 @@ public class CoreMLTraining {
   ///   - model: Trained MLModel to evaluate
   ///   - features: Feature vectors for evaluation
   /// - Returns: CoreMLModelValidationResult with comprehensive metrics, sanity checks, and statistical variance
-  public func evaluate(_ model: MLModel,
-                       on features: [FeatureVector]) throws -> CoreMLModelValidationResult
-  {
+  public func evaluate(
+    _ model: MLModel,
+    on features: [FeatureVector]
+  ) throws -> CoreMLModelValidationResult {
     guard !features.isEmpty else {
-      throw CoreMLTrainingError.insufficientData(required: 1,
-                                                 available: 0)
+      throw CoreMLTrainingError.insufficientData(
+        required: 1,
+        available: 0)
     }
 
     // Split data for validation
@@ -422,18 +436,22 @@ public class CoreMLTraining {
     let validationInputs = try Self.toMLMultiArray(validationFeatures)
 
     // Perform predictions
-    let trainPredictions = try performPredictions(model: model,
-                                                  inputs: trainInputs,
-                                                  outputKey: config.outputKey)
-    let validationPredictions = try performPredictions(model: model,
-                                                       inputs: validationInputs,
-                                                       outputKey: config.outputKey)
+    let trainPredictions = try performPredictions(
+      model: model,
+      inputs: trainInputs,
+      outputKey: config.outputKey)
+    let validationPredictions = try performPredictions(
+      model: model,
+      inputs: validationInputs,
+      outputKey: config.outputKey)
 
     // Calculate metrics
-    let trainMetrics = calculateMetrics(predictions: trainPredictions,
-                                        actual: trainFeatures)
-    let validationMetrics = calculateMetrics(predictions: validationPredictions,
-                                             actual: validationFeatures)
+    let trainMetrics = calculateMetrics(
+      predictions: trainPredictions,
+      actual: trainFeatures)
+    let validationMetrics = calculateMetrics(
+      predictions: validationPredictions,
+      actual: validationFeatures)
 
     // Detect overfitting
     let isOverfitting = validationMetrics.loss > trainMetrics.loss * 1.2
@@ -442,19 +460,20 @@ public class CoreMLTraining {
     let hasConverged = trainMetrics.loss < 0.1
 
     // Create validation result
-    let result = CoreMLModelValidationResult(accuracy: trainMetrics.accuracy,
-                                             loss: trainMetrics.loss,
-                                             f1Score: trainMetrics.f1Score,
-                                             precision: trainMetrics.precision,
-                                             recall: trainMetrics.recall,
-                                             confusionMatrix: trainMetrics.confusionMatrix,
-                                             validationAccuracy: validationMetrics.accuracy,
-                                             validationLoss: validationMetrics.loss,
-                                             isOverfitting: isOverfitting,
-                                             hasConverged: hasConverged,
-                                             isValid: trainMetrics.accuracy > 0.7 && !isOverfitting,
-                                             inputShape: config.inputShape,
-                                             outputShape: config.outputShape)
+    let result = CoreMLModelValidationResult(
+      accuracy: trainMetrics.accuracy,
+      loss: trainMetrics.loss,
+      f1Score: trainMetrics.f1Score,
+      precision: trainMetrics.precision,
+      recall: trainMetrics.recall,
+      confusionMatrix: trainMetrics.confusionMatrix,
+      validationAccuracy: validationMetrics.accuracy,
+      validationLoss: validationMetrics.loss,
+      isOverfitting: isOverfitting,
+      hasConverged: hasConverged,
+      isValid: trainMetrics.accuracy > 0.7 && !isOverfitting,
+      inputShape: config.inputShape,
+      outputShape: config.outputShape)
 
     // Log validation results
     logger.info(
@@ -495,21 +514,24 @@ public class CoreMLTraining {
   ///   - numRuns: Number of prediction runs (default: 10, recommended: 10-50)
   /// - Returns: ETASummary with statistical variance of predictions
   /// - Throws: CoreMLTrainingError if insufficient data or computation fails
-  public func computePredictionVariance(_ model: MLModel,
-                                        on features: [FeatureVector],
-                                        numRuns: Int = 10) throws -> ETASummary
-  {
+  public func computePredictionVariance(
+    _ model: MLModel,
+    on features: [FeatureVector],
+    numRuns: Int = 10
+  ) throws -> ETASummary {
     guard !features.isEmpty else {
-      throw CoreMLTrainingError.insufficientData(required: 1,
-                                                 available: 0)
+      throw CoreMLTrainingError.insufficientData(
+        required: 1,
+        available: 0)
     }
 
     var allPredictions: [Double] = []
 
     // Perform multiple prediction runs to capture variance
-    for _ in 0 ..< numRuns {
+    for _ in 0..<numRuns {
       let inputs = try Self.toMLMultiArray(features)
-      let predictions = try performPredictions(model: model, inputs: inputs, outputKey: config.outputKey)
+      let predictions = try performPredictions(
+        model: model, inputs: inputs, outputKey: config.outputKey)
 
       // Extract prediction values (predictions are already Double values)
       let predictionValues = predictions
@@ -519,8 +541,9 @@ public class CoreMLTraining {
 
     // Compute statistical summary
     guard let varianceSummary = allPredictions.toETASummary() else {
-      throw CoreMLTrainingError.insufficientData(required: 1,
-                                                 available: 0)
+      throw CoreMLTrainingError.insufficientData(
+        required: 1,
+        available: 0)
     }
 
     logger.info(
@@ -659,63 +682,73 @@ public class CoreMLTraining {
   ///   - accuracyTrend: Array of validation accuracy values (optional)
   /// - Returns: StatisticalTrainingMetrics with comprehensive variance analysis
   /// - Throws: CoreMLTrainingError if model evaluation fails
-  public func computeStatisticalMetrics(_ model: MLModel,
-                                        on features: [FeatureVector],
-                                        lossTrend: [Double] = [],
-                                        accuracyTrend: [Double] = []) throws -> StatisticalTrainingMetrics
-  {
+  public func computeStatisticalMetrics(
+    _ model: MLModel,
+    on features: [FeatureVector],
+    lossTrend: [Double] = [],
+    accuracyTrend: [Double] = []
+  ) throws -> StatisticalTrainingMetrics {
     // Compute prediction variance
     let predictionVariance = try computePredictionVariance(model, on: features)
 
     // Compute training loss variance
     let trainingLossStats =
       computeTrainingLossVariance(lossTrend: lossTrend)
-        ?? ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15)
+      ?? ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15)
 
     // Compute validation accuracy variance
     let validationAccuracyStats =
       computeValidationAccuracyVariance(accuracyTrend: accuracyTrend)
-        ?? ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88)
+      ?? ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88)
 
     // Compute validation loss variance (using same trend as training loss for now)
     let validationLossStats =
       computeTrainingLossVariance(lossTrend: lossTrend)
-        ?? ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18)
+      ?? ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18)
 
     // Create confidence intervals based on prediction variance
-    let confidenceIntervals = PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: max(0.0, validationAccuracyStats.mean - 1.96 * validationAccuracyStats.stdDev),
-                                                                                              upper: min(1.0, validationAccuracyStats.mean + 1.96 * validationAccuracyStats.stdDev)),
-                                                             f1Score95CI: ConfidenceInterval(lower: max(0.0, validationAccuracyStats.mean - 1.96 * validationAccuracyStats.stdDev),
-                                                                                             upper: min(1.0, validationAccuracyStats.mean + 1.96 * validationAccuracyStats.stdDev)),
-                                                             meanError95CI: ConfidenceInterval(lower: max(0.0, trainingLossStats.mean - 1.96 * trainingLossStats.stdDev),
-                                                                                               upper: trainingLossStats.mean + 1.96 * trainingLossStats.stdDev))
+    let confidenceIntervals = PerformanceConfidenceIntervals(
+      accuracy95CI: ConfidenceInterval(
+        lower: max(0.0, validationAccuracyStats.mean - 1.96 * validationAccuracyStats.stdDev),
+        upper: min(1.0, validationAccuracyStats.mean + 1.96 * validationAccuracyStats.stdDev)),
+      f1Score95CI: ConfidenceInterval(
+        lower: max(0.0, validationAccuracyStats.mean - 1.96 * validationAccuracyStats.stdDev),
+        upper: min(1.0, validationAccuracyStats.mean + 1.96 * validationAccuracyStats.stdDev)),
+      meanError95CI: ConfidenceInterval(
+        lower: max(0.0, trainingLossStats.mean - 1.96 * trainingLossStats.stdDev),
+        upper: trainingLossStats.mean + 1.96 * trainingLossStats.stdDev))
 
     // Compute error distribution metrics
-    let errorDistribution = ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: trainingLossStats.mean,
-                                                                                    variance: trainingLossStats.variance,
-                                                                                    min: trainingLossStats.min,
-                                                                                    max: trainingLossStats.max),
-                                                     relativeErrorStats: ETASummary(mean: (trainingLossStats.mean / validationAccuracyStats.mean) * 100,
-                                                                                    variance: (trainingLossStats.variance / pow(validationAccuracyStats.mean, 2)) * 10000,
-                                                                                    min: 0.0,
-                                                                                    max: 15.0),
-                                                     withinOneStdDev: 68.0,  // Assuming normal distribution
-                                                     withinTwoStdDev: 95.0)
+    let errorDistribution = ErrorDistributionMetrics(
+      absoluteErrorStats: ETASummary(
+        mean: trainingLossStats.mean,
+        variance: trainingLossStats.variance,
+        min: trainingLossStats.min,
+        max: trainingLossStats.max),
+      relativeErrorStats: ETASummary(
+        mean: (trainingLossStats.mean / validationAccuracyStats.mean) * 100,
+        variance: (trainingLossStats.variance / pow(validationAccuracyStats.mean, 2)) * 10000,
+        min: 0.0,
+        max: 15.0),
+      withinOneStdDev: 68.0,  // Assuming normal distribution
+      withinTwoStdDev: 95.0)
 
-    return StatisticalTrainingMetrics(trainingLossStats: trainingLossStats,
-                                      validationLossStats: validationLossStats,
-                                      predictionAccuracyStats: validationAccuracyStats,
-                                      etaPredictionVariance: predictionVariance,
-                                      performanceConfidenceIntervals: confidenceIntervals,
-                                      errorDistribution: errorDistribution)
+    return StatisticalTrainingMetrics(
+      trainingLossStats: trainingLossStats,
+      validationLossStats: validationLossStats,
+      predictionAccuracyStats: validationAccuracyStats,
+      etaPredictionVariance: predictionVariance,
+      performanceConfidenceIntervals: confidenceIntervals,
+      errorDistribution: errorDistribution)
   }
 
   // MARK: - Private Helper Methods
 
   private func validateTrainingData(_ features: [FeatureVector]) throws {
     guard features.count >= 10 else {
-      throw CoreMLTrainingError.insufficientData(required: 10,
-                                                 available: features.count)
+      throw CoreMLTrainingError.insufficientData(
+        required: 10,
+        available: features.count)
     }
 
     // Validate feature consistency
@@ -739,17 +772,19 @@ public class CoreMLTraining {
       ]
 
       guard actualFeatures.count == expectedFeatureCount else {
-        throw CoreMLTrainingError.invalidFeatureVector(index: index,
-                                                       reason:
-                                                       "Expected \(expectedFeatureCount) features, found \(actualFeatures.count)")
+        throw CoreMLTrainingError.invalidFeatureVector(
+          index: index,
+          reason:
+            "Expected \(expectedFeatureCount) features, found \(actualFeatures.count)")
       }
 
       // Check for NaN or infinite values
       for (featureIndex, value) in actualFeatures.enumerated() {
         if value.isNaN || value.isInfinite {
-          throw CoreMLTrainingError.invalidFeatureVector(index: index,
-                                                         reason:
-                                                         "Feature \(featureIndex) has invalid value: \(value)")
+          throw CoreMLTrainingError.invalidFeatureVector(
+            index: index,
+            reason:
+              "Feature \(featureIndex) has invalid value: \(value)")
         }
       }
     }
@@ -788,11 +823,12 @@ public class CoreMLTraining {
     return config
   }
 
-  private func performTraining(inputs: [MLMultiArray],
-                               targets: [MLMultiArray],
-                               configuration: MLModelConfiguration,
-                               progressDelegate: CoreMLTrainingProgressDelegate?) async throws -> MLModel
-  {
+  private func performTraining(
+    inputs: [MLMultiArray],
+    targets: [MLMultiArray],
+    configuration: MLModelConfiguration,
+    progressDelegate: CoreMLTrainingProgressDelegate?
+  ) async throws -> MLModel {
     // Create feature providers for training
     var featureProviders = [MLFeatureProvider]()
 
@@ -810,20 +846,21 @@ public class CoreMLTraining {
     let batchProvider = MLArrayBatchProvider(array: featureProviders)
 
     // Create progress handlers for real-time updates
-    let progressHandlers = MLUpdateProgressHandlers(forEvents: [.trainingBegin, .miniBatchEnd, .epochEnd],
-                                                    progressHandler: { [weak progressDelegate] context in
-                                                      let progress = self.calculateTrainingProgress(context: context)
-                                                      Task { @MainActor in
-                                                        progressDelegate?.trainingDidUpdateProgress(progress)
-                                                      }
-                                                    },
-                                                    completionHandler: { [weak progressDelegate] context in
-                                                      if let error = context.task.error {
-                                                        Task { @MainActor in
-                                                          progressDelegate?.trainingDidFail(error)
-                                                        }
-                                                      }
-                                                    })
+    let progressHandlers = MLUpdateProgressHandlers(
+      forEvents: [.trainingBegin, .miniBatchEnd, .epochEnd],
+      progressHandler: { [weak progressDelegate] context in
+        let progress = self.calculateTrainingProgress(context: context)
+        Task { @MainActor in
+          progressDelegate?.trainingDidUpdateProgress(progress)
+        }
+      },
+      completionHandler: { [weak progressDelegate] context in
+        if let error = context.task.error {
+          Task { @MainActor in
+            progressDelegate?.trainingDidFail(error)
+          }
+        }
+      })
 
     // Create or load base model for training
     let baseModelURL = try await createOrLoadBaseModel(
@@ -831,10 +868,11 @@ public class CoreMLTraining {
     )
 
     // Create and start MLUpdateTask
-    _ = try MLUpdateTask(forModelAt: baseModelURL,
-                         trainingData: batchProvider,
-                         configuration: configuration,
-                         progressHandlers: progressHandlers)
+    _ = try MLUpdateTask(
+      forModelAt: baseModelURL,
+      trainingData: batchProvider,
+      configuration: configuration,
+      progressHandlers: progressHandlers)
 
     // Start training
     logger.info(
@@ -847,8 +885,9 @@ public class CoreMLTraining {
 
     // Return a mock model for now
     // In production, this would be the actual trained model
-    throw CoreMLTrainingError.trainingFailed(reason: missingBaseModelMessage,
-                                             underlyingError: nil)
+    throw CoreMLTrainingError.trainingFailed(
+      reason: missingBaseModelMessage,
+      underlyingError: nil)
   }
 
   private func createOrLoadBaseModel(configuration: MLModelConfiguration)
@@ -858,8 +897,9 @@ public class CoreMLTraining {
     if let modelURL = config.modelURL {
       // Verify the model exists and can be loaded
       do {
-        _ = try MLModel(contentsOf: modelURL,
-                        configuration: configuration)
+        _ = try MLModel(
+          contentsOf: modelURL,
+          configuration: configuration)
         logger.info("Using existing model from \(modelURL)")
         return modelURL
       } catch {
@@ -913,23 +953,26 @@ public class CoreMLTraining {
     }
   }
 
-  private func performPredictions(model: MLModel, inputs: MLMultiArray, outputKey: String = "output") throws
+  private func performPredictions(
+    model: MLModel, inputs: MLMultiArray, outputKey: String = "output"
+  ) throws
     -> [Double]
   {
     let sampleCount = inputs.shape[0].intValue
     var predictions: [Double] = []
 
     // Process each sample individually for prediction
-    for i in 0 ..< sampleCount {
+    for i in 0..<sampleCount {
       // Extract single sample
       let sampleShape = [
         NSNumber(value: 1), NSNumber(value: inputs.shape[1].intValue),
       ]
-      let sampleArray = try MLMultiArray(shape: sampleShape,
-                                         dataType: inputs.dataType)
+      let sampleArray = try MLMultiArray(
+        shape: sampleShape,
+        dataType: inputs.dataType)
 
       // Copy data for this sample
-      for j in 0 ..< inputs.shape[1].intValue {
+      for j in 0..<inputs.shape[1].intValue {
         let sourceIndex = [i, j] as [NSNumber]
         let targetIndex = [0, j] as [NSNumber]
         sampleArray[targetIndex] = inputs[sourceIndex]
@@ -937,7 +980,7 @@ public class CoreMLTraining {
 
       // Create feature provider for this sample
       let dict: [String: MLFeatureValue] = [
-        "input": MLFeatureValue(multiArray: sampleArray),
+        "input": MLFeatureValue(multiArray: sampleArray)
       ]
       let featureProvider = try MLDictionaryFeatureProvider(
         dictionary: dict
@@ -948,7 +991,7 @@ public class CoreMLTraining {
 
       // Extract prediction value using configurable output key
       if let outputFeature = prediction.featureValue(for: outputKey),
-         let outputArray = outputFeature.multiArrayValue
+        let outputArray = outputFeature.multiArrayValue
       {
         let predictionValue = outputArray[0].doubleValue
         predictions.append(predictionValue)
@@ -956,8 +999,8 @@ public class CoreMLTraining {
         // Try to auto-detect output key from model description
         let availableKeys = prediction.featureNames
         if let firstKey = availableKeys.first,
-           let outputFeature = prediction.featureValue(for: firstKey),
-           let outputArray = outputFeature.multiArrayValue
+          let outputFeature = prediction.featureValue(for: firstKey),
+          let outputArray = outputFeature.multiArrayValue
         {
           let predictionValue = outputArray[0].doubleValue
           predictions.append(predictionValue)
@@ -973,10 +1016,13 @@ public class CoreMLTraining {
     return predictions
   }
 
-  private func calculateMetrics(predictions: [Double],
-                                actual: [FeatureVector]) -> (accuracy: Double, loss: Double, f1Score: Double, precision: Double,
-                                                             recall: Double, confusionMatrix: [[Int]])
-  {
+  private func calculateMetrics(
+    predictions: [Double],
+    actual: [FeatureVector]
+  ) -> (
+    accuracy: Double, loss: Double, f1Score: Double, precision: Double,
+    recall: Double, confusionMatrix: [[Int]]
+  ) {
     guard predictions.count == actual.count else {
       logger.error(
         "Mismatch between predictions (\(predictions.count)) and actual (\(actual.count))"
@@ -999,7 +1045,7 @@ public class CoreMLTraining {
       let clippedPrediction = max(epsilon, min(1.0 - epsilon, prediction))
       let loss =
         -(actualTarget * log(clippedPrediction) + (1.0 - actualTarget)
-            * log(1.0 - clippedPrediction))
+          * log(1.0 - clippedPrediction))
       totalLoss += loss
 
       // Update confusion matrix
@@ -1021,15 +1067,15 @@ public class CoreMLTraining {
 
     let precision =
       truePositives > 0
-        ? Double(truePositives) / Double(truePositives + falsePositives)
-        : 0.0
+      ? Double(truePositives) / Double(truePositives + falsePositives)
+      : 0.0
     let recall =
       truePositives > 0
-        ? Double(truePositives) / Double(truePositives + falseNegatives)
-        : 0.0
+      ? Double(truePositives) / Double(truePositives + falseNegatives)
+      : 0.0
     let f1Score =
       (precision + recall) > 0
-        ? 2.0 * precision * recall / (precision + recall) : 0.0
+      ? 2.0 * precision * recall / (precision + recall) : 0.0
 
     let confusionMatrix = [
       [trueNegatives, falsePositives],
@@ -1043,31 +1089,32 @@ public class CoreMLTraining {
 // MARK: - Synthetic Data Generator
 
 /// Utility for generating synthetic training data for testing
-public extension CoreMLTraining {
+extension CoreMLTraining {
   /// Generates deterministic synthetic feature vectors for testing
   /// - Parameter count: Number of feature vectors to generate
   /// - Returns: Array of synthetic FeatureVector instances
-  static func generateSyntheticData(count: Int) -> [FeatureVector] {
+  public static func generateSyntheticData(count: Int) -> [FeatureVector] {
     var features: [FeatureVector] = []
 
-    for i in 0 ..< count {
-      let feature = FeatureVector(bridge_id: i % 5 + 1,
-                                  horizon_min: (i % 4) * 3,
-                                  min_sin: sin(Double(i) * 0.1),
-                                  min_cos: cos(Double(i) * 0.1),
-                                  dow_sin: sin(Double(i % 7) * 0.5),
-                                  dow_cos: cos(Double(i % 7) * 0.5),
-                                  open_5m: Double(i % 10) / 10.0,
-                                  open_30m: Double(i % 8) / 8.0,
-                                  detour_delta: Double(i % 60) - 30.0,
-                                  cross_rate: Double(i % 10) / 10.0,
-                                  via_routable: i % 2 == 0 ? 1.0 : 0.0,
-                                  via_penalty: Double(i % 120),
-                                  gate_anom: Double(i % 5) * 0.5,
-                                  detour_frac: Double(i % 10) / 10.0,
-                                  current_speed: 30.0 + Double(i % 20),
-                                  normal_speed: 35.0,
-                                  target: i % 2)
+    for i in 0..<count {
+      let feature = FeatureVector(
+        bridge_id: i % 5 + 1,
+        horizon_min: (i % 4) * 3,
+        min_sin: sin(Double(i) * 0.1),
+        min_cos: cos(Double(i) * 0.1),
+        dow_sin: sin(Double(i % 7) * 0.5),
+        dow_cos: cos(Double(i % 7) * 0.5),
+        open_5m: Double(i % 10) / 10.0,
+        open_30m: Double(i % 8) / 8.0,
+        detour_delta: Double(i % 60) - 30.0,
+        cross_rate: Double(i % 10) / 10.0,
+        via_routable: i % 2 == 0 ? 1.0 : 0.0,
+        via_penalty: Double(i % 120),
+        gate_anom: Double(i % 5) * 0.5,
+        detour_frac: Double(i % 10) / 10.0,
+        current_speed: 30.0 + Double(i % 20),
+        normal_speed: 35.0,
+        target: i % 2)
       features.append(feature)
     }
 

@@ -6,7 +6,7 @@ import Foundation
 // MARK: - Date Extensions
 
 /// Extensions related to `Date` for common date calculations and formatting.
-public extension Date {
+extension Date {
   /// Returns the Date floored to the nearest minute.
   ///
   /// This property calculates the date by removing the seconds and smaller
@@ -15,7 +15,7 @@ public extension Date {
   /// - Returns: A new `Date` instance representing the time at the start of the current minute.
   ///
   /// - Note: The returned date will have zero seconds and fractional seconds.
-  var flooredToMinute: Date {
+  public var flooredToMinute: Date {
     let time = timeIntervalSince1970
     let floored = time - (time.truncatingRemainder(dividingBy: 60))
     return Date(timeIntervalSince1970: floored)
@@ -30,7 +30,7 @@ public extension Date {
   /// - Returns: An `Int` representing the number of minutes from `other` to the current date.
   ///
   /// - Note: If `self` is earlier than `other`, the result will be negative.
-  func minutes(since other: Date) -> Int {
+  public func minutes(since other: Date) -> Int {
     return Int(timeIntervalSince(other) / 60)
   }
 }
@@ -38,7 +38,7 @@ public extension Date {
 // MARK: - Array Extensions
 
 /// Extensions related to `Array` for safe access and chunking functionality.
-public extension Array {
+extension Array {
   /// Safely returns the element at the specified index if it exists.
   ///
   /// This subscript returns `nil` instead of crashing if the index is out of bounds.
@@ -47,7 +47,7 @@ public extension Array {
   /// - Returns: The element at the given index if it exists, otherwise `nil`.
   ///
   /// - Note: This is useful for avoiding runtime errors from invalid indices.
-  subscript(safe index: Int) -> Element? {
+  public subscript(safe index: Int) -> Element? {
     return (indices.contains(index)) ? self[index] : nil
   }
 
@@ -60,10 +60,10 @@ public extension Array {
   /// - Returns: An array of arrays, where each subarray has up to `size` elements.
   ///
   /// - Note: If `size` is less than or equal to zero, the method returns an empty array.
-  func chunked(into size: Int) -> [[Element]] {
+  public func chunked(into size: Int) -> [[Element]] {
     if size <= 0 { return [] }
     return stride(from: 0, to: count, by: size).map { i in
-      Array(self[i ..< Swift.min(i + size, count)])
+      Array(self[i..<Swift.min(i + size, count)])
     }
   }
 }
@@ -71,13 +71,13 @@ public extension Array {
 // MARK: - String Extensions
 
 /// Extensions related to `String` for trimming and date validation.
-public extension String {
+extension String {
   /// Returns a copy of the string with whitespace and newline characters trimmed from both ends.
   ///
   /// Leading and trailing whitespace and newline characters are removed.
   ///
   /// - Returns: A new string without leading or trailing whitespace and newlines.
-  var trimmed: String {
+  public var trimmed: String {
     trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
@@ -88,7 +88,7 @@ public extension String {
   /// - Returns: `true` if the string can be converted to a `Date` using ISO8601 format, otherwise `false`.
   ///
   /// - Note: This does not guarantee the string is a complete ISO8601 date, but that it can be parsed by the formatter.
-  var isISO8601Date: Bool {
+  public var isISO8601Date: Bool {
     let formatter = ISO8601DateFormatter()
     return formatter.date(from: self) != nil
   }

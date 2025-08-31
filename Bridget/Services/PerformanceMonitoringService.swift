@@ -34,13 +34,14 @@ public struct PerformanceMetrics {
   public let peakMemoryMB: Double
   public let totalTimeMs: Double
 
-  public init(parseTimeMs: Double = 0,
-              featureEngineeringTimeMs: Double = 0,
-              mlMultiArrayConversionTimeMs: Double = 0,
-              trainingTimeMs: Double = 0,
-              validationTimeMs: Double = 0,
-              peakMemoryMB: Double = 0)
-  {
+  public init(
+    parseTimeMs: Double = 0,
+    featureEngineeringTimeMs: Double = 0,
+    mlMultiArrayConversionTimeMs: Double = 0,
+    trainingTimeMs: Double = 0,
+    validationTimeMs: Double = 0,
+    peakMemoryMB: Double = 0
+  ) {
     self.parseTimeMs = parseTimeMs
     self.featureEngineeringTimeMs = featureEngineeringTimeMs
     self.mlMultiArrayConversionTimeMs = mlMultiArrayConversionTimeMs
@@ -49,7 +50,7 @@ public struct PerformanceMetrics {
     self.peakMemoryMB = peakMemoryMB
     self.totalTimeMs =
       parseTimeMs + featureEngineeringTimeMs + mlMultiArrayConversionTimeMs + trainingTimeMs
-        + validationTimeMs
+      + validationTimeMs
   }
 }
 
@@ -63,13 +64,14 @@ public struct PerformanceBudget {
   public let validationTimeMs: Double
   public let peakMemoryMB: Double
 
-  public init(parseTimeMs: Double = 1000,
-              featureEngineeringTimeMs: Double = 5000,
-              mlMultiArrayConversionTimeMs: Double = 500,
-              trainingTimeMs: Double = 30000,
-              validationTimeMs: Double = 2000,
-              peakMemoryMB: Double = 512)
-  {
+  public init(
+    parseTimeMs: Double = 1000,
+    featureEngineeringTimeMs: Double = 5000,
+    mlMultiArrayConversionTimeMs: Double = 500,
+    trainingTimeMs: Double = 30000,
+    validationTimeMs: Double = 2000,
+    peakMemoryMB: Double = 512
+  ) {
     self.parseTimeMs = parseTimeMs
     self.featureEngineeringTimeMs = featureEngineeringTimeMs
     self.mlMultiArrayConversionTimeMs = mlMultiArrayConversionTimeMs
@@ -79,20 +81,22 @@ public struct PerformanceBudget {
   }
 
   /// Default production performance budget
-  public static let production = PerformanceBudget(parseTimeMs: 1000,
-                                                   featureEngineeringTimeMs: 5000,
-                                                   mlMultiArrayConversionTimeMs: 500,
-                                                   trainingTimeMs: 30000,
-                                                   validationTimeMs: 2000,
-                                                   peakMemoryMB: 512)
+  public static let production = PerformanceBudget(
+    parseTimeMs: 1000,
+    featureEngineeringTimeMs: 5000,
+    mlMultiArrayConversionTimeMs: 500,
+    trainingTimeMs: 30000,
+    validationTimeMs: 2000,
+    peakMemoryMB: 512)
 
   /// Relaxed development performance budget
-  public static let development = PerformanceBudget(parseTimeMs: 2000,
-                                                    featureEngineeringTimeMs: 10000,
-                                                    mlMultiArrayConversionTimeMs: 1000,
-                                                    trainingTimeMs: 60000,
-                                                    validationTimeMs: 5000,
-                                                    peakMemoryMB: 1024)
+  public static let development = PerformanceBudget(
+    parseTimeMs: 2000,
+    featureEngineeringTimeMs: 10000,
+    mlMultiArrayConversionTimeMs: 1000,
+    trainingTimeMs: 60000,
+    validationTimeMs: 5000,
+    peakMemoryMB: 1024)
 }
 
 // MARK: - Budget Validation Result
@@ -103,9 +107,10 @@ public struct BudgetValidationResult {
   public let performanceRating: String
   public let recommendations: [String]
 
-  public init(isWithinBudget: Bool, exceededStages: [String], performanceRating: String,
-              recommendations: [String])
-  {
+  public init(
+    isWithinBudget: Bool, exceededStages: [String], performanceRating: String,
+    recommendations: [String]
+  ) {
     self.isWithinBudget = isWithinBudget
     self.exceededStages = exceededStages
     self.performanceRating = performanceRating
@@ -146,40 +151,45 @@ public class PerformanceMonitoringService {
     // Update metrics based on stage
     switch stage {
     case "parse":
-      metrics = PerformanceMetrics(parseTimeMs: duration,
-                                   featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
-                                   mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
-                                   trainingTimeMs: metrics.trainingTimeMs,
-                                   validationTimeMs: metrics.validationTimeMs,
-                                   peakMemoryMB: metrics.peakMemoryMB)
+      metrics = PerformanceMetrics(
+        parseTimeMs: duration,
+        featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
+        mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
+        trainingTimeMs: metrics.trainingTimeMs,
+        validationTimeMs: metrics.validationTimeMs,
+        peakMemoryMB: metrics.peakMemoryMB)
     case "featureEngineering":
-      metrics = PerformanceMetrics(parseTimeMs: metrics.parseTimeMs,
-                                   featureEngineeringTimeMs: duration,
-                                   mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
-                                   trainingTimeMs: metrics.trainingTimeMs,
-                                   validationTimeMs: metrics.validationTimeMs,
-                                   peakMemoryMB: metrics.peakMemoryMB)
+      metrics = PerformanceMetrics(
+        parseTimeMs: metrics.parseTimeMs,
+        featureEngineeringTimeMs: duration,
+        mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
+        trainingTimeMs: metrics.trainingTimeMs,
+        validationTimeMs: metrics.validationTimeMs,
+        peakMemoryMB: metrics.peakMemoryMB)
     case "mlMultiArrayConversion":
-      metrics = PerformanceMetrics(parseTimeMs: metrics.parseTimeMs,
-                                   featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
-                                   mlMultiArrayConversionTimeMs: duration,
-                                   trainingTimeMs: metrics.trainingTimeMs,
-                                   validationTimeMs: metrics.validationTimeMs,
-                                   peakMemoryMB: metrics.peakMemoryMB)
+      metrics = PerformanceMetrics(
+        parseTimeMs: metrics.parseTimeMs,
+        featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
+        mlMultiArrayConversionTimeMs: duration,
+        trainingTimeMs: metrics.trainingTimeMs,
+        validationTimeMs: metrics.validationTimeMs,
+        peakMemoryMB: metrics.peakMemoryMB)
     case "training":
-      metrics = PerformanceMetrics(parseTimeMs: metrics.parseTimeMs,
-                                   featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
-                                   mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
-                                   trainingTimeMs: duration,
-                                   validationTimeMs: metrics.validationTimeMs,
-                                   peakMemoryMB: metrics.peakMemoryMB)
+      metrics = PerformanceMetrics(
+        parseTimeMs: metrics.parseTimeMs,
+        featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
+        mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
+        trainingTimeMs: duration,
+        validationTimeMs: metrics.validationTimeMs,
+        peakMemoryMB: metrics.peakMemoryMB)
     case "validation":
-      metrics = PerformanceMetrics(parseTimeMs: metrics.parseTimeMs,
-                                   featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
-                                   mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
-                                   trainingTimeMs: metrics.trainingTimeMs,
-                                   validationTimeMs: duration,
-                                   peakMemoryMB: metrics.peakMemoryMB)
+      metrics = PerformanceMetrics(
+        parseTimeMs: metrics.parseTimeMs,
+        featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
+        mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
+        trainingTimeMs: metrics.trainingTimeMs,
+        validationTimeMs: duration,
+        peakMemoryMB: metrics.peakMemoryMB)
     default:
       logger.warning("Unknown stage: \(stage)")
     }
@@ -191,12 +201,13 @@ public class PerformanceMonitoringService {
   /// - Parameter memoryMB: Memory usage in MB
   public func recordMemoryUsage(_ memoryMB: Double) {
     if memoryMB > metrics.peakMemoryMB {
-      metrics = PerformanceMetrics(parseTimeMs: metrics.parseTimeMs,
-                                   featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
-                                   mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
-                                   trainingTimeMs: metrics.trainingTimeMs,
-                                   validationTimeMs: metrics.validationTimeMs,
-                                   peakMemoryMB: memoryMB)
+      metrics = PerformanceMetrics(
+        parseTimeMs: metrics.parseTimeMs,
+        featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
+        mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
+        trainingTimeMs: metrics.trainingTimeMs,
+        validationTimeMs: metrics.validationTimeMs,
+        peakMemoryMB: memoryMB)
     }
   }
 
@@ -245,10 +256,11 @@ public class PerformanceMonitoringService {
     let isWithinBudget = exceededStages.isEmpty
     let performanceRating = isWithinBudget ? "Excellent" : "Needs Optimization"
 
-    return BudgetValidationResult(isWithinBudget: isWithinBudget,
-                                  exceededStages: exceededStages,
-                                  performanceRating: performanceRating,
-                                  recommendations: recommendations)
+    return BudgetValidationResult(
+      isWithinBudget: isWithinBudget,
+      exceededStages: exceededStages,
+      performanceRating: performanceRating,
+      recommendations: recommendations)
   }
 
   /// Generate performance report
@@ -257,28 +269,28 @@ public class PerformanceMonitoringService {
     let validation = validateBudget()
 
     let report = """
-    Performance Report
-    =================
+      Performance Report
+      =================
 
-    Stage Timings:
-    - Parse: \(String(format: "%.2f", metrics.parseTimeMs))ms (Budget: \(String(format: "%.2f", budget.parseTimeMs))ms)
-    - Feature Engineering: \(String(format: "%.2f", metrics.featureEngineeringTimeMs))ms (Budget: \(String(format: "%.2f", budget.featureEngineeringTimeMs))ms)
-    - MLMultiArray Conversion: \(String(format: "%.2f", metrics.mlMultiArrayConversionTimeMs))ms (Budget: \(String(format: "%.2f", budget.mlMultiArrayConversionTimeMs))ms)
-    - Training: \(String(format: "%.2f", metrics.trainingTimeMs))ms (Budget: \(String(format: "%.2f", budget.trainingTimeMs))ms)
-    - Validation: \(String(format: "%.2f", metrics.validationTimeMs))ms (Budget: \(String(format: "%.2f", budget.validationTimeMs))ms)
+      Stage Timings:
+      - Parse: \(String(format: "%.2f", metrics.parseTimeMs))ms (Budget: \(String(format: "%.2f", budget.parseTimeMs))ms)
+      - Feature Engineering: \(String(format: "%.2f", metrics.featureEngineeringTimeMs))ms (Budget: \(String(format: "%.2f", budget.featureEngineeringTimeMs))ms)
+      - MLMultiArray Conversion: \(String(format: "%.2f", metrics.mlMultiArrayConversionTimeMs))ms (Budget: \(String(format: "%.2f", budget.mlMultiArrayConversionTimeMs))ms)
+      - Training: \(String(format: "%.2f", metrics.trainingTimeMs))ms (Budget: \(String(format: "%.2f", budget.trainingTimeMs))ms)
+      - Validation: \(String(format: "%.2f", metrics.validationTimeMs))ms (Budget: \(String(format: "%.2f", budget.validationTimeMs))ms)
 
-    Memory Usage:
-    - Peak Memory: \(String(format: "%.2f", metrics.peakMemoryMB))MB (Budget: \(String(format: "%.2f", budget.peakMemoryMB))MB)
+      Memory Usage:
+      - Peak Memory: \(String(format: "%.2f", metrics.peakMemoryMB))MB (Budget: \(String(format: "%.2f", budget.peakMemoryMB))MB)
 
-    Total Time: \(String(format: "%.2f", metrics.totalTimeMs))ms
+      Total Time: \(String(format: "%.2f", metrics.totalTimeMs))ms
 
-    Budget Validation: \(validation.isWithinBudget ? "✅ PASS" : "❌ FAIL")
-    Performance Rating: \(validation.performanceRating)
+      Budget Validation: \(validation.isWithinBudget ? "✅ PASS" : "❌ FAIL")
+      Performance Rating: \(validation.performanceRating)
 
-    \(validation.exceededStages.isEmpty ? "All stages within budget" : "Exceeded stages: \(validation.exceededStages.joined(separator: ", "))")
+      \(validation.exceededStages.isEmpty ? "All stages within budget" : "Exceeded stages: \(validation.exceededStages.joined(separator: ", "))")
 
-    \(validation.recommendations.isEmpty ? "" : "Recommendations:\n" + validation.recommendations.map { "- \($0)" }.joined(separator: "\n"))
-    """
+      \(validation.recommendations.isEmpty ? "" : "Recommendations:\n" + validation.recommendations.map { "- \($0)" }.joined(separator: "\n"))
+      """
 
     return report
   }
@@ -292,13 +304,17 @@ public func createPerformanceMonitor(budget: PerformanceBudget = .production)
   return PerformanceMonitoringService(budget: budget)
 }
 
-public func measurePerformance<T>(_ stage: String, monitor: PerformanceMonitoringService, operation: () throws -> T) rethrows -> T {
+public func measurePerformance<T>(
+  _ stage: String, monitor: PerformanceMonitoringService, operation: () throws -> T
+) rethrows -> T {
   monitor.startStage(stage)
   defer { monitor.endStage(stage) }
   return try operation()
 }
 
-public func measurePerformanceAsync<T>(_ stage: String, monitor: PerformanceMonitoringService, operation: () async throws -> T) async rethrows -> T {
+public func measurePerformanceAsync<T>(
+  _ stage: String, monitor: PerformanceMonitoringService, operation: () async throws -> T
+) async rethrows -> T {
   monitor.startStage(stage)
   defer { monitor.endStage(stage) }
   return try await operation()

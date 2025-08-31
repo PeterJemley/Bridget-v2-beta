@@ -1,0 +1,51 @@
+# Bridget Documentation
+
+@Metadata {
+    @TechnologyRoot
+}
+
+Welcome to Bridget's technical documentation. This guide provides comprehensive information about the architecture, implementation, and usage of the Bridget bridge monitoring application.
+
+## Overview
+
+Bridget is a SwiftUI application for monitoring bridge openings in Seattle using Apple's Observation framework and Core ML for on-device machine learning. The project follows a modular, service-oriented architecture with comprehensive testing and documentation.
+
+## Topics
+
+### Architecture
+
+- <doc:ArchitectureOverview>
+- <doc:DataFlow>
+- <doc:DataProcessingPipeline>
+
+### Machine Learning
+
+- <doc:MLTrainingDataPipelineOverview>
+- <doc:MLTrainingDataPipeline>
+- <doc:MLTrainingDataPipeline.catalog>
+
+### Implementation Details
+
+- <doc:ErrorHandling>
+- <doc:CachingStrategy>
+- <doc:FileManagerUtils>
+- <doc:GuardStatementPatterns>
+
+### Data and Validation
+
+- <doc:DataValidation>
+- <doc:ValidationFailures>
+- <doc:ValidatorFixes>
+- <doc:SurfacesValidationFailures>
+
+### Development and Testing
+
+- <doc:TestingWorkflow>
+- <doc:StatisticsUtilitiesSummary>
+- <doc:MultiPath_Implementation_Status>
+- <doc:GradualDocumentationChecklist>
+
+## See Also
+
+- <doc:README>
+

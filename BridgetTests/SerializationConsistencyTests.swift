@@ -45,13 +45,13 @@ struct SerializationConsistencyTests {
   @Test("snake_case key decoding")
   func snakeCaseKeyDecoding() async throws {
     let json = """
-    {
-        "id": 3,
-        "name": "SnakeCase",
-        "date": "2025-08-18T09:30:00Z",
-        "snake_case_field": "snake"
-    }
-    """.data(using: .utf8)!
+      {
+          "id": 3,
+          "name": "SnakeCase",
+          "date": "2025-08-18T09:30:00Z",
+          "snake_case_field": "snake"
+      }
+      """.data(using: .utf8)!
     let decoder = JSONDecoder.bridgeDecoder()
     let model = try decoder.decode(SampleModel.self, from: json)
     #expect(model.snakeCaseField == "snake")
@@ -74,11 +74,10 @@ struct SerializationConsistencyTests {
     let encoder = JSONEncoder.bridgeEncoder(dateEncodingStrategy: .secondsSince1970)
     let data = try encoder.encode(model)
     let decoder = JSONDecoder.bridgeDecoder()
-    do {
-      _ = try decoder.decode(SampleModel.self, from: data)
-      throw TestError.unexpectedSuccess("Mismatched date strategies should fail")
-    } catch {
-      // Expected failure - bridge decoder can't handle secondsSince1970 format
+
+    // Expect this to fail due to mismatched date strategies
+    #expect(throws: DecodingError.self) {
+      try decoder.decode(SampleModel.self, from: data)
     }
   }
 }

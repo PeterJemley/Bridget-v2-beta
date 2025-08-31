@@ -51,7 +51,8 @@ import Testing
       calendar.date(byAdding: .hour, value: -3, to: now)!,
     ]
 
-    let bridge = BridgeStatusModel(bridgeName: "Test Bridge", apiBridgeID: nil, historicalOpenings: openings)
+    let bridge = BridgeStatusModel(
+      bridgeName: "Test Bridge", apiBridgeID: nil, historicalOpenings: openings)
 
     #expect(bridge.bridgeName == "Test Bridge")
     #expect(bridge.historicalOpenings.count == 3)
@@ -84,18 +85,20 @@ import Testing
     let calendar = Calendar.current
     let now = Date()
 
-    let bridge1 = BridgeStatusModel(bridgeName: "Bridge 1",
-                                    apiBridgeID: nil,
-                                    historicalOpenings: [
-                                      calendar.date(byAdding: .hour, value: -1, to: now)!,
-                                      calendar.date(byAdding: .hour, value: -2, to: now)!,
-                                    ])
+    let bridge1 = BridgeStatusModel(
+      bridgeName: "Bridge 1",
+      apiBridgeID: nil,
+      historicalOpenings: [
+        calendar.date(byAdding: .hour, value: -1, to: now)!,
+        calendar.date(byAdding: .hour, value: -2, to: now)!,
+      ])
 
-    let bridge2 = BridgeStatusModel(bridgeName: "Bridge 2",
-                                    apiBridgeID: nil,
-                                    historicalOpenings: [
-                                      calendar.date(byAdding: .hour, value: -3, to: now)!,
-                                    ])
+    let bridge2 = BridgeStatusModel(
+      bridgeName: "Bridge 2",
+      apiBridgeID: nil,
+      historicalOpenings: [
+        calendar.date(byAdding: .hour, value: -3, to: now)!
+      ])
 
     let route = RouteModel(routeID: "Test Route", bridges: [bridge1, bridge2], score: 0.0)
 
@@ -184,7 +187,8 @@ import Testing
   @Test
   func bridgeDataErrorLocalization() {
     let networkError = NetworkError.networkError
-    let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")), rawData: Data())
+    let decodingError = BridgeDataError.decodingError(
+      .dataCorrupted(.init(codingPath: [], debugDescription: "test")), rawData: Data())
     let invalidURLError = NetworkError.invalidResponse
 
     #expect(!networkError.localizedDescription.isEmpty)
@@ -200,14 +204,15 @@ import Testing
 
   @Test
   func bridgeOpeningRecordCoding() {
-    let record = BridgeOpeningRecord(entitytype: "Bridge",
-                                     entityname: "1st Ave South",
-                                     entityid: "1",
-                                     opendatetime: "2025-01-03T10:12:00.000",
-                                     closedatetime: "2025-01-03T10:20:00.000",
-                                     minutesopen: "8",
-                                     latitude: "47.542213439941406",
-                                     longitude: "-122.33446502685547")
+    let record = BridgeOpeningRecord(
+      entitytype: "Bridge",
+      entityname: "1st Ave South",
+      entityid: "1",
+      opendatetime: "2025-01-03T10:12:00.000",
+      closedatetime: "2025-01-03T10:20:00.000",
+      minutesopen: "8",
+      latitude: "47.542213439941406",
+      longitude: "-122.33446502685547")
 
     #expect(record.entityid == "1")
     #expect(record.entityname == "1st Ave South")
@@ -218,14 +223,15 @@ import Testing
 
   @Test
   func bridgeOpeningRecordComputedProperties() {
-    let record = BridgeOpeningRecord(entitytype: "Bridge",
-                                     entityname: "1st Ave South",
-                                     entityid: "1",
-                                     opendatetime: "2025-01-03T10:12:00.000",
-                                     closedatetime: "2025-01-03T10:20:00.000",
-                                     minutesopen: "8",
-                                     latitude: "47.542213439941406",
-                                     longitude: "-122.33446502685547")
+    let record = BridgeOpeningRecord(
+      entitytype: "Bridge",
+      entityname: "1st Ave South",
+      entityid: "1",
+      opendatetime: "2025-01-03T10:12:00.000",
+      closedatetime: "2025-01-03T10:20:00.000",
+      minutesopen: "8",
+      latitude: "47.542213439941406",
+      longitude: "-122.33446502685547")
 
     #expect(record.openDate != nil)
     #expect(record.closeDate != nil)
@@ -237,17 +243,17 @@ import Testing
   @Test
   func bridgeOpeningRecordJSONDecoding() throws {
     let json = """
-    {
-        "entitytype": "Bridge",
-        "entityname": "1st Ave South",
-        "entityid": "1",
-        "opendatetime": "2025-01-03T10:12:00.000",
-        "closedatetime": "2025-01-03T10:20:00.000",
-        "minutesopen": "8",
-        "latitude": "47.542213439941406",
-        "longitude": "-122.33446502685547"
-    }
-    """.data(using: .utf8)!
+      {
+          "entitytype": "Bridge",
+          "entityname": "1st Ave South",
+          "entityid": "1",
+          "opendatetime": "2025-01-03T10:12:00.000",
+          "closedatetime": "2025-01-03T10:20:00.000",
+          "minutesopen": "8",
+          "latitude": "47.542213439941406",
+          "longitude": "-122.33446502685547"
+      }
+      """.data(using: .utf8)!
 
     let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(record.entityid == "1")
@@ -260,12 +266,12 @@ import Testing
   @Test
   func missingRequiredKeys() {
     let json = """
-    {
-        "entitytype": "Bridge",
-        "entityname": "1st Ave South"
-        // Missing entityid, opendatetime, etc.
-    }
-    """.data(using: .utf8)!
+      {
+          "entitytype": "Bridge",
+          "entityname": "1st Ave South"
+          // Missing entityid, opendatetime, etc.
+      }
+      """.data(using: .utf8)!
 
     #expect(throws: DecodingError.self) {
       _ = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
@@ -275,18 +281,18 @@ import Testing
   @Test
   func extraUnknownKeys() throws {
     let json = """
-    {
-        "entitytype": "Bridge",
-        "entityname": "1st Ave South",
-        "entityid": "1",
-        "opendatetime": "2025-01-03T10:12:00.000",
-        "closedatetime": "2025-01-03T10:20:00.000",
-        "minutesopen": "8",
-        "latitude": "47.542213439941406",
-        "longitude": "-122.33446502685547",
-        "unknown_field": "should_be_ignored"
-    }
-    """.data(using: .utf8)!
+      {
+          "entitytype": "Bridge",
+          "entityname": "1st Ave South",
+          "entityid": "1",
+          "opendatetime": "2025-01-03T10:12:00.000",
+          "closedatetime": "2025-01-03T10:20:00.000",
+          "minutesopen": "8",
+          "latitude": "47.542213439941406",
+          "longitude": "-122.33446502685547",
+          "unknown_field": "should_be_ignored"
+      }
+      """.data(using: .utf8)!
 
     let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(record.entityid == "1")
@@ -296,17 +302,17 @@ import Testing
   @Test
   func malformedDateStrings() throws {
     let json = """
-    {
-        "entitytype": "Bridge",
-        "entityname": "1st Ave South",
-        "entityid": "1",
-        "opendatetime": "invalid-date-format",
-        "closedatetime": "2025-01-03T10:20:00.000",
-        "minutesopen": "8",
-        "latitude": "47.542213439941406",
-        "longitude": "-122.33446502685547"
-    }
-    """.data(using: .utf8)!
+      {
+          "entitytype": "Bridge",
+          "entityname": "1st Ave South",
+          "entityid": "1",
+          "opendatetime": "invalid-date-format",
+          "closedatetime": "2025-01-03T10:20:00.000",
+          "minutesopen": "8",
+          "latitude": "47.542213439941406",
+          "longitude": "-122.33446502685547"
+      }
+      """.data(using: .utf8)!
 
     let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(record.openDate == nil, "Should have nil openDate for malformed date")
@@ -324,17 +330,17 @@ import Testing
   @Test
   func emptyStringValues() throws {
     let json = """
-    {
-        "entitytype": "Bridge",
-        "entityname": "",
-        "entityid": "",
-        "opendatetime": "2025-01-03T10:12:00.000",
-        "closedatetime": "2025-01-03T10:20:00.000",
-        "minutesopen": "8",
-        "latitude": "47.542213439941406",
-        "longitude": "-122.33446502685547"
-    }
-    """.data(using: .utf8)!
+      {
+          "entitytype": "Bridge",
+          "entityname": "",
+          "entityid": "",
+          "opendatetime": "2025-01-03T10:12:00.000",
+          "closedatetime": "2025-01-03T10:20:00.000",
+          "minutesopen": "8",
+          "latitude": "47.542213439941406",
+          "longitude": "-122.33446502685547"
+      }
+      """.data(using: .utf8)!
 
     let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(record.entityid == "")
@@ -346,17 +352,17 @@ import Testing
   @Test
   func invalidNumericValues() throws {
     let json = """
-    {
-        "entitytype": "Bridge",
-        "entityname": "1st Ave South",
-        "entityid": "1",
-        "opendatetime": "2025-01-03T10:12:00.000",
-        "closedatetime": "2025-01-03T10:20:00.000",
-        "minutesopen": "not_a_number",
-        "latitude": "invalid_latitude",
-        "longitude": "invalid_longitude"
-    }
-    """.data(using: .utf8)!
+      {
+          "entitytype": "Bridge",
+          "entityname": "1st Ave South",
+          "entityid": "1",
+          "opendatetime": "2025-01-03T10:12:00.000",
+          "closedatetime": "2025-01-03T10:20:00.000",
+          "minutesopen": "not_a_number",
+          "latitude": "invalid_latitude",
+          "longitude": "invalid_longitude"
+      }
+      """.data(using: .utf8)!
 
     let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(record.minutesOpenValue == nil)
@@ -371,7 +377,8 @@ import Testing
     let networkError = NetworkError.networkError
     let invalidContentTypeError = NetworkError.invalidContentType
     let payloadSizeError = NetworkError.payloadSizeError
-    let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")), rawData: Data())
+    let decodingError = BridgeDataError.decodingError(
+      .dataCorrupted(.init(codingPath: [], debugDescription: "test")), rawData: Data())
     let processingError = BridgeDataError.processingError("test error")
 
     #expect(!networkError.localizedDescription.isEmpty)
@@ -384,17 +391,17 @@ import Testing
   @Test
   func outOfRangeDate() throws {
     let json = """
-    {
-        "entitytype": "Bridge",
-        "entityname": "1st Ave South",
-        "entityid": "1",
-        "opendatetime": "1970-01-01T10:12:00.000",
-        "closedatetime": "1970-01-01T10:20:00.000",
-        "minutesopen": "8",
-        "latitude": "47.542213439941406",
-        "longitude": "-122.33446502685547"
-    }
-    """.data(using: .utf8)!
+      {
+          "entitytype": "Bridge",
+          "entityname": "1st Ave South",
+          "entityid": "1",
+          "opendatetime": "1970-01-01T10:12:00.000",
+          "closedatetime": "1970-01-01T10:20:00.000",
+          "minutesopen": "8",
+          "latitude": "47.542213439941406",
+          "longitude": "-122.33446502685547"
+      }
+      """.data(using: .utf8)!
 
     _ = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(true)
@@ -403,17 +410,17 @@ import Testing
   @Test
   func unknownBridgeID() throws {
     let json = """
-    {
-        "entitytype": "Bridge",
-        "entityname": "Unknown Bridge",
-        "entityid": "999",
-        "opendatetime": "2025-01-03T10:12:00.000",
-        "closedatetime": "2025-01-03T10:20:00.000",
-        "minutesopen": "8",
-        "latitude": "47.542213439941406",
-        "longitude": "-122.33446502685547"
-    }
-    """.data(using: .utf8)!
+      {
+          "entitytype": "Bridge",
+          "entityname": "Unknown Bridge",
+          "entityid": "999",
+          "opendatetime": "2025-01-03T10:12:00.000",
+          "closedatetime": "2025-01-03T10:20:00.000",
+          "minutesopen": "8",
+          "latitude": "47.542213439941406",
+          "longitude": "-122.33446502685547"
+      }
+      """.data(using: .utf8)!
 
     _ = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
     #expect(true)
@@ -438,59 +445,59 @@ import Testing
     let validCloseDate = "2025-01-03T10:20:00.000"
 
     let invalidLatJSON = """
-    [{
-        "entitytype": "Bridge",
-        "entityname": "Test Bridge",
-        "entityid": "1",
-        "opendatetime": "\(validDate)",
-        "closedatetime": "\(validCloseDate)",
-        "minutesopen": "8",
-        "latitude": "95.0",
-        "longitude": "-122.334465"
-    }]
-    """.data(using: .utf8)!
+      [{
+          "entitytype": "Bridge",
+          "entityname": "Test Bridge",
+          "entityid": "1",
+          "opendatetime": "\(validDate)",
+          "closedatetime": "\(validCloseDate)",
+          "minutesopen": "8",
+          "latitude": "95.0",
+          "longitude": "-122.334465"
+      }]
+      """.data(using: .utf8)!
     #expect(try processor.processHistoricalData(invalidLatJSON).0.isEmpty)
 
     let invalidLonJSON = """
-    [{
-        "entitytype": "Bridge",
-        "entityname": "Test Bridge",
-        "entityid": "1",
-        "opendatetime": "\(validDate)",
-        "closedatetime": "\(validCloseDate)",
-        "minutesopen": "8",
-        "latitude": "47.542213",
-        "longitude": "-190.0"
-    }]
-    """.data(using: .utf8)!
+      [{
+          "entitytype": "Bridge",
+          "entityname": "Test Bridge",
+          "entityid": "1",
+          "opendatetime": "\(validDate)",
+          "closedatetime": "\(validCloseDate)",
+          "minutesopen": "8",
+          "latitude": "47.542213",
+          "longitude": "-190.0"
+      }]
+      """.data(using: .utf8)!
     #expect(try processor.processHistoricalData(invalidLonJSON).0.isEmpty)
 
     let invalidMinutesJSON = """
-    [{
-        "entitytype": "Bridge",
-        "entityname": "Test Bridge",
-        "entityid": "1",
-        "opendatetime": "\(validDate)",
-        "closedatetime": "\(validCloseDate)",
-        "minutesopen": "-5",
-        "latitude": "47.542213",
-        "longitude": "-122.334465"
-    }]
-    """.data(using: .utf8)!
+      [{
+          "entitytype": "Bridge",
+          "entityname": "Test Bridge",
+          "entityid": "1",
+          "opendatetime": "\(validDate)",
+          "closedatetime": "\(validCloseDate)",
+          "minutesopen": "-5",
+          "latitude": "47.542213",
+          "longitude": "-122.334465"
+      }]
+      """.data(using: .utf8)!
     #expect(try processor.processHistoricalData(invalidMinutesJSON).0.isEmpty)
 
     let oldDateJSON = """
-    [{
-        "entitytype": "Bridge",
-        "entityname": "Test Bridge",
-        "entityid": "1",
-        "opendatetime": "2010-01-03T10:12:00.000",
-        "closedatetime": "2010-01-03T10:20:00.000",
-        "minutesopen": "8",
-        "latitude": "47.542213",
-        "longitude": "-122.334465"
-    }]
-    """.data(using: .utf8)!
+      [{
+          "entitytype": "Bridge",
+          "entityname": "Test Bridge",
+          "entityid": "1",
+          "opendatetime": "2010-01-03T10:12:00.000",
+          "closedatetime": "2010-01-03T10:20:00.000",
+          "minutesopen": "8",
+          "latitude": "47.542213",
+          "longitude": "-122.334465"
+      }]
+      """.data(using: .utf8)!
     #expect(try processor.processHistoricalData(oldDateJSON).0.isEmpty)
   }
 }

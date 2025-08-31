@@ -16,7 +16,7 @@ final class GraphImporterTests: XCTestCase {
     ]
 
     let edges = [
-      Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false, bridgeID: nil),
+      Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false, bridgeID: nil)
     ]
 
     // Create a simple graph
@@ -34,21 +34,21 @@ final class GraphImporterTests: XCTestCase {
   func testJSONDecoding() throws {
     // Test JSON decoding directly to isolate the issue
     let nodesJSON = """
-    [
-      { "id": "A", "name": "Node A", "latitude": 47.0, "longitude": -122.0, "type": "intersection" },
-      { "id": "B", "name": "Node B", "latitude": 47.1, "longitude": -122.1, "type": "intersection" }
-    ]
-    """.data(using: .utf8)!
+      [
+        { "id": "A", "name": "Node A", "latitude": 47.0, "longitude": -122.0, "type": "intersection" },
+        { "id": "B", "name": "Node B", "latitude": 47.1, "longitude": -122.1, "type": "intersection" }
+      ]
+      """.data(using: .utf8)!
 
     let edgesJSON = """
-    [
-      { "from": "A", "to": "B", "travelTimeSec": 300, "distanceM": 1000, "isBridge": false, "bridgeID": null, "laneCount": 2, "speedLimit": 25 }
-    ]
-    """.data(using: .utf8)!
+      [
+        { "from": "A", "to": "B", "travelTimeSec": 300, "distanceM": 1000, "isBridge": false, "bridgeID": null, "laneCount": 2, "speedLimit": 25 }
+      ]
+      """.data(using: .utf8)!
 
     let bridgesJSON = """
-    []
-    """.data(using: .utf8)!
+      []
+      """.data(using: .utf8)!
 
     // Try to decode each JSON type
     let nodes = try JSONDecoder().decode([ImportNode].self, from: nodesJSON)
@@ -82,21 +82,21 @@ final class GraphImporterTests: XCTestCase {
 
     // Create simple test data
     let nodesData = """
-    [
-      { "id": "A", "name": "Node A", "latitude": 47.0, "longitude": -122.0, "type": "intersection" },
-      { "id": "B", "name": "Node B", "latitude": 47.1, "longitude": -122.1, "type": "intersection" }
-    ]
-    """.data(using: .utf8)!
+      [
+        { "id": "A", "name": "Node A", "latitude": 47.0, "longitude": -122.0, "type": "intersection" },
+        { "id": "B", "name": "Node B", "latitude": 47.1, "longitude": -122.1, "type": "intersection" }
+      ]
+      """.data(using: .utf8)!
 
     let edgesData = """
-    [
-      { "from": "A", "to": "B", "travelTimeSec": 300, "distanceM": 1000, "isBridge": false, "bridgeID": null, "laneCount": 2, "speedLimit": 25 }
-    ]
-    """.data(using: .utf8)!
+      [
+        { "from": "A", "to": "B", "travelTimeSec": 300, "distanceM": 1000, "isBridge": false, "bridgeID": null, "laneCount": 2, "speedLimit": 25 }
+      ]
+      """.data(using: .utf8)!
 
     let bridgesData = """
-    []
-    """.data(using: .utf8)!
+      []
+      """.data(using: .utf8)!
 
     // Write files
     try nodesData.write(to: testDir.appendingPathComponent("nodes.json"))

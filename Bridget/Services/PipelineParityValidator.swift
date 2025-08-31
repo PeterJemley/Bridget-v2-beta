@@ -35,20 +35,22 @@ public struct ParityConfig: Codable {
   public let epsilon: Double
 
   /// Default configuration with business-appropriate tolerances
-  public static let `default` = ParityConfig(shapeStrict: true,
-                                             countTolerancePct: 0.03,  // 3% tolerance for count changes
-                                             rangeTolerancePct: 0.15,  // 15% tolerance for range changes
-                                             perfTolerancePct: 0.25,  // 25% tolerance for performance changes
-                                             schemaStrict: true,
-                                             epsilon: 1e-10)
+  public static let `default` = ParityConfig(
+    shapeStrict: true,
+    countTolerancePct: 0.03,  // 3% tolerance for count changes
+    rangeTolerancePct: 0.15,  // 15% tolerance for range changes
+    perfTolerancePct: 0.25,  // 25% tolerance for performance changes
+    schemaStrict: true,
+    epsilon: 1e-10)
 
   /// Relaxed configuration for development/testing
-  public static let relaxed = ParityConfig(shapeStrict: false,
-                                           countTolerancePct: 0.02,  // 2% tolerance
-                                           rangeTolerancePct: 0.10,  // 10% tolerance
-                                           perfTolerancePct: 0.20,  // 20% tolerance
-                                           schemaStrict: false,
-                                           epsilon: 1e-10)
+  public static let relaxed = ParityConfig(
+    shapeStrict: false,
+    countTolerancePct: 0.02,  // 2% tolerance
+    rangeTolerancePct: 0.10,  // 10% tolerance
+    perfTolerancePct: 0.20,  // 20% tolerance
+    schemaStrict: false,
+    epsilon: 1e-10)
 }
 
 public enum Module: String, CaseIterable, Codable {
@@ -214,9 +216,10 @@ public class PipelineParityValidator {
 
   // MARK: - Initializer
 
-  public init(logger: Logger = Logger(subsystem: "com.bridget.parity", category: "validation"),
-              config: ParityConfig = .default)
-  {
+  public init(
+    logger: Logger = Logger(subsystem: "com.bridget.parity", category: "validation"),
+    config: ParityConfig = .default
+  ) {
     self.logger = logger
     self.config = config
   }
@@ -235,10 +238,11 @@ public class PipelineParityValidator {
   ///   - sample: Golden sample data used for validation
   /// - Returns: Parity validation result with detailed analysis
   /// - Throws: Validation errors if comparison fails
-  public func validateParity(baseline: BaselineMetrics,
-                             current: CurrentOutput,
-                             sample: GoldenSample) async throws -> ParityValidationResult
-  {
+  public func validateParity(
+    baseline: BaselineMetrics,
+    current: CurrentOutput,
+    sample: GoldenSample
+  ) async throws -> ParityValidationResult {
     logger.info("🔍 Starting parity validation for sample: \(sample.name)")
 
     var detectedChanges: [OutputChange] = []
@@ -250,25 +254,29 @@ public class PipelineParityValidator {
     detectedChanges.append(contentsOf: shapeChanges)
 
     // 2. Count Validation - Check record counts and distributions
-    let countChanges = validateCountParity(baseline: baseline,
-                                           current: current,
-                                           sample: sample)
+    let countChanges = validateCountParity(
+      baseline: baseline,
+      current: current,
+      sample: sample)
     detectedChanges.append(contentsOf: countChanges)
 
     // 3. Range Validation - Check data value ranges and distributions
-    let rangeChanges = validateRangeParity(baseline: baseline,
-                                           current: current,
-                                           sample: sample)
+    let rangeChanges = validateRangeParity(
+      baseline: baseline,
+      current: current,
+      sample: sample)
     detectedChanges.append(contentsOf: rangeChanges)
 
     // 4. Performance Validation - Check timing and memory consistency
-    let performanceChanges = validatePerformanceParity(baseline: baseline,
-                                                       current: current)
+    let performanceChanges = validatePerformanceParity(
+      baseline: baseline,
+      current: current)
     detectedChanges.append(contentsOf: performanceChanges)
 
     // 5. Schema Validation - Check data schema consistency
-    let schemaChanges = validateSchemaParity(baseline: baseline,
-                                             current: current)
+    let schemaChanges = validateSchemaParity(
+      baseline: baseline,
+      current: current)
     detectedChanges.append(contentsOf: schemaChanges)
 
     // Determine if parity is maintained
@@ -285,27 +293,29 @@ public class PipelineParityValidator {
     let confidence = calculateConfidence(changes: detectedChanges)
 
     // Generate loop-back guidance
-    let loopbackGuidance = getLoopbackGuidance(failure: failureReason,
-                                               affectedModule: affectedModule,
-                                               changes: detectedChanges)
+    let loopbackGuidance = getLoopbackGuidance(
+      failure: failureReason,
+      affectedModule: affectedModule,
+      changes: detectedChanges)
 
     // Get ranked list of likely modules
     let likelyModules = getRankedLikelyModules(changes: detectedChanges)
 
-    let result = ParityValidationResult(isParity: isParity,
-                                        failureReason: failureReason,
-                                        affectedModule: affectedModule,
-                                        detectedChanges: detectedChanges,
-                                        confidence: confidence,
-                                        loopbackGuidance: loopbackGuidance,
-                                        schemaHashBaseline: baseline.schemaHash,
-                                        schemaHashCurrent: current.schemaHash,
-                                        timingsBaseline: baseline.stageTimings,
-                                        timingsCurrent: current.stageTimings,
-                                        memoryBaseline: baseline.memoryMetrics,
-                                        memoryCurrent: current.memoryMetrics,
-                                        deterministicSeedUsed: baseline.deterministicSeedUsed,
-                                        likelyModules: likelyModules)
+    let result = ParityValidationResult(
+      isParity: isParity,
+      failureReason: failureReason,
+      affectedModule: affectedModule,
+      detectedChanges: detectedChanges,
+      confidence: confidence,
+      loopbackGuidance: loopbackGuidance,
+      schemaHashBaseline: baseline.schemaHash,
+      schemaHashCurrent: current.schemaHash,
+      timingsBaseline: baseline.stageTimings,
+      timingsCurrent: current.stageTimings,
+      memoryBaseline: baseline.memoryMetrics,
+      memoryCurrent: current.memoryMetrics,
+      deterministicSeedUsed: baseline.deterministicSeedUsed,
+      likelyModules: likelyModules)
 
     // Log the results
     if isParity {
@@ -321,46 +331,50 @@ public class PipelineParityValidator {
 
   // MARK: - Individual Validation Methods
 
-  private func validateShapeParity(baseline: BaselineMetrics,
-                                   current: CurrentOutput) -> [OutputChange]
-  {
+  private func validateShapeParity(
+    baseline: BaselineMetrics,
+    current: CurrentOutput
+  ) -> [OutputChange] {
     var changes: [OutputChange] = []
 
     // Check if output structure has changed
     if baseline.outputStructure != current.outputStructure {
       changes.append(
-        OutputChange(changeType: .shape,
-                     affectedField: "output_structure",
-                     baselineValue: baseline.outputStructure,
-                     currentValue: current.outputStructure,
-                     severity: .critical,
-                     likelyCause: "Data processing pipeline changes",
-                     metadata: [:]))
+        OutputChange(
+          changeType: .shape,
+          affectedField: "output_structure",
+          baselineValue: baseline.outputStructure,
+          currentValue: current.outputStructure,
+          severity: .critical,
+          likelyCause: "Data processing pipeline changes",
+          metadata: [:]))
     }
 
     // Check if field counts have changed
     if baseline.fieldCount != current.fieldCount {
       changes.append(
-        OutputChange(changeType: .shape,
-                     affectedField: "field_count",
-                     baselineValue: "\(baseline.fieldCount)",
-                     currentValue: "\(current.fieldCount)",
-                     severity: config.shapeStrict ? .critical : .major,
-                     likelyCause: "Schema modifications or data transformation changes",
-                     metadata: [
-                       "baseline_fields": "\(baseline.fieldCount)",
-                       "current_fields": "\(current.fieldCount)",
-                       "field_difference": "\(current.fieldCount - baseline.fieldCount)",
-                     ]))
+        OutputChange(
+          changeType: .shape,
+          affectedField: "field_count",
+          baselineValue: "\(baseline.fieldCount)",
+          currentValue: "\(current.fieldCount)",
+          severity: config.shapeStrict ? .critical : .major,
+          likelyCause: "Schema modifications or data transformation changes",
+          metadata: [
+            "baseline_fields": "\(baseline.fieldCount)",
+            "current_fields": "\(current.fieldCount)",
+            "field_difference": "\(current.fieldCount - baseline.fieldCount)",
+          ]))
     }
 
     return changes
   }
 
-  private func validateCountParity(baseline: BaselineMetrics,
-                                   current: CurrentOutput,
-                                   sample: GoldenSample) -> [OutputChange]
-  {
+  private func validateCountParity(
+    baseline: BaselineMetrics,
+    current: CurrentOutput,
+    sample: GoldenSample
+  ) -> [OutputChange] {
     var changes: [OutputChange] = []
 
     // Check total record count
@@ -370,18 +384,19 @@ public class PipelineParityValidator {
 
     if countDifference > countTolerance {
       changes.append(
-        OutputChange(changeType: .count,
-                     affectedField: "total_records",
-                     baselineValue: "\(expectedCount)",
-                     currentValue: "\(current.totalRecords)",
-                     severity: countDifference > expectedCount / 10 ? .critical : .major,
-                     likelyCause: "Data ingestion or processing pipeline changes",
-                     metadata: [
-                       "expected_count": "\(expectedCount)",
-                       "actual_count": "\(current.totalRecords)",
-                       "difference": "\(countDifference)",
-                       "tolerance": "\(countTolerance)",
-                     ]))
+        OutputChange(
+          changeType: .count,
+          affectedField: "total_records",
+          baselineValue: "\(expectedCount)",
+          currentValue: "\(current.totalRecords)",
+          severity: countDifference > expectedCount / 10 ? .critical : .major,
+          likelyCause: "Data ingestion or processing pipeline changes",
+          metadata: [
+            "expected_count": "\(expectedCount)",
+            "actual_count": "\(current.totalRecords)",
+            "difference": "\(countDifference)",
+            "tolerance": "\(countTolerance)",
+          ]))
     }
 
     // Check bridge-specific record counts with relative deltas
@@ -396,49 +411,53 @@ public class PipelineParityValidator {
 
         if relativeDelta > config.countTolerancePct {
           changes.append(
-            OutputChange(changeType: .count,
-                         affectedField: "bridge_\(bridgeId)_records",
-                         baselineValue: "\(baselineCount)",
-                         currentValue: "\(currentCount)",
-                         severity: relativeDelta > config.countTolerancePct * 3 ? .major : .minor,
-                         likelyCause: "Bridge-specific data processing changes",
-                         metadata: [
-                           "bridge_id": bridgeId,
-                           "baseline_count": "\(baselineCount)",
-                           "current_count": "\(currentCount)",
-                           "relative_delta": String(format: "%.4f", relativeDelta),
-                           "tolerance": String(format: "%.4f", config.countTolerancePct),
-                         ]))
+            OutputChange(
+              changeType: .count,
+              affectedField: "bridge_\(bridgeId)_records",
+              baselineValue: "\(baselineCount)",
+              currentValue: "\(currentCount)",
+              severity: relativeDelta > config.countTolerancePct * 3 ? .major : .minor,
+              likelyCause: "Bridge-specific data processing changes",
+              metadata: [
+                "bridge_id": bridgeId,
+                "baseline_count": "\(baselineCount)",
+                "current_count": "\(currentCount)",
+                "relative_delta": String(format: "%.4f", relativeDelta),
+                "tolerance": String(format: "%.4f", config.countTolerancePct),
+              ]))
         }
       }
     }
 
     // Check time-based distribution using chi-square test
-    let timeDistributionChange = compareTimeDistributions(baseline: baseline.timeDistribution,
-                                                          current: current.timeDistribution)
+    let timeDistributionChange = compareTimeDistributions(
+      baseline: baseline.timeDistribution,
+      current: current.timeDistribution)
 
     if timeDistributionChange.isSignificant {
       changes.append(
-        OutputChange(changeType: .count,
-                     affectedField: "time_distribution",
-                     baselineValue: baseline.timeDistribution.description,
-                     currentValue: current.timeDistribution.description,
-                     severity: timeDistributionChange.severity,
-                     likelyCause: "Time-based data processing or filtering changes",
-                     metadata: [
-                       "chi_square_statistic": String(format: "%.4f", timeDistributionChange.chiSquare),
-                       "p_value": String(format: "%.4f", timeDistributionChange.pValue),
-                       "significance_threshold": "0.05",
-                     ]))
+        OutputChange(
+          changeType: .count,
+          affectedField: "time_distribution",
+          baselineValue: baseline.timeDistribution.description,
+          currentValue: current.timeDistribution.description,
+          severity: timeDistributionChange.severity,
+          likelyCause: "Time-based data processing or filtering changes",
+          metadata: [
+            "chi_square_statistic": String(format: "%.4f", timeDistributionChange.chiSquare),
+            "p_value": String(format: "%.4f", timeDistributionChange.pValue),
+            "significance_threshold": "0.05",
+          ]))
     }
 
     return changes
   }
 
-  private func validateRangeParity(baseline: BaselineMetrics,
-                                   current: CurrentOutput,
-                                   sample _: GoldenSample) -> [OutputChange]
-  {
+  private func validateRangeParity(
+    baseline: BaselineMetrics,
+    current: CurrentOutput,
+    sample _: GoldenSample
+  ) -> [OutputChange] {
     var changes: [OutputChange] = []
 
     // Check numeric field ranges
@@ -458,39 +477,41 @@ public class PipelineParityValidator {
         // Check for NaN/Inf values (automatic critical)
         if baselineRange.hasNaNOrInf || currentRange.hasNaNOrInf {
           changes.append(
-            OutputChange(changeType: .range,
-                         affectedField: field,
-                         baselineValue: baselineRange.description,
-                         currentValue: currentRange.description,
-                         severity: .critical,
-                         likelyCause: "Data corruption or calculation errors",
-                         metadata: [
-                           "baseline_has_nan_inf": "\(baselineRange.hasNaNOrInf)",
-                           "current_has_nan_inf": "\(currentRange.hasNaNOrInf)",
-                           "baseline_values":
-                             "min:\(baselineRange.min), max:\(baselineRange.max), mean:\(baselineRange.mean)",
-                           "current_values":
-                             "min:\(currentRange.min), max:\(currentRange.max), mean:\(currentRange.mean)",
-                         ]))
+            OutputChange(
+              changeType: .range,
+              affectedField: field,
+              baselineValue: baselineRange.description,
+              currentValue: currentRange.description,
+              severity: .critical,
+              likelyCause: "Data corruption or calculation errors",
+              metadata: [
+                "baseline_has_nan_inf": "\(baselineRange.hasNaNOrInf)",
+                "current_has_nan_inf": "\(currentRange.hasNaNOrInf)",
+                "baseline_values":
+                  "min:\(baselineRange.min), max:\(baselineRange.max), mean:\(baselineRange.mean)",
+                "current_values":
+                  "min:\(currentRange.min), max:\(currentRange.max), mean:\(currentRange.mean)",
+              ]))
           continue
         }
 
         // Compare ranges with tolerance
         if !baselineRange.isSimilar(to: currentRange, tolerance: config.rangeTolerancePct) {
           changes.append(
-            OutputChange(changeType: .range,
-                         affectedField: field,
-                         baselineValue: baselineRange.description,
-                         currentValue: currentRange.description,
-                         severity: .minor,
-                         likelyCause: "Data transformation or calculation changes",
-                         metadata: [
-                           "baseline_range":
-                             "min:\(baselineRange.min), max:\(baselineRange.max), mean:\(baselineRange.mean)",
-                           "current_range":
-                             "min:\(currentRange.min), max:\(currentRange.max), mean:\(currentRange.mean)",
-                           "tolerance": String(format: "%.4f", config.rangeTolerancePct),
-                         ]))
+            OutputChange(
+              changeType: .range,
+              affectedField: field,
+              baselineValue: baselineRange.description,
+              currentValue: currentRange.description,
+              severity: .minor,
+              likelyCause: "Data transformation or calculation changes",
+              metadata: [
+                "baseline_range":
+                  "min:\(baselineRange.min), max:\(baselineRange.max), mean:\(baselineRange.mean)",
+                "current_range":
+                  "min:\(currentRange.min), max:\(currentRange.max), mean:\(currentRange.mean)",
+                "tolerance": String(format: "%.4f", config.rangeTolerancePct),
+              ]))
         }
       }
     }
@@ -507,25 +528,27 @@ public class PipelineParityValidator {
       let currentDistribution = current.fieldDistributions[field]
 
       if let baselineDistribution = baselineDistribution,
-         let currentDistribution = currentDistribution
+        let currentDistribution = currentDistribution
       {
-        let distributionChange = compareFieldDistributions(baseline: baselineDistribution,
-                                                           current: currentDistribution)
+        let distributionChange = compareFieldDistributions(
+          baseline: baselineDistribution,
+          current: currentDistribution)
 
         if distributionChange.isSignificant {
           changes.append(
-            OutputChange(changeType: .range,
-                         affectedField: field,
-                         baselineValue: baselineDistribution.description,
-                         currentValue: currentDistribution.description,
-                         severity: distributionChange.severity,
-                         likelyCause: "Data filtering or categorization changes",
-                         metadata: [
-                           "chi_square_statistic": String(format: "%.4f", distributionChange.chiSquare),
-                           "p_value": String(format: "%.4f", distributionChange.pValue),
-                           "missing_keys": distributionChange.missingKeys.joined(separator: ","),
-                           "new_keys": distributionChange.newKeys.joined(separator: ","),
-                         ]))
+            OutputChange(
+              changeType: .range,
+              affectedField: field,
+              baselineValue: baselineDistribution.description,
+              currentValue: currentDistribution.description,
+              severity: distributionChange.severity,
+              likelyCause: "Data filtering or categorization changes",
+              metadata: [
+                "chi_square_statistic": String(format: "%.4f", distributionChange.chiSquare),
+                "p_value": String(format: "%.4f", distributionChange.pValue),
+                "missing_keys": distributionChange.missingKeys.joined(separator: ","),
+                "new_keys": distributionChange.newKeys.joined(separator: ","),
+              ]))
         }
       }
     }
@@ -533,9 +556,10 @@ public class PipelineParityValidator {
     return changes
   }
 
-  private func validatePerformanceParity(baseline: BaselineMetrics,
-                                         current: CurrentOutput) -> [OutputChange]
-  {
+  private func validatePerformanceParity(
+    baseline: BaselineMetrics,
+    current: CurrentOutput
+  ) -> [OutputChange] {
     var changes: [OutputChange] = []
 
     // Check pipeline timing with tolerance
@@ -547,38 +571,42 @@ public class PipelineParityValidator {
 
     if !baseline.pipelineTime.isWithin(tolerance: timingTolerance, of: current.pipelineTime) {
       changes.append(
-        OutputChange(changeType: .performance,
-                     affectedField: "pipeline_time",
-                     baselineValue: "\(baseline.pipelineTime)s",
-                     currentValue: "\(current.pipelineTime)s",
-                     severity: .minor,
-                     likelyCause: "Performance optimizations or regressions",
-                     metadata: [
-                       "baseline_time": "\(baseline.pipelineTime)",
-                       "current_time": "\(current.pipelineTime)",
-                       "tolerance": String(format: "%.4f", timingTolerance),
-                       "relative_change": String(format: "%.2f%%",
-                                                 ((current.pipelineTime - baseline.pipelineTime) / baseline.pipelineTime) * 100),
-                     ]))
+        OutputChange(
+          changeType: .performance,
+          affectedField: "pipeline_time",
+          baselineValue: "\(baseline.pipelineTime)s",
+          currentValue: "\(current.pipelineTime)s",
+          severity: .minor,
+          likelyCause: "Performance optimizations or regressions",
+          metadata: [
+            "baseline_time": "\(baseline.pipelineTime)",
+            "current_time": "\(current.pipelineTime)",
+            "tolerance": String(format: "%.4f", timingTolerance),
+            "relative_change": String(
+              format: "%.2f%%",
+              ((current.pipelineTime - baseline.pipelineTime) / baseline.pipelineTime) * 100),
+          ]))
     }
 
     // Check memory usage with tolerance
     let memoryTolerance = config.perfTolerancePct
     if !baseline.peakMemory.isWithin(tolerance: memoryTolerance, of: current.peakMemory) {
       changes.append(
-        OutputChange(changeType: .performance,
-                     affectedField: "peak_memory",
-                     baselineValue: "\(baseline.peakMemory)MB",
-                     currentValue: "\(current.peakMemory)MB",
-                     severity: .minor,
-                     likelyCause: "Memory management or data structure changes",
-                     metadata: [
-                       "baseline_memory": "\(baseline.peakMemory)",
-                       "current_memory": "\(current.peakMemory)",
-                       "tolerance": String(format: "%.4f", memoryTolerance),
-                       "relative_change": String(format: "%.2f%%",
-                                                 ((current.peakMemory - baseline.peakMemory) / baseline.peakMemory) * 100),
-                     ]))
+        OutputChange(
+          changeType: .performance,
+          affectedField: "peak_memory",
+          baselineValue: "\(baseline.peakMemory)MB",
+          currentValue: "\(current.peakMemory)MB",
+          severity: .minor,
+          likelyCause: "Memory management or data structure changes",
+          metadata: [
+            "baseline_memory": "\(baseline.peakMemory)",
+            "current_memory": "\(current.peakMemory)",
+            "tolerance": String(format: "%.4f", memoryTolerance),
+            "relative_change": String(
+              format: "%.2f%%",
+              ((current.peakMemory - baseline.peakMemory) / baseline.peakMemory) * 100),
+          ]))
     }
 
     // Check stage timings
@@ -586,18 +614,19 @@ public class PipelineParityValidator {
       if let currentTime = current.stageTimings[stage] {
         if !baselineTime.isWithin(tolerance: timingTolerance, of: currentTime) {
           changes.append(
-            OutputChange(changeType: .performance,
-                         affectedField: "stage_\(stage)",
-                         baselineValue: "\(baselineTime)s",
-                         currentValue: "\(currentTime)s",
-                         severity: .minor,
-                         likelyCause: "Stage-specific performance changes",
-                         metadata: [
-                           "stage": stage,
-                           "baseline_time": "\(baselineTime)",
-                           "current_time": "\(currentTime)",
-                           "tolerance": String(format: "%.4f", timingTolerance),
-                         ]))
+            OutputChange(
+              changeType: .performance,
+              affectedField: "stage_\(stage)",
+              baselineValue: "\(baselineTime)s",
+              currentValue: "\(currentTime)s",
+              severity: .minor,
+              likelyCause: "Stage-specific performance changes",
+              metadata: [
+                "stage": stage,
+                "baseline_time": "\(baselineTime)",
+                "current_time": "\(currentTime)",
+                "tolerance": String(format: "%.4f", timingTolerance),
+              ]))
         }
       }
     }
@@ -605,46 +634,50 @@ public class PipelineParityValidator {
     return changes
   }
 
-  private func validateSchemaParity(baseline: BaselineMetrics,
-                                    current: CurrentOutput) -> [OutputChange]
-  {
+  private func validateSchemaParity(
+    baseline: BaselineMetrics,
+    current: CurrentOutput
+  ) -> [OutputChange] {
     var changes: [OutputChange] = []
 
     // Check schema hash first (fast path)
     if baseline.schemaHash != current.schemaHash {
       changes.append(
-        OutputChange(changeType: .schema,
-                     affectedField: "schema_hash",
-                     baselineValue: baseline.schemaHash,
-                     currentValue: current.schemaHash,
-                     severity: .critical,
-                     likelyCause: "Schema definition or data transformation changes",
-                     metadata: [
-                       "baseline_hash": baseline.schemaHash,
-                       "current_hash": current.schemaHash,
-                       "hash_difference": "Schema structure has changed",
-                     ]))
+        OutputChange(
+          changeType: .schema,
+          affectedField: "schema_hash",
+          baselineValue: baseline.schemaHash,
+          currentValue: current.schemaHash,
+          severity: .critical,
+          likelyCause: "Schema definition or data transformation changes",
+          metadata: [
+            "baseline_hash": baseline.schemaHash,
+            "current_hash": current.schemaHash,
+            "hash_difference": "Schema structure has changed",
+          ]))
 
       // If schema hash differs, analyze the specific changes
-      let schemaDiff = analyzeSchemaDifferences(baseline: baseline.schema,
-                                                current: current.schema)
+      let schemaDiff = analyzeSchemaDifferences(
+        baseline: baseline.schema,
+        current: current.schema)
 
       if !schemaDiff.addedFields.isEmpty || !schemaDiff.removedFields.isEmpty
         || !schemaDiff.renamedFields.isEmpty || !schemaDiff.typeChanges.isEmpty
       {
         changes.append(
-          OutputChange(changeType: .schema,
-                       affectedField: "schema_structure",
-                       baselineValue: "Stable schema",
-                       currentValue: "Modified schema",
-                       severity: .critical,
-                       likelyCause: "Schema modifications detected",
-                       metadata: [
-                         "added_fields": schemaDiff.addedFields.joined(separator: ","),
-                         "removed_fields": schemaDiff.removedFields.joined(separator: ","),
-                         "renamed_fields": schemaDiff.renamedFields.joined(separator: ","),
-                         "type_changes": schemaDiff.typeChanges.joined(separator: ","),
-                       ]))
+          OutputChange(
+            changeType: .schema,
+            affectedField: "schema_structure",
+            baselineValue: "Stable schema",
+            currentValue: "Modified schema",
+            severity: .critical,
+            likelyCause: "Schema modifications detected",
+            metadata: [
+              "added_fields": schemaDiff.addedFields.joined(separator: ","),
+              "removed_fields": schemaDiff.removedFields.joined(separator: ","),
+              "renamed_fields": schemaDiff.renamedFields.joined(separator: ","),
+              "type_changes": schemaDiff.typeChanges.joined(separator: ","),
+            ]))
       }
     }
 
@@ -660,16 +693,17 @@ public class PipelineParityValidator {
     for field in requiredFields {
       if !current.schema.fields.contains(field) {
         changes.append(
-          OutputChange(changeType: .schema,
-                       affectedField: field,
-                       baselineValue: "Present",
-                       currentValue: "Missing",
-                       severity: .critical,
-                       likelyCause: "Schema definition or data transformation changes",
-                       metadata: [
-                         "missing_field": field,
-                         "required": "true",
-                       ]))
+          OutputChange(
+            changeType: .schema,
+            affectedField: field,
+            baselineValue: "Present",
+            currentValue: "Missing",
+            severity: .critical,
+            likelyCause: "Schema definition or data transformation changes",
+            metadata: [
+              "missing_field": field,
+              "required": "true",
+            ]))
       }
     }
 
@@ -680,18 +714,19 @@ public class PipelineParityValidator {
     for (field, expectedType) in fieldTypes {
       if let currentType = currentFieldTypes[field], currentType != expectedType {
         changes.append(
-          OutputChange(changeType: .schema,
-                       affectedField: field,
-                       baselineValue: expectedType,
-                       currentValue: currentType,
-                       severity: .major,
-                       likelyCause: "Data type conversion or schema changes",
-                       metadata: [
-                         "field": field,
-                         "baseline_type": expectedType,
-                         "current_type": currentType,
-                         "type_change": "\(expectedType) → \(currentType)",
-                       ]))
+          OutputChange(
+            changeType: .schema,
+            affectedField: field,
+            baselineValue: expectedType,
+            currentValue: currentType,
+            severity: .major,
+            likelyCause: "Data type conversion or schema changes",
+            metadata: [
+              "field": field,
+              "baseline_type": expectedType,
+              "current_type": currentType,
+              "type_change": "\(expectedType) → \(currentType)",
+            ]))
       }
     }
 
@@ -748,8 +783,8 @@ public class PipelineParityValidator {
 
     return
       moduleScores
-        .sorted { $0.value > $1.value }
-        .map { $0.key }
+      .sorted { $0.value > $1.value }
+      .map { $0.key }
   }
 
   private func getModuleForChange(_ change: OutputChange) -> Module {
@@ -811,10 +846,11 @@ public class PipelineParityValidator {
     return min(severityScore * changeSpecificity, 1.0)
   }
 
-  private func getLoopbackGuidance(failure: String?,
-                                   affectedModule: Module?,
-                                   changes: [OutputChange]) -> String?
-  {
+  private func getLoopbackGuidance(
+    failure: String?,
+    affectedModule: Module?,
+    changes: [OutputChange]
+  ) -> String? {
     guard let failure = failure, let affectedModule = affectedModule else {
       return nil
     }
@@ -846,43 +882,50 @@ public class PipelineParityValidator {
 
   // MARK: - Helper Methods
 
-  private func compareTimeDistributions(baseline: TimeDistribution,
-                                        current: TimeDistribution) -> DistributionChange
-  {
+  private func compareTimeDistributions(
+    baseline: TimeDistribution,
+    current: TimeDistribution
+  ) -> DistributionChange {
     // Implement chi-square test for time distribution comparison
-    let chiSquare = calculateChiSquare(baseline: baseline.hourlyDistribution,
-                                       current: current.hourlyDistribution)
+    let chiSquare = calculateChiSquare(
+      baseline: baseline.hourlyDistribution,
+      current: current.hourlyDistribution)
     let pValue = calculatePValue(chiSquare: chiSquare, degreesOfFreedom: 23)  // 24 hours - 1
 
-    return DistributionChange(isSignificant: pValue < 0.05,
-                              chiSquare: chiSquare,
-                              pValue: pValue,
-                              severity: pValue < 0.01 ? .critical : .major)
+    return DistributionChange(
+      isSignificant: pValue < 0.05,
+      chiSquare: chiSquare,
+      pValue: pValue,
+      severity: pValue < 0.01 ? .critical : .major)
   }
 
-  private func compareFieldDistributions(baseline: FieldDistribution,
-                                         current: FieldDistribution) -> DistributionChange
-  {
+  private func compareFieldDistributions(
+    baseline: FieldDistribution,
+    current: FieldDistribution
+  ) -> DistributionChange {
     // Implement chi-square test for field distribution comparison
-    let chiSquare = calculateChiSquare(baseline: baseline.values,
-                                       current: current.values)
+    let chiSquare = calculateChiSquare(
+      baseline: baseline.values,
+      current: current.values)
     let degreesOfFreedom = max(baseline.values.count, current.values.count) - 1
     let pValue = calculatePValue(chiSquare: chiSquare, degreesOfFreedom: degreesOfFreedom)
 
     let missingKeys = Set(baseline.values.keys).subtracting(Set(current.values.keys))
     let newKeys = Set(current.values.keys).subtracting(Set(baseline.values.keys))
 
-    return DistributionChange(isSignificant: pValue < 0.05 || !missingKeys.isEmpty || !newKeys.isEmpty,
-                              chiSquare: chiSquare,
-                              pValue: pValue,
-                              severity: pValue < 0.01 || !missingKeys.isEmpty || !newKeys.isEmpty ? .critical : .major,
-                              missingKeys: Array(missingKeys),
-                              newKeys: Array(newKeys))
+    return DistributionChange(
+      isSignificant: pValue < 0.05 || !missingKeys.isEmpty || !newKeys.isEmpty,
+      chiSquare: chiSquare,
+      pValue: pValue,
+      severity: pValue < 0.01 || !missingKeys.isEmpty || !newKeys.isEmpty ? .critical : .major,
+      missingKeys: Array(missingKeys),
+      newKeys: Array(newKeys))
   }
 
-  private func analyzeSchemaDifferences(baseline: DataSchema,
-                                        current: DataSchema) -> SchemaDiff
-  {
+  private func analyzeSchemaDifferences(
+    baseline: DataSchema,
+    current: DataSchema
+  ) -> SchemaDiff {
     let baselineFields = Set(baseline.fields)
     let currentFields = Set(current.fields)
 
@@ -901,17 +944,19 @@ public class PipelineParityValidator {
       }
     }
 
-    return SchemaDiff(addedFields: Array(addedFields),
-                      removedFields: Array(removedFields),
-                      renamedFields: renamedFields,
-                      typeChanges: typeChanges)
+    return SchemaDiff(
+      addedFields: Array(addedFields),
+      removedFields: Array(removedFields),
+      renamedFields: renamedFields,
+      typeChanges: typeChanges)
   }
 
   // MARK: - Statistical Methods
 
-  private func calculateChiSquare(baseline: [String: Int],
-                                  current: [String: Int]) -> Double
-  {
+  private func calculateChiSquare(
+    baseline: [String: Int],
+    current: [String: Int]
+  ) -> Double {
     var chiSquare = 0.0
     let allKeys = Set(baseline.keys).union(Set(current.keys))
 
@@ -929,12 +974,13 @@ public class PipelineParityValidator {
     return chiSquare
   }
 
-  private func calculateChiSquare(baseline: [Int: Int],
-                                  current: [Int: Int]) -> Double
-  {
+  private func calculateChiSquare(
+    baseline: [Int: Int],
+    current: [Int: Int]
+  ) -> Double {
     var chiSquare = 0.0
 
-    for hour in 0 ..< 24 {
+    for hour in 0..<24 {
       let baselineValue = Double(baseline[hour] ?? 0)
       let currentValue = Double(current[hour] ?? 0)
 
@@ -981,13 +1027,14 @@ public struct DistributionChange {
   public let missingKeys: [String]
   public let newKeys: [String]
 
-  public init(isSignificant: Bool,
-              chiSquare: Double,
-              pValue: Double,
-              severity: PipelineParityValidator.ChangeSeverity,
-              missingKeys: [String] = [],
-              newKeys: [String] = [])
-  {
+  public init(
+    isSignificant: Bool,
+    chiSquare: Double,
+    pValue: Double,
+    severity: PipelineParityValidator.ChangeSeverity,
+    missingKeys: [String] = [],
+    newKeys: [String] = []
+  ) {
     self.isSignificant = isSignificant
     self.chiSquare = chiSquare
     self.pValue = pValue
@@ -1121,18 +1168,20 @@ public enum ParityGate {
   ///   - sample: Golden sample for validation
   /// - Returns: Parity validation result
   /// - Throws: Validation errors or file reading errors
-  public static func run(baselineURL: URL,
-                         current: CurrentOutput,
-                         sample: GoldenSample) async throws -> PipelineParityValidator.ParityValidationResult
-  {
+  public static func run(
+    baselineURL: URL,
+    current: CurrentOutput,
+    sample: GoldenSample
+  ) async throws -> PipelineParityValidator.ParityValidationResult {
     let baselineData = try Data(contentsOf: baselineURL)
     let baseline = try JSONDecoder.bridgeDecoder()
       .decode(BaselineMetrics.self, from: baselineData)
 
     let validator = PipelineParityValidator(config: .default)
 
-    return try await validator.validateParity(baseline: baseline,
-                                              current: current,
-                                              sample: sample)
+    return try await validator.validateParity(
+      baseline: baseline,
+      current: current,
+      sample: sample)
   }
 }

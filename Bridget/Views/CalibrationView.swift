@@ -77,8 +77,9 @@ struct CalibrationView: View {
               BridgeStatusModel(bridgeName: "Fremont Bridge", apiBridgeID: .fremont),
               BridgeStatusModel(bridgeName: "Montlake Bridge", apiBridgeID: .montlake),
             ]
-            calibrationVM = CalibrationVM(calibrator: DefaultBridgeCalibrator(),
-                                          bridges: mockBridges)
+            calibrationVM = CalibrationVM(
+              calibrator: DefaultBridgeCalibrator(),
+              bridges: mockBridges)
           }
         }
       }

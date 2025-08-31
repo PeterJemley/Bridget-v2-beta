@@ -98,21 +98,24 @@ final class CoreMLTrainingPhase3Tests: XCTestCase {
     let validationLossStats = ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18)
     let etaPredictionVariance = ETASummary(mean: 120.0, variance: 25.0, min: 90.0, max: 150.0)
 
-    let confidenceIntervals = PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
-                                                             f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
-                                                             meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16))
+    let confidenceIntervals = PerformanceConfidenceIntervals(
+      accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
+      f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
+      meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16))
 
-    let errorDistribution = ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
-                                                     relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
-                                                     withinOneStdDev: 68.2,
-                                                     withinTwoStdDev: 95.4)
+    let errorDistribution = ErrorDistributionMetrics(
+      absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
+      relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
+      withinOneStdDev: 68.2,
+      withinTwoStdDev: 95.4)
 
-    let metrics = StatisticalTrainingMetrics(trainingLossStats: trainingLossStats,
-                                             validationLossStats: validationLossStats,
-                                             predictionAccuracyStats: predictionAccuracyStats,
-                                             etaPredictionVariance: etaPredictionVariance,
-                                             performanceConfidenceIntervals: confidenceIntervals,
-                                             errorDistribution: errorDistribution)
+    let metrics = StatisticalTrainingMetrics(
+      trainingLossStats: trainingLossStats,
+      validationLossStats: validationLossStats,
+      predictionAccuracyStats: predictionAccuracyStats,
+      etaPredictionVariance: etaPredictionVariance,
+      performanceConfidenceIntervals: confidenceIntervals,
+      errorDistribution: errorDistribution)
 
     // Verify all properties are accessible
     XCTAssertEqual(metrics.trainingLossStats.mean, 0.1, accuracy: 0.001)
@@ -126,48 +129,52 @@ final class CoreMLTrainingPhase3Tests: XCTestCase {
 
   func testPipelineMetricsDataWithStatisticalMetrics() {
     // Test that PipelineMetricsData can include statistical metrics
-    let statisticalMetrics = StatisticalTrainingMetrics(trainingLossStats: ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15),
-                                                        validationLossStats: ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18),
-                                                        predictionAccuracyStats: ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88),
-                                                        etaPredictionVariance: ETASummary(mean: 120.0, variance: 25.0, min: 90.0, max: 150.0),
-                                                        performanceConfidenceIntervals: PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
-                                                                                                                       f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
-                                                                                                                       meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)),
-                                                        errorDistribution: ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
-                                                                                                    relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
-                                                                                                    withinOneStdDev: 68.2,
-                                                                                                    withinTwoStdDev: 95.4))
+    let statisticalMetrics = StatisticalTrainingMetrics(
+      trainingLossStats: ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15),
+      validationLossStats: ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18),
+      predictionAccuracyStats: ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88),
+      etaPredictionVariance: ETASummary(mean: 120.0, variance: 25.0, min: 90.0, max: 150.0),
+      performanceConfidenceIntervals: PerformanceConfidenceIntervals(
+        accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
+        f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
+        meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)),
+      errorDistribution: ErrorDistributionMetrics(
+        absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
+        relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
+        withinOneStdDev: 68.2,
+        withinTwoStdDev: 95.4))
 
-    let pipelineData = PipelineMetricsData(timestamp: Date(),
-                                           stageDurations: [
-                                             "DataProcessing": 1.2,
-                                             "FeatureEngineering": 2.1,
-                                             "ModelTraining": 5.3,
-                                           ],
-                                           memoryUsage: [
-                                             "DataProcessing": 256,
-                                             "FeatureEngineering": 384,
-                                             "ModelTraining": 512,
-                                           ],
-                                           validationRates: [
-                                             "DataQualityValidator": 0.95,
-                                             "SchemaValidator": 0.98,
-                                           ],
-                                           errorCounts: [
-                                             "DataProcessing": 0,
-                                             "FeatureEngineering": 1,
-                                             "ModelTraining": 0,
-                                           ],
-                                           recordCounts: [
-                                             "DataProcessing": 1000,
-                                             "FeatureEngineering": 950,
-                                             "ModelTraining": 900,
-                                           ],
-                                           customValidationResults: [
-                                             "DataQualityValidator": true,
-                                             "SchemaValidator": true,
-                                           ],
-                                           statisticalMetrics: statisticalMetrics)
+    let pipelineData = PipelineMetricsData(
+      timestamp: Date(),
+      stageDurations: [
+        "DataProcessing": 1.2,
+        "FeatureEngineering": 2.1,
+        "ModelTraining": 5.3,
+      ],
+      memoryUsage: [
+        "DataProcessing": 256,
+        "FeatureEngineering": 384,
+        "ModelTraining": 512,
+      ],
+      validationRates: [
+        "DataQualityValidator": 0.95,
+        "SchemaValidator": 0.98,
+      ],
+      errorCounts: [
+        "DataProcessing": 0,
+        "FeatureEngineering": 1,
+        "ModelTraining": 0,
+      ],
+      recordCounts: [
+        "DataProcessing": 1000,
+        "FeatureEngineering": 950,
+        "ModelTraining": 900,
+      ],
+      customValidationResults: [
+        "DataQualityValidator": true,
+        "SchemaValidator": true,
+      ],
+      statisticalMetrics: statisticalMetrics)
 
     XCTAssertNotNil(pipelineData.statisticalMetrics)
     if let stats = pipelineData.statisticalMetrics {
@@ -203,13 +210,13 @@ final class CoreMLTrainingPhase3Tests: XCTestCase {
 
   func testStableEpochsCalculation() {
     // Test that stable epochs calculation works correctly
-    let manyLosses = Array(0 ..< 100).map { Double($0) * 0.001 }  // 100 values
+    let manyLosses = Array(0..<100).map { Double($0) * 0.001 }  // 100 values
     let variance = coreMLTraining.computeTrainingLossVariance(lossTrend: manyLosses)
 
     XCTAssertNotNil(variance)
     if let variance = variance {
       // Should use last 20% (20 values) for stable epoch calculation
-      let expectedMean = (80 ..< 100).map { Double($0) * 0.001 }.reduce(0, +) / 20
+      let expectedMean = (80..<100).map { Double($0) * 0.001 }.reduce(0, +) / 20
       XCTAssertEqual(variance.mean, expectedMean, accuracy: 0.001)
     }
   }

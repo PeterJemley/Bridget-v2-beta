@@ -13,9 +13,10 @@ struct BridgeRecordValidator {
   let maxDate: Date
   let validEntityTypes: Set<String>
 
-  init(knownBridgeIDs: Set<String>, bridgeLocations: [String: (lat: Double, lon: Double)],
-       validEntityTypes: Set<String>, minDate: Date, maxDate: Date)
-  {
+  init(
+    knownBridgeIDs: Set<String>, bridgeLocations: [String: (lat: Double, lon: Double)],
+    validEntityTypes: Set<String>, minDate: Date, maxDate: Date
+  ) {
     self.knownBridgeIDs = knownBridgeIDs
     self.bridgeLocations = bridgeLocations
     self.validEntityTypes = validEntityTypes
@@ -46,10 +47,10 @@ struct BridgeRecordValidator {
     if closeDate <= openDate {
       return .closeDateNotAfterOpenDate(open: openDate, close: closeDate)
     }
-    guard let lat = record.latitudeValue, isInRange(lat, -90.0 ... 90.0) else {
+    guard let lat = record.latitudeValue, isInRange(lat, -90.0...90.0) else {
       return .invalidLatitude(record.latitudeValue)
     }
-    guard let lon = record.longitudeValue, isInRange(lon, -180.0 ... 180.0) else {
+    guard let lon = record.longitudeValue, isInRange(lon, -180.0...180.0) else {
       return .invalidLongitude(record.longitudeValue)
     }
     guard let minutesOpen = record.minutesOpenValue, minutesOpen >= 0 else {
@@ -60,9 +61,10 @@ struct BridgeRecordValidator {
       return .minutesOpenMismatch(reported: minutesOpen, actual: actualMinutes)
     }
     if let expected = bridgeLocations[record.entityid],
-       abs(expected.lat - lat) > 0.001 || abs(expected.lon - lon) > 0.001
+      abs(expected.lat - lat) > 0.001 || abs(expected.lon - lon) > 0.001
     {
-      return .geospatialMismatch(expectedLat: expected.lat, expectedLon: expected.lon, actualLat: lat, actualLon: lon)
+      return .geospatialMismatch(
+        expectedLat: expected.lat, expectedLon: expected.lon, actualLat: lat, actualLon: lon)
     }
     return nil
   }

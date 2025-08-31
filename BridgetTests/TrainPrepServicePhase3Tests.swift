@@ -30,21 +30,24 @@ final class TrainPrepServicePhase3Tests: XCTestCase {
     let predictionAccuracyStats = ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88)
     let etaPredictionVariance = ETASummary(mean: 300.0, variance: 900.0, min: 240.0, max: 360.0)
 
-    let confidenceIntervals = PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
-                                                             f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.86),
-                                                             meanError95CI: ConfidenceInterval(lower: 0.0, upper: 0.1))
+    let confidenceIntervals = PerformanceConfidenceIntervals(
+      accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
+      f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.86),
+      meanError95CI: ConfidenceInterval(lower: 0.0, upper: 0.1))
 
-    let errorDistribution = ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.001, min: 0.0, max: 0.15),
-                                                     relativeErrorStats: ETASummary(mean: 5.0, variance: 1.0, min: 0.0, max: 15.0),
-                                                     withinOneStdDev: 68.0,
-                                                     withinTwoStdDev: 95.0)
+    let errorDistribution = ErrorDistributionMetrics(
+      absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.001, min: 0.0, max: 0.15),
+      relativeErrorStats: ETASummary(mean: 5.0, variance: 1.0, min: 0.0, max: 15.0),
+      withinOneStdDev: 68.0,
+      withinTwoStdDev: 95.0)
 
-    let metrics = StatisticalTrainingMetrics(trainingLossStats: trainingLossStats,
-                                             validationLossStats: validationLossStats,
-                                             predictionAccuracyStats: predictionAccuracyStats,
-                                             etaPredictionVariance: etaPredictionVariance,
-                                             performanceConfidenceIntervals: confidenceIntervals,
-                                             errorDistribution: errorDistribution)
+    let metrics = StatisticalTrainingMetrics(
+      trainingLossStats: trainingLossStats,
+      validationLossStats: validationLossStats,
+      predictionAccuracyStats: predictionAccuracyStats,
+      etaPredictionVariance: etaPredictionVariance,
+      performanceConfidenceIntervals: confidenceIntervals,
+      errorDistribution: errorDistribution)
 
     XCTAssertEqual(metrics.trainingLossStats.mean, 0.1)
     XCTAssertEqual(metrics.validationLossStats.mean, 0.12)
@@ -59,9 +62,10 @@ final class TrainPrepServicePhase3Tests: XCTestCase {
   // MARK: - PerformanceConfidenceIntervals Tests
 
   func testPerformanceConfidenceIntervalsCreation() {
-    let intervals = PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
-                                                   f1Score95CI: ConfidenceInterval(lower: 0.75, upper: 0.85),
-                                                   meanError95CI: ConfidenceInterval(lower: 0.0, upper: 0.05))
+    let intervals = PerformanceConfidenceIntervals(
+      accuracy95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
+      f1Score95CI: ConfidenceInterval(lower: 0.75, upper: 0.85),
+      meanError95CI: ConfidenceInterval(lower: 0.0, upper: 0.05))
 
     XCTAssertEqual(intervals.accuracy95CI.lower, 0.80)
     XCTAssertEqual(intervals.accuracy95CI.upper, 0.90)
@@ -77,10 +81,11 @@ final class TrainPrepServicePhase3Tests: XCTestCase {
     let absoluteErrorStats = ETASummary(mean: 0.03, variance: 0.0009, min: 0.0, max: 0.08)
     let relativeErrorStats = ETASummary(mean: 3.0, variance: 0.5, min: 0.0, max: 8.0)
 
-    let errorDistribution = ErrorDistributionMetrics(absoluteErrorStats: absoluteErrorStats,
-                                                     relativeErrorStats: relativeErrorStats,
-                                                     withinOneStdDev: 70.0,
-                                                     withinTwoStdDev: 96.0)
+    let errorDistribution = ErrorDistributionMetrics(
+      absoluteErrorStats: absoluteErrorStats,
+      relativeErrorStats: relativeErrorStats,
+      withinOneStdDev: 70.0,
+      withinTwoStdDev: 96.0)
 
     XCTAssertEqual(errorDistribution.absoluteErrorStats.mean, 0.03)
     XCTAssertEqual(errorDistribution.relativeErrorStats.mean, 3.0)
@@ -114,21 +119,24 @@ final class TrainPrepServicePhase3Tests: XCTestCase {
     let predictionAccuracyStats = ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88)
     let etaPredictionVariance = ETASummary(mean: 300.0, variance: 900.0, min: 240.0, max: 360.0)
 
-    let confidenceIntervals = PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
-                                                             f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.86),
-                                                             meanError95CI: ConfidenceInterval(lower: 0.0, upper: 0.1))
+    let confidenceIntervals = PerformanceConfidenceIntervals(
+      accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
+      f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.86),
+      meanError95CI: ConfidenceInterval(lower: 0.0, upper: 0.1))
 
-    let errorDistribution = ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.001, min: 0.0, max: 0.15),
-                                                     relativeErrorStats: ETASummary(mean: 5.0, variance: 1.0, min: 0.0, max: 15.0),
-                                                     withinOneStdDev: 68.0,
-                                                     withinTwoStdDev: 95.0)
+    let errorDistribution = ErrorDistributionMetrics(
+      absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.001, min: 0.0, max: 0.15),
+      relativeErrorStats: ETASummary(mean: 5.0, variance: 1.0, min: 0.0, max: 15.0),
+      withinOneStdDev: 68.0,
+      withinTwoStdDev: 95.0)
 
-    let originalMetrics = StatisticalTrainingMetrics(trainingLossStats: trainingLossStats,
-                                                     validationLossStats: validationLossStats,
-                                                     predictionAccuracyStats: predictionAccuracyStats,
-                                                     etaPredictionVariance: etaPredictionVariance,
-                                                     performanceConfidenceIntervals: confidenceIntervals,
-                                                     errorDistribution: errorDistribution)
+    let originalMetrics = StatisticalTrainingMetrics(
+      trainingLossStats: trainingLossStats,
+      validationLossStats: validationLossStats,
+      predictionAccuracyStats: predictionAccuracyStats,
+      etaPredictionVariance: etaPredictionVariance,
+      performanceConfidenceIntervals: confidenceIntervals,
+      errorDistribution: errorDistribution)
 
     // Test encoding
     let encoder = JSONEncoder()
@@ -140,17 +148,24 @@ final class TrainPrepServicePhase3Tests: XCTestCase {
 
     // Verify round-trip
     XCTAssertEqual(originalMetrics.trainingLossStats.mean, decodedMetrics.trainingLossStats.mean)
-    XCTAssertEqual(originalMetrics.validationLossStats.mean, decodedMetrics.validationLossStats.mean)
-    XCTAssertEqual(originalMetrics.predictionAccuracyStats.mean, decodedMetrics.predictionAccuracyStats.mean)
-    XCTAssertEqual(originalMetrics.etaPredictionVariance.mean, decodedMetrics.etaPredictionVariance.mean)
-    XCTAssertEqual(originalMetrics.performanceConfidenceIntervals.accuracy95CI.lower,
-                   decodedMetrics.performanceConfidenceIntervals.accuracy95CI.lower)
-    XCTAssertEqual(originalMetrics.performanceConfidenceIntervals.accuracy95CI.upper,
-                   decodedMetrics.performanceConfidenceIntervals.accuracy95CI.upper)
-    XCTAssertEqual(originalMetrics.errorDistribution.withinOneStdDev,
-                   decodedMetrics.errorDistribution.withinOneStdDev)
-    XCTAssertEqual(originalMetrics.errorDistribution.withinTwoStdDev,
-                   decodedMetrics.errorDistribution.withinTwoStdDev)
+    XCTAssertEqual(
+      originalMetrics.validationLossStats.mean, decodedMetrics.validationLossStats.mean)
+    XCTAssertEqual(
+      originalMetrics.predictionAccuracyStats.mean, decodedMetrics.predictionAccuracyStats.mean)
+    XCTAssertEqual(
+      originalMetrics.etaPredictionVariance.mean, decodedMetrics.etaPredictionVariance.mean)
+    XCTAssertEqual(
+      originalMetrics.performanceConfidenceIntervals.accuracy95CI.lower,
+      decodedMetrics.performanceConfidenceIntervals.accuracy95CI.lower)
+    XCTAssertEqual(
+      originalMetrics.performanceConfidenceIntervals.accuracy95CI.upper,
+      decodedMetrics.performanceConfidenceIntervals.accuracy95CI.upper)
+    XCTAssertEqual(
+      originalMetrics.errorDistribution.withinOneStdDev,
+      decodedMetrics.errorDistribution.withinOneStdDev)
+    XCTAssertEqual(
+      originalMetrics.errorDistribution.withinTwoStdDev,
+      decodedMetrics.errorDistribution.withinTwoStdDev)
   }
 
   func testConfidenceIntervalCodable() {

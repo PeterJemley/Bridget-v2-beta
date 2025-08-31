@@ -5,14 +5,17 @@
 //  Tests for SeattleDrawbridges single source of truth
 //
 
-@testable import Bridget
 import XCTest
+
+@testable import Bridget
 
 final class SeattleDrawbridgesTests: XCTestCase {
   func testBridgeCount() {
     XCTAssertEqual(SeattleDrawbridges.count, 7, "Should have exactly 7 Seattle drawbridges")
-    XCTAssertEqual(SeattleDrawbridges.allBridges.count, 7, "All bridges array should have 7 bridges")
-    XCTAssertEqual(SeattleDrawbridges.BridgeID.allCases.count, 7, "BridgeID enum should have 7 cases")
+    XCTAssertEqual(
+      SeattleDrawbridges.allBridges.count, 7, "All bridges array should have 7 bridges")
+    XCTAssertEqual(
+      SeattleDrawbridges.BridgeID.allCases.count, 7, "BridgeID enum should have 7 cases")
   }
 
   func testBridgeIDs() {
@@ -40,7 +43,8 @@ final class SeattleDrawbridgesTests: XCTestCase {
 
     let actualNames = SeattleDrawbridges.allBridges.map { $0.name }.sorted()
 
-    XCTAssertEqual(actualNames, expectedNames, "Bridge names should match actual Seattle drawbridges")
+    XCTAssertEqual(
+      actualNames, expectedNames, "Bridge names should match actual Seattle drawbridges")
   }
 
   func testBridgeInfoLookup() {
@@ -107,16 +111,24 @@ final class SeattleDrawbridgesTests: XCTestCase {
     let nonCanonicalIDs = ["0", "5", "7", "8", "9", "10", "999", "invalid", ""]
 
     for nonCanonicalID in nonCanonicalIDs {
-      XCTAssertFalse(SeattleDrawbridges.isValidBridgeID(nonCanonicalID), "Non-canonical ID '\(nonCanonicalID)' should be rejected")
-      XCTAssertNil(SeattleDrawbridges.bridgeInfo(for: nonCanonicalID), "Non-canonical ID '\(nonCanonicalID)' should not have bridge info")
+      XCTAssertFalse(
+        SeattleDrawbridges.isValidBridgeID(nonCanonicalID),
+        "Non-canonical ID '\(nonCanonicalID)' should be rejected")
+      XCTAssertNil(
+        SeattleDrawbridges.bridgeInfo(for: nonCanonicalID),
+        "Non-canonical ID '\(nonCanonicalID)' should not have bridge info")
     }
   }
 
   func testCanonicalBridgeIDAcceptance() {
     // Test that all canonical bridge IDs are accepted
     for bridgeID in SeattleDrawbridges.BridgeID.allIDs {
-      XCTAssertTrue(SeattleDrawbridges.isValidBridgeID(bridgeID), "Canonical ID '\(bridgeID)' should be accepted")
-      XCTAssertNotNil(SeattleDrawbridges.bridgeInfo(for: bridgeID), "Canonical ID '\(bridgeID)' should have bridge info")
+      XCTAssertTrue(
+        SeattleDrawbridges.isValidBridgeID(bridgeID),
+        "Canonical ID '\(bridgeID)' should be accepted")
+      XCTAssertNotNil(
+        SeattleDrawbridges.bridgeInfo(for: bridgeID),
+        "Canonical ID '\(bridgeID)' should have bridge info")
     }
   }
 
@@ -140,22 +152,93 @@ final class SeattleDrawbridgesTests: XCTestCase {
   }
 
   func testSingleSourceOfTruthEnforcement() {
-    // Test that SeattleDrawbridges is the single source of truth
     let expectedBridgeIDs = Set(["1", "2", "3", "4", "6", "21", "29"])
     let actualBridgeIDs = Set(SeattleDrawbridges.BridgeID.allIDs)
 
-    XCTAssertEqual(actualBridgeIDs, expectedBridgeIDs, "Bridge IDs should exactly match the canonical set")
+    XCTAssertEqual(
+      actualBridgeIDs, expectedBridgeIDs, "Bridge IDs should exactly match the canonical set")
 
-    // Test that all coordinates are valid (non-zero)
     for bridge in SeattleDrawbridges.allBridges {
-      XCTAssertNotEqual(bridge.coordinate.latitude, 0.0, "Bridge \(bridge.name) should have non-zero latitude")
-      XCTAssertNotEqual(bridge.coordinate.longitude, 0.0, "Bridge \(bridge.name) should have non-zero longitude")
+      XCTAssertNotEqual(
+        bridge.coordinate.latitude, 0.0, "Bridge \(bridge.name) should have non-zero latitude")
+      XCTAssertNotEqual(
+        bridge.coordinate.longitude, 0.0, "Bridge \(bridge.name) should have non-zero longitude")
     }
 
-    // Test that all bridge IDs are unique
     let allIDs = SeattleDrawbridges.allBridges.map { $0.id.rawValue }
     let uniqueIDs = Set(allIDs)
     XCTAssertEqual(allIDs.count, uniqueIDs.count, "All bridge IDs should be unique")
+  }
+
+  func testCanonicalBridgeIDValidation() {
+    // Test canonical bridge IDs
+    XCTAssertTrue(
+      SeattleDrawbridges.isCanonicalBridgeID("1"), "First Avenue South Bridge should be canonical")
+    XCTAssertTrue(SeattleDrawbridges.isCanonicalBridgeID("2"), "Ballard Bridge should be canonical")
+    XCTAssertTrue(
+      SeattleDrawbridges.isCanonicalBridgeID("29"), "South Park Bridge should be canonical")
+
+    // Test non-canonical bridge IDs
+    XCTAssertFalse(
+      SeattleDrawbridges.isCanonicalBridgeID("0"), "Non-existent bridge ID should not be canonical")
+    XCTAssertFalse(
+      SeattleDrawbridges.isCanonicalBridgeID("999"),
+      "Non-existent bridge ID should not be canonical")
+    XCTAssertFalse(
+      SeattleDrawbridges.isCanonicalBridgeID("bridge1"), "Synthetic test ID should not be canonical"
+    )
+    XCTAssertFalse(
+      SeattleDrawbridges.isCanonicalBridgeID(""), "Empty string should not be canonical")
+  }
+
+  func testSyntheticTestBridgeIDValidation() {
+    // Test synthetic test bridge IDs
+    XCTAssertTrue(
+      SeattleDrawbridges.isSyntheticTestBridgeID("bridge1"), "bridge1 should be synthetic test ID")
+    XCTAssertTrue(
+      SeattleDrawbridges.isSyntheticTestBridgeID("bridge2"), "bridge2 should be synthetic test ID")
+    XCTAssertTrue(
+      SeattleDrawbridges.isSyntheticTestBridgeID("bridge999"),
+      "bridge999 should be synthetic test ID")
+
+    // Test non-synthetic bridge IDs
+    XCTAssertFalse(
+      SeattleDrawbridges.isSyntheticTestBridgeID("1"), "Canonical bridge ID should not be synthetic"
+    )
+    XCTAssertFalse(
+      SeattleDrawbridges.isSyntheticTestBridgeID("bridge"),
+      "bridge without number should not be synthetic")
+    XCTAssertFalse(
+      SeattleDrawbridges.isSyntheticTestBridgeID("bridge1a"), "bridge1a should not be synthetic")
+    XCTAssertFalse(
+      SeattleDrawbridges.isSyntheticTestBridgeID(""), "Empty string should not be synthetic")
+  }
+
+  func testAcceptedBridgeIDValidation() {
+    // Test with allowSynthetic: false (default)
+    XCTAssertTrue(
+      SeattleDrawbridges.isAcceptedBridgeID("1"), "Canonical bridge ID should be accepted")
+    XCTAssertTrue(
+      SeattleDrawbridges.isAcceptedBridgeID("29"), "Canonical bridge ID should be accepted")
+    XCTAssertFalse(
+      SeattleDrawbridges.isAcceptedBridgeID("bridge1"),
+      "Synthetic test ID should not be accepted by default")
+    XCTAssertFalse(
+      SeattleDrawbridges.isAcceptedBridgeID("999"), "Non-canonical ID should not be accepted")
+
+    // Test with allowSynthetic: true
+    XCTAssertTrue(
+      SeattleDrawbridges.isAcceptedBridgeID("1", allowSynthetic: true),
+      "Canonical bridge ID should be accepted")
+    XCTAssertTrue(
+      SeattleDrawbridges.isAcceptedBridgeID("bridge1", allowSynthetic: true),
+      "Synthetic test ID should be accepted when allowed")
+    XCTAssertTrue(
+      SeattleDrawbridges.isAcceptedBridgeID("bridge999", allowSynthetic: true),
+      "Synthetic test ID should be accepted when allowed")
+    XCTAssertFalse(
+      SeattleDrawbridges.isAcceptedBridgeID("999", allowSynthetic: true),
+      "Non-canonical, non-synthetic ID should not be accepted")
   }
 
   func testBridgeIDSetConsistency() {

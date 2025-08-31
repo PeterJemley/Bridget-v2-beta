@@ -11,46 +11,6 @@
 
 import Foundation
 
-// MARK: - PathScoringService
-
-/// Service for scoring route paths by aggregating bridge opening probabilities.
-///
-/// This service integrates ETA estimation and bridge prediction to compute the probability
-/// that a complete route path will be traversable (all bridges open when needed).
-///
-/// ## Key Features:
-/// - **Log-domain aggregation**: Uses log-domain math to avoid numerical underflow
-/// - **Batch processing**: Efficiently processes multiple paths and predictions
-/// - **Deterministic features**: Generates reproducible feature vectors for ML models
-/// - **Robust error handling**: Comprehensive error types and graceful failure modes
-/// - **Configuration validation**: Validates service configuration at initialization
-///
-/// ## Usage Example:
-/// ```swift
-/// let service = try PathScoringService(
-///     predictor: bridgePredictor,
-///     etaEstimator: etaEstimator,
-///     config: multiPathConfig
-/// )
-///
-/// let pathScore = try await service.scorePath(routePath, departureTime: Date())
-/// let journeyAnalysis = try await service.analyzeJourney(
-///     paths: alternativePaths,
-///     startNode: "A",
-///     endNode: "B",
-///     departureTime: Date()
-/// )
-/// ```
-///
-/// ## Mathematical Background:
-/// - **Joint Probability**: P(all bridges open) = ∏ P(bridge_i open)
-/// - **Log-domain**: log(P) = ∑ log(P_i) for numerical stability
-/// - **Network Probability**: P(at least one path open) = 1 - ∏(1 - P(path_i))
-///
-/// - Author: Bridget Team
-/// - Version: 1.0
-/// - Since: 2024
-
 // MARK: - Feature Structures
 
 /// Bridge-specific features for ML prediction
@@ -123,10 +83,11 @@ public class PathScoringService {
     }
   }
 
-  public init(predictor: BridgeOpenPredictor,
-              etaEstimator: ETAEstimator,
-              config: MultiPathConfig) throws
-  {
+  public init(
+    predictor: BridgeOpenPredictor,
+    etaEstimator: ETAEstimator,
+    config: MultiPathConfig
+  ) throws {
     self.predictor = predictor
     self.etaEstimator = etaEstimator
     self.config = config
@@ -224,6 +185,42 @@ public class PathScoringService {
     return (cacheStats.hits, cacheStats.misses, cacheStats.hitRate)
   }
 
+  /// Get current memory usage for performance monitoring
+  /// - Returns: Current memory usage in bytes
+  private func getCurrentMemoryUsage() -> Int64 {
+    var info = mach_task_basic_info()
+    var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+
+    let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
+      $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+        task_info(
+          mach_task_self_,
+          task_flavor_t(MACH_TASK_BASIC_INFO),
+          $0,
+          &count)
+      }
+    }
+
+    if kerr == KERN_SUCCESS {
+      return Int64(info.resident_size)
+    } else {
+      return 0
+    }
+  }
+
+  /// Calculate standard deviation for statistical analysis
+  /// - Parameters:
+  ///   - values: Array of values to analyze
+  ///   - mean: Pre-calculated mean of the values
+  /// - Returns: Standard deviation
+  private func calculateStandardDeviation(_ values: [Double], mean: Double) -> Double {
+    guard values.count > 1 else { return 0.0 }
+
+    let squaredDifferences = values.map { pow($0 - mean, 2) }
+    let variance = squaredDifferences.reduce(0, +) / Double(values.count - 1)
+    return sqrt(variance)
+  }
+
   /// Clear all caches (useful for testing and memory management)
   public func clearCaches() {
     featureCacheQueue.async(flags: .barrier) {
@@ -234,41 +231,29 @@ public class PathScoringService {
     cacheStats.misses = 0
   }
 
+  // MARK: - Logging
+
+  /// Gate warnings based on configured verbosity
+  private func logWarning(_ message: String) {
+    switch config.performance.logVerbosity {
+    case .silent:
+      return
+    case .warnings, .verbose:
+      print(message)
+    }
+  }
+
   /// Score a single route path by aggregating bridge opening probabilities.
-  ///
-  /// This method performs the complete scoring pipeline:
-  /// 1. Validates the route path structure
-  /// 2. Estimates arrival times for each bridge in the path
-  /// 3. Generates feature vectors for ML prediction
-  /// 4. Predicts bridge opening probabilities using batch processing
-  /// 5. Aggregates probabilities using log-domain math
-  ///
-  /// ## Mathematical Process:
-  /// - **ETA Estimation**: Uses `ETAEstimator` to compute arrival times at each bridge
-  /// - **Feature Generation**: Creates deterministic feature vectors based on time, bridge ID, and path context
-  /// - **Probability Prediction**: Uses `BridgeOpenPredictor` to get opening probabilities
-  /// - **Aggregation**: Computes joint probability P(all bridges open) = ∏ P(bridge_i open)
-  /// - **Log-domain**: Returns both log(P) and P for numerical stability and convenience
-  ///
-  /// ## Performance Characteristics:
-  /// - **Time Complexity**: O(n) where n is the number of bridges in the path
-  /// - **Space Complexity**: O(n) for feature vectors and probability storage
-  /// - **Batch Efficiency**: Uses `predictBatch` for optimal ML model inference
-  ///
-  /// ## Error Handling:
-  /// - Validates path structure and throws `PathScoringError.invalidPath` for malformed paths
-  /// - Handles prediction failures with `PathScoringError.predictionFailed`
-  /// - Manages feature generation errors with `PathScoringError.featureGenerationFailed`
-  /// - Gracefully handles unsupported bridges with default probabilities
-  ///
-  /// - Parameters:
-  ///   - path: The RoutePath to score. Must be valid and contain at least one bridge.
-  ///   - departureTime: The travel start time. Used for ETA calculations and time-of-day features.
-  /// - Returns: PathScore containing the aggregated probability and detailed bridge-level information
-  /// - Throws: PathScoringError for validation, prediction, or feature generation failures
-  public func scorePath(_ path: RoutePath,
-                        departureTime: Date) async throws -> PathScore
-  {
+  public func scorePath(
+    _ path: RoutePath,
+    departureTime: Date
+  ) async throws -> PathScore {
+    let startTime = Date()
+    var etaEstimationTime: TimeInterval = 0.0
+    var bridgePredictionTime: TimeInterval = 0.0
+    var aggregationTime: TimeInterval = 0.0
+    var featureGenerationTime: TimeInterval = 0.0
+
     // Validate input parameters
     guard !path.nodes.isEmpty else {
       throw PathScoringError.invalidPath("Path contains no nodes")
@@ -284,43 +269,82 @@ public class PathScoringService {
     }
 
     // Get bridge ETAs with IDs for prediction
-    let bridgeETAs = etaEstimator.estimateBridgeETAsWithIDs(for: path,
-                                                            departureTime: departureTime)
-
-    // Validate that all bridge IDs are canonical Seattle bridges
-    let nonCanonicalBridgeIDs = bridgeETAs.compactMap { eta in
-      SeattleDrawbridges.isValidBridgeID(eta.bridgeID) ? nil : eta.bridgeID
-    }
-
-    if !nonCanonicalBridgeIDs.isEmpty {
-      throw PathScoringError.unsupportedBridges(nonCanonicalBridgeIDs)
-    }
+    let etaStartTime = Date()
+    let bridgeETAs = etaEstimator.estimateBridgeETAsWithIDs(
+      for: path,
+      departureTime: departureTime)
+    etaEstimationTime = Date().timeIntervalSince(etaStartTime)
 
     guard !bridgeETAs.isEmpty else {
       // Path has no bridges, so probability is 1.0 (always passable)
-      return PathScore(path: path,
-                       logProbability: 0.0,  // log(1.0) = 0.0
-                       linearProbability: 1.0,
-                       bridgeProbabilities: [:])
+      return PathScore(
+        path: path,
+        logProbability: 0.0,  // log(1.0) = 0.0
+        linearProbability: 1.0,
+        bridgeProbabilities: [:])
     }
 
-    // Build prediction inputs for all bridges
+    // Defensive accepted-ID check: separate accepted vs policy-rejected bridges
+    var acceptedBridgeETAs: [(bridgeID: String, eta: ETA)] = []
+    var policyRejected: [String] = []
+
+    for (bridgeID, eta) in bridgeETAs {
+      if SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) {
+        acceptedBridgeETAs.append((bridgeID: bridgeID, eta: eta))
+      } else {
+        policyRejected.append(bridgeID)
+      }
+    }
+
+    // Prepare containers
+    var bridgeProbabilities: [String: Double] = [:]
+    var probabilities: [Double] = []
+    var unsupportedBridges: [String] = []  // predictor-unsupported
+    let defaultProbability = predictor.defaultProbability
+
+    // For policy-rejected IDs: assign default probability and do not predict
+    if !policyRejected.isEmpty {
+      for id in policyRejected {
+        bridgeProbabilities[id] = defaultProbability
+        probabilities.append(defaultProbability)
+      }
+    }
+
+    // If no accepted bridges remain, return aggregated result for only policy-rejected
+    if acceptedBridgeETAs.isEmpty {
+      let (logP, linP) = aggregateProbabilities(probabilities)
+      // Log a single warning for policy-rejected IDs
+      logWarning(
+        "⚠️ Warning: \(policyRejected.count) bridge IDs rejected by policy (neither canonical nor allowed synthetic): \(policyRejected.joined(separator: ", ")). Using default probabilities."
+      )
+      return PathScore(
+        path: path,
+        logProbability: logP,
+        linearProbability: linP,
+        bridgeProbabilities: bridgeProbabilities)
+    }
+
+    // Build prediction inputs for accepted bridges
+    let featureStartTime = Date()
     let predictionInputs: [BridgePredictionInput]
     do {
-      predictionInputs = try await buildPredictionInputs(bridgeETAs: bridgeETAs,
-                                                         path: path,
-                                                         departureTime: departureTime)
+      predictionInputs = try await buildPredictionInputs(
+        bridgeETAs: acceptedBridgeETAs,
+        path: path,
+        departureTime: departureTime)
     } catch {
       throw PathScoringError.featureGenerationFailed(
         "Failed to build prediction inputs: \(error.localizedDescription)")
     }
+    featureGenerationTime = Date().timeIntervalSince(featureStartTime)
 
     // Validate prediction inputs
     guard !predictionInputs.isEmpty else {
       throw PathScoringError.predictionFailed("No prediction inputs generated")
     }
 
-    // Batch predict bridge opening probabilities
+    // Batch predict bridge opening probabilities for accepted bridges
+    let predictionStartTime = Date()
     let predictionResult: BatchPredictionResult
     do {
       predictionResult = try await predictor.predictBatch(predictionInputs)
@@ -328,27 +352,22 @@ public class PathScoringService {
       throw PathScoringError.predictionFailed(
         "Batch prediction failed: \(error.localizedDescription)")
     }
+    bridgePredictionTime = Date().timeIntervalSince(predictionStartTime)
 
-    // Validate prediction results
-    guard predictionResult.predictions.count == bridgeETAs.count else {
+    // Validate prediction results count
+    guard predictionResult.predictions.count == acceptedBridgeETAs.count else {
       throw PathScoringError.predictionFailed(
-        "Prediction result count (\(predictionResult.predictions.count)) doesn't match bridge count (\(bridgeETAs.count))"
+        "Prediction result count (\(predictionResult.predictions.count)) doesn't match accepted bridge count (\(acceptedBridgeETAs.count))"
       )
     }
 
     // Extract probabilities and create bridge ID mapping with error handling
-    var bridgeProbabilities: [String: Double] = [:]
-    var probabilities: [Double] = []
-    var unsupportedBridges: [String] = []
-
     for (index, prediction) in predictionResult.predictions.enumerated() {
-      let bridgeID = bridgeETAs[index].bridgeID
+      let bridgeID = acceptedBridgeETAs[index].bridgeID
 
       // Check if bridge is supported by predictor
       if !predictor.supports(bridgeID: bridgeID) {
         unsupportedBridges.append(bridgeID)
-        // Use default probability for unsupported bridges
-        let defaultProbability = predictor.defaultProbability
         bridgeProbabilities[bridgeID] = defaultProbability
         probabilities.append(defaultProbability)
         continue
@@ -361,21 +380,17 @@ public class PathScoringService {
       }
 
       // Clamp individual bridge probability to configuration bounds
-      let probability = max(config.scoring.minProbability,
-                            min(config.scoring.maxProbability, prediction.openProbability))
+      let probability = max(
+        config.scoring.minProbability,
+        min(config.scoring.maxProbability, prediction.openProbability))
       bridgeProbabilities[bridgeID] = probability
       probabilities.append(probability)
     }
 
-    // Log warning for unsupported bridges if any
-    if !unsupportedBridges.isEmpty {
-      print(
-        "⚠️ Warning: \(unsupportedBridges.count) unsupported bridges found: \(unsupportedBridges.joined(separator: ", ")). Using default probabilities."
-      )
-    }
-
     // Aggregate probabilities using log-domain math for numerical stability
+    let aggregationStartTime = Date()
     let (logProbability, linearProbability) = aggregateProbabilities(probabilities)
+    aggregationTime = Date().timeIntervalSince(aggregationStartTime)
 
     // Validate final probabilities
     guard linearProbability.isFinite && linearProbability >= 0.0 && linearProbability <= 1.0 else {
@@ -383,49 +398,63 @@ public class PathScoringService {
         "Invalid aggregated probability: \(linearProbability)")
     }
 
-    return PathScore(path: path,
-                     logProbability: logProbability,
-                     linearProbability: linearProbability,
-                     bridgeProbabilities: bridgeProbabilities)
+    // Log warnings for policy-rejected and predictor-unsupported bridges
+    if !policyRejected.isEmpty {
+      logWarning(
+        "⚠️ Warning: \(policyRejected.count) bridge IDs rejected by policy (neither canonical nor allowed synthetic): \(policyRejected.joined(separator: ", ")). Using default probabilities."
+      )
+    }
+    if !unsupportedBridges.isEmpty {
+      logWarning(
+        "⚠️ Warning: \(unsupportedBridges.count) bridges unsupported by predictor: \(unsupportedBridges.joined(separator: ", ")). Using default probabilities."
+      )
+    }
+
+    // Record performance metrics if enabled
+    if config.performance.enablePerformanceLogging {
+      let totalScoringTime = Date().timeIntervalSince(startTime)
+      let bridgesProcessed = bridgeETAs.count
+      let defaultProbabilityBridges = policyRejected.count + unsupportedBridges.count
+      let cacheStats = getCacheStatistics()
+
+      let metrics = ScoringMetrics(
+        totalScoringTime: totalScoringTime,
+        etaEstimationTime: etaEstimationTime,
+        bridgePredictionTime: bridgePredictionTime,
+        aggregationTime: aggregationTime,
+        featureGenerationTime: featureGenerationTime,
+        pathsScored: 1,
+        bridgesProcessed: bridgesProcessed,
+        pathsPerSecond: totalScoringTime > 0 ? 1.0 / totalScoringTime : 0.0,
+        bridgesPerSecond: totalScoringTime > 0 ? Double(bridgesProcessed) / totalScoringTime : 0.0,
+        featureCacheHitRate: cacheStats.hitRate,
+        cacheHits: cacheStats.hits,
+        cacheMisses: cacheStats.misses,
+        failedPaths: 0,
+        defaultProbabilityBridges: defaultProbabilityBridges,
+        averagePathProbability: linearProbability,
+        pathProbabilityStdDev: 0.0,
+        peakMemoryUsage: getCurrentMemoryUsage(),
+        memoryPerPath: Double(getCurrentMemoryUsage())
+      )
+
+      globalScoringMetrics.recordMetrics(metrics)
+    }
+
+    return PathScore(
+      path: path,
+      logProbability: logProbability,
+      linearProbability: linearProbability,
+      bridgeProbabilities: bridgeProbabilities)
   }
 
   /// Score multiple paths efficiently using batch processing.
-  ///
-  /// This method processes multiple route paths sequentially, maintaining the order
-  /// of the input array in the results. Each path is scored independently using
-  /// the same pipeline as `scorePath(_:departureTime:)`.
-  ///
-  /// ⚠️ **Performance Enhancement Note**: For very large path sets, consider implementing
-  /// concurrent processing or advanced batching strategies. The current sequential
-  /// approach is suitable for typical use cases but may benefit from optimization
-  /// for high-volume scenarios.
-  ///
-  /// See the Future Enhancements section in PathScoringService_API_Guide.md for details.
-  ///
-  /// ## Performance Considerations:
-  /// - **Sequential Processing**: Paths are processed one at a time to maintain order
-  /// - **Batch Prediction**: Each path uses batch prediction for its bridges (internal optimization)
-  /// - **Memory Usage**: Results are accumulated in memory, so large path sets may use significant memory
-  /// - **Time Estimation**: Roughly 10 paths per second (configurable via `config.performance.maxScoringTime`)
-  ///
-  /// ## Error Handling:
-  /// - **Partial Failures**: Processes all paths and reports failures at the end
-  /// - **Validation**: All paths are validated before processing begins
-  /// - **Empty Sets**: Returns empty array for empty input (no error thrown)
-  ///
-  /// ## Use Cases:
-  /// - **Alternative Routes**: Score multiple route options for the same journey
-  /// - **Path Comparison**: Compare different routing strategies
-  /// - **Batch Analysis**: Process large sets of candidate paths
-  ///
-  /// - Parameters:
-  ///   - paths: Array of RoutePaths to score. Can be empty (returns empty array).
-  ///   - departureTime: The travel start time. Applied to all paths uniformly.
-  /// - Returns: Array of PathScores in the same order as the input paths array
-  /// - Throws: PathScoringError if any path fails validation or processing
-  public func scorePaths(_ paths: [RoutePath],
-                         departureTime: Date) async throws -> [PathScore]
-  {
+  public func scorePaths(
+    _ paths: [RoutePath],
+    departureTime: Date
+  ) async throws -> [PathScore] {
+    let startTime = Date()
+
     // Validate input
     guard !paths.isEmpty else {
       throw PathScoringError.emptyPathSet("No paths provided for scoring")
@@ -433,24 +462,38 @@ public class PathScoringService {
 
     // Check for configuration limits
     if paths.count > Int(config.performance.maxScoringTime * 10) {  // Rough estimate: 10 paths per second
-      print("⚠️ Warning: Large path set (\(paths.count) paths) may take significant time to process")
+      logWarning(
+        "⚠️ Warning: Large path set (\(paths.count) paths) may take significant time to process")
     }
 
     var pathScores: [PathScore] = []
     var failedPaths: [(index: Int, error: Error)] = []
+    var totalBridgesProcessed = 0
+    var totalDefaultProbabilityBridges = 0
+    var pathProbabilities: [Double] = []
 
     // Process paths with error handling
     for (index, path) in paths.enumerated() {
       do {
         let score = try await scorePath(path, departureTime: departureTime)
         pathScores.append(score)
+
+        // Collect metrics for batch analysis
+        totalBridgesProcessed += path.edges.filter { $0.isBridge }.count
+        totalDefaultProbabilityBridges +=
+          path.edges.filter {
+            $0.isBridge
+              && !SeattleDrawbridges.isAcceptedBridgeID($0.bridgeID ?? "", allowSynthetic: true)
+          }.count
+        pathProbabilities.append(score.linearProbability)
+
       } catch {
         failedPaths.append((index: index, error: error))
 
         // Continue processing other paths unless this is a critical error
         if error is PathScoringError {
           // For path-specific errors, continue with other paths
-          print("⚠️ Warning: Failed to score path \(index): \(error.localizedDescription)")
+          logWarning("⚠️ Warning: Failed to score path \(index): \(error.localizedDescription)")
         } else {
           // For unexpected errors, re-throw
           throw error
@@ -467,53 +510,52 @@ public class PathScoringService {
       )
     }
 
+    // Record batch performance metrics if enabled
+    if config.performance.enablePerformanceLogging {
+      let totalScoringTime = Date().timeIntervalSince(startTime)
+      let averagePathProbability =
+        pathProbabilities.isEmpty
+        ? 0.0 : pathProbabilities.reduce(0, +) / Double(pathProbabilities.count)
+      let pathProbabilityStdDev = calculateStandardDeviation(
+        pathProbabilities, mean: averagePathProbability)
+      let cacheStats = getCacheStatistics()
+
+      let metrics = ScoringMetrics(
+        totalScoringTime: totalScoringTime,
+        etaEstimationTime: 0.0,  // Not tracked separately for batch
+        bridgePredictionTime: 0.0,  // Not tracked separately for batch
+        aggregationTime: 0.0,  // Not tracked separately for batch
+        featureGenerationTime: 0.0,  // Not tracked separately for batch
+        pathsScored: paths.count,
+        bridgesProcessed: totalBridgesProcessed,
+        pathsPerSecond: totalScoringTime > 0 ? Double(paths.count) / totalScoringTime : 0.0,
+        bridgesPerSecond: totalScoringTime > 0
+          ? Double(totalBridgesProcessed) / totalScoringTime : 0.0,
+        featureCacheHitRate: cacheStats.hitRate,
+        cacheHits: cacheStats.hits,
+        cacheMisses: cacheStats.misses,
+        failedPaths: failedPaths.count,
+        defaultProbabilityBridges: totalDefaultProbabilityBridges,
+        averagePathProbability: averagePathProbability,
+        pathProbabilityStdDev: pathProbabilityStdDev,
+        peakMemoryUsage: getCurrentMemoryUsage(),
+        memoryPerPath: totalScoringTime > 0
+          ? Double(getCurrentMemoryUsage()) / Double(paths.count) : 0.0
+      )
+
+      globalScoringMetrics.recordMetrics(metrics)
+    }
+
     return pathScores
   }
 
   /// Analyze a complete journey with multiple paths and compute network-level probability.
-  ///
-  /// This method provides a comprehensive analysis of a journey with multiple route options.
-  /// It scores all paths and computes the overall network probability that at least one
-  /// path will be traversable.
-  ///
-  /// ## Mathematical Process:
-  /// 1. **Path Scoring**: Scores each individual path using `scorePaths(_:departureTime:)`
-  /// 2. **Network Probability**: Computes P(at least one path open) using the union formula:
-  ///    ```
-  ///    P(network) = 1 - ∏(1 - P(path_i))
-  ///    ```
-  /// 3. **Best Path Identification**: Finds the path with the highest individual probability
-  /// 4. **Statistical Summary**: Provides mean, min, max, and standard deviation of path probabilities
-  ///
-  /// ## Network Probability Formula:
-  /// The network probability represents the chance that at least one path is traversable.
-  /// This uses the complement of the intersection of path failures:
-  /// - Let P_i = probability that path i is traversable
-  /// - Let F_i = 1 - P_i = probability that path i fails
-  /// - Network probability = 1 - ∏ F_i = 1 - ∏(1 - P_i)
-  ///
-  /// ## Edge Cases:
-  /// - **Empty Path Set**: Returns a valid `JourneyAnalysis` with zero probabilities
-  /// - **Single Path**: Network probability equals the single path probability
-  /// - **All Paths Zero**: Network probability is zero
-  /// - **All Paths One**: Network probability is one
-  ///
-  /// ## Performance:
-  /// - **Time Complexity**: O(n × m) where n = number of paths, m = average bridges per path
-  /// - **Memory Usage**: Stores all path scores in memory for analysis
-  ///
-  /// - Parameters:
-  ///   - paths: Array of RoutePaths to analyze. Can be empty (returns zero probabilities).
-  ///   - startNode: Starting node ID. Used for validation and documentation.
-  ///   - endNode: Destination node ID. Used for validation and documentation.
-  ///   - departureTime: The travel start time. Applied to all paths uniformly.
-  /// - Returns: JourneyAnalysis containing path scores, network probability, and statistical summary
-  /// - Throws: PathScoringError if any path fails validation or processing
-  public func analyzeJourney(paths: [RoutePath],
-                             startNode: NodeID,
-                             endNode: NodeID,
-                             departureTime: Date) async throws -> JourneyAnalysis
-  {
+  public func analyzeJourney(
+    paths: [RoutePath],
+    startNode: NodeID,
+    endNode: NodeID,
+    departureTime: Date
+  ) async throws -> JourneyAnalysis {
     // Validate node IDs
     guard !startNode.isEmpty else {
       throw PathScoringError.invalidPath("Start node ID is empty")
@@ -530,13 +572,14 @@ public class PathScoringService {
       print("   • Network probability: 0.000")
       print("   • Best path probability: 0.000")
 
-      return JourneyAnalysis(startNode: startNode,
-                             endNode: endNode,
-                             departureTime: departureTime,
-                             pathScores: [],
-                             networkProbability: 0.0,
-                             bestPathProbability: 0.0,
-                             totalPathsAnalyzed: 0)
+      return JourneyAnalysis(
+        startNode: startNode,
+        endNode: endNode,
+        departureTime: departureTime,
+        pathScores: [],
+        networkProbability: 0.0,
+        bestPathProbability: 0.0,
+        totalPathsAnalyzed: 0)
     }
 
     // Score all paths
@@ -579,34 +622,38 @@ public class PathScoringService {
     print("   • Network probability: \(String(format: "%.3f", networkProbability))")
     print("   • Best path probability: \(String(format: "%.3f", bestPathProbability))")
 
-    return JourneyAnalysis(startNode: startNode,
-                           endNode: endNode,
-                           departureTime: departureTime,
-                           pathScores: pathScores,
-                           networkProbability: networkProbability,
-                           bestPathProbability: bestPathProbability,
-                           totalPathsAnalyzed: paths.count)
+    return JourneyAnalysis(
+      startNode: startNode,
+      endNode: endNode,
+      departureTime: departureTime,
+      pathScores: pathScores,
+      networkProbability: networkProbability,
+      bestPathProbability: bestPathProbability,
+      totalPathsAnalyzed: paths.count)
   }
 
   // MARK: - Private Methods
 
   /// Build prediction inputs for bridge ETAs
-  private func buildPredictionInputs(bridgeETAs: [(bridgeID: String, eta: ETA)],
-                                     path: RoutePath,
-                                     departureTime: Date) async throws -> [BridgePredictionInput]
-  {
+  private func buildPredictionInputs(
+    bridgeETAs: [(bridgeID: String, eta: ETA)],
+    path: RoutePath,
+    departureTime: Date
+  ) async throws -> [BridgePredictionInput] {
     var inputs: [BridgePredictionInput] = []
 
     for (bridgeID, eta) in bridgeETAs {
       // Build feature vector for this bridge at this ETA
-      let features = try await buildFeatures(for: bridgeID,
-                                             eta: eta.arrivalTime,
-                                             path: path,
-                                             departureTime: departureTime)
+      let features = try await buildFeatures(
+        for: bridgeID,
+        eta: eta.arrivalTime,
+        path: path,
+        departureTime: departureTime)
 
-      let input = BridgePredictionInput(bridgeID: bridgeID,
-                                        eta: eta.arrivalTime,
-                                        features: features)
+      let input = BridgePredictionInput(
+        bridgeID: bridgeID,
+        eta: eta.arrivalTime,
+        features: features)
       inputs.append(input)
     }
 
@@ -614,59 +661,12 @@ public class PathScoringService {
   }
 
   /// Build feature vector for bridge prediction using real feature engineering patterns.
-  ///
-  /// This method generates a comprehensive feature vector for ML prediction,
-  /// incorporating time-of-day patterns, bridge characteristics, and path context.
-  /// The features are deterministic based on the input parameters for reproducible results.
-  ///
-  /// ## Feature Categories:
-  ///
-  /// ### Time-based Features:
-  /// - **Cyclical Time Encoding**: Hour and minute encoded as sin/cos for smooth transitions
-  /// - **Day of Week**: Encoded as sin/cos for weekly patterns
-  /// - **Rush Hour Detection**: Binary indicator for peak traffic periods
-  /// - **Weekend Adjustment**: Reduced traffic patterns for weekend days
-  ///
-  /// ### Bridge-specific Features:
-  /// - **Opening Rates**: 5-minute and 30-minute opening probabilities
-  /// - **Crossing Rate**: Probability of successful bridge crossing
-  /// - **Gate Anomaly**: Slight variation to model real-world unpredictability
-  ///
-  /// ### Path Context Features:
-  /// - **Detour Delta**: Additional time for path complexity
-  /// - **Via Routable**: Path routing efficiency indicator
-  /// - **Via Penalty**: Penalty for complex routing
-  /// - **Detour Fraction**: Fraction of path that is detour
-  ///
-  /// ### Traffic Features:
-  /// - **Current Speed**: Real-time traffic speed estimate
-  /// - **Normal Speed**: Baseline speed for comparison
-  ///
-  /// ## Deterministic Behavior:
-  /// Features are generated using a seeded random number generator based on:
-  /// - Bridge ID hash value
-  /// - Arrival time (minute + hour)
-  /// - Path characteristics
-  ///
-  /// This ensures that identical inputs produce identical feature vectors.
-  ///
-  /// ## Integration Notes:
-  /// - Uses the same `cyc()` function as `FeatureEngineeringService` for consistency
-  /// - Follows the same feature vector structure as existing ML models
-  /// - Designed to be compatible with existing prediction pipelines
-  ///
-  /// - Parameters:
-  ///   - bridgeID: Unique identifier for the bridge
-  ///   - eta: Estimated arrival time at the bridge
-  ///   - path: The complete route path for context
-  ///   - departureTime: Original departure time for journey context
-  /// - Returns: Array of Double values representing the feature vector
-  /// - Throws: Never throws (deterministic feature generation)
-  private func buildFeatures(for bridgeID: String,
-                             eta: Date,
-                             path: RoutePath,
-                             departureTime: Date) async throws -> [Double]
-  {
+  private func buildFeatures(
+    for bridgeID: String,
+    eta: Date,
+    path: RoutePath,
+    departureTime: Date
+  ) async throws -> [Double] {
     // Check cache first
     let cacheKey = featureCacheKey(bridgeID: bridgeID, eta: eta)
     if let cachedFeatures = getCachedFeatures(for: cacheKey) {
@@ -674,10 +674,11 @@ public class PathScoringService {
     }
 
     // Generate features if not cached
-    let features = try await generateFeatures(for: bridgeID,
-                                              eta: eta,
-                                              path: path,
-                                              departureTime: departureTime)
+    let features = try await generateFeatures(
+      for: bridgeID,
+      eta: eta,
+      path: path,
+      departureTime: departureTime)
 
     // Cache the generated features
     cacheFeatures(features, for: cacheKey)
@@ -686,11 +687,12 @@ public class PathScoringService {
   }
 
   /// Generate feature vector for bridge prediction (uncached version)
-  private func generateFeatures(for bridgeID: String,
-                                eta: Date,
-                                path: RoutePath,
-                                departureTime: Date) async throws -> [Double]
-  {
+  private func generateFeatures(
+    for bridgeID: String,
+    eta: Date,
+    path: RoutePath,
+    departureTime: Date
+  ) async throws -> [Double] {
     // Extract time-based features using the same patterns as FeatureEngineeringService
     let calendar = Calendar.current
     let minuteOfDay =
@@ -702,10 +704,11 @@ public class PathScoringService {
     let (dowSin, dowCos) = cyc(Double(dayOfWeek), period: 7.0)
 
     // Bridge-specific features based on path context and historical patterns
-    let bridgeFeatures = try await computeBridgeFeatures(bridgeID: bridgeID,
-                                                         eta: eta,
-                                                         path: path,
-                                                         departureTime: departureTime)
+    let bridgeFeatures = try await computeBridgeFeatures(
+      bridgeID: bridgeID,
+      eta: eta,
+      path: path,
+      departureTime: departureTime)
 
     return [
       minSin, minCos, dowSin, dowCos,
@@ -718,32 +721,13 @@ public class PathScoringService {
   }
 
   /// Compute bridge-specific features using path context and realistic patterns
-  ///
-  /// ⚠️ **Production Enhancement Note**: This method currently uses synthetic features
-  /// for development and testing. For production deployment, consider integrating with:
-  /// - Real historical bridge data from sensors
-  /// - Live traffic APIs for current conditions
-  /// - Weather data for environmental factors
-  /// - Event data for special circumstances
-  ///
-  /// See the Future Enhancements section in PathScoringService_API_Guide.md for details.
-  ///
-  /// - Parameters:
-  ///   - bridgeID: Bridge identifier
-  ///   - eta: Estimated arrival time
-  ///   - path: Route path context
-  ///   - departureTime: Journey departure time
-  /// - Returns: Bridge-specific feature values
-  private func computeBridgeFeatures(bridgeID: String,
-                                     eta: Date,
-                                     path: RoutePath,
-                                     departureTime _: Date) async throws -> BridgeFeatures
-  {
-    // TODO: In production, this would query historical data and compute:
-    // - Rolling averages from recent bridge opening data
-    // - Traffic patterns based on time of day
-    // - Path-specific detour information
-    // - Real-time traffic speed data
+  private func computeBridgeFeatures(
+    bridgeID: String,
+    eta: Date,
+    path: RoutePath,
+    departureTime _: Date
+  ) async throws -> BridgeFeatures {
+    // TODO: In production, integrate real data sources
 
     // Generate realistic features based on time of day and bridge context
     let calendar = Calendar.current
@@ -763,8 +747,10 @@ public class PathScoringService {
     let seed = UInt64(abs(bridgeHash + timeHash))
     let random = SimpleDeterministicRandom(seed: seed)
 
-    let open5m = max(0.1, min(0.9, baseOpenRate + rushHourAdjustment + random.nextDouble() * 0.1 - 0.05))
-    let open30m = max(0.1, min(0.9, baseOpenRate + rushHourAdjustment + random.nextDouble() * 0.16 - 0.08))
+    let open5m = max(
+      0.1, min(0.9, baseOpenRate + rushHourAdjustment + random.nextDouble() * 0.1 - 0.05))
+    let open30m = max(
+      0.1, min(0.9, baseOpenRate + rushHourAdjustment + random.nextDouble() * 0.16 - 0.08))
 
     // Path-specific features
     let pathLength = path.nodes.count
@@ -777,22 +763,23 @@ public class PathScoringService {
     let currentSpeed = max(10.0, min(50.0, baseSpeed + speedVariation))
     let normalSpeed = max(25.0, min(45.0, 35.0 + random.nextDouble() * 6.0 - 3.0))
 
-    return BridgeFeatures(open5m: open5m,
-                          open30m: open30m,
-                          detourDelta: detourDelta,
-                          crossRate: crossRate,
-                          viaRoutable: 1.0,
-                          viaPenalty: min(1.0, detourDelta / 900.0),  // Normalized to 0-1
-                          gateAnom: 1.0 + random.nextDouble() * 0.5,  // Slight anomaly
-                          detourFrac: min(1.0, detourDelta / (normalSpeed * 60)),  // Fraction of normal travel time
-                          currentSpeed: currentSpeed,
-                          normalSpeed: normalSpeed)
+    return BridgeFeatures(
+      open5m: open5m,
+      open30m: open30m,
+      detourDelta: detourDelta,
+      crossRate: crossRate,
+      viaRoutable: 1.0,
+      viaPenalty: min(1.0, detourDelta / 900.0),  // Normalized to 0-1
+      gateAnom: 1.0 + random.nextDouble() * 0.5,  // Slight anomaly
+      detourFrac: min(1.0, detourDelta / (normalSpeed * 60)),  // Fraction of normal travel time
+      currentSpeed: currentSpeed,
+      normalSpeed: normalSpeed)
   }
 
   /// Aggregate bridge probabilities using log-domain math for numerical stability
-  /// - Parameter probabilities: Array of bridge opening probabilities (already clamped)
-  /// - Returns: Tuple of (logProbability, linearProbability)
-  private func aggregateProbabilities(_ probabilities: [Double]) -> (logProbability: Double, linearProbability: Double) {
+  private func aggregateProbabilities(_ probabilities: [Double]) -> (
+    logProbability: Double, linearProbability: Double
+  ) {
     guard !probabilities.isEmpty else {
       return (logProbability: 0.0, linearProbability: 1.0)
     }
@@ -808,9 +795,6 @@ public class PathScoringService {
   }
 
   /// Compute network-level probability using union formula
-  /// P(any path succeeds) = 1 - P(all paths fail)
-  /// - Parameter pathScores: Array of scored paths
-  /// - Returns: Network-level probability
   private func computeNetworkProbability(_ pathScores: [PathScore]) -> Double {
     guard !pathScores.isEmpty else {
       return 0.0
@@ -837,45 +821,6 @@ public class PathScoringService {
 
 // MARK: - Path Scoring Errors
 
-/// Errors specific to path scoring operations.
-///
-/// This enum provides comprehensive error types for the PathScoringService,
-/// covering validation failures, prediction errors, feature generation issues,
-/// and configuration problems.
-///
-/// ## Error Categories:
-///
-/// ### Validation Errors:
-/// - `invalidPath`: Path structure or content validation failures
-/// - `emptyPathSet`: No paths provided for analysis
-///
-/// ### Processing Errors:
-/// - `predictionFailed`: Bridge prediction or ETA estimation failures
-/// - `featureGenerationFailed`: Feature vector generation problems
-/// - `unsupportedBridge`: Bridge not supported by the predictor
-///
-/// ### Configuration Errors:
-/// - `configurationError`: Invalid service configuration
-///
-/// ## Usage:
-/// ```swift
-/// do {
-///     let score = try await service.scorePath(path, departureTime: Date())
-/// } catch let error as PathScoringError {
-///     switch error {
-///     case .invalidPath(let reason):
-///         print("Path validation failed: \(reason)")
-///     case .predictionFailed(let reason):
-///         print("Prediction failed: \(reason)")
-///     default:
-///         print("Other error: \(error.localizedDescription)")
-///     }
-/// }
-/// ```
-///
-/// - Author: Bridget Team
-/// - Version: 1.0
-/// - Since: 2024
 public enum PathScoringError: Error, LocalizedError {
   case invalidPath(String)
   case predictionFailed(String)
@@ -886,17 +831,17 @@ public enum PathScoringError: Error, LocalizedError {
 
   public var errorDescription: String? {
     switch self {
-    case let .invalidPath(reason):
+    case .invalidPath(let reason):
       return "Invalid path: \(reason)"
-    case let .predictionFailed(reason):
+    case .predictionFailed(let reason):
       return "Prediction failed: \(reason)"
-    case let .featureGenerationFailed(reason):
+    case .featureGenerationFailed(let reason):
       return "Feature generation failed: \(reason)"
-    case let .emptyPathSet(reason):
+    case .emptyPathSet(let reason):
       return "Empty path set: \(reason)"
-    case let .unsupportedBridges(bridges):
+    case .unsupportedBridges(let bridges):
       return "Unsupported bridges: \(bridges.joined(separator: ", "))"
-    case let .configurationError(reason):
+    case .configurationError(let reason):
       return "Configuration error: \(reason)"
     }
   }

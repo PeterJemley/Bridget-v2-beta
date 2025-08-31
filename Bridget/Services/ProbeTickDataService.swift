@@ -88,7 +88,7 @@ func calculateGateAnomaly(at timestamp: Date, from events: [BridgeEvent]) -> Dou
   let recentEvents = events.filter { $0.openDateTime >= oneWeekAgo }
   let averageMinutesOpen =
     recentEvents.isEmpty
-      ? 5.0 : Double(recentEvents.map { $0.minutesOpen }.reduce(0, +)) / Double(recentEvents.count)
+    ? 5.0 : Double(recentEvents.map { $0.minutesOpen }.reduce(0, +)) / Double(recentEvents.count)
 
   let currentEvent = events.first { event in
     event.openDateTime <= timestamp
@@ -98,11 +98,13 @@ func calculateGateAnomaly(at timestamp: Date, from events: [BridgeEvent]) -> Dou
   if let currentEvent = currentEvent {
     let currentMinutesOpen =
       currentEvent.closeDateTime != nil
-        ? Double(
-          calendar.dateComponents([.minute], from: currentEvent.openDateTime, to: currentEvent.closeDateTime!).minute ?? 0)
-        : Double(
-          calendar.dateComponents([.minute], from: currentEvent.openDateTime, to: timestamp).minute
-            ?? 0)
+      ? Double(
+        calendar.dateComponents(
+          [.minute], from: currentEvent.openDateTime, to: currentEvent.closeDateTime!
+        ).minute ?? 0)
+      : Double(
+        calendar.dateComponents([.minute], from: currentEvent.openDateTime, to: timestamp).minute
+          ?? 0)
 
     let ratio = currentMinutesOpen / max(averageMinutesOpen, 1.0)
     return min(max(ratio, 1.0), 8.0)  // Clamp to [1, 8]
@@ -141,10 +143,11 @@ func calculateAlternateMetrics(at _: Date, from _: [BridgeEvent]) -> (Int, Int) 
 ///   - timestamp: The timestamp for this tick
 ///   - events: Historical bridge events for this bridge
 /// - Returns: A ProbeTick instance if valid data exists, nil otherwise
-func makeProbeTick(for bridgeID: String,
-                   at timestamp: Date,
-                   from events: [BridgeEvent]) -> ProbeTick?
-{
+func makeProbeTick(
+  for bridgeID: String,
+  at timestamp: Date,
+  from events: [BridgeEvent]
+) -> ProbeTick? {
   // Find if there's an active bridge opening at this timestamp
   let activeEvent = events.first { event in
     event.openDateTime <= timestamp
@@ -170,19 +173,20 @@ func makeProbeTick(for bridgeID: String,
   let clampedCrossN = max(crossN, 1)  // Ensure we don't have zero
 
   // Create the ProbeTick record
-  let tick = ProbeTick(tsUtc: timestamp,
-                       bridgeId: bridgeIdInt,
-                       crossK: Int16(clampedCrossK),
-                       crossN: Int16(clampedCrossN),
-                       viaRoutable: viaRoutable,
-                       viaPenaltySec: Int32(clampedViaPenaltySec),
-                       gateAnom: clampedGateAnom,
-                       alternatesTotal: Int16(alternatesTotal),
-                       alternatesAvoid: Int16(alternatesAvoid),
-                       freeEtaSec: nil,  // TODO: Implement real-time ETA calculation
-                       viaEtaSec: nil,  // TODO: Implement via route ETA calculation
-                       openLabel: openLabel,
-                       isValid: true)
+  let tick = ProbeTick(
+    tsUtc: timestamp,
+    bridgeId: bridgeIdInt,
+    crossK: Int16(clampedCrossK),
+    crossN: Int16(clampedCrossN),
+    viaRoutable: viaRoutable,
+    viaPenaltySec: Int32(clampedViaPenaltySec),
+    gateAnom: clampedGateAnom,
+    alternatesTotal: Int16(alternatesTotal),
+    alternatesAvoid: Int16(alternatesAvoid),
+    freeEtaSec: nil,  // TODO: Implement real-time ETA calculation
+    viaEtaSec: nil,  // TODO: Implement via route ETA calculation
+    openLabel: openLabel,
+    isValid: true)
 
   return tick
 }
@@ -199,11 +203,12 @@ func makeProbeTick(for bridgeID: String,
 ///   - startDate: Start of the date range (inclusive)
 ///   - endDate: End of the date range (exclusive)
 /// - Returns: Array of ProbeTick instances created
-func makeProbeTicks(from events: [BridgeEvent],
-                    for bridgeIDs: [String],
-                    from startDate: Date,
-                    to endDate: Date) -> [ProbeTick]
-{
+func makeProbeTicks(
+  from events: [BridgeEvent],
+  for bridgeIDs: [String],
+  from startDate: Date,
+  to endDate: Date
+) -> [ProbeTick] {
   let calendar = Calendar.current
 
   // Group events by bridge ID for efficient lookup
@@ -267,10 +272,11 @@ final class ProbeTickDataService {
   /// - May take several minutes for large date ranges
   func populateHistoricalProbeTicks(from startDate: Date, to endDate: Date) async throws {
     // Fetch all bridge events in the date range
-    let fetchDescriptor = FetchDescriptor<BridgeEvent>(predicate: #Predicate {
-      $0.openDateTime >= startDate && $0.openDateTime < endDate && $0.isValidated
-    },
-    sortBy: [SortDescriptor(\.openDateTime), SortDescriptor(\.bridgeID)])
+    let fetchDescriptor = FetchDescriptor<BridgeEvent>(
+      predicate: #Predicate {
+        $0.openDateTime >= startDate && $0.openDateTime < endDate && $0.isValidated
+      },
+      sortBy: [SortDescriptor(\.openDateTime), SortDescriptor(\.bridgeID)])
 
     let events = try context.fetch(fetchDescriptor)
 
