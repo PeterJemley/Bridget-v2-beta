@@ -81,7 +81,10 @@ struct FileManagerUtilsTests {
     try FileManagerUtils.ensureDirectoryExists(testDir)
     #expect(FileManager.default.fileExists(atPath: testDir.path))
     var isDirectory: ObjCBool = false
-    #expect(FileManager.default.fileExists(atPath: testDir.path, isDirectory: &isDirectory))
+    #expect(
+      FileManager.default.fileExists(atPath: testDir.path,
+                                     isDirectory: &isDirectory)
+    )
     #expect(isDirectory.boolValue)
   }
 
@@ -91,7 +94,8 @@ struct FileManagerUtilsTests {
     defer { cleanupTestDirectory(testDir) }
 
     // Create directory first
-    try FileManager.default.createDirectory(at: testDir, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: testDir,
+                                            withIntermediateDirectories: true)
 
     // Should not throw when directory already exists
     try FileManagerUtils.ensureDirectoryExists(testDir)
@@ -100,11 +104,15 @@ struct FileManagerUtilsTests {
 
   @Test("Ensure directory exists with invalid path")
   func ensureDirectoryExistsWithInvalidPath() throws {
-    let invalidPath = URL(fileURLWithPath: "/invalid/path/that/should/not/exist")
+    let invalidPath = URL(
+      fileURLWithPath: "/invalid/path/that/should/not/exist"
+    )
 
     do {
       try FileManagerUtils.ensureDirectoryExists(invalidPath)
-      throw TestError.unexpectedSuccess("Should have thrown an error for invalid path")
+      throw TestError.unexpectedSuccess(
+        "Should have thrown an error for invalid path"
+      )
     } catch {
       // Expected to throw an error
       #expect(error is FileManagerError)
@@ -124,7 +132,9 @@ struct FileManagerUtilsTests {
     #expect(!FileManagerUtils.fileExists(at: testFile))
 
     // Create the file
-    try "test content".write(to: testFile, atomically: true, encoding: .utf8)
+    try "test content".write(to: testFile,
+                             atomically: true,
+                             encoding: .utf8)
 
     // File should exist now
     #expect(FileManagerUtils.fileExists(at: testFile))
@@ -140,7 +150,9 @@ struct FileManagerUtilsTests {
 
     #expect(FileManagerUtils.fileExists(at: markerFile))
 
-    let attributes = try FileManager.default.attributesOfItem(atPath: markerFile.path)
+    let attributes = try FileManager.default.attributesOfItem(
+      atPath: markerFile.path
+    )
     let fileSize = attributes[.size] as? Int64 ?? 0
     #expect(fileSize == 0)
   }
@@ -151,7 +163,9 @@ struct FileManagerUtilsTests {
     defer { cleanupTestDirectory(testDir) }
 
     let testFile = testDir.appendingPathComponent("test.txt")
-    try "test content".write(to: testFile, atomically: true, encoding: .utf8)
+    try "test content".write(to: testFile,
+                             atomically: true,
+                             encoding: .utf8)
 
     #expect(FileManagerUtils.fileExists(at: testFile))
 
@@ -168,7 +182,9 @@ struct FileManagerUtilsTests {
 
     do {
       try FileManagerUtils.removeFile(at: nonExistentFile)
-      throw TestError.unexpectedSuccess("Should have thrown an error for non-existent file")
+      throw TestError.unexpectedSuccess(
+        "Should have thrown an error for non-existent file"
+      )
     } catch {
       #expect(error is FileManagerError)
     }
@@ -182,7 +198,9 @@ struct FileManagerUtilsTests {
     let originalFile = testDir.appendingPathComponent("original.txt")
     let newFile = testDir.appendingPathComponent("new.txt")
 
-    try "original content".write(to: originalFile, atomically: true, encoding: .utf8)
+    try "original content".write(to: originalFile,
+                                 atomically: true,
+                                 encoding: .utf8)
     try "new content".write(to: newFile, atomically: true, encoding: .utf8)
 
     try FileManagerUtils.atomicReplaceItem(at: originalFile, with: newFile)
@@ -199,7 +217,9 @@ struct FileManagerUtilsTests {
     let testDir = try createUniqueTestDirectory()
     defer { cleanupTestDirectory(testDir) }
 
-    let tempFile = try FileManagerUtils.createTemporaryFile(in: testDir, prefix: "test", extension: "tmp")
+    let tempFile = try FileManagerUtils.createTemporaryFile(in: testDir,
+                                                            prefix: "test",
+                                                            extension: "tmp")
 
     #expect(FileManagerUtils.fileExists(at: tempFile))
     #expect(tempFile.pathExtension == "tmp")
@@ -219,7 +239,8 @@ struct FileManagerUtilsTests {
 
     try "content1".write(to: file1, atomically: true, encoding: .utf8)
     try "content2".write(to: file2, atomically: true, encoding: .utf8)
-    try FileManager.default.createDirectory(at: subdir, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: subdir,
+                                            withIntermediateDirectories: true)
 
     let files = try FileManagerUtils.enumerateFiles(in: testDir)
     #expect(files.count == 2)
@@ -254,7 +275,9 @@ struct FileManagerUtilsTests {
     defer { cleanupTestDirectory(testDir) }
 
     let testFile = testDir.appendingPathComponent("test.txt")
-    try "test content".write(to: testFile, atomically: true, encoding: .utf8)
+    try "test content".write(to: testFile,
+                             atomically: true,
+                             encoding: .utf8)
 
     let attributes = try FileManagerUtils.attributesOfItem(at: testFile)
     #expect(attributes[.size] != nil)
@@ -290,9 +313,11 @@ struct FileManagerUtilsTests {
 
     // Set old file modification date to 2 days ago
     let oldDate = Date().addingTimeInterval(-2 * 24 * 60 * 60)
-    try FileManager.default.setAttributes([.modificationDate: oldDate], ofItemAtPath: oldFile.path)
+    try FileManager.default.setAttributes([.modificationDate: oldDate],
+                                          ofItemAtPath: oldFile.path)
 
-    try FileManagerUtils.removeOldFiles(in: testDir, olderThan: Date().addingTimeInterval(-1 * 24 * 60 * 60))
+    try FileManagerUtils.removeOldFiles(in: testDir,
+                                        olderThan: Date().addingTimeInterval(-1 * 24 * 60 * 60))
     #expect(!FileManagerUtils.fileExists(at: oldFile))
     #expect(FileManagerUtils.fileExists(at: newFile))
   }

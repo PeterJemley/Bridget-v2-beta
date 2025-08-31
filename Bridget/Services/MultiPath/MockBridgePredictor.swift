@@ -58,13 +58,19 @@ public class MockBridgePredictor: BridgeOpenPredictor {
 
   // MARK: - BridgeOpenPredictor Implementation
 
-  public func predict(bridgeID: String, eta: Date, features: [Double]) async throws
+  public func predict(bridgeID: String, eta: Date, features: [Double])
+    async throws
     -> BridgePredictionResult
   {
     try BridgePredictionUtils.validateInput(
-      BridgePredictionInput(bridgeID: bridgeID, eta: eta, features: features))
+      BridgePredictionInput(bridgeID: bridgeID,
+                            eta: eta,
+                            features: features)
+    )
 
-    let probability = generateProbability(for: bridgeID, eta: eta, features: features)
+    let probability = generateProbability(for: bridgeID,
+                                          eta: eta,
+                                          features: features)
     let confidence = generateConfidence(for: bridgeID)
 
     return BridgePredictionResult(bridgeID: bridgeID,
@@ -73,14 +79,19 @@ public class MockBridgePredictor: BridgeOpenPredictor {
                                   confidence: confidence)
   }
 
-  public func predictBatch(_ inputs: [BridgePredictionInput]) async throws -> BatchPredictionResult {
-    try BridgePredictionUtils.validateBatch(inputs, maxBatchSize: maxBatchSize)
+  public func predictBatch(_ inputs: [BridgePredictionInput]) async throws
+    -> BatchPredictionResult
+  {
+    try BridgePredictionUtils.validateBatch(inputs,
+                                            maxBatchSize: maxBatchSize)
 
     let startTime = Date()
     var predictions: [BridgePredictionResult] = []
 
     for input in inputs {
-      let probability = generateProbability(for: input.bridgeID, eta: input.eta, features: input.features)
+      let probability = generateProbability(for: input.bridgeID,
+                                            eta: input.eta,
+                                            features: input.features)
       let confidence = generateConfidence(for: input.bridgeID)
 
       let result = BridgePredictionResult(bridgeID: input.bridgeID,
@@ -102,11 +113,13 @@ public class MockBridgePredictor: BridgeOpenPredictor {
 
   public func supports(bridgeID: String) -> Bool {
     // First check if it's in our supported bridges set
-    let isSupported = supportedBridges.isEmpty || supportedBridges.contains(bridgeID)
+    let isSupported =
+      supportedBridges.isEmpty || supportedBridges.contains(bridgeID)
 
     // Then validate against SeattleDrawbridges as the single source of truth
     // Allow both canonical Seattle bridges and synthetic test IDs
-    let isAccepted = SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true)
+    let isAccepted = SeattleDrawbridges.isAcceptedBridgeID(bridgeID,
+                                                           allowSynthetic: true)
 
     // Support bridges that are both in our set AND accepted by policy
     return isSupported && isAccepted
@@ -115,7 +128,10 @@ public class MockBridgePredictor: BridgeOpenPredictor {
   // MARK: - Private Methods
 
   /// Generate a deterministic probability for a bridge
-  private func generateProbability(for bridgeID: String, eta: Date, features: [Double]) -> Double {
+  private func generateProbability(for bridgeID: String,
+                                   eta: Date,
+                                   features: [Double]) -> Double
+  {
     // Use bridgeID, time components, and features to generate deterministic probability
     var hash = bridgeID.hashValue
     hash = hash &+ eta.timeIntervalSince1970.hashValue
@@ -125,7 +141,9 @@ public class MockBridgePredictor: BridgeOpenPredictor {
     }
 
     // Use the hash to seed a temporary generator for this prediction
-    let tempGenerator = SeededRandomGenerator(seed: UInt64(bitPattern: Int64(hash)))
+    let tempGenerator = SeededRandomGenerator(
+      seed: UInt64(bitPattern: Int64(hash))
+    )
 
     // Generate probability based on time of day and bridge characteristics
     let hour = Calendar.current.component(.hour, from: eta)
@@ -150,7 +168,8 @@ public class MockBridgePredictor: BridgeOpenPredictor {
     // Add some randomness based on bridge ID and features
     let randomFactor = tempGenerator.nextDouble() * 0.3 - 0.15  // ±15%
     let featureFactor =
-      features.isEmpty ? 0.0 : features.reduce(0, +) / Double(features.count) * 0.1
+      features.isEmpty
+        ? 0.0 : features.reduce(0, +) / Double(features.count) * 0.1
 
     let finalProbability = baseProbability + randomFactor + featureFactor
 
@@ -161,7 +180,9 @@ public class MockBridgePredictor: BridgeOpenPredictor {
   private func generateConfidence(for bridgeID: String) -> Double {
     // Use bridgeID to generate consistent confidence
     let hash = bridgeID.hashValue
-    let tempGenerator = SeededRandomGenerator(seed: UInt64(bitPattern: Int64(hash)))
+    let tempGenerator = SeededRandomGenerator(
+      seed: UInt64(bitPattern: Int64(hash))
+    )
 
     // Confidence between 0.7 and 1.0
     return 0.7 + tempGenerator.nextDouble() * 0.3
@@ -258,7 +279,9 @@ private class ConstantMockPredictor: BridgeOpenPredictor {
                                   confidence: 1.0)
   }
 
-  func predictBatch(_ inputs: [BridgePredictionInput]) async throws -> BatchPredictionResult {
+  func predictBatch(_ inputs: [BridgePredictionInput]) async throws
+    -> BatchPredictionResult
+  {
     let startTime = Date()
     let predictions = inputs.map { input in
       BridgePredictionResult(bridgeID: input.bridgeID,
@@ -288,9 +311,16 @@ private class AlternatingMockPredictor: BridgeOpenPredictor {
   private let supportedBridges: Set<String>
   private var counter = 0
 
-  init(highProbability: Double, lowProbability: Double, supportedBridges: Set<String>) {
-    self.highProbability = BridgePredictionUtils.clampProbability(highProbability)
-    self.lowProbability = BridgePredictionUtils.clampProbability(lowProbability)
+  init(highProbability: Double,
+       lowProbability: Double,
+       supportedBridges: Set<String>)
+  {
+    self.highProbability = BridgePredictionUtils.clampProbability(
+      highProbability
+    )
+    self.lowProbability = BridgePredictionUtils.clampProbability(
+      lowProbability
+    )
     self.supportedBridges = supportedBridges
   }
 
@@ -306,12 +336,15 @@ private class AlternatingMockPredictor: BridgeOpenPredictor {
                                   confidence: 0.8)
   }
 
-  func predictBatch(_ inputs: [BridgePredictionInput]) async throws -> BatchPredictionResult {
+  func predictBatch(_ inputs: [BridgePredictionInput]) async throws
+    -> BatchPredictionResult
+  {
     let startTime = Date()
     var predictions: [BridgePredictionResult] = []
 
     for input in inputs {
-      let probability = counter % 2 == 0 ? highProbability : lowProbability
+      let probability =
+        counter % 2 == 0 ? highProbability : lowProbability
       counter += 1
 
       let result = BridgePredictionResult(bridgeID: input.bridgeID,

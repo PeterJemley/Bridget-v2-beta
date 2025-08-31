@@ -218,7 +218,8 @@ public extension TrainingConfig {
       && self.maxEpochs == TrainingConfig.production.maxEpochs
     {
       return PerformanceBudget.production
-    } else if self.deterministicSeed == TrainingConfig.development.deterministicSeed
+    } else if self.deterministicSeed
+      == TrainingConfig.development.deterministicSeed
       && self.batchSize == TrainingConfig.development.batchSize
       && self.maxEpochs == TrainingConfig.development.maxEpochs
     {

@@ -74,7 +74,9 @@
   extension XCTestCase {
     func getCurrentMemoryUsage() -> UInt64 {
       var info = mach_task_basic_info()
-      var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+      var count =
+        mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)
+          / 4
 
       let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
         $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
@@ -99,7 +101,8 @@
   /// This does not run any Swift Testing suites.
   final class SeattlePerformanceTests_XCTestPlaceholder: XCTestCase {
     func testSwiftTestingUnavailablePlaceholder() {
-      XCTAssertTrue(true, "Swift Testing not available; placeholder test executed.")
+      XCTAssertTrue(true,
+                    "Swift Testing not available; placeholder test executed.")
     }
   }
 #endif

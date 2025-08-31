@@ -99,13 +99,17 @@ struct PipelineMetricsDashboard: View {
             stageDetailsSection(data: data)
 
             // Custom validation results
-            if let customResults = data.customValidationResults, !customResults.isEmpty {
+            if let customResults = data.customValidationResults,
+               !customResults.isEmpty
+            {
               customValidationSection(results: customResults)
             }
 
             // Statistical uncertainty metrics (Phase 3 enhancement)
             if let statisticalMetrics = data.statisticalMetrics {
-              StatisticalUncertaintySection(metrics: statisticalMetrics)
+              StatisticalUncertaintySection(
+                metrics: statisticalMetrics
+              )
             }
           } else {
             noDataView
@@ -145,9 +149,11 @@ struct PipelineMetricsDashboard: View {
             .fontWeight(.semibold)
 
           if let data = metricsData {
-            Text("Last updated: \(data.timestamp, style: .relative)")
-              .font(.caption)
-              .foregroundColor(.secondary)
+            Text(
+              "Last updated: \(data.timestamp, style: .relative)"
+            )
+            .font(.caption)
+            .foregroundColor(.secondary)
           }
         }
 
@@ -170,7 +176,8 @@ struct PipelineMetricsDashboard: View {
       if let data = metricsData {
         HStack(spacing: 20) {
           MetricCard(title: "Total Duration",
-                     value: "\(String(format: "%.1f", data.stageDurations.values.reduce(0, +)))s",
+                     value:
+                     "\(String(format: "%.1f", data.stageDurations.values.reduce(0, +)))s",
                      color: .blue)
 
           MetricCard(title: "Total Memory",
@@ -199,7 +206,8 @@ struct PipelineMetricsDashboard: View {
       LazyVGrid(columns: [
         GridItem(.flexible()),
         GridItem(.flexible()),
-      ], spacing: 12) {
+      ],
+      spacing: 12) {
         ForEach(data.stageMetrics.prefix(6)) { metric in
           StageMetricCard(metric: metric)
         }
@@ -302,7 +310,9 @@ struct PipelineMetricsDashboard: View {
             systemName: results[validatorName] == true
               ? "checkmark.circle.fill" : "xmark.circle.fill"
           )
-          .foregroundColor(results[validatorName] == true ? .green : .red)
+          .foregroundColor(
+            results[validatorName] == true ? .green : .red
+          )
 
           Text(validatorName)
             .font(.subheadline)
@@ -311,13 +321,17 @@ struct PipelineMetricsDashboard: View {
 
           Text(results[validatorName] == true ? "Passed" : "Failed")
             .font(.caption)
-            .foregroundColor(results[validatorName] == true ? .green : .red)
+            .foregroundColor(
+              results[validatorName] == true ? .green : .red
+            )
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(
               RoundedRectangle(cornerRadius: 4)
                 .fill(
-                  results[validatorName] == true ? Color.green.opacity(0.1) : Color.red.opacity(0.1)
+                  results[validatorName] == true
+                    ? Color.green.opacity(0.1)
+                    : Color.red.opacity(0.1)
                 )
             )
         }
@@ -342,10 +356,12 @@ struct PipelineMetricsDashboard: View {
         .font(.title2)
         .fontWeight(.semibold)
 
-      Text("Run the pipeline to generate metrics, or check the metrics file path.")
-        .font(.body)
-        .foregroundColor(.secondary)
-        .multilineTextAlignment(.center)
+      Text(
+        "Run the pipeline to generate metrics, or check the metrics file path."
+      )
+      .font(.body)
+      .foregroundColor(.secondary)
+      .multilineTextAlignment(.center)
 
       Button("Refresh") {
         refreshMetrics()
@@ -372,7 +388,8 @@ struct PipelineMetricsDashboard: View {
       // Use fileURLWithPath for local file paths
       let url = URL(fileURLWithPath: path)
       if let data = try? Data(contentsOf: url),
-         let decoded = try? JSONDecoder.bridgeDecoder().decode(PipelineMetricsData.self, from: data)
+         let decoded = try? JSONDecoder.bridgeDecoder().decode(PipelineMetricsData.self,
+                                                               from: data)
       {
         DispatchQueue.main.async {
           self.metricsData = decoded
@@ -462,15 +479,33 @@ struct PipelineMetricsDashboard: View {
   }
 
   private func createSampleStatisticalMetrics() -> StatisticalTrainingMetrics {
-    StatisticalTrainingMetrics(trainingLossStats: ETASummary(mean: 0.085, variance: 0.002, min: 0.082, max: 0.089),
-                               validationLossStats: ETASummary(mean: 0.092, variance: 0.003, min: 0.088, max: 0.096),
-                               predictionAccuracyStats: ETASummary(mean: 0.87, variance: 0.001, min: 0.86, max: 0.88),
-                               etaPredictionVariance: ETASummary(mean: 120.5, variance: 25.2, min: 95.0, max: 145.0),
+    StatisticalTrainingMetrics(trainingLossStats: ETASummary(mean: 0.085,
+                                                             variance: 0.002,
+                                                             min: 0.082,
+                                                             max: 0.089),
+                               validationLossStats: ETASummary(mean: 0.092,
+                                                               variance: 0.003,
+                                                               min: 0.088,
+                                                               max: 0.096),
+                               predictionAccuracyStats: ETASummary(mean: 0.87,
+                                                                   variance: 0.001,
+                                                                   min: 0.86,
+                                                                   max: 0.88),
+                               etaPredictionVariance: ETASummary(mean: 120.5,
+                                                                 variance: 25.2,
+                                                                 min: 95.0,
+                                                                 max: 145.0),
                                performanceConfidenceIntervals: PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: 0.84, upper: 0.90),
                                                                                               f1Score95CI: ConfidenceInterval(lower: 0.82, upper: 0.92),
                                                                                               meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)),
-                               errorDistribution: ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.045, variance: 0.002, min: 0.025, max: 0.065),
-                                                                           relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
+                               errorDistribution: ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.045,
+                                                                                                          variance: 0.002,
+                                                                                                          min: 0.025,
+                                                                                                          max: 0.065),
+                                                                           relativeErrorStats: ETASummary(mean: 0.12,
+                                                                                                          variance: 0.005,
+                                                                                                          min: 0.08,
+                                                                                                          max: 0.16),
                                                                            withinOneStdDev: 68.5,
                                                                            withinTwoStdDev: 95.2))
   }
@@ -596,9 +631,11 @@ struct StageDetailRow: View {
             .foregroundColor(.green)
             .font(.caption2)
 
-          Text("\(String(format: "%.1f", metric.validationRate * 100))% valid")
-            .font(.caption)
-            .foregroundColor(.green)
+          Text(
+            "\(String(format: "%.1f", metric.validationRate * 100))% valid"
+          )
+          .font(.caption)
+          .foregroundColor(.green)
         }
 
         Spacer()
@@ -642,15 +679,20 @@ struct StatisticalUncertaintySection: View {
 
         HStack {
           StatisticCard(title: "Mean Loss",
-                        value: String(format: "%.4f", metrics.trainingLossStats.mean),
-                        subtitle: "±\(String(format: "%.4f", metrics.trainingLossStats.stdDev))")
+                        value: String(format: "%.4f",
+                                      metrics.trainingLossStats.mean),
+                        subtitle:
+                        "±\(String(format: "%.4f", metrics.trainingLossStats.stdDev))")
 
           StatisticCard(title: "Variance",
-                        value: String(format: "%.6f", metrics.trainingLossStats.variance),
-                        subtitle: "Min: \(String(format: "%.4f", metrics.trainingLossStats.min))")
+                        value: String(format: "%.6f",
+                                      metrics.trainingLossStats.variance),
+                        subtitle:
+                        "Min: \(String(format: "%.4f", metrics.trainingLossStats.min))")
 
           StatisticCard(title: "Max Loss",
-                        value: String(format: "%.4f", metrics.trainingLossStats.max),
+                        value: String(format: "%.4f",
+                                      metrics.trainingLossStats.max),
                         subtitle:
                         "Range: \(String(format: "%.4f", metrics.trainingLossStats.max - metrics.trainingLossStats.min))")
         }
@@ -664,15 +706,21 @@ struct StatisticalUncertaintySection: View {
 
         HStack {
           StatisticCard(title: "Mean Accuracy",
-                        value: String(format: "%.3f", metrics.predictionAccuracyStats.mean),
-                        subtitle: "±\(String(format: "%.3f", metrics.predictionAccuracyStats.stdDev))")
+                        value: String(format: "%.3f",
+                                      metrics.predictionAccuracyStats.mean),
+                        subtitle:
+                        "±\(String(format: "%.3f", metrics.predictionAccuracyStats.stdDev))")
 
           StatisticCard(title: "95% CI Lower",
-                        value: String(format: "%.3f", metrics.performanceConfidenceIntervals.accuracy95CI.lower),
+                        value: String(format: "%.3f",
+                                      metrics.performanceConfidenceIntervals.accuracy95CI
+                                        .lower),
                         subtitle: "Confidence Interval")
 
           StatisticCard(title: "95% CI Upper",
-                        value: String(format: "%.3f", metrics.performanceConfidenceIntervals.accuracy95CI.upper),
+                        value: String(format: "%.3f",
+                                      metrics.performanceConfidenceIntervals.accuracy95CI
+                                        .upper),
                         subtitle: "Confidence Interval")
         }
       }
@@ -685,15 +733,20 @@ struct StatisticalUncertaintySection: View {
 
         HStack {
           StatisticCard(title: "Mean ETA",
-                        value: String(format: "%.1fs", metrics.etaPredictionVariance.mean),
-                        subtitle: "±\(String(format: "%.1fs", metrics.etaPredictionVariance.stdDev))")
+                        value: String(format: "%.1fs",
+                                      metrics.etaPredictionVariance.mean),
+                        subtitle:
+                        "±\(String(format: "%.1fs", metrics.etaPredictionVariance.stdDev))")
 
           StatisticCard(title: "Variance",
-                        value: String(format: "%.1f", metrics.etaPredictionVariance.variance),
-                        subtitle: "Min: \(String(format: "%.1fs", metrics.etaPredictionVariance.min))")
+                        value: String(format: "%.1f",
+                                      metrics.etaPredictionVariance.variance),
+                        subtitle:
+                        "Min: \(String(format: "%.1fs", metrics.etaPredictionVariance.min))")
 
           StatisticCard(title: "Max ETA",
-                        value: String(format: "%.1fs", metrics.etaPredictionVariance.max),
+                        value: String(format: "%.1fs",
+                                      metrics.etaPredictionVariance.max),
                         subtitle:
                         "Range: \(String(format: "%.1fs", metrics.etaPredictionVariance.max - metrics.etaPredictionVariance.min))")
         }
@@ -707,15 +760,18 @@ struct StatisticalUncertaintySection: View {
 
         HStack {
           StatisticCard(title: "Within 1σ",
-                        value: String(format: "%.1f%%", metrics.errorDistribution.withinOneStdDev),
+                        value: String(format: "%.1f%%",
+                                      metrics.errorDistribution.withinOneStdDev),
                         subtitle: "Standard Deviation")
 
           StatisticCard(title: "Within 2σ",
-                        value: String(format: "%.1f%%", metrics.errorDistribution.withinTwoStdDev),
+                        value: String(format: "%.1f%%",
+                                      metrics.errorDistribution.withinTwoStdDev),
                         subtitle: "Standard Deviation")
 
           StatisticCard(title: "Mean Error",
-                        value: String(format: "%.4f", metrics.errorDistribution.absoluteErrorStats.mean),
+                        value: String(format: "%.4f",
+                                      metrics.errorDistribution.absoluteErrorStats.mean),
                         subtitle:
                         "±\(String(format: "%.4f", metrics.errorDistribution.absoluteErrorStats.stdDev))")
         }

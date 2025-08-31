@@ -12,7 +12,9 @@ public struct ExportConfigurationSheet: View {
     NavigationStack {
       Form {
         Section("Export Configuration") {
-          DatePicker("Export Date", selection: $selectedDate, displayedComponents: .date)
+          DatePicker("Export Date",
+                     selection: $selectedDate,
+                     displayedComponents: .date)
           Picker("Export Destination", selection: $exportDestination) {
             ForEach(destinations, id: \.self) { val in
               Text(val).tag(val)

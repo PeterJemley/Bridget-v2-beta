@@ -54,7 +54,7 @@ struct ContentView: View {
               showingBridgeStatus = true
             } label: {
               HStack {
-                Image(systemName: "bridge.fill")
+                Image(systemName: "gear")
                   .font(.title2)
                   .foregroundStyle(.green)
                 VStack(alignment: .leading, spacing: 2) {
@@ -78,9 +78,11 @@ struct ContentView: View {
               showingTrafficAlerts = true
             } label: {
               HStack {
-                Image(systemName: "exclamationmark.triangle.fill")
-                  .font(.title2)
-                  .foregroundStyle(.orange)
+                Image(
+                  systemName: "exclamationmark.triangle.fill"
+                )
+                .font(.title2)
+                .foregroundStyle(.orange)
                 VStack(alignment: .leading, spacing: 2) {
                   Text("Traffic Alerts")
                     .font(.headline)
@@ -143,7 +145,7 @@ struct ContentView: View {
         }
         .padding(.bottom, 40)
       }
-      .navigationBarHidden(true)
+      // Removed .navigationBarHidden(true) to restore proper safe-area handling
     }
     .sheet(isPresented: $showingSettings) {
       NavigationStack {
@@ -170,7 +172,9 @@ struct ContentView: View {
         appState = AppStateModel(modelContext: modelContext)
       }
       if pipelineViewModel == nil {
-        pipelineViewModel = MLPipelineViewModel(modelContext: modelContext)
+        pipelineViewModel = MLPipelineViewModel(
+          modelContext: modelContext
+        )
       }
     }
   }
@@ -185,6 +189,7 @@ struct ContentView: View {
         TrafficInferenceCache.self,
         UserRouteHistory.self,
         ProbeTick.self,
-      ], inMemory: true)
+      ],
+      inMemory: true)
   }
 #endif

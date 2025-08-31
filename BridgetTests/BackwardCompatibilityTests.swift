@@ -42,15 +42,33 @@ struct BackwardCompatibilityTests {
 
   @Test("New-style PipelineMetricsData with statistical metrics works")
   func pipelineMetricsDataWithNewFeatures() {
-    let statisticalMetrics = StatisticalTrainingMetrics(trainingLossStats: ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15),
-                                                        validationLossStats: ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18),
-                                                        predictionAccuracyStats: ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88),
-                                                        etaPredictionVariance: ETASummary(mean: 120.0, variance: 25.0, min: 90.0, max: 150.0),
+    let statisticalMetrics = StatisticalTrainingMetrics(trainingLossStats: ETASummary(mean: 0.1,
+                                                                                      variance: 0.01,
+                                                                                      min: 0.05,
+                                                                                      max: 0.15),
+                                                        validationLossStats: ETASummary(mean: 0.12,
+                                                                                        variance: 0.015,
+                                                                                        min: 0.06,
+                                                                                        max: 0.18),
+                                                        predictionAccuracyStats: ETASummary(mean: 0.85,
+                                                                                            variance: 0.001,
+                                                                                            min: 0.82,
+                                                                                            max: 0.88),
+                                                        etaPredictionVariance: ETASummary(mean: 120.0,
+                                                                                          variance: 25.0,
+                                                                                          min: 90.0,
+                                                                                          max: 150.0),
                                                         performanceConfidenceIntervals: PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
                                                                                                                        f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
                                                                                                                        meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)),
-                                                        errorDistribution: ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
-                                                                                                    relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
+                                                        errorDistribution: ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.05,
+                                                                                                                                   variance: 0.002,
+                                                                                                                                   min: 0.02,
+                                                                                                                                   max: 0.08),
+                                                                                                    relativeErrorStats: ETASummary(mean: 0.12,
+                                                                                                                                   variance: 0.005,
+                                                                                                                                   min: 0.08,
+                                                                                                                                   max: 0.16),
                                                                                                     withinOneStdDev: 68.2,
                                                                                                     withinTwoStdDev: 95.4))
 
@@ -71,8 +89,18 @@ struct BackwardCompatibilityTests {
     #expect(newData.customValidationResults == nil)
 
     #expect(newData.statisticalMetrics != nil)
-    #expect(abs((newData.statisticalMetrics?.trainingLossStats.mean ?? 0.0) - 0.1) < 0.001)
-    #expect(abs((newData.statisticalMetrics?.predictionAccuracyStats.mean ?? 0.0) - 0.85) < 0.001)
+    #expect(
+      abs(
+        (newData.statisticalMetrics?.trainingLossStats.mean ?? 0.0)
+          - 0.1
+      ) < 0.001
+    )
+    #expect(
+      abs(
+        (newData.statisticalMetrics?.predictionAccuracyStats.mean ?? 0.0)
+          - 0.85
+      ) < 0.001
+    )
 
     #expect(newData.stageMetrics.count == 1)
     #expect(newData.stageMetrics.first?.stage == "DataProcessing")
@@ -80,20 +108,27 @@ struct BackwardCompatibilityTests {
 
   // MARK: - CoreMLTraining Backward Compatibility
 
-  @Test("CoreMLTraining basic API remains constructible and helpers return nil for empty inputs")
+  @Test(
+    "CoreMLTraining basic API remains constructible and helpers return nil for empty inputs"
+  )
   func coreMLTrainingBackwardCompatibility() {
     let coreMLTraining = CoreMLTraining(config: .validation)
-    #expect(coreMLTraining != nil)
-
+    // Instance creation succeeded; now verify helper behavior on empty inputs
     let emptyLossTrend: [Double] = []
     let emptyAccuracyTrend: [Double] = []
 
     #expect(
-      CoreMLTraining(config: .validation).computeTrainingLossVariance(lossTrend: emptyLossTrend)
-        == nil)
+      CoreMLTraining(config: .validation).computeTrainingLossVariance(
+        lossTrend: emptyLossTrend
+      )
+        == nil
+    )
     #expect(
-      CoreMLTraining(config: .validation).computeValidationAccuracyVariance(
-        accuracyTrend: emptyAccuracyTrend) == nil)
+      CoreMLTraining(config: .validation)
+        .computeValidationAccuracyVariance(
+          accuracyTrend: emptyAccuracyTrend
+        ) == nil
+    )
   }
 
   // MARK: - UI Backward Compatibility
@@ -132,27 +167,51 @@ struct BackwardCompatibilityTests {
     let decoded = try decoder.decode(PipelineMetricsData.self, from: data)
 
     #expect(
-      abs(oldData.timestamp.timeIntervalSince1970 - decoded.timestamp.timeIntervalSince1970) <= 1.0)
+      abs(
+        oldData.timestamp.timeIntervalSince1970
+          - decoded.timestamp.timeIntervalSince1970
+      ) <= 1.0
+    )
     #expect(oldData.stageDurations == decoded.stageDurations)
     #expect(oldData.memoryUsage == decoded.memoryUsage)
     #expect(oldData.validationRates == decoded.validationRates)
     #expect(oldData.errorCounts == decoded.errorCounts)
     #expect(oldData.recordCounts == decoded.recordCounts)
-    #expect(oldData.customValidationResults == decoded.customValidationResults)
+    #expect(
+      oldData.customValidationResults == decoded.customValidationResults
+    )
     #expect(decoded.statisticalMetrics == nil)
   }
 
   @Test("New data with statistical metrics encodes/decodes")
   func serializationWithNewFeatures() throws {
-    let statisticalMetrics = StatisticalTrainingMetrics(trainingLossStats: ETASummary(mean: 0.1, variance: 0.01, min: 0.05, max: 0.15),
-                                                        validationLossStats: ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18),
-                                                        predictionAccuracyStats: ETASummary(mean: 0.85, variance: 0.001, min: 0.82, max: 0.88),
-                                                        etaPredictionVariance: ETASummary(mean: 120.0, variance: 25.0, min: 90.0, max: 150.0),
+    let statisticalMetrics = StatisticalTrainingMetrics(trainingLossStats: ETASummary(mean: 0.1,
+                                                                                      variance: 0.01,
+                                                                                      min: 0.05,
+                                                                                      max: 0.15),
+                                                        validationLossStats: ETASummary(mean: 0.12,
+                                                                                        variance: 0.015,
+                                                                                        min: 0.06,
+                                                                                        max: 0.18),
+                                                        predictionAccuracyStats: ETASummary(mean: 0.85,
+                                                                                            variance: 0.001,
+                                                                                            min: 0.82,
+                                                                                            max: 0.88),
+                                                        etaPredictionVariance: ETASummary(mean: 120.0,
+                                                                                          variance: 25.0,
+                                                                                          min: 90.0,
+                                                                                          max: 150.0),
                                                         performanceConfidenceIntervals: PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: 0.82, upper: 0.88),
                                                                                                                        f1Score95CI: ConfidenceInterval(lower: 0.80, upper: 0.90),
                                                                                                                        meanError95CI: ConfidenceInterval(lower: 0.08, upper: 0.16)),
-                                                        errorDistribution: ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.05, variance: 0.002, min: 0.02, max: 0.08),
-                                                                                                    relativeErrorStats: ETASummary(mean: 0.12, variance: 0.005, min: 0.08, max: 0.16),
+                                                        errorDistribution: ErrorDistributionMetrics(absoluteErrorStats: ETASummary(mean: 0.05,
+                                                                                                                                   variance: 0.002,
+                                                                                                                                   min: 0.02,
+                                                                                                                                   max: 0.08),
+                                                                                                    relativeErrorStats: ETASummary(mean: 0.12,
+                                                                                                                                   variance: 0.005,
+                                                                                                                                   min: 0.08,
+                                                                                                                                   max: 0.16),
                                                                                                     withinOneStdDev: 68.2,
                                                                                                     withinTwoStdDev: 95.4))
 
@@ -171,16 +230,32 @@ struct BackwardCompatibilityTests {
     let decoded = try decoder.decode(PipelineMetricsData.self, from: data)
 
     #expect(
-      abs(newData.timestamp.timeIntervalSince1970 - decoded.timestamp.timeIntervalSince1970) <= 1.0)
+      abs(
+        newData.timestamp.timeIntervalSince1970
+          - decoded.timestamp.timeIntervalSince1970
+      ) <= 1.0
+    )
     #expect(newData.stageDurations == decoded.stageDurations)
     #expect(newData.memoryUsage == decoded.memoryUsage)
     #expect(newData.validationRates == decoded.validationRates)
     #expect(newData.errorCounts == decoded.errorCounts)
     #expect(newData.recordCounts == decoded.recordCounts)
-    #expect(newData.customValidationResults == decoded.customValidationResults)
+    #expect(
+      newData.customValidationResults == decoded.customValidationResults
+    )
     #expect(decoded.statisticalMetrics != nil)
-    #expect(abs((decoded.statisticalMetrics?.trainingLossStats.mean ?? 0.0) - 0.1) < 0.001)
-    #expect(abs((decoded.statisticalMetrics?.predictionAccuracyStats.mean ?? 0.0) - 0.85) < 0.001)
+    #expect(
+      abs(
+        (decoded.statisticalMetrics?.trainingLossStats.mean ?? 0.0)
+          - 0.1
+      ) < 0.001
+    )
+    #expect(
+      abs(
+        (decoded.statisticalMetrics?.predictionAccuracyStats.mean ?? 0.0)
+          - 0.85
+      ) < 0.001
+    )
   }
 
   // MARK: - API Evolution Tests
@@ -224,7 +299,8 @@ struct BackwardCompatibilityTests {
       result += "Memory: \(data.memoryUsage.values.reduce(0, +)) MB"
 
       if let stats = data.statisticalMetrics {
-        result += ", Enhanced: Training variance: \(stats.trainingLossStats.variance)"
+        result +=
+          ", Enhanced: Training variance: \(stats.trainingLossStats.variance)"
       } else {
         result += ", Enhanced: Not available"
       }

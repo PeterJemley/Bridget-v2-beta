@@ -34,7 +34,8 @@ public class ETAEstimator {
       etas.append(
         ETA(nodeID: firstNode,
             arrivalTime: departureTime,
-            travelTimeFromStart: 0))
+            travelTimeFromStart: 0)
+      )
     }
 
     // Calculate ETAs for each subsequent node
@@ -48,7 +49,8 @@ public class ETAEstimator {
         etas.append(
           ETA(nodeID: nextNode,
               arrivalTime: currentTime,
-              travelTimeFromStart: accumulatedTime))
+              travelTimeFromStart: accumulatedTime)
+        )
       }
     }
 
@@ -102,7 +104,9 @@ public class ETAEstimator {
       if edge.isBridge, let bridgeID = edge.bridgeID {
         // Validate bridge ID against SeattleDrawbridges policy:
         // accept canonical Seattle IDs and synthetic test IDs when allowed
-        if !SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) {
+        if !SeattleDrawbridges.isAcceptedBridgeID(bridgeID,
+                                                  allowSynthetic: true)
+        {
           print(
             "⚠️ ETAEstimator: Bridge ID '\(bridgeID)' rejected by policy (neither canonical nor allowed synthetic). Skipping bridge ETA calculation."
           )
@@ -111,7 +115,9 @@ public class ETAEstimator {
 
         let destinationNodeIndex = index + 1
         if destinationNodeIndex < allETAs.count {
-          bridgeETAs.append((bridgeID: bridgeID, eta: allETAs[destinationNodeIndex]))
+          bridgeETAs.append(
+            (bridgeID: bridgeID, eta: allETAs[destinationNodeIndex])
+          )
         }
       }
     }
@@ -137,13 +143,16 @@ public class ETAEstimator {
                                       departureTime: Date) -> PathTravelStatistics
   {
     let etas = estimateETAs(for: path, departureTime: departureTime)
-    let bridgeETAs = estimateBridgeETAs(for: path, departureTime: departureTime)
+    let bridgeETAs = estimateBridgeETAs(for: path,
+                                        departureTime: departureTime)
 
     let totalTravelTime = path.totalTravelTime
-    let averageSpeed = path.totalDistance > 0 ? path.totalDistance / totalTravelTime : 0
+    let averageSpeed =
+      path.totalDistance > 0 ? path.totalDistance / totalTravelTime : 0
 
     let bridgeCount = path.bridgeCount
-    let averageTimeBetweenBridges = bridgeCount > 1 ? totalTravelTime / Double(bridgeCount - 1) : 0
+    let averageTimeBetweenBridges =
+      bridgeCount > 1 ? totalTravelTime / Double(bridgeCount - 1) : 0
 
     return PathTravelStatistics(totalTravelTime: totalTravelTime,
                                 totalDistance: path.totalDistance,
@@ -174,7 +183,8 @@ public class ETAEstimator {
       estimates.append(
         ETAEstimate(nodeID: firstNode,
                     summary: departureSummary,
-                    arrivalTime: departureTime))
+                    arrivalTime: departureTime)
+      )
     }
 
     // Calculate ETAs with uncertainty for each subsequent node
@@ -187,9 +197,13 @@ public class ETAEstimator {
         let nextNode = path.nodes[nextNodeIndex]
 
         // Enhanced uncertainty modeling using per-edge arrival times
-        let edgeArrivalTime = departureTime.addingTimeInterval(accumulatedTime)
-        let timeOfDayMultiplier = ETAEstimator.timeOfDayCategory(edgeArrivalTime)
-          .travelTimeMultiplier
+        let edgeArrivalTime = departureTime.addingTimeInterval(
+          accumulatedTime
+        )
+        let timeOfDayMultiplier = ETAEstimator.timeOfDayCategory(
+          edgeArrivalTime
+        )
+        .travelTimeMultiplier
 
         // Calculate uncertainty based on edge-specific factors
         let baseVariance = edge.travelTime * 0.1  // 10% of travel time as base variance
@@ -213,7 +227,8 @@ public class ETAEstimator {
         // Calculate cumulative variance (sum of individual edge variances)
         let cumulativeVariance =
           estimates.isEmpty
-            ? adjustedVariance : (estimates.last?.summary.variance ?? 0) + adjustedVariance
+            ? adjustedVariance
+            : (estimates.last?.summary.variance ?? 0) + adjustedVariance
 
         let summary = ETASummary(mean: accumulatedTime,
                                  variance: cumulativeVariance,
@@ -224,7 +239,8 @@ public class ETAEstimator {
         estimates.append(
           ETAEstimate(nodeID: nextNode,
                       summary: summary,
-                      arrivalTime: currentTime))
+                      arrivalTime: currentTime)
+        )
       }
     }
 
@@ -235,7 +251,8 @@ public class ETAEstimator {
   public func estimateBridgeETAsWithUncertainty(for path: RoutePath,
                                                 departureTime: Date) -> [ETAEstimate]
   {
-    let allEstimates = estimateETAsWithUncertainty(for: path, departureTime: departureTime)
+    let allEstimates = estimateETAsWithUncertainty(for: path,
+                                                   departureTime: departureTime)
 
     // Find bridge edges and their corresponding estimates
     var bridgeEstimates: [ETAEstimate] = []
@@ -257,8 +274,10 @@ public class ETAEstimator {
   public func calculatePathStatisticsWithUncertainty(for path: RoutePath,
                                                      departureTime: Date) -> PathTravelStatisticsWithUncertainty
   {
-    let estimates = estimateETAsWithUncertainty(for: path, departureTime: departureTime)
-    let bridgeEstimates = estimateBridgeETAsWithUncertainty(for: path, departureTime: departureTime)
+    let estimates = estimateETAsWithUncertainty(for: path,
+                                                departureTime: departureTime)
+    let bridgeEstimates = estimateBridgeETAsWithUncertainty(for: path,
+                                                            departureTime: departureTime)
 
     // Aggregate travel time statistics
     let travelTimes = estimates.map { $0.summary.mean }
@@ -270,8 +289,12 @@ public class ETAEstimator {
                       max: path.totalTravelTime)
 
     // Calculate speed statistics
-    let speeds = estimates.enumerated().compactMap { index, estimate -> Double? in
-      guard index > 0, let edge = path.edges[safe: index - 1] else { return nil }
+    let speeds = estimates.enumerated().compactMap {
+      index,
+        estimate -> Double? in
+      guard index > 0, let edge = path.edges[safe: index - 1] else {
+        return nil
+      }
       return edge.distance / estimate.summary.mean
     }
     let speedSummary =

@@ -132,8 +132,12 @@ struct BridgeValidationTests {
 
   @Test("Synthetic test ID pattern validation")
   func syntheticTestIDPattern() throws {
-    let validSyntheticIDs = ["bridge1", "bridge2", "bridge999", "bridge12345"]
-    let invalidSyntheticIDs = ["bridge", "bridge1a", "bridge_1", "Bridge1", "BRIDGE1"]
+    let validSyntheticIDs = [
+      "bridge1", "bridge2", "bridge999", "bridge12345",
+    ]
+    let invalidSyntheticIDs = [
+      "bridge", "bridge1a", "bridge_1", "Bridge1", "BRIDGE1",
+    ]
 
     for validID in validSyntheticIDs {
       #expect(SeattleDrawbridges.isSyntheticTestBridgeID(validID))
@@ -156,8 +160,17 @@ struct BridgeValidationTests {
     #expect(!SeattleDrawbridges.isAcceptedBridgeID(invalidID))
 
     // Test with allowSynthetic: true
-    #expect(SeattleDrawbridges.isAcceptedBridgeID(canonicalID, allowSynthetic: true))
-    #expect(SeattleDrawbridges.isAcceptedBridgeID(syntheticID, allowSynthetic: true))
-    #expect(!SeattleDrawbridges.isAcceptedBridgeID(invalidID, allowSynthetic: true))
+    #expect(
+      SeattleDrawbridges.isAcceptedBridgeID(canonicalID,
+                                            allowSynthetic: true)
+    )
+    #expect(
+      SeattleDrawbridges.isAcceptedBridgeID(syntheticID,
+                                            allowSynthetic: true)
+    )
+    #expect(
+      !SeattleDrawbridges.isAcceptedBridgeID(invalidID,
+                                             allowSynthetic: true)
+    )
   }
 }

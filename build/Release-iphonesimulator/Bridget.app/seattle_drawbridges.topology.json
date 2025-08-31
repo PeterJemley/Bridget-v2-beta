@@ -1,0 +1,53 @@
+{
+  "bridges": [
+    {
+      "id": "ballard",
+      "name": "Ballard Bridge",
+      "type": "bascule",
+      "center": { "lat": 47.65980, "lng": -122.37622 },
+      "approachHints": { "north": "15th Ave NW", "south": "15th Ave W" }
+    },
+    {
+      "id": "fremont",
+      "name": "Fremont Bridge",
+      "type": "bascule",
+      "center": { "lat": 47.64750, "lng": -122.34967 },
+      "approachHints": { "north": "Fremont Ave N", "south": "4th Ave N / Nickerson St" }
+    },
+    {
+      "id": "university",
+      "name": "University Bridge",
+      "type": "bascule",
+      "center": { "lat": 47.65309, "lng": -122.32010 },
+      "approachHints": { "north": "Eastlake Ave NE", "south": "Eastlake Ave E" }
+    },
+    {
+      "id": "montlake",
+      "name": "Montlake Bridge",
+      "type": "bascule",
+      "center": { "lat": 47.64730, "lng": -122.30468 },
+      "approachHints": { "north": "Montlake Blvd NE", "south": "Montlake Blvd E" }
+    },
+    {
+      "id": "spokane",
+      "name": "Spokane Street Swing Bridge",
+      "type": "swing",
+      "center": { "lat": 47.57138, "lng": -122.35336 },
+      "approachHints": { "west": "SW Spokane St (West Seattle)", "east": "SW Spokane St / E Marginal Way S (Harbor Island)" }
+    },
+    {
+      "id": "southpark",
+      "name": "South Park Bridge",
+      "type": "bascule",
+      "center": { "lat": 47.529306, "lng": -122.314083 },
+      "approachHints": { "north": "14th Ave S", "south": "14th Ave S" }
+    },
+    {
+      "id": "first-ave-s",
+      "name": "First Avenue South Bridge",
+      "type": "bascule",
+      "center": { "lat": 47.54231, "lng": -122.33443 },
+      "approachHints": { "north": "1st Ave S (SR 99)", "south": "1st Ave S (SR 99)" }
+    }
+  ]
+}

@@ -509,7 +509,9 @@ public class CoreMLTraining {
     // Perform multiple prediction runs to capture variance
     for _ in 0 ..< numRuns {
       let inputs = try Self.toMLMultiArray(features)
-      let predictions = try performPredictions(model: model, inputs: inputs, outputKey: config.outputKey)
+      let predictions = try performPredictions(model: model,
+                                               inputs: inputs,
+                                               outputKey: config.outputKey)
 
       // Extract prediction values (predictions are already Double values)
       let predictionValues = predictions
@@ -597,7 +599,9 @@ public class CoreMLTraining {
   ///
   /// - Parameter accuracyTrend: Array of accuracy values across validation epochs
   /// - Returns: ETASummary with statistical variance of validation accuracy, or nil if insufficient data
-  public func computeValidationAccuracyVariance(accuracyTrend: [Double]) -> ETASummary? {
+  public func computeValidationAccuracyVariance(accuracyTrend: [Double])
+    -> ETASummary?
+  {
     guard !accuracyTrend.isEmpty else { return nil }
 
     // Use the last 20% of epochs for variance computation
@@ -665,7 +669,8 @@ public class CoreMLTraining {
                                         accuracyTrend: [Double] = []) throws -> StatisticalTrainingMetrics
   {
     // Compute prediction variance
-    let predictionVariance = try computePredictionVariance(model, on: features)
+    let predictionVariance = try computePredictionVariance(model,
+                                                           on: features)
 
     // Compute training loss variance
     let trainingLossStats =
@@ -683,11 +688,20 @@ public class CoreMLTraining {
         ?? ETASummary(mean: 0.12, variance: 0.015, min: 0.06, max: 0.18)
 
     // Create confidence intervals based on prediction variance
-    let confidenceIntervals = PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: max(0.0, validationAccuracyStats.mean - 1.96 * validationAccuracyStats.stdDev),
-                                                                                              upper: min(1.0, validationAccuracyStats.mean + 1.96 * validationAccuracyStats.stdDev)),
-                                                             f1Score95CI: ConfidenceInterval(lower: max(0.0, validationAccuracyStats.mean - 1.96 * validationAccuracyStats.stdDev),
-                                                                                             upper: min(1.0, validationAccuracyStats.mean + 1.96 * validationAccuracyStats.stdDev)),
-                                                             meanError95CI: ConfidenceInterval(lower: max(0.0, trainingLossStats.mean - 1.96 * trainingLossStats.stdDev),
+    let confidenceIntervals = PerformanceConfidenceIntervals(accuracy95CI: ConfidenceInterval(lower: max(0.0,
+                                                                                                         validationAccuracyStats.mean - 1.96
+                                                                                                           * validationAccuracyStats.stdDev),
+                                                                                              upper: min(1.0,
+                                                                                                         validationAccuracyStats.mean + 1.96
+                                                                                                           * validationAccuracyStats.stdDev)),
+                                                             f1Score95CI: ConfidenceInterval(lower: max(0.0,
+                                                                                                        validationAccuracyStats.mean - 1.96
+                                                                                                          * validationAccuracyStats.stdDev),
+                                                                                             upper: min(1.0,
+                                                                                                        validationAccuracyStats.mean + 1.96
+                                                                                                          * validationAccuracyStats.stdDev)),
+                                                             meanError95CI: ConfidenceInterval(lower: max(0.0,
+                                                                                                          trainingLossStats.mean - 1.96 * trainingLossStats.stdDev),
                                                                                                upper: trainingLossStats.mean + 1.96 * trainingLossStats.stdDev))
 
     // Compute error distribution metrics
@@ -695,10 +709,12 @@ public class CoreMLTraining {
                                                                                     variance: trainingLossStats.variance,
                                                                                     min: trainingLossStats.min,
                                                                                     max: trainingLossStats.max),
-                                                     relativeErrorStats: ETASummary(mean: (trainingLossStats.mean / validationAccuracyStats.mean) * 100,
-                                                                                    variance: (trainingLossStats.variance / pow(validationAccuracyStats.mean, 2)) * 10000,
-                                                                                    min: 0.0,
-                                                                                    max: 15.0),
+                                                     relativeErrorStats: ETASummary(mean: (trainingLossStats.mean / validationAccuracyStats.mean)
+                                                       * 100,
+                                                       variance: (trainingLossStats.variance
+                                                         / pow(validationAccuracyStats.mean, 2)) * 10000,
+                                                       min: 0.0,
+                                                       max: 15.0),
                                                      withinOneStdDev: 68.0,  // Assuming normal distribution
                                                      withinTwoStdDev: 95.0)
 
@@ -913,7 +929,9 @@ public class CoreMLTraining {
     }
   }
 
-  private func performPredictions(model: MLModel, inputs: MLMultiArray, outputKey: String = "output") throws
+  private func performPredictions(model: MLModel,
+                                  inputs: MLMultiArray,
+                                  outputKey: String = "output") throws
     -> [Double]
   {
     let sampleCount = inputs.shape[0].intValue
@@ -964,7 +982,9 @@ public class CoreMLTraining {
           logger.debug("Auto-detected output key: \(firstKey)")
         } else {
           // Fallback to default prediction
-          logger.warning("Could not extract prediction value, using default 0.5")
+          logger.warning(
+            "Could not extract prediction value, using default 0.5"
+          )
           predictions.append(0.5)
         }
       }

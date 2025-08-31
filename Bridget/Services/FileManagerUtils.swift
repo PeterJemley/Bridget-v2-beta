@@ -41,17 +41,23 @@ public enum FileManagerError: LocalizedError, Equatable {
   public var errorDescription: String? {
     switch self {
     case let .directoryCreationFailed(url, error):
-      return "Failed to create directory at \(url.path): \(error.localizedDescription)"
+      return
+        "Failed to create directory at \(url.path): \(error.localizedDescription)"
     case let .fileReplacementFailed(url, error):
-      return "Failed to replace file at \(url.path): \(error.localizedDescription)"
+      return
+        "Failed to replace file at \(url.path): \(error.localizedDescription)"
     case let .fileEnumerationFailed(url, error):
-      return "Failed to enumerate files in \(url.path): \(error.localizedDescription)"
+      return
+        "Failed to enumerate files in \(url.path): \(error.localizedDescription)"
     case let .fileRemovalFailed(url, error):
-      return "Failed to remove file at \(url.path): \(error.localizedDescription)"
+      return
+        "Failed to remove file at \(url.path): \(error.localizedDescription)"
     case let .fileAttributesFailed(url, error):
-      return "Failed to get attributes for \(url.path): \(error.localizedDescription)"
+      return
+        "Failed to get attributes for \(url.path): \(error.localizedDescription)"
     case let .fileExistsCheckFailed(url, error):
-      return "Failed to check existence of \(url.path): \(error.localizedDescription)"
+      return
+        "Failed to check existence of \(url.path): \(error.localizedDescription)"
     case let .invalidDirectory(url):
       return "Invalid directory path: \(url.path)"
     case let .fileNotFound(url):
@@ -65,17 +71,22 @@ public enum FileManagerError: LocalizedError, Equatable {
 
   public static func == (lhs: FileManagerError, rhs: FileManagerError) -> Bool {
     switch (lhs, rhs) {
-    case let (.directoryCreationFailed(url1, _), .directoryCreationFailed(url2, _)):
+    case let (.directoryCreationFailed(url1, _),
+              .directoryCreationFailed(url2, _)):
       return url1 == url2
-    case let (.fileReplacementFailed(url1, _), .fileReplacementFailed(url2, _)):
+    case let (.fileReplacementFailed(url1, _),
+              .fileReplacementFailed(url2, _)):
       return url1 == url2
-    case let (.fileEnumerationFailed(url1, _), .fileEnumerationFailed(url2, _)):
+    case let (.fileEnumerationFailed(url1, _),
+              .fileEnumerationFailed(url2, _)):
       return url1 == url2
     case let (.fileRemovalFailed(url1, _), .fileRemovalFailed(url2, _)):
       return url1 == url2
-    case let (.fileAttributesFailed(url1, _), .fileAttributesFailed(url2, _)):
+    case let (.fileAttributesFailed(url1, _),
+              .fileAttributesFailed(url2, _)):
       return url1 == url2
-    case let (.fileExistsCheckFailed(url1, _), .fileExistsCheckFailed(url2, _)):
+    case let (.fileExistsCheckFailed(url1, _),
+              .fileExistsCheckFailed(url2, _)):
       return url1 == url2
     case let (.invalidDirectory(url1), .invalidDirectory(url2)):
       return url1 == url2
@@ -95,7 +106,8 @@ public enum FileManagerError: LocalizedError, Equatable {
 
 /// Centralized utility for file system operations with consistent error handling
 public enum FileManagerUtils {
-  private static let logger = Logger(subsystem: "com.peterjemley.Bridget", category: "FileManagerUtils")
+  private static let logger = Logger(subsystem: "com.peterjemley.Bridget",
+                                     category: "FileManagerUtils")
   private static let fileManager = FileManager.default
 
   // MARK: - Directory Operations
@@ -105,16 +117,59 @@ public enum FileManagerUtils {
   /// - Throws: `FileManagerError` if directory creation fails
   public static func ensureDirectoryExists(_ url: URL) throws {
     guard url.hasDirectoryPath else {
+      logger.error("Invalid directory path: \(url.path)")
       throw FileManagerError.invalidDirectory(url)
     }
 
     do {
       if !fileManager.fileExists(atPath: url.path) {
-        try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
-        logger.info("Created directory: \(url.path)")
+        logger.info("Creating directory at: \(url.path)")
+
+        // Check if parent directory exists and is writable
+        let parentURL = url.deletingLastPathComponent()
+        if fileManager.fileExists(atPath: parentURL.path) {
+          var isDirectory: ObjCBool = false
+          if fileManager.fileExists(atPath: parentURL.path,
+                                    isDirectory: &isDirectory)
+          {
+            if isDirectory.boolValue {
+              logger.info(
+                "Parent directory exists and is directory: \(parentURL.path)"
+              )
+            } else {
+              logger.error(
+                "Parent path exists but is not a directory: \(parentURL.path)"
+              )
+            }
+          }
+
+          // Check if we can write to parent directory
+          if fileManager.isWritableFile(atPath: parentURL.path) {
+            logger.info(
+              "Parent directory is writable: \(parentURL.path)"
+            )
+          } else {
+            logger.error(
+              "Parent directory is not writable: \(parentURL.path)"
+            )
+          }
+        } else {
+          logger.info(
+            "Parent directory does not exist: \(parentURL.path)"
+          )
+        }
+
+        try fileManager.createDirectory(at: url,
+                                        withIntermediateDirectories: true)
+        logger.info("Successfully created directory: \(url.path)")
+      } else {
+        logger.info("Directory already exists: \(url.path)")
       }
     } catch {
-      logger.error("Failed to create directory at \(url.path): \(error.localizedDescription)")
+      logger.error(
+        "Failed to create directory at \(url.path): \(error.localizedDescription)"
+      )
+      logger.error("Error details: \(error)")
       throw FileManagerError.directoryCreationFailed(url, error)
     }
   }
@@ -134,12 +189,17 @@ public enum FileManagerUtils {
   ///   - destination: The destination URL where the file should be placed
   ///   - temporary: The temporary file URL to replace with
   /// - Throws: `FileManagerError` if replacement fails
-  public static func atomicReplaceItem(at destination: URL, with temporary: URL) throws {
+  public static func atomicReplaceItem(at destination: URL,
+                                       with temporary: URL) throws
+  {
     do {
-      _ = try fileManager.replaceItemAt(destination, withItemAt: temporary)
+      _ = try fileManager.replaceItemAt(destination,
+                                        withItemAt: temporary)
       logger.info("Atomically replaced file at \(destination.path)")
     } catch {
-      logger.error("Failed to replace file at \(destination.path): \(error.localizedDescription)")
+      logger.error(
+        "Failed to replace file at \(destination.path): \(error.localizedDescription)"
+      )
       throw FileManagerError.fileReplacementFailed(destination, error)
     }
   }
@@ -151,18 +211,27 @@ public enum FileManagerUtils {
   ///   - extension: Optional file extension (without the dot)
   /// - Returns: The URL of the created temporary file
   /// - Throws: `FileManagerError` if file creation fails
-  public static func createTemporaryFile(in directory: URL, prefix: String = "temp", extension: String? = nil) throws -> URL {
+  public static func createTemporaryFile(in directory: URL,
+                                         prefix: String = "temp",
+                                         extension: String? = nil) throws -> URL
+  {
     let filename = "\(prefix)_\(UUID().uuidString)"
     let tempURL = directory.appendingPathComponent(filename)
-    let finalURL = `extension` != nil ? tempURL.appendingPathExtension(`extension`!) : tempURL
+    let finalURL =
+      `extension` != nil
+        ? tempURL.appendingPathExtension(`extension`!) : tempURL
 
-    let created = fileManager.createFile(atPath: finalURL.path, contents: nil)
+    let created = fileManager.createFile(atPath: finalURL.path,
+                                         contents: nil)
     if created {
       logger.debug("Created temporary file: \(finalURL.path)")
       return finalURL
     } else {
       logger.error("Failed to create temporary file at \(finalURL.path)")
-      throw FileManagerError.fileReplacementFailed(finalURL, NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: nil))
+      throw FileManagerError.fileReplacementFailed(finalURL,
+                                                   NSError(domain: NSCocoaErrorDomain,
+                                                           code: NSFileWriteUnknownError,
+                                                           userInfo: nil))
     }
   }
 
@@ -175,7 +244,10 @@ public enum FileManagerUtils {
       logger.debug("Created marker file: \(url.path)")
     } else {
       logger.error("Failed to create marker file at \(url.path)")
-      throw FileManagerError.fileReplacementFailed(url, NSError(domain: NSCocoaErrorDomain, code: NSFileWriteUnknownError, userInfo: nil))
+      throw FileManagerError.fileReplacementFailed(url,
+                                                   NSError(domain: NSCocoaErrorDomain,
+                                                           code: NSFileWriteUnknownError,
+                                                           userInfo: nil))
     }
   }
 
@@ -193,12 +265,17 @@ public enum FileManagerUtils {
                                     properties: [URLResourceKey]? = nil) throws -> [URL]
   {
     do {
-      let files = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: properties)
+      let files = try fileManager.contentsOfDirectory(at: directory,
+                                                      includingPropertiesForKeys: properties)
       let filteredFiles = filter != nil ? files.filter(filter!) : files
-      logger.debug("Enumerated \(filteredFiles.count) files in \(directory.path)")
+      logger.debug(
+        "Enumerated \(filteredFiles.count) files in \(directory.path)"
+      )
       return filteredFiles
     } catch {
-      logger.error("Failed to enumerate files in \(directory.path): \(error.localizedDescription)")
+      logger.error(
+        "Failed to enumerate files in \(directory.path): \(error.localizedDescription)"
+      )
       throw FileManagerError.fileEnumerationFailed(directory, error)
     }
   }
@@ -215,7 +292,9 @@ public enum FileManagerUtils {
                                     properties: [URLResourceKey]? = nil) throws -> [URL]
   {
     let url = URL(fileURLWithPath: path)
-    return try enumerateFiles(in: url, filter: filter, properties: properties)
+    return try enumerateFiles(in: url,
+                              filter: filter,
+                              properties: properties)
   }
 
   // MARK: - File Removal Operations
@@ -228,7 +307,9 @@ public enum FileManagerUtils {
       try fileManager.removeItem(at: url)
       logger.debug("Removed file: \(url.path)")
     } catch {
-      logger.error("Failed to remove file at \(url.path): \(error.localizedDescription)")
+      logger.error(
+        "Failed to remove file at \(url.path): \(error.localizedDescription)"
+      )
       throw FileManagerError.fileRemovalFailed(url, error)
     }
   }
@@ -258,7 +339,9 @@ public enum FileManagerUtils {
     var removedCount = 0
     for file in files {
       do {
-        let attributes = try fileManager.attributesOfItem(atPath: file.path)
+        let attributes = try fileManager.attributesOfItem(
+          atPath: file.path
+        )
         if let creationDate = attributes[.creationDate] as? Date,
            creationDate < cutoffDate
         {
@@ -266,13 +349,17 @@ public enum FileManagerUtils {
           removedCount += 1
         }
       } catch {
-        logger.warning("Failed to check attributes for \(file.path): \(error.localizedDescription)")
+        logger.warning(
+          "Failed to check attributes for \(file.path): \(error.localizedDescription)"
+        )
         // Continue with other files
       }
     }
 
     if removedCount > 0 {
-      logger.info("Removed \(removedCount) old files from \(directory.path)")
+      logger.info(
+        "Removed \(removedCount) old files from \(directory.path)"
+      )
     }
   }
 
@@ -281,10 +368,13 @@ public enum FileManagerUtils {
   ///   - directory: The directory to search
   ///   - pattern: The pattern to match (e.g., "*.tmp", "temp_*")
   /// - Throws: `FileManagerError` if any operation fails
-  public static func removeFilesMatchingPattern(in directory: URL, pattern: String) throws {
+  public static func removeFilesMatchingPattern(in directory: URL,
+                                                pattern: String) throws
+  {
     let filter: (URL) -> Bool = { url in
       let filename = url.lastPathComponent
-      return filename.range(of: pattern, options: .regularExpression) != nil
+      return filename.range(of: pattern, options: .regularExpression)
+        != nil
     }
 
     let files = try enumerateFiles(in: directory, filter: filter)
@@ -294,7 +384,8 @@ public enum FileManagerUtils {
 
     if !files.isEmpty {
       logger.info(
-        "Removed \(files.count) files matching pattern '\(pattern)' from \(directory.path)")
+        "Removed \(files.count) files matching pattern '\(pattern)' from \(directory.path)"
+      )
     }
   }
 
@@ -319,11 +410,15 @@ public enum FileManagerUtils {
   /// - Parameter url: The URL of the file
   /// - Returns: Dictionary of file attributes
   /// - Throws: `FileManagerError` if getting attributes fails
-  public static func attributesOfItem(at url: URL) throws -> [FileAttributeKey: Any] {
+  public static func attributesOfItem(at url: URL) throws
+    -> [FileAttributeKey: Any]
+  {
     do {
       return try fileManager.attributesOfItem(atPath: url.path)
     } catch {
-      logger.error("Failed to get attributes for \(url.path): \(error.localizedDescription)")
+      logger.error(
+        "Failed to get attributes for \(url.path): \(error.localizedDescription)"
+      )
       throw FileManagerError.fileAttributesFailed(url, error)
     }
   }
@@ -332,7 +427,9 @@ public enum FileManagerUtils {
   /// - Parameter path: The path of the file
   /// - Returns: Dictionary of file attributes
   /// - Throws: `FileManagerError` if getting attributes fails
-  public static func attributesOfItem(at path: String) throws -> [FileAttributeKey: Any] {
+  public static func attributesOfItem(at path: String) throws
+    -> [FileAttributeKey: Any]
+  {
     let url = URL(fileURLWithPath: path)
     return try attributesOfItem(at: url)
   }
@@ -345,10 +442,13 @@ public enum FileManagerUtils {
   ///   - filter: Optional closure to filter which files to include
   /// - Returns: Total size in bytes
   /// - Throws: `FileManagerError` if any operation fails
-  public static func calculateDirectorySize(in directory: URL, filter: ((URL) -> Bool)? = nil)
+  public static func calculateDirectorySize(in directory: URL,
+                                            filter: ((URL) -> Bool)? = nil)
     throws -> Int64
   {
-    let files = try enumerateFiles(in: directory, filter: filter, properties: [.fileSizeKey])
+    let files = try enumerateFiles(in: directory,
+                                   filter: filter,
+                                   properties: [.fileSizeKey])
 
     var totalSize: Int64 = 0
     for file in files {
@@ -356,7 +456,9 @@ public enum FileManagerUtils {
         let attributes = try attributesOfItem(at: file)
         totalSize += attributes[.size] as? Int64 ?? 0
       } catch {
-        logger.warning("Failed to get size for \(file.path): \(error.localizedDescription)")
+        logger.warning(
+          "Failed to get size for \(file.path): \(error.localizedDescription)"
+        )
         // Continue with other files
       }
     }
@@ -368,9 +470,13 @@ public enum FileManagerUtils {
   /// - Returns: The documents directory URL
   /// - Throws: `FileManagerError` if the directory is not accessible
   public static func documentsDirectory() throws -> URL {
-    guard let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first
+    guard
+      let documentsPath = fileManager.urls(for: .documentDirectory,
+                                           in: .userDomainMask).first
     else {
-      throw FileManagerError.invalidDirectory(URL(fileURLWithPath: "Documents"))
+      throw FileManagerError.invalidDirectory(
+        URL(fileURLWithPath: "Documents")
+      )
     }
     return documentsPath
   }
@@ -379,7 +485,8 @@ public enum FileManagerUtils {
   /// - Returns: The downloads directory URL, or nil if not available
   public static func downloadsDirectory() -> URL? {
     #if os(macOS)
-      return fileManager.urls(for: .downloadsDirectory, in: .userDomainMask).first
+      return fileManager.urls(for: .downloadsDirectory,
+                              in: .userDomainMask).first
     #else
       return nil
     #endif

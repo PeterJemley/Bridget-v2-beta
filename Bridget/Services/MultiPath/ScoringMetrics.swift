@@ -115,7 +115,8 @@ public struct ScoringMetrics {
 
 /// Aggregates scoring metrics across multiple operations
 public final class ScoringMetricsAggregator {
-  private let logger = Logger(subsystem: "Bridget", category: "ScoringMetrics")
+  private let logger = Logger(subsystem: "Bridget",
+                              category: "ScoringMetrics")
 
   // MARK: - Thread Safety
 
@@ -248,34 +249,49 @@ public final class ScoringMetricsAggregator {
   /// Get aggregated metrics across all recorded operations
   public func getAggregatedMetrics() -> ScoringMetrics {
     return lock.withLock {
-      let avgScoringTime = operationCount > 0 ? totalScoringTime / Double(operationCount) : 0.0
+      let avgScoringTime =
+        operationCount > 0
+          ? totalScoringTime / Double(operationCount) : 0.0
       let avgEtaEstimationTime =
-        operationCount > 0 ? totalEtaEstimationTime / Double(operationCount) : 0.0
+        operationCount > 0
+          ? totalEtaEstimationTime / Double(operationCount) : 0.0
       let avgBridgePredictionTime =
-        operationCount > 0 ? totalBridgePredictionTime / Double(operationCount) : 0.0
+        operationCount > 0
+          ? totalBridgePredictionTime / Double(operationCount) : 0.0
       let avgAggregationTime =
-        operationCount > 0 ? totalAggregationTime / Double(operationCount) : 0.0
+        operationCount > 0
+          ? totalAggregationTime / Double(operationCount) : 0.0
       let avgFeatureGenerationTime =
-        operationCount > 0 ? totalFeatureGenerationTime / Double(operationCount) : 0.0
+        operationCount > 0
+          ? totalFeatureGenerationTime / Double(operationCount) : 0.0
 
-      let avgPathsScored = operationCount > 0 ? totalPathsScored / operationCount : 0
-      let avgBridgesProcessed = operationCount > 0 ? totalBridgesProcessed / operationCount : 0
+      let avgPathsScored =
+        operationCount > 0 ? totalPathsScored / operationCount : 0
+      let avgBridgesProcessed =
+        operationCount > 0 ? totalBridgesProcessed / operationCount : 0
 
       let totalCacheRequests = totalCacheHits + totalCacheMisses
       let avgCacheHitRate =
-        totalCacheRequests > 0 ? Double(totalCacheHits) / Double(totalCacheRequests) : 0.0
+        totalCacheRequests > 0
+          ? Double(totalCacheHits) / Double(totalCacheRequests) : 0.0
 
-      let avgFailedPaths = operationCount > 0 ? totalFailedPaths / operationCount : 0
+      let avgFailedPaths =
+        operationCount > 0 ? totalFailedPaths / operationCount : 0
       let avgDefaultProbabilityBridges =
-        operationCount > 0 ? totalDefaultProbabilityBridges / operationCount : 0
+        operationCount > 0
+          ? totalDefaultProbabilityBridges / operationCount : 0
 
       let avgPathProbability =
         pathProbabilities.isEmpty
-          ? 0.0 : pathProbabilities.reduce(0, +) / Double(pathProbabilities.count)
-      let pathProbabilityStdDev = calculateStandardDeviation(pathProbabilities, mean: avgPathProbability)
+          ? 0.0
+          : pathProbabilities.reduce(0, +)
+          / Double(pathProbabilities.count)
+      let pathProbabilityStdDev = calculateStandardDeviation(pathProbabilities,
+                                                             mean: avgPathProbability)
 
       let avgMemoryPerPath =
-        totalPathsScored > 0 ? Double(peakMemoryUsage) / Double(totalPathsScored) : 0.0
+        totalPathsScored > 0
+          ? Double(peakMemoryUsage) / Double(totalPathsScored) : 0.0
 
       return ScoringMetrics(totalScoringTime: avgScoringTime,
                             etaEstimationTime: avgEtaEstimationTime,
@@ -284,8 +300,10 @@ public final class ScoringMetricsAggregator {
                             featureGenerationTime: avgFeatureGenerationTime,
                             pathsScored: avgPathsScored,
                             bridgesProcessed: avgBridgesProcessed,
-                            pathsPerSecond: avgScoringTime > 0 ? Double(avgPathsScored) / avgScoringTime : 0.0,
-                            bridgesPerSecond: avgScoringTime > 0 ? Double(avgBridgesProcessed) / avgScoringTime : 0.0,
+                            pathsPerSecond: avgScoringTime > 0
+                              ? Double(avgPathsScored) / avgScoringTime : 0.0,
+                            bridgesPerSecond: avgScoringTime > 0
+                              ? Double(avgBridgesProcessed) / avgScoringTime : 0.0,
                             featureCacheHitRate: avgCacheHitRate,
                             cacheHits: totalCacheHits,
                             cacheMisses: totalCacheMisses,
@@ -307,7 +325,10 @@ public final class ScoringMetricsAggregator {
         csvData.joined(separator: "\n")
       }
 
-      let documentsPath = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+      let documentsPath = try FileManager.default.url(for: .documentDirectory,
+                                                      in: .userDomainMask,
+                                                      appropriateFor: nil,
+                                                      create: true)
       let csvURL = documentsPath.appendingPathComponent(filename)
 
       try csvContent.write(to: csvURL, atomically: true, encoding: .utf8)
@@ -318,11 +339,14 @@ public final class ScoringMetricsAggregator {
 
   // MARK: - Utility Methods
 
-  private func calculateStandardDeviation(_ values: [Double], mean: Double) -> Double {
+  private func calculateStandardDeviation(_ values: [Double], mean: Double)
+    -> Double
+  {
     guard values.count > 1 else { return 0.0 }
 
     let squaredDifferences = values.map { pow($0 - mean, 2) }
-    let variance = squaredDifferences.reduce(0, +) / Double(values.count - 1)
+    let variance =
+      squaredDifferences.reduce(0, +) / Double(values.count - 1)
     return sqrt(variance)
   }
 

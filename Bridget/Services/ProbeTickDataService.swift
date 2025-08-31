@@ -32,7 +32,8 @@ import SwiftData
 /// - Returns: Tuple of (crossK, crossN) representing crossing rate
 func calculateCrossRate(at timestamp: Date, from events: [BridgeEvent]) -> (Int, Int) {
   let calendar = Calendar.current
-  let oneMinuteAgo = calendar.date(byAdding: .minute, value: -1, to: timestamp) ?? timestamp
+  let oneMinuteAgo =
+    calendar.date(byAdding: .minute, value: -1, to: timestamp) ?? timestamp
 
   // Count vehicles that crossed in the last minute
   let crossingEvents = events.filter { event in
@@ -65,7 +66,8 @@ func calculateViaMetrics(at timestamp: Date, from events: [BridgeEvent]) -> (Boo
   }
 
   let viaRoutable = activeEvent == nil  // Can route directly if bridge is closed
-  let viaPenaltySec = activeEvent != nil ? Int(activeEvent!.minutesOpen * 60) : 0
+  let viaPenaltySec =
+    activeEvent != nil ? Int(activeEvent!.minutesOpen * 60) : 0
 
   return (viaRoutable, viaPenaltySec)
 }
@@ -80,15 +82,20 @@ func calculateViaMetrics(at timestamp: Date, from events: [BridgeEvent]) -> (Boo
 ///   - timestamp: The timestamp for anomaly calculation
 ///   - events: Historical bridge events for baseline
 /// - Returns: Anomaly ratio (clipped to [1, 8])
-func calculateGateAnomaly(at timestamp: Date, from events: [BridgeEvent]) -> Double {
+func calculateGateAnomaly(at timestamp: Date, from events: [BridgeEvent])
+  -> Double
+{
   // Calculate the ratio of current wait time to historical average
   let calendar = Calendar.current
-  let oneWeekAgo = calendar.date(byAdding: .day, value: -7, to: timestamp) ?? timestamp
+  let oneWeekAgo =
+    calendar.date(byAdding: .day, value: -7, to: timestamp) ?? timestamp
 
   let recentEvents = events.filter { $0.openDateTime >= oneWeekAgo }
   let averageMinutesOpen =
     recentEvents.isEmpty
-      ? 5.0 : Double(recentEvents.map { $0.minutesOpen }.reduce(0, +)) / Double(recentEvents.count)
+      ? 5.0
+      : Double(recentEvents.map { $0.minutesOpen }.reduce(0, +))
+      / Double(recentEvents.count)
 
   let currentEvent = events.first { event in
     event.openDateTime <= timestamp
@@ -99,10 +106,16 @@ func calculateGateAnomaly(at timestamp: Date, from events: [BridgeEvent]) -> Dou
     let currentMinutesOpen =
       currentEvent.closeDateTime != nil
         ? Double(
-          calendar.dateComponents([.minute], from: currentEvent.openDateTime, to: currentEvent.closeDateTime!).minute ?? 0)
+          calendar.dateComponents([.minute],
+                                  from: currentEvent.openDateTime,
+                                  to: currentEvent.closeDateTime!).minute ?? 0
+        )
         : Double(
-          calendar.dateComponents([.minute], from: currentEvent.openDateTime, to: timestamp).minute
-            ?? 0)
+          calendar.dateComponents([.minute],
+                                  from: currentEvent.openDateTime,
+                                  to: timestamp).minute
+            ?? 0
+        )
 
     let ratio = currentMinutesOpen / max(averageMinutesOpen, 1.0)
     return min(max(ratio, 1.0), 8.0)  // Clamp to [1, 8]
@@ -153,9 +166,11 @@ func makeProbeTick(for bridgeID: String,
 
   // Calculate features based on historical data
   let (crossK, crossN) = calculateCrossRate(at: timestamp, from: events)
-  let (viaRoutable, viaPenaltySec) = calculateViaMetrics(at: timestamp, from: events)
+  let (viaRoutable, viaPenaltySec) = calculateViaMetrics(at: timestamp,
+                                                         from: events)
   let gateAnom = calculateGateAnomaly(at: timestamp, from: events)
-  let (alternatesTotal, alternatesAvoid) = calculateAlternateMetrics(at: timestamp, from: events)
+  let (alternatesTotal, alternatesAvoid) = calculateAlternateMetrics(at: timestamp,
+                                                                     from: events)
   let openLabel = activeEvent != nil
 
   // Validate bridgeID conversion
@@ -218,11 +233,16 @@ func makeProbeTicks(from events: [BridgeEvent],
   while currentDate < endDate {
     for bridgeID in bridgeIDs {
       let bridgeEvents = eventsByBridge[bridgeID] ?? []
-      if let tick = makeProbeTick(for: bridgeID, at: currentDate, from: bridgeEvents) {
+      if let tick = makeProbeTick(for: bridgeID,
+                                  at: currentDate,
+                                  from: bridgeEvents)
+      {
         probeTicks.append(tick)
       }
     }
-    currentDate = calendar.date(byAdding: .minute, value: 1, to: currentDate) ?? currentDate
+    currentDate =
+      calendar.date(byAdding: .minute, value: 1, to: currentDate)
+        ?? currentDate
   }
 
   return probeTicks
@@ -265,12 +285,17 @@ final class ProbeTickDataService {
   /// - Computes features based on historical event patterns
   /// - Saves to database after processing each batch
   /// - May take several minutes for large date ranges
-  func populateHistoricalProbeTicks(from startDate: Date, to endDate: Date) async throws {
+  func populateHistoricalProbeTicks(from startDate: Date, to endDate: Date)
+    async throws
+  {
     // Fetch all bridge events in the date range
     let fetchDescriptor = FetchDescriptor<BridgeEvent>(predicate: #Predicate {
-      $0.openDateTime >= startDate && $0.openDateTime < endDate && $0.isValidated
+      $0.openDateTime >= startDate && $0.openDateTime < endDate
+        && $0.isValidated
     },
-    sortBy: [SortDescriptor(\.openDateTime), SortDescriptor(\.bridgeID)])
+    sortBy: [
+      SortDescriptor(\.openDateTime), SortDescriptor(\.bridgeID),
+    ])
 
     let events = try context.fetch(fetchDescriptor)
 
@@ -278,19 +303,26 @@ final class ProbeTickDataService {
     let bridgeIDs = Set(events.map { $0.bridgeID })
 
     let calendar = Calendar.current
-    let totalMinutes = calendar.dateComponents([.minute], from: startDate, to: endDate).minute ?? 0
+    let totalMinutes =
+      calendar.dateComponents([.minute], from: startDate, to: endDate)
+        .minute ?? 0
     var processedMinutes = 0
     var batchCount = 0
     let batchSize = 50  // Batch size for saving
 
-    print("🔄 [INFO] Starting data population: \(totalMinutes) minutes to process")
+    print(
+      "🔄 [INFO] Starting data population: \(totalMinutes) minutes to process"
+    )
 
     var currentDate = startDate
     while currentDate < endDate {
       for bridgeID in bridgeIDs {
         let bridgeEvents = events.filter { $0.bridgeID == bridgeID }
 
-        if let tick = makeProbeTick(for: bridgeID, at: currentDate, from: bridgeEvents) {
+        if let tick = makeProbeTick(for: bridgeID,
+                                    at: currentDate,
+                                    from: bridgeEvents)
+        {
           context.insert(tick)
           batchCount += 1
 
@@ -301,11 +333,14 @@ final class ProbeTickDataService {
         }
       }
 
-      currentDate = calendar.date(byAdding: .minute, value: 1, to: currentDate) ?? currentDate
+      currentDate =
+        calendar.date(byAdding: .minute, value: 1, to: currentDate)
+          ?? currentDate
       processedMinutes += 1
 
       if processedMinutes % 100 == 0 {
-        let progress = Double(processedMinutes) / Double(totalMinutes) * 100
+        let progress =
+          Double(processedMinutes) / Double(totalMinutes) * 100
         print(
           "🔄 [INFO] Data population progress: \(Int(progress))% (\(processedMinutes)/\(totalMinutes) minutes)"
         )
@@ -316,7 +351,9 @@ final class ProbeTickDataService {
       try context.save()
     }
 
-    print("✅ [INFO] Data population completed: \(processedMinutes) minutes processed")
+    print(
+      "✅ [INFO] Data population completed: \(processedMinutes) minutes processed"
+    )
   }
 
   /// Populates ProbeTick data for today from existing BridgeEvent data.
@@ -336,7 +373,8 @@ final class ProbeTickDataService {
   func populateTodayProbeTicks() async throws {
     let calendar = Calendar.current
     let today = calendar.startOfDay(for: Date())
-    let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? today
+    let tomorrow =
+      calendar.date(byAdding: .day, value: 1, to: today) ?? today
 
     try await populateHistoricalProbeTicks(from: today, to: tomorrow)
   }
@@ -358,7 +396,8 @@ final class ProbeTickDataService {
   func populateLastWeekProbeTicks() async throws {
     let calendar = Calendar.current
     let today = calendar.startOfDay(for: Date())
-    let lastWeek = calendar.date(byAdding: .day, value: -7, to: today) ?? today
+    let lastWeek =
+      calendar.date(byAdding: .day, value: -7, to: today) ?? today
 
     try await populateHistoricalProbeTicks(from: lastWeek, to: today)
   }

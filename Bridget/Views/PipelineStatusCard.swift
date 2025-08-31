@@ -22,7 +22,8 @@ struct PipelineStatusCard: View {
         PipelineStatusRow(title: "Data Availability",
                           subtitle: viewModel.dataAvailabilityStatus,
                           icon: viewModel.isPipelineHealthy
-                            ? "checkmark.circle.fill" : "exclamationmark.triangle.fill",
+                            ? "checkmark.circle.fill"
+                            : "exclamationmark.triangle.fill",
                           color: viewModel.isPipelineHealthy ? .green : .orange)
 
         PipelineStatusRow(title: "Last Population",
@@ -74,5 +75,6 @@ struct PipelineStatusCard: View {
       TrafficInferenceCache.self,
       UserRouteHistory.self,
       ProbeTick.self,
-    ], inMemory: true)
+    ],
+    inMemory: true)
 }

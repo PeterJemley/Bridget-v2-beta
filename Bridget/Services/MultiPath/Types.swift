@@ -34,10 +34,14 @@ public struct Node: Hashable, Codable {
   public let name: String
   public let coordinates: Coordinates
 
-  public init(id: NodeID, name: String, coordinates: (latitude: Double, longitude: Double)) {
+  public init(id: NodeID,
+              name: String,
+              coordinates: (latitude: Double, longitude: Double))
+  {
     self.id = id
     self.name = name
-    self.coordinates = Coordinates(latitude: coordinates.latitude, longitude: coordinates.longitude)
+    self.coordinates = Coordinates(latitude: coordinates.latitude,
+                                   longitude: coordinates.longitude)
   }
 
   // MARK: - Hashable
@@ -71,15 +75,24 @@ public struct Edge: Hashable, Codable {
   }
 
   /// Throwing initializer with comprehensive validation
-  public init(validatingFrom from: NodeID, to: NodeID,
-              travelTime: TimeInterval, distance: Double,
-              isBridge: Bool, bridgeID: String?) throws
+  public init(validatingFrom from: NodeID,
+              to: NodeID,
+              travelTime: TimeInterval,
+              distance: Double,
+              isBridge: Bool,
+              bridgeID: String?) throws
   {
     guard from != to else { throw EdgeInitError.selfLoop }
-    guard distance.isFinite, distance > 0 else { throw EdgeInitError.nonPositiveDistance }
-    guard travelTime.isFinite, travelTime > 0 else { throw EdgeInitError.nonPositiveTravelTime }
+    guard distance.isFinite, distance > 0 else {
+      throw EdgeInitError.nonPositiveDistance
+    }
+    guard travelTime.isFinite, travelTime > 0 else {
+      throw EdgeInitError.nonPositiveTravelTime
+    }
     guard isBridge == (bridgeID != nil) else {
-      throw isBridge ? EdgeInitError.missingBridgeID : EdgeInitError.unexpectedBridgeID
+      throw isBridge
+        ? EdgeInitError.missingBridgeID
+        : EdgeInitError.unexpectedBridgeID
     }
 
     self.from = from
@@ -92,7 +105,11 @@ public struct Edge: Hashable, Codable {
 
   /// Non-throwing initializer for backward compatibility
   /// Uses default values and warnings instead of throwing
-  public init(from: NodeID, to: NodeID, travelTime: TimeInterval, distance: Double, isBridge: Bool = false,
+  public init(from: NodeID,
+              to: NodeID,
+              travelTime: TimeInterval,
+              distance: Double,
+              isBridge: Bool = false,
               bridgeID: String? = nil)
   {
     self.from = from
@@ -106,14 +123,18 @@ public struct Edge: Hashable, Codable {
       if let bridgeID = bridgeID {
         #if DEBUG
           // In debug builds, use assertions for developer feedback
-          if !SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) {
+          if !SeattleDrawbridges.isAcceptedBridgeID(bridgeID,
+                                                    allowSynthetic: true)
+          {
             assertionFailure(
               "Edge: Non-canonical, non-synthetic bridge ID '\(bridgeID)' detected. Must be canonical Seattle bridge or synthetic test ID (bridge1, bridge2, etc.)"
             )
           }
         #else
           // In release builds, warn but continue
-          if !SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) {
+          if !SeattleDrawbridges.isAcceptedBridgeID(bridgeID,
+                                                    allowSynthetic: true)
+          {
             print(
               "⚠️ Edge: Non-canonical, non-synthetic bridge ID '\(bridgeID)' detected. Must be canonical Seattle bridge or synthetic test ID (bridge1, bridge2, etc.)"
             )
@@ -124,7 +145,9 @@ public struct Edge: Hashable, Codable {
         #if DEBUG
           assertionFailure("Edge: Bridge edge missing bridgeID")
         #else
-          print("⚠️ Edge: Bridge edge missing bridgeID. Setting to nil.")
+          print(
+            "⚠️ Edge: Bridge edge missing bridgeID. Setting to nil."
+          )
         #endif
         self.bridgeID = nil
       }
@@ -136,25 +159,54 @@ public struct Edge: Hashable, Codable {
   // MARK: - Convenience Initializers
 
   /// Create a regular road edge (non-bridge)
-  public static func road(from: NodeID, to: NodeID, travelTime: TimeInterval, distance: Double)
+  public static func road(from: NodeID,
+                          to: NodeID,
+                          travelTime: TimeInterval,
+                          distance: Double)
     -> Edge
   {
-    return Edge(from: from, to: to, travelTime: travelTime, distance: distance, isBridge: false, bridgeID: nil)
+    return Edge(from: from,
+                to: to,
+                travelTime: travelTime,
+                distance: distance,
+                isBridge: false,
+                bridgeID: nil)
   }
 
   /// Create a bridge edge with validation (returns nil if invalid)
-  public static func bridge(from: NodeID, to: NodeID, travelTime: TimeInterval, distance: Double, bridgeID: String) -> Edge? {
-    guard SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) else {
+  public static func bridge(from: NodeID,
+                            to: NodeID,
+                            travelTime: TimeInterval,
+                            distance: Double,
+                            bridgeID: String) -> Edge?
+  {
+    guard
+      SeattleDrawbridges.isAcceptedBridgeID(bridgeID,
+                                            allowSynthetic: true)
+    else {
       return nil
     }
     // Use the non-throwing initializer for backward compatibility
-    return Edge(from: from, to: to, travelTime: travelTime, distance: distance, isBridge: true,
+    return Edge(from: from,
+                to: to,
+                travelTime: travelTime,
+                distance: distance,
+                isBridge: true,
                 bridgeID: bridgeID)
   }
 
   /// Create a bridge edge with throwing validation
-  public static func bridgeThrowing(from: NodeID, to: NodeID, travelTime: TimeInterval, distance: Double, bridgeID: String) throws -> Edge {
-    return try Edge(validatingFrom: from, to: to, travelTime: travelTime, distance: distance, isBridge: true,
+  public static func bridgeThrowing(from: NodeID,
+                                    to: NodeID,
+                                    travelTime: TimeInterval,
+                                    distance: Double,
+                                    bridgeID: String) throws -> Edge
+  {
+    return try Edge(validatingFrom: from,
+                    to: to,
+                    travelTime: travelTime,
+                    distance: distance,
+                    isBridge: true,
                     bridgeID: bridgeID)
   }
 
@@ -243,7 +295,8 @@ public struct RoutePath: Hashable, Codable {
   public func validate() throws {
     if !isContiguous() {
       throw MultiPathError.invalidPath(
-        "Path is not contiguous: edges do not connect nodes in sequence")
+        "Path is not contiguous: edges do not connect nodes in sequence"
+      )
     }
   }
 }
@@ -306,7 +359,10 @@ public struct ETA: Codable, Equatable {
   public let arrivalTime: Date
   public let travelTimeFromStart: TimeInterval
 
-  public init(nodeID: NodeID, arrivalTime: Date, travelTimeFromStart: TimeInterval) {
+  public init(nodeID: NodeID,
+              arrivalTime: Date,
+              travelTimeFromStart: TimeInterval)
+  {
     self.nodeID = nodeID
     self.arrivalTime = arrivalTime
     self.travelTimeFromStart = travelTimeFromStart

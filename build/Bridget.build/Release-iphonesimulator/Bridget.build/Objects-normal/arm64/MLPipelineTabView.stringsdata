@@ -1,0 +1,120 @@
+{
+  "source": "/Users/peterjemley/Developer/Bridget/Bridget/Views/MLPipelineTabView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "ML Training Pipeline",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 92
+        }
+      },
+      {
+        "comment": "",
+        "key": "Core ML Training Pipeline",
+        "location": {
+          "startingColumn": 12,
+          "startingLine": 103
+        }
+      },
+      {
+        "comment": "",
+        "key": "Train bridge lift prediction models using on-device Core ML",
+        "location": {
+          "startingColumn": 12,
+          "startingLine": 107
+        }
+      },
+      {
+        "comment": "",
+        "key": "Training in Progress",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 122
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld%%",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 136
+        }
+      },
+      {
+        "comment": "",
+        "key": "Training Controls",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 151
+        }
+      },
+      {
+        "comment": "",
+        "key": "Train models for all horizons (0, 3, 6, 9, 12 minutes)",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 172
+        }
+      },
+      {
+        "comment": "",
+        "key": "Individual Horizon Training",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 178
+        }
+      },
+      {
+        "comment": "",
+        "key": "Start Full Training Pipeline",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 162
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld min",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 189
+        }
+      },
+      {
+        "comment": "",
+        "key": "Trained Models",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 211
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld-min horizon:",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 220
+        }
+      },
+      {
+        "comment": "",
+        "key": "Retry",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 252
+        }
+      },
+      {
+        "comment": "",
+        "key": "Training Error",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 242
+        }
+      }
+    ]
+  },
+  "version": 1
+}

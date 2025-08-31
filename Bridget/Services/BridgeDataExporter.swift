@@ -84,7 +84,8 @@ func validateAndClampFields(from tick: ProbeTick) -> (crossK: Int,
     hadCorrection = true
   }
 
-  return (crossK, crossN, viaPenalty, gateAnom, alternatesTotal, alternatesAvoid, hadCorrection)
+  return (crossK, crossN, viaPenalty, gateAnom, alternatesTotal, alternatesAvoid,
+          hadCorrection)
 }
 
 /// Represents a row in the NDJSON export, conforming to the expected schema.
@@ -123,7 +124,9 @@ struct NDJSONRow: Encodable {
 /// - This function is pure and has no side effects.
 /// - Validation/correction is applied to each tick's fields.
 /// - The output strings include a trailing newline character.
-func makeNDJSONRows(from ticks: [ProbeTick], isoFormatter: ISO8601DateFormatter) throws -> [String] {
+func makeNDJSONRows(from ticks: [ProbeTick], isoFormatter: ISO8601DateFormatter)
+  throws -> [String]
+{
   let encoder = JSONEncoder.bridgeEncoder()
   encoder.outputFormatting = [.withoutEscapingSlashes]
 
@@ -131,7 +134,8 @@ func makeNDJSONRows(from ticks: [ProbeTick], isoFormatter: ISO8601DateFormatter)
   rows.reserveCapacity(ticks.count)
 
   for tick in ticks {
-    let (crossK, crossN, viaPenalty, gateAnom, alternatesTotal, alternatesAvoid, _) =
+    let (crossK, crossN, viaPenalty, gateAnom, alternatesTotal,
+         alternatesAvoid, _) =
       validateAndClampFields(from: tick)
 
     let row = NDJSONRow(v: 1,
@@ -144,14 +148,19 @@ func makeNDJSONRows(from ticks: [ProbeTick], isoFormatter: ISO8601DateFormatter)
                         gateAnom: gateAnom,
                         alternatesTotal: alternatesTotal,
                         alternatesAvoidSpan: alternatesAvoid,
-                        freeEtaSec: tick.freeEtaSec == 0 ? nil : tick.freeEtaSec.map(Int.init),
+                        freeEtaSec: tick.freeEtaSec == 0
+                          ? nil : tick.freeEtaSec.map(Int.init),
                         viaEtaSec: tick.viaEtaSec == 0 ? nil : tick.viaEtaSec.map(Int.init),
                         openLabel: tick.openLabel ? 1 : 0)
 
     let data = try encoder.encode(row)
     guard var jsonString = String(data: data, encoding: .utf8) else {
-      throw NSError(domain: "BridgeDataExporter", code: 3,
-                    userInfo: [NSLocalizedDescriptionKey: "Failed to convert encoded data to UTF-8 string"])
+      throw NSError(domain: "BridgeDataExporter",
+                    code: 3,
+                    userInfo: [
+                      NSLocalizedDescriptionKey:
+                        "Failed to convert encoded data to UTF-8 string",
+                    ])
     }
     jsonString.append("\n")
 
@@ -279,7 +288,8 @@ final class BridgeDataExporter {
   init(context: ModelContext) {
     self.context = context
     iso.formatOptions = [
-      .withInternetDateTime, .withColonSeparatorInTime, .withColonSeparatorInTimeZone,
+      .withInternetDateTime, .withColonSeparatorInTime,
+      .withColonSeparatorInTimeZone,
     ]
     iso.timeZone = TimeZone(secondsFromGMT: 0)
   }
@@ -392,16 +402,24 @@ final class BridgeDataExporter {
     // Get the start of the local day in Pacific timezone (midnight Pacific time)
     let startPacific = calPacific.startOfDay(for: dayLocal)
     // The next day at midnight Pacific time
-    guard let endPacific = calPacific.date(byAdding: .day, value: 1, to: startPacific) else {
+    guard
+      let endPacific = calPacific.date(byAdding: .day,
+                                       value: 1,
+                                       to: startPacific)
+    else {
       let errorMessage = "Failed to compute end of day"
-      throw NSError(domain: "BridgeDataExporter", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+      throw NSError(domain: "BridgeDataExporter",
+                    code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: errorMessage])
     }
 
     // Convert the Pacific local day window to UTC bounds, accounting for DST safely
     let startUTC = startPacific.addingTimeInterval(
-      -TimeInterval(pacific.secondsFromGMT(for: startPacific)))
+      -TimeInterval(pacific.secondsFromGMT(for: startPacific))
+    )
     let endUTC = endPacific.addingTimeInterval(
-      -TimeInterval(pacific.secondsFromGMT(for: endPacific)))
+      -TimeInterval(pacific.secondsFromGMT(for: endPacific))
+    )
 
     // Fetch all ProbeTick within the UTC window that are valid
     let fetchDescriptor = FetchDescriptor<ProbeTick>(predicate: #Predicate {
@@ -418,7 +436,8 @@ final class BridgeDataExporter {
       // Floor timestamp to minute (UTC)
       let ts = tick.tsUtc
       let flooredTimestamp =
-        ts.timeIntervalSince1970 - (ts.timeIntervalSince1970.truncatingRemainder(dividingBy: 60))
+        ts.timeIntervalSince1970
+          - (ts.timeIntervalSince1970.truncatingRemainder(dividingBy: 60))
 
       let key = "\(tick.bridgeId)-\(Int(flooredTimestamp))"
 
@@ -440,18 +459,25 @@ final class BridgeDataExporter {
     }
 
     // Prepare NDJSON rows using pure function
-    let ndjsonRows = try makeNDJSONRows(from: dedupedTicks, isoFormatter: iso)
+    let ndjsonRows = try makeNDJSONRows(from: dedupedTicks,
+                                        isoFormatter: iso)
 
     let outputDirectory = url.deletingLastPathComponent()
-    let bridgeMapURL = outputDirectory.appendingPathComponent("bridge_map.json")
+    let bridgeMapURL = outputDirectory.appendingPathComponent(
+      "bridge_map.json"
+    )
 
     // Prepare a temporary file URL for atomic replacement
-    let tempURL = try FileManagerUtils.createTemporaryFile(in: outputDirectory, prefix: "export", extension: "ndjson.tmp")
+    let tempURL = try FileManagerUtils.createTemporaryFile(in: outputDirectory,
+                                                           prefix: "export",
+                                                           extension: "ndjson.tmp")
 
     // Open the temp file for writing
     guard let handle = try? FileHandle(forWritingTo: tempURL) else {
       let errorMessage = "Failed to open temp file for writing"
-      throw NSError(domain: "BridgeDataExporter", code: 2, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+      throw NSError(domain: "BridgeDataExporter",
+                    code: 2,
+                    userInfo: [NSLocalizedDescriptionKey: errorMessage])
     }
     try handle.truncate(atOffset: 0)
 
@@ -465,7 +491,9 @@ final class BridgeDataExporter {
     // For each deduped tick, we apply validation and count corrections again to keep metrics accurate.
     // (We could optimize by modifying makeNDJSONRows to also return corrections, but per instructions keep class logic here.)
     for tick in dedupedTicks {
-      let (_, _, _, _, _, _, hadCorrection) = validateAndClampFields(from: tick)
+      let (_, _, _, _, _, _, hadCorrection) = validateAndClampFields(
+        from: tick
+      )
 
       // Write NDJSON line (already encoded)
       let index = totalRows
@@ -526,7 +554,8 @@ final class BridgeDataExporter {
     // Also include bridges with zero counts but present in bridge_map
     if FileManagerUtils.fileExists(at: bridgeMapURL) {
       if let data = try? Data(contentsOf: bridgeMapURL),
-         let bridgeMap = try? JSONDecoder.bridgeDecoder().decode([String: String].self, from: data)
+         let bridgeMap = try? JSONDecoder.bridgeDecoder().decode([String: String].self,
+                                                                 from: data)
       {
         for bridgeIdStr in bridgeMap.keys {
           if bridgeCounts[Int(bridgeIdStr) ?? -1] == nil {
@@ -536,9 +565,14 @@ final class BridgeDataExporter {
       }
     }
 
-    let metricsURL = url.deletingPathExtension().appendingPathExtension("metrics.json")
+    let metricsURL = url.deletingPathExtension().appendingPathExtension(
+      "metrics.json"
+    )
     let bridgeCountsDict = Dictionary(
-      uniqueKeysWithValues: bridgeCounts.map { (String($0.key), $0.value) })
+      uniqueKeysWithValues: bridgeCounts.map {
+        (String($0.key), $0.value)
+      }
+    )
     let metrics = Metrics(totalRows: totalRows,
                           correctedRows: correctedRows,
                           bridgeCounts: bridgeCountsDict,

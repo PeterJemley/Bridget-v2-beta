@@ -11,12 +11,21 @@ final class GraphImporterTests: XCTestCase {
   func testBasicGraphImport() throws {
     // Create a simple test graph
     let nodes = [
-      Node(id: "A", name: "Node A", coordinates: (latitude: 47.0, longitude: -122.0)),
-      Node(id: "B", name: "Node B", coordinates: (latitude: 47.1, longitude: -122.1)),
+      Node(id: "A",
+           name: "Node A",
+           coordinates: (latitude: 47.0, longitude: -122.0)),
+      Node(id: "B",
+           name: "Node B",
+           coordinates: (latitude: 47.1, longitude: -122.1)),
     ]
 
     let edges = [
-      Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false, bridgeID: nil),
+      Edge(from: "A",
+           to: "B",
+           travelTime: 300,
+           distance: 1000,
+           isBridge: false,
+           bridgeID: nil),
     ]
 
     // Create a simple graph
@@ -53,7 +62,8 @@ final class GraphImporterTests: XCTestCase {
     // Try to decode each JSON type
     let nodes = try JSONDecoder().decode([ImportNode].self, from: nodesJSON)
     let edges = try JSONDecoder().decode([ImportEdge].self, from: edgesJSON)
-    let bridges = try JSONDecoder().decode([ImportBridge].self, from: bridgesJSON)
+    let bridges = try JSONDecoder().decode([ImportBridge].self,
+                                           from: bridgesJSON)
 
     // Verify decoding worked
     XCTAssertEqual(nodes.count, 2)
@@ -69,11 +79,14 @@ final class GraphImporterTests: XCTestCase {
   func testSimpleGraphImporter() throws {
     // Test GraphImporter with simple data
     let tempDir = FileManager.default.temporaryDirectory
-    let testDir = tempDir.appendingPathComponent("test_graph_\(UUID().uuidString)")
+    let testDir = tempDir.appendingPathComponent(
+      "test_graph_\(UUID().uuidString)"
+    )
 
     // Clean up any existing directory
     try? FileManager.default.removeItem(at: testDir)
-    try FileManager.default.createDirectory(at: testDir, withIntermediateDirectories: true)
+    try FileManager.default.createDirectory(at: testDir,
+                                            withIntermediateDirectories: true)
 
     defer {
       // Clean up
@@ -101,7 +114,9 @@ final class GraphImporterTests: XCTestCase {
     // Write files
     try nodesData.write(to: testDir.appendingPathComponent("nodes.json"))
     try edgesData.write(to: testDir.appendingPathComponent("edges.json"))
-    try bridgesData.write(to: testDir.appendingPathComponent("bridges.json"))
+    try bridgesData.write(
+      to: testDir.appendingPathComponent("bridges.json")
+    )
 
     // Try to import
     let graph = try GraphImporter.importGraph(from: testDir)

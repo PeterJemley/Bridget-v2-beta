@@ -30,28 +30,37 @@ final class PathEnumerationServiceTests: XCTestCase {
 
   func testPhase1SimpleFixture() throws {
     // Test the basic fixture: A -> B -> C and A -> D -> C
-    let (graph, expectedPaths) = PathEnumerationService.createPhase1TestFixture()
+    let (graph, expectedPaths) =
+      PathEnumerationService.createPhase1TestFixture()
 
     // Enumerate paths from A to C
-    let foundPaths = try service.enumeratePaths(from: "A", to: "C", in: graph)
+    let foundPaths = try service.enumeratePaths(from: "A",
+                                                to: "C",
+                                                in: graph)
 
     // Verify we found exactly 2 paths
     XCTAssertEqual(foundPaths.count, 2, "Should find exactly 2 paths")
 
     // Verify all paths are valid
-    XCTAssertTrue(service.validatePaths(foundPaths), "All paths should be valid")
+    XCTAssertTrue(service.validatePaths(foundPaths),
+                  "All paths should be valid")
 
     // Compare with golden paths
-    let comparison = service.compareWithGoldenPaths(found: foundPaths, expected: expectedPaths)
-    XCTAssertTrue(comparison.isSuccess, "Should match golden paths: \(comparison.description)")
+    let comparison = service.compareWithGoldenPaths(found: foundPaths,
+                                                    expected: expectedPaths)
+    XCTAssertTrue(comparison.isSuccess,
+                  "Should match golden paths: \(comparison.description)")
 
     // Verify paths are sorted by travel time (shortest first)
-    XCTAssertLessThan(foundPaths[0].totalTravelTime, foundPaths[1].totalTravelTime)
+    XCTAssertLessThan(foundPaths[0].totalTravelTime,
+                      foundPaths[1].totalTravelTime)
 
     // Verify specific paths exist
     let path1Nodes = foundPaths.map { $0.nodes }
-    XCTAssertTrue(path1Nodes.contains(["A", "B", "C"]), "Should contain A->B->C path")
-    XCTAssertTrue(path1Nodes.contains(["A", "D", "C"]), "Should contain A->D->C path")
+    XCTAssertTrue(path1Nodes.contains(["A", "B", "C"]),
+                  "Should contain A->B->C path")
+    XCTAssertTrue(path1Nodes.contains(["A", "D", "C"]),
+                  "Should contain A->D->C path")
   }
 
   func testPhase1ComplexFixture() throws {
@@ -59,25 +68,33 @@ final class PathEnumerationServiceTests: XCTestCase {
     let (graph, _) = PathEnumerationService.createPhase1ComplexFixture()
 
     // Enumerate paths from A to D
-    let foundPaths = try service.enumeratePaths(from: "A", to: "D", in: graph)
+    let foundPaths = try service.enumeratePaths(from: "A",
+                                                to: "D",
+                                                in: graph)
 
     // Verify we found exactly 4 paths
     XCTAssertEqual(foundPaths.count, 4, "Should find exactly 4 paths")
 
     // Verify all paths are valid
-    XCTAssertTrue(service.validatePaths(foundPaths), "All paths should be valid")
+    XCTAssertTrue(service.validatePaths(foundPaths),
+                  "All paths should be valid")
 
     // Verify paths are sorted by travel time (shortest first)
     for i in 0 ..< (foundPaths.count - 1) {
-      XCTAssertLessThanOrEqual(foundPaths[i].totalTravelTime, foundPaths[i + 1].totalTravelTime)
+      XCTAssertLessThanOrEqual(foundPaths[i].totalTravelTime,
+                               foundPaths[i + 1].totalTravelTime)
     }
 
     // Verify specific expected paths exist
     let pathNodes = foundPaths.map { $0.nodes }
-    XCTAssertTrue(pathNodes.contains(["A", "E", "D"]), "Should contain A->E->D path")
-    XCTAssertTrue(pathNodes.contains(["A", "C", "D"]), "Should contain A->C->D path")
-    XCTAssertTrue(pathNodes.contains(["A", "B", "D"]), "Should contain A->B->D path")
-    XCTAssertTrue(pathNodes.contains(["A", "D"]), "Should contain A->D path")
+    XCTAssertTrue(pathNodes.contains(["A", "E", "D"]),
+                  "Should contain A->E->D path")
+    XCTAssertTrue(pathNodes.contains(["A", "C", "D"]),
+                  "Should contain A->C->D path")
+    XCTAssertTrue(pathNodes.contains(["A", "B", "D"]),
+                  "Should contain A->B->D path")
+    XCTAssertTrue(pathNodes.contains(["A", "D"]),
+                  "Should contain A->D path")
   }
 
   // MARK: - Path Validation Tests
@@ -89,7 +106,8 @@ final class PathEnumerationServiceTests: XCTestCase {
 
     // All paths should be contiguous
     for path in paths {
-      XCTAssertTrue(path.isContiguous(), "Path \(path.nodes) should be contiguous")
+      XCTAssertTrue(path.isContiguous(),
+                    "Path \(path.nodes) should be contiguous")
     }
   }
 
@@ -100,7 +118,9 @@ final class PathEnumerationServiceTests: XCTestCase {
 
     // All paths should have positive travel time
     for path in paths {
-      XCTAssertGreaterThan(path.totalTravelTime, 0, "Path \(path.nodes) should have positive travel time")
+      XCTAssertGreaterThan(path.totalTravelTime,
+                           0,
+                           "Path \(path.nodes) should have positive travel time")
     }
   }
 
@@ -111,7 +131,9 @@ final class PathEnumerationServiceTests: XCTestCase {
 
     // All paths should have positive distance
     for path in paths {
-      XCTAssertGreaterThan(path.totalDistance, 0, "Path \(path.nodes) should have positive distance")
+      XCTAssertGreaterThan(path.totalDistance,
+                           0,
+                           "Path \(path.nodes) should have positive distance")
     }
   }
 
@@ -121,12 +143,16 @@ final class PathEnumerationServiceTests: XCTestCase {
     let (graph, _) = PathEnumerationService.createPhase1TestFixture()
 
     // Try to find path from non-existent node
-    XCTAssertThrowsError(try service.enumeratePaths(from: "Z", to: "C", in: graph)) { error in
+    XCTAssertThrowsError(
+      try service.enumeratePaths(from: "Z", to: "C", in: graph)
+    ) { error in
       XCTAssertEqual(error as? MultiPathError, .nodeNotFound("Z"))
     }
 
     // Try to find path to non-existent node
-    XCTAssertThrowsError(try service.enumeratePaths(from: "A", to: "Z", in: graph)) { error in
+    XCTAssertThrowsError(
+      try service.enumeratePaths(from: "A", to: "Z", in: graph)
+    ) { error in
       XCTAssertEqual(error as? MultiPathError, .nodeNotFound("Z"))
     }
   }
@@ -143,7 +169,8 @@ final class PathEnumerationServiceTests: XCTestCase {
 
     // Should return empty array (no error, just no paths)
     let paths = try service.enumeratePaths(from: "A", to: "B", in: graph)
-    XCTAssertTrue(paths.isEmpty, "Should return empty array when no path exists")
+    XCTAssertTrue(paths.isEmpty,
+                  "Should return empty array when no path exists")
   }
 
   // MARK: - Configuration Tests
@@ -152,18 +179,25 @@ final class PathEnumerationServiceTests: XCTestCase {
     let (graph, _) = PathEnumerationService.createPhase1ComplexFixture()
 
     // Create service with very low maxPaths limit
-    let limitedService = PathEnumerationService(config: MultiPathConfig.testing)
+    let limitedService = PathEnumerationService(
+      config: MultiPathConfig.testing
+    )
 
-    let paths = try limitedService.enumeratePaths(from: "A", to: "D", in: graph)
+    let paths = try limitedService.enumeratePaths(from: "A",
+                                                  to: "D",
+                                                  in: graph)
 
     // Should respect maxPaths limit
-    XCTAssertLessThanOrEqual(paths.count, limitedService.config.pathEnumeration.maxPaths)
+    XCTAssertLessThanOrEqual(paths.count,
+                             limitedService.config.pathEnumeration.maxPaths)
   }
 
   func testMaxDepthLimit() throws {
     // Create a deep graph
     let nodes = (0 ... 10).map { i in
-      Node(id: "\(i)", name: "Node\(i)", coordinates: (Double(i), Double(i)))
+      Node(id: "\(i)",
+           name: "Node\(i)",
+           coordinates: (Double(i), Double(i)))
     }
 
     let edges = (0 ..< 10).map { i in
@@ -177,7 +211,9 @@ final class PathEnumerationServiceTests: XCTestCase {
     config.pathEnumeration.maxDepth = 3
     let limitedService = PathEnumerationService(config: config)
 
-    let paths = try limitedService.enumeratePaths(from: "0", to: "10", in: graph)
+    let paths = try limitedService.enumeratePaths(from: "0",
+                                                  to: "10",
+                                                  in: graph)
 
     // Should find no paths due to depth limit
     XCTAssertTrue(paths.isEmpty, "Should find no paths due to depth limit")
@@ -191,11 +227,14 @@ final class PathEnumerationServiceTests: XCTestCase {
     config.pathEnumeration.maxTravelTime = 100  // Very low limit
     let limitedService = PathEnumerationService(config: config)
 
-    let paths = try limitedService.enumeratePaths(from: "A", to: "D", in: graph)
+    let paths = try limitedService.enumeratePaths(from: "A",
+                                                  to: "D",
+                                                  in: graph)
 
     // All paths should respect travel time limit
     for path in paths {
-      XCTAssertLessThanOrEqual(path.totalTravelTime, config.pathEnumeration.maxTravelTime)
+      XCTAssertLessThanOrEqual(path.totalTravelTime,
+                               config.pathEnumeration.maxTravelTime)
     }
   }
 
@@ -207,16 +246,24 @@ final class PathEnumerationServiceTests: XCTestCase {
     // Test with cycles allowed
     var cycleAllowedConfig = MultiPathConfig.testing
     cycleAllowedConfig.pathEnumeration.allowCycles = true
-    let cycleAllowedService = PathEnumerationService(config: cycleAllowedConfig)
+    let cycleAllowedService = PathEnumerationService(
+      config: cycleAllowedConfig
+    )
 
-    let pathsWithCycles = try cycleAllowedService.enumeratePaths(from: "A", to: "D", in: graph)
+    let pathsWithCycles = try cycleAllowedService.enumeratePaths(from: "A",
+                                                                 to: "D",
+                                                                 in: graph)
 
     // Test with cycles not allowed
     var cycleForbiddenConfig = MultiPathConfig.testing
     cycleForbiddenConfig.pathEnumeration.allowCycles = false
-    let cycleForbiddenService = PathEnumerationService(config: cycleForbiddenConfig)
+    let cycleForbiddenService = PathEnumerationService(
+      config: cycleForbiddenConfig
+    )
 
-    let pathsWithoutCycles = try cycleForbiddenService.enumeratePaths(from: "A", to: "D", in: graph)
+    let pathsWithoutCycles = try cycleForbiddenService.enumeratePaths(from: "A",
+                                                                      to: "D",
+                                                                      in: graph)
 
     // Should find same number of paths (our test graph doesn't have problematic cycles)
     XCTAssertEqual(pathsWithCycles.count, pathsWithoutCycles.count)
@@ -227,11 +274,17 @@ final class PathEnumerationServiceTests: XCTestCase {
   func testShortestPath() throws {
     let (graph, _) = PathEnumerationService.createPhase1ComplexFixture()
 
-    let shortestPath = try service.shortestPath(from: "A", to: "D", in: graph)
+    let shortestPath = try service.shortestPath(from: "A",
+                                                to: "D",
+                                                in: graph)
 
     XCTAssertNotNil(shortestPath, "Should find shortest path")
-    XCTAssertEqual(shortestPath?.nodes, ["A", "B", "D"], "Shortest path should be A->B->D (500s)")
-    XCTAssertEqual(shortestPath?.totalTravelTime, 500, "Shortest path should have 500s travel time")
+    XCTAssertEqual(shortestPath?.nodes,
+                   ["A", "B", "D"],
+                   "Shortest path should be A->B->D (500s)")
+    XCTAssertEqual(shortestPath?.totalTravelTime,
+                   500,
+                   "Shortest path should have 500s travel time")
   }
 
   func testShortestPathNoPathExists() throws {
@@ -244,7 +297,9 @@ final class PathEnumerationServiceTests: XCTestCase {
 
     let graph = try Graph(nodes: nodes, edges: edges)
 
-    let shortestPath = try service.shortestPath(from: "A", to: "B", in: graph)
+    let shortestPath = try service.shortestPath(from: "A",
+                                                to: "B",
+                                                in: graph)
 
     XCTAssertNil(shortestPath, "Should return nil when no path exists")
   }
@@ -266,8 +321,10 @@ final class PathEnumerationServiceTests: XCTestCase {
     for i in 0 ..< results1.count {
       XCTAssertEqual(results1[i].nodes, results2[i].nodes)
       XCTAssertEqual(results2[i].nodes, results3[i].nodes)
-      XCTAssertEqual(results1[i].totalTravelTime, results2[i].totalTravelTime)
-      XCTAssertEqual(results2[i].totalTravelTime, results3[i].totalTravelTime)
+      XCTAssertEqual(results1[i].totalTravelTime,
+                     results2[i].totalTravelTime)
+      XCTAssertEqual(results2[i].totalTravelTime,
+                     results3[i].totalTravelTime)
     }
   }
 
@@ -314,7 +371,9 @@ final class PathEnumerationServiceTests: XCTestCase {
     let graph = try Graph(nodes: nodes, edges: edges)
 
     // Should throw error when nodes don't exist in empty graph
-    XCTAssertThrowsError(try service.enumeratePaths(from: "A", to: "B", in: graph)) { error in
+    XCTAssertThrowsError(
+      try service.enumeratePaths(from: "A", to: "B", in: graph)
+    ) { error in
       XCTAssertEqual(error as? MultiPathError, .nodeNotFound("A"))
     }
   }
@@ -357,8 +416,12 @@ final class PathEnumerationServiceTests: XCTestCase {
     for startNode in graph.nodes {
       for endNode in graph.nodes {
         if startNode.id != endNode.id {
-          let pathsA = try serviceA.enumeratePaths(from: startNode.id, to: endNode.id, in: graph)
-          let pathsB = try serviceB.enumeratePaths(from: startNode.id, to: endNode.id, in: graph)
+          let pathsA = try serviceA.enumeratePaths(from: startNode.id,
+                                                   to: endNode.id,
+                                                   in: graph)
+          let pathsB = try serviceB.enumeratePaths(from: startNode.id,
+                                                   to: endNode.id,
+                                                   in: graph)
 
           // All paths found with lower maxDepth should also be found with higher maxDepth
           for pathA in pathsA {
@@ -385,8 +448,12 @@ final class PathEnumerationServiceTests: XCTestCase {
     for startNode in graph.nodes {
       for endNode in graph.nodes {
         if startNode.id != endNode.id {
-          let pathsA = try serviceA.enumeratePaths(from: startNode.id, to: endNode.id, in: graph)
-          let pathsB = try serviceB.enumeratePaths(from: startNode.id, to: endNode.id, in: graph)
+          let pathsA = try serviceA.enumeratePaths(from: startNode.id,
+                                                   to: endNode.id,
+                                                   in: graph)
+          let pathsB = try serviceB.enumeratePaths(from: startNode.id,
+                                                   to: endNode.id,
+                                                   in: graph)
 
           // All paths found with lower maxPaths should also be found with higher maxPaths
           for pathA in pathsA {
@@ -404,7 +471,8 @@ final class PathEnumerationServiceTests: XCTestCase {
     var configB = MultiPathConfig.testing
 
     // Set different maxTimeOverShortest values
-    configB.pathEnumeration.maxTimeOverShortest = configA.pathEnumeration.maxTimeOverShortest + 60  // Add 1 minute
+    configB.pathEnumeration.maxTimeOverShortest =
+      configA.pathEnumeration.maxTimeOverShortest + 60  // Add 1 minute
 
     let serviceA = PathEnumerationService(config: configA)
     let serviceB = PathEnumerationService(config: configB)
@@ -413,8 +481,12 @@ final class PathEnumerationServiceTests: XCTestCase {
     for startNode in graph.nodes {
       for endNode in graph.nodes {
         if startNode.id != endNode.id {
-          let pathsA = try serviceA.enumeratePaths(from: startNode.id, to: endNode.id, in: graph)
-          let pathsB = try serviceB.enumeratePaths(from: startNode.id, to: endNode.id, in: graph)
+          let pathsA = try serviceA.enumeratePaths(from: startNode.id,
+                                                   to: endNode.id,
+                                                   in: graph)
+          let pathsB = try serviceB.enumeratePaths(from: startNode.id,
+                                                   to: endNode.id,
+                                                   in: graph)
 
           // All paths found with lower maxTimeOverShortest should also be found with higher maxTimeOverShortest
           for pathA in pathsA {
@@ -434,7 +506,9 @@ final class PathEnumerationServiceTests: XCTestCase {
     var restrictiveConfig = MultiPathConfig.testing
     restrictiveConfig.pathEnumeration.maxTimeOverShortest = 50  // Very restrictive (50 seconds)
 
-    let restrictiveService = PathEnumerationService(config: restrictiveConfig)
+    let restrictiveService = PathEnumerationService(
+      config: restrictiveConfig
+    )
 
     // Create config with very permissive maxTimeOverShortest
     var permissiveConfig = MultiPathConfig.testing
@@ -443,11 +517,16 @@ final class PathEnumerationServiceTests: XCTestCase {
     let permissiveService = PathEnumerationService(config: permissiveConfig)
 
     // Test A to D path enumeration
-    let restrictivePaths = try restrictiveService.enumeratePaths(from: "A", to: "D", in: graph)
-    let permissivePaths = try permissiveService.enumeratePaths(from: "A", to: "D", in: graph)
+    let restrictivePaths = try restrictiveService.enumeratePaths(from: "A",
+                                                                 to: "D",
+                                                                 in: graph)
+    let permissivePaths = try permissiveService.enumeratePaths(from: "A",
+                                                               to: "D",
+                                                               in: graph)
 
     // Restrictive config should find fewer or equal paths
-    XCTAssertLessThanOrEqual(restrictivePaths.count, permissivePaths.count,
+    XCTAssertLessThanOrEqual(restrictivePaths.count,
+                             permissivePaths.count,
                              "Restrictive pruning should find fewer or equal paths")
 
     // All paths found with restrictive config should also be found with permissive config

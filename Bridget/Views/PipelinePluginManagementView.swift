@@ -49,8 +49,11 @@ struct PipelinePluginManagementView: View {
         AddValidatorView(pluginManager: pluginManager)
       }
       .sheet(item: $selectedValidatorName) { item in
-        if let validator = pluginManager.validators.first(where: { $0.name == item.name }) {
-          ValidatorConfigurationView(validator: validator, pluginManager: pluginManager)
+        if let validator = pluginManager.validators.first(where: {
+          $0.name == item.name
+        }) {
+          ValidatorConfigurationView(validator: validator,
+                                     pluginManager: pluginManager)
         }
       }
     }
@@ -80,7 +83,8 @@ struct PipelinePluginManagementView: View {
         Spacer()
 
         VStack(alignment: .trailing) {
-          Toggle("Enable Plugins", isOn: $pluginManager.pluginsEnabled)
+          Toggle("Enable Plugins",
+                 isOn: $pluginManager.pluginsEnabled)
             .toggleStyle(.switch)
 
           Text(
@@ -98,11 +102,13 @@ struct PipelinePluginManagementView: View {
                  color: .blue)
 
         StatCard(title: "Active",
-                 value: "\(pluginManager.validators.filter { $0.isEnabled }.count)",
+                 value:
+                 "\(pluginManager.validators.filter { $0.isEnabled }.count)",
                  color: .green)
 
         StatCard(title: "Last Run",
-                 value: pluginManager.lastValidationResults.isEmpty ? "Never" : "Recent",
+                 value: pluginManager.lastValidationResults.isEmpty
+                   ? "Never" : "Recent",
                  color: .orange)
       }
     }
@@ -131,9 +137,12 @@ struct PipelinePluginManagementView: View {
     List {
       ForEach(filteredValidators, id: \.name) { validator in
         PluginRowView(validator: validator,
-                      lastResult: pluginManager.lastValidationResults[validator.name])
-        {
-          selectedValidatorName = ValidatorNameItem(id: validator.name)
+                      lastResult: pluginManager.lastValidationResults[
+                        validator.name
+                      ]) {
+          selectedValidatorName = ValidatorNameItem(
+            id: validator.name
+          )
         }
       }
       .onDelete(perform: deleteValidator)
@@ -153,10 +162,12 @@ struct PipelinePluginManagementView: View {
         .font(.title2)
         .fontWeight(.semibold)
 
-      Text("Add validation plugins to enhance your pipeline's data quality checks.")
-        .font(.body)
-        .foregroundColor(.secondary)
-        .multilineTextAlignment(.center)
+      Text(
+        "Add validation plugins to enhance your pipeline's data quality checks."
+      )
+      .font(.body)
+      .foregroundColor(.secondary)
+      .multilineTextAlignment(.center)
 
       Button("Add Plugin") {
         showingAddValidator = true
@@ -175,7 +186,9 @@ struct PipelinePluginManagementView: View {
     } else {
       return pluginManager.validators.filter { validator in
         validator.name.localizedCaseInsensitiveContains(searchText)
-          || validator.description.localizedCaseInsensitiveContains(searchText)
+          || validator.description.localizedCaseInsensitiveContains(
+            searchText
+          )
       }
     }
   }
@@ -235,9 +248,13 @@ struct PluginRowView: View {
           // Last result summary
           if let result = lastResult {
             HStack(spacing: 8) {
-              Image(systemName: result.isValid ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .foregroundColor(result.isValid ? .green : .red)
-                .font(.caption)
+              Image(
+                systemName: result.isValid
+                  ? "checkmark.circle.fill"
+                  : "xmark.circle.fill"
+              )
+              .foregroundColor(result.isValid ? .green : .red)
+              .font(.caption)
 
               Text(result.isValid ? "Passed" : "Failed")
                 .font(.caption)
@@ -342,7 +359,9 @@ struct AddValidatorView: View {
       Form {
         Section("Validator Type") {
           Picker("Type", selection: $selectedValidatorType) {
-            ForEach(Array(availableValidatorTypes.keys.sorted()), id: \.self) { key in
+            ForEach(Array(availableValidatorTypes.keys.sorted()),
+                    id: \.self)
+            { key in
               Text(availableValidatorTypes[key] ?? key).tag(key)
             }
           }
@@ -353,13 +372,17 @@ struct AddValidatorView: View {
           TextField("Name", text: $customName)
           TextField("Description", text: $customDescription)
 
-          Stepper("Priority: \(priority)", value: $priority, in: 1 ... 1000)
+          Stepper("Priority: \(priority)",
+                  value: $priority,
+                  in: 1 ... 1000)
         }
 
         Section("Preview") {
           VStack(alignment: .leading, spacing: 8) {
-            Text("Name: \(customName.isEmpty ? selectedValidatorType : customName)")
-              .font(.subheadline)
+            Text(
+              "Name: \(customName.isEmpty ? selectedValidatorType : customName)"
+            )
+            .font(.subheadline)
 
             Text(
               "Description: \(customDescription.isEmpty ? availableValidatorTypes[selectedValidatorType] ?? "" : customDescription)"
@@ -391,11 +414,13 @@ struct AddValidatorView: View {
     }
     .onAppear {
       customName = selectedValidatorType
-      customDescription = availableValidatorTypes[selectedValidatorType] ?? ""
+      customDescription =
+        availableValidatorTypes[selectedValidatorType] ?? ""
     }
     .onChange(of: selectedValidatorType) {
       customName = selectedValidatorType
-      customDescription = availableValidatorTypes[selectedValidatorType] ?? ""
+      customDescription =
+        availableValidatorTypes[selectedValidatorType] ?? ""
     }
   }
 
@@ -517,8 +542,11 @@ struct ValidatorConfigurationView: View {
       if let result = pluginManager.lastValidationResults[validator.name] {
         VStack(alignment: .leading, spacing: 8) {
           HStack {
-            Image(systemName: result.isValid ? "checkmark.circle.fill" : "xmark.circle.fill")
-              .foregroundColor(result.isValid ? .green : .red)
+            Image(
+              systemName: result.isValid
+                ? "checkmark.circle.fill" : "xmark.circle.fill"
+            )
+            .foregroundColor(result.isValid ? .green : .red)
 
             Text(result.isValid ? "Passed" : "Failed")
               .fontWeight(.semibold)
@@ -532,9 +560,11 @@ struct ValidatorConfigurationView: View {
           }
 
           if !result.warnings.isEmpty {
-            Text("Warnings: \(result.warnings.joined(separator: "; "))")
-              .font(.caption)
-              .foregroundColor(.orange)
+            Text(
+              "Warnings: \(result.warnings.joined(separator: "; "))"
+            )
+            .font(.caption)
+            .foregroundColor(.orange)
           }
         }
       } else {
@@ -547,7 +577,8 @@ struct ValidatorConfigurationView: View {
   private var actionsSection: some View {
     Section("Actions") {
       Button(validator.isEnabled ? "Disable" : "Enable") {
-        pluginManager.setValidator(validator.name, enabled: !validator.isEnabled)
+        pluginManager.setValidator(validator.name,
+                                   enabled: !validator.isEnabled)
       }
       .foregroundColor(validator.isEnabled ? .red : .green)
 

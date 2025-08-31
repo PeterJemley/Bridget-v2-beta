@@ -28,15 +28,19 @@ struct QuickActionsView: View {
 
         Button {
           Task {
-            viewModel.backgroundManager.triggerBackgroundTask(.dataExport)
+            viewModel.backgroundManager.triggerBackgroundTask(
+              .dataExport
+            )
             viewModel.backgroundManager.updateLastExportDate()
             viewModel.backgroundManager.addActivity(title: "Data Export",
                                                     description: "Exported today's probe tick data",
                                                     type: .dataExport)
             viewModel.notificationManager.showSuccessNotification(title: "Data Export Complete",
-                                                                  body: "Today's data has been successfully exported.",
+                                                                  body:
+                                                                  "Today's data has been successfully exported.",
                                                                   operation: .dataExport)
-            viewModel.lastOperationResult = "Today's data exported successfully."
+            viewModel.lastOperationResult =
+              "Today's data exported successfully."
           }
         } label: {
           HStack {

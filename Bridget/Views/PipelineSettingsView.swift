@@ -11,7 +11,8 @@ struct PipelineSettingsView: View {
         Text("Automation Settings")
           .font(.headline)
 
-        Toggle("Auto Export", isOn: $settingsViewModel.autoExportEnabled)
+        Toggle("Auto Export",
+               isOn: $settingsViewModel.autoExportEnabled)
 
         if settingsViewModel.autoExportEnabled {
           HStack {
@@ -29,13 +30,18 @@ struct PipelineSettingsView: View {
         Text("Notifications")
           .font(.headline)
 
-        Toggle("Enable Notifications", isOn: $settingsViewModel.notificationsEnabled)
+        Toggle("Enable Notifications",
+               isOn: $settingsViewModel.notificationsEnabled)
 
         if settingsViewModel.notificationsEnabled {
-          Toggle("Success Notifications", isOn: $settingsViewModel.successNotifications)
-          Toggle("Failure Notifications", isOn: $settingsViewModel.failureNotifications)
-          Toggle("Progress Notifications", isOn: $settingsViewModel.progressNotifications)
-          Toggle("Health Notifications", isOn: $settingsViewModel.healthNotifications)
+          Toggle("Success Notifications",
+                 isOn: $settingsViewModel.successNotifications)
+          Toggle("Failure Notifications",
+                 isOn: $settingsViewModel.failureNotifications)
+          Toggle("Progress Notifications",
+                 isOn: $settingsViewModel.progressNotifications)
+          Toggle("Health Notifications",
+                 isOn: $settingsViewModel.healthNotifications)
         }
       }
 
@@ -52,7 +58,8 @@ struct PipelineSettingsView: View {
     .sheet(isPresented: $settingsViewModel.showingTimePicker) {
       NavigationStack {
         VStack {
-          DatePicker("Export Time", selection: $settingsViewModel.tempTime,
+          DatePicker("Export Time",
+                     selection: $settingsViewModel.tempTime,
                      displayedComponents: .hourAndMinute)
             .datePickerStyle(.wheel)
             .padding()
@@ -64,7 +71,9 @@ struct PipelineSettingsView: View {
             Button("Done") {
               let formatter = DateFormatter()
               formatter.dateFormat = "HH:mm"
-              settingsViewModel.autoExportTime = formatter.string(from: settingsViewModel.tempTime)
+              settingsViewModel.autoExportTime = formatter.string(
+                from: settingsViewModel.tempTime
+              )
               settingsViewModel.showingTimePicker = false
             }
           }

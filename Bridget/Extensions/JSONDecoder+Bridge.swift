@@ -99,7 +99,9 @@ extension JSONDecoder {
   ///
   /// ## Extending Defaults
   /// To change default decoding strategies or parsing logic, update this factory and audit usage project-wide. See the `Bridge` project policy for guidance.
-  static func bridgeDecoder(dateParser: DateParser = defaultParser) -> JSONDecoder {
+  static func bridgeDecoder(dateParser: DateParser = defaultParser)
+    -> JSONDecoder
+  {
     let decoder = JSONDecoder()
     decoder.keyDecodingStrategy = .convertFromSnakeCase
     decoder.dateDecodingStrategy = .custom { decoder in

@@ -77,7 +77,9 @@ class NetworkClient {
 
     for attempt in 1 ... maxRetryAttempts {
       do {
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await URLSession.shared.data(
+          from: url
+        )
 
         // Validate HTTP response
         try validateHTTPResponse(response)
@@ -116,8 +118,11 @@ class NetworkClient {
     }
 
     // Validate content type
-    guard let contentType = httpResponse.value(forHTTPHeaderField: "Content-Type"),
-          contentType.contains("application/json")
+    guard
+      let contentType = httpResponse.value(
+        forHTTPHeaderField: "Content-Type"
+      ),
+      contentType.contains("application/json")
     else {
       throw NetworkError.invalidContentType
     }

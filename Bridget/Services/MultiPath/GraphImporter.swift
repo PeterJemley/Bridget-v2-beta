@@ -21,7 +21,12 @@ public struct ImportNode: Codable {
   public let longitude: Double
   public let type: String
 
-  public init(id: String, name: String, latitude: Double, longitude: Double, type: String) {
+  public init(id: String,
+              name: String,
+              latitude: Double,
+              longitude: Double,
+              type: String)
+  {
     self.id = id
     self.name = name
     self.latitude = latitude
@@ -114,7 +119,11 @@ public struct DaySchedule: Codable {
     case dayOperations = "day_operations"
   }
 
-  public init(morningRush: String?, eveningRush: String?, nightOperations: String?, dayOperations: String?) {
+  public init(morningRush: String?,
+              eveningRush: String?,
+              nightOperations: String?,
+              dayOperations: String?)
+  {
     self.morningRush = morningRush
     self.eveningRush = eveningRush
     self.nightOperations = nightOperations
@@ -135,7 +144,8 @@ public struct DatasetManifest: Codable {
   public let files: [String]
 
   private enum CodingKeys: String, CodingKey {
-    case dataset, version, generated, description, source, statistics, bridges, files
+    case dataset, version, generated, description, source, statistics,
+         bridges, files
     case testScenarios = "test_scenarios"
   }
 
@@ -175,7 +185,12 @@ public struct DatasetStatistics: Codable {
     case averageDegree = "average_degree"
   }
 
-  public init(nodes: Int, edges: Int, bridges: Int, totalDistanceKm: Double, averageDegree: Double) {
+  public init(nodes: Int,
+              edges: Int,
+              bridges: Int,
+              totalDistanceKm: Double,
+              averageDegree: Double)
+  {
     self.nodes = nodes
     self.edges = edges
     self.bridges = bridges
@@ -198,7 +213,12 @@ public struct TestScenario: Codable {
     case expectedTravelTimeMin = "expected_travel_time_min"
   }
 
-  public init(name: String, start: String, end: String, expectedBridges: [String], expectedTravelTimeMin: Int) {
+  public init(name: String,
+              start: String,
+              end: String,
+              expectedBridges: [String],
+              expectedTravelTimeMin: Int)
+  {
     self.name = name
     self.start = start
     self.end = end
@@ -228,15 +248,19 @@ public class GraphImporter {
     let bridgesData = try Data(contentsOf: bridgesURL)
 
     // Decode JSON
-    let importNodes = try JSONDecoder().decode([ImportNode].self, from: nodesData)
-    let importEdges = try JSONDecoder().decode([ImportEdge].self, from: edgesData)
-    let importBridges = try JSONDecoder().decode([ImportBridge].self, from: bridgesData)
+    let importNodes = try JSONDecoder().decode([ImportNode].self,
+                                               from: nodesData)
+    let importEdges = try JSONDecoder().decode([ImportEdge].self,
+                                               from: edgesData)
+    let importBridges = try JSONDecoder().decode([ImportBridge].self,
+                                                 from: bridgesData)
 
     // Convert to domain types
     let nodes = importNodes.map { importNode in
       Node(id: importNode.id,
            name: importNode.name,
-           coordinates: (latitude: importNode.latitude, longitude: importNode.longitude))
+           coordinates: (latitude: importNode.latitude,
+                         longitude: importNode.longitude))
     }
 
     let edges = importEdges.map { importEdge in
@@ -266,17 +290,22 @@ public class GraphImporter {
     let edgesURL = directoryURL.appendingPathComponent("edges.json")
     let bridgesURL = directoryURL.appendingPathComponent("bridges.json")
 
-    return try importGraph(nodesURL: nodesURL, edgesURL: edgesURL, bridgesURL: bridgesURL)
+    return try importGraph(nodesURL: nodesURL,
+                           edgesURL: edgesURL,
+                           bridgesURL: bridgesURL)
   }
 
   /// Load manifest from a directory
   /// - Parameter directoryURL: URL to directory containing manifest.json
   /// - Returns: DatasetManifest instance
   /// - Throws: MultiPathError if manifest not found or invalid
-  public static func loadManifest(from directoryURL: URL) throws -> DatasetManifest {
+  public static func loadManifest(from directoryURL: URL) throws
+    -> DatasetManifest
+  {
     let manifestURL = directoryURL.appendingPathComponent("manifest.json")
     let manifestData = try Data(contentsOf: manifestURL)
-    return try JSONDecoder().decode(DatasetManifest.self, from: manifestData)
+    return try JSONDecoder().decode(DatasetManifest.self,
+                                    from: manifestData)
   }
 
   // MARK: - Validation
@@ -299,36 +328,46 @@ public class GraphImporter {
     for edge in edges {
       // Check that edge endpoints exist
       if !nodeIDs.contains(edge.from) {
-        throw MultiPathError.invalidGraph("Edge references non-existent node: \(edge.from)")
+        throw MultiPathError.invalidGraph(
+          "Edge references non-existent node: \(edge.from)"
+        )
       }
       if !nodeIDs.contains(edge.to) {
-        throw MultiPathError.invalidGraph("Edge references non-existent node: \(edge.to)")
+        throw MultiPathError.invalidGraph(
+          "Edge references non-existent node: \(edge.to)"
+        )
       }
 
       // Check bridge references
       if edge.isBridge {
         guard let bridgeID = edge.bridgeID else {
           throw MultiPathError.invalidGraph(
-            "Bridge edge missing bridgeID: \(edge.from) -> \(edge.to)")
+            "Bridge edge missing bridgeID: \(edge.from) -> \(edge.to)"
+          )
         }
         if !bridgeIDs.contains(bridgeID) {
           throw MultiPathError.invalidGraph(
-            "Bridge edge references non-existent bridge: \(bridgeID)")
+            "Bridge edge references non-existent bridge: \(bridgeID)"
+          )
         }
       } else {
         if edge.bridgeID != nil {
           throw MultiPathError.invalidGraph(
-            "Non-bridge edge has bridgeID: \(edge.from) -> \(edge.to)")
+            "Non-bridge edge has bridgeID: \(edge.from) -> \(edge.to)"
+          )
         }
       }
 
       // Validate travel time and distance
       if edge.travelTime <= 0 {
         throw MultiPathError.invalidGraph(
-          "Edge has non-positive travel time: \(edge.from) -> \(edge.to)")
+          "Edge has non-positive travel time: \(edge.from) -> \(edge.to)"
+        )
       }
       if edge.distance < 0 {
-        throw MultiPathError.invalidGraph("Edge has negative distance: \(edge.from) -> \(edge.to)")
+        throw MultiPathError.invalidGraph(
+          "Edge has negative distance: \(edge.from) -> \(edge.to)"
+        )
       }
     }
 
@@ -342,10 +381,14 @@ public class GraphImporter {
     // Validate bridge data
     for bridge in bridges {
       if bridge.latitude < -90 || bridge.latitude > 90 {
-        throw MultiPathError.invalidGraph("Invalid bridge latitude: \(bridge.latitude)")
+        throw MultiPathError.invalidGraph(
+          "Invalid bridge latitude: \(bridge.latitude)"
+        )
       }
       if bridge.longitude < -180 || bridge.longitude > 180 {
-        throw MultiPathError.invalidGraph("Invalid bridge longitude: \(bridge.longitude)")
+        throw MultiPathError.invalidGraph(
+          "Invalid bridge longitude: \(bridge.longitude)"
+        )
       }
     }
   }
@@ -369,7 +412,8 @@ public class GraphImporter {
     let totalTravelTime = edges.reduce(0) { $0 + $1.travelTime }
 
     let averageDegree = Double(edgeCount * 2) / Double(nodeCount)
-    let averageSpeed = totalDistance > 0 ? totalDistance / totalTravelTime : 0
+    let averageSpeed =
+      totalDistance > 0 ? totalDistance / totalTravelTime : 0
 
     var report = """
     Dataset Report:

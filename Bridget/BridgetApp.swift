@@ -182,4 +182,3 @@ struct BridgetApp: App {
                                                 operation: .maintenance)
   }
 }
-

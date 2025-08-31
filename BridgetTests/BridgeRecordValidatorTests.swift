@@ -32,8 +32,12 @@ struct BridgeRecordValidatorTests {
                                             "1": (47.542213439941406, -122.33446502685547),
                                           ],
                                           validEntityTypes: Set(["Bridge"]),
-                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
+                                          minDate: Calendar.current.date(byAdding: .year,
+                                                                         value: -10,
+                                                                         to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year,
+                                                                         value: 1,
+                                                                         to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     #expect(result == nil, "Valid record should pass validation")
   }
@@ -51,8 +55,12 @@ struct BridgeRecordValidatorTests {
     let validator = BridgeRecordValidator(knownBridgeIDs: Set(["1", "2", "3", "4", "6", "21", "29"]),
                                           bridgeLocations: [:],
                                           validEntityTypes: Set(["Bridge"]),
-                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
+                                          minDate: Calendar.current.date(byAdding: .year,
+                                                                         value: -10,
+                                                                         to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year,
+                                                                         value: 1,
+                                                                         to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     #expect(result == .emptyEntityID, "Empty entity ID should be rejected")
   }
@@ -70,10 +78,15 @@ struct BridgeRecordValidatorTests {
     let validator = BridgeRecordValidator(knownBridgeIDs: Set(["1", "2", "3", "4", "6", "21", "29"]),
                                           bridgeLocations: [:],
                                           validEntityTypes: Set(["Bridge"]),
-                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
+                                          minDate: Calendar.current.date(byAdding: .year,
+                                                                         value: -10,
+                                                                         to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year,
+                                                                         value: 1,
+                                                                         to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
-    #expect(result == .unknownBridgeID("100"), "Unknown bridge ID should be rejected")
+    #expect(result == .unknownBridgeID("100"),
+            "Unknown bridge ID should be rejected")
   }
 
   @Test("rejects malformed open date")
@@ -89,10 +102,15 @@ struct BridgeRecordValidatorTests {
     let validator = BridgeRecordValidator(knownBridgeIDs: Set(["1", "2", "3", "4", "6", "21", "29"]),
                                           bridgeLocations: [:],
                                           validEntityTypes: Set(["Bridge"]),
-                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
+                                          minDate: Calendar.current.date(byAdding: .year,
+                                                                         value: -10,
+                                                                         to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year,
+                                                                         value: 1,
+                                                                         to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
-    #expect(result == .malformedOpenDate("not-a-date"), "Malformed open date should be rejected")
+    #expect(result == .malformedOpenDate("not-a-date"),
+            "Malformed open date should be rejected")
   }
 
   @Test("rejects out of range open date")
@@ -108,12 +126,19 @@ struct BridgeRecordValidatorTests {
     let validator = BridgeRecordValidator(knownBridgeIDs: Set(["1", "2", "3", "4", "6", "21", "29"]),
                                           bridgeLocations: [:],
                                           validEntityTypes: Set(["Bridge"]),
-                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
+                                          minDate: Calendar.current.date(byAdding: .year,
+                                                                         value: -10,
+                                                                         to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year,
+                                                                         value: 1,
+                                                                         to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     let expectedDate =
-      Calendar.current.date(from: DateComponents(year: 2000, month: 1, day: 1)) ?? Date()
-    #expect(result == .outOfRangeOpenDate(expectedDate), "Out of range open date should be rejected")
+      Calendar.current.date(
+        from: DateComponents(year: 2000, month: 1, day: 1)
+      ) ?? Date()
+    #expect(result == .outOfRangeOpenDate(expectedDate),
+            "Out of range open date should be rejected")
   }
 
   @Test("rejects malformed close date")
@@ -129,10 +154,15 @@ struct BridgeRecordValidatorTests {
     let validator = BridgeRecordValidator(knownBridgeIDs: Set(["1", "2", "3", "4", "6", "21", "29"]),
                                           bridgeLocations: [:],
                                           validEntityTypes: Set(["Bridge"]),
-                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
+                                          minDate: Calendar.current.date(byAdding: .year,
+                                                                         value: -10,
+                                                                         to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year,
+                                                                         value: 1,
+                                                                         to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
-    #expect(result == .malformedCloseDate("not-a-date"), "Malformed close date should be rejected")
+    #expect(result == .malformedCloseDate("not-a-date"),
+            "Malformed close date should be rejected")
   }
 
   @Test("rejects close date not after open date")
@@ -148,19 +178,36 @@ struct BridgeRecordValidatorTests {
     let validator = BridgeRecordValidator(knownBridgeIDs: Set(["1", "2", "3", "4", "6", "21", "29"]),
                                           bridgeLocations: [:],
                                           validEntityTypes: Set(["Bridge"]),
-                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
+                                          minDate: Calendar.current.date(byAdding: .year,
+                                                                         value: -10,
+                                                                         to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year,
+                                                                         value: 1,
+                                                                         to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     let openDate =
       Calendar.current.date(
-        from: DateComponents(year: 2024, month: 6, day: 1, hour: 12, minute: 0, second: 0))
+        from: DateComponents(year: 2024,
+                             month: 6,
+                             day: 1,
+                             hour: 12,
+                             minute: 0,
+                             second: 0)
+      )
       ?? Date()
     let closeDate =
       Calendar.current.date(
-        from: DateComponents(year: 2024, month: 6, day: 1, hour: 11, minute: 59, second: 0))
+        from: DateComponents(year: 2024,
+                             month: 6,
+                             day: 1,
+                             hour: 11,
+                             minute: 59,
+                             second: 0)
+      )
       ?? Date()
-    #expect(result == .closeDateNotAfterOpenDate(open: openDate, close: closeDate),
-            "Close date not after open date should be rejected")
+    #expect(result
+      == .closeDateNotAfterOpenDate(open: openDate, close: closeDate),
+      "Close date not after open date should be rejected")
   }
 
   @Test("rejects invalid latitude")
@@ -176,10 +223,15 @@ struct BridgeRecordValidatorTests {
     let validator = BridgeRecordValidator(knownBridgeIDs: Set(["1", "2", "3", "4", "6", "21", "29"]),
                                           bridgeLocations: [:],
                                           validEntityTypes: Set(["Bridge"]),
-                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
+                                          minDate: Calendar.current.date(byAdding: .year,
+                                                                         value: -10,
+                                                                         to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year,
+                                                                         value: 1,
+                                                                         to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
-    #expect(result == .invalidLatitude(100.0), "Invalid latitude should be rejected")
+    #expect(result == .invalidLatitude(100.0),
+            "Invalid latitude should be rejected")
   }
 
   @Test("rejects invalid longitude")
@@ -195,10 +247,15 @@ struct BridgeRecordValidatorTests {
     let validator = BridgeRecordValidator(knownBridgeIDs: Set(["1", "2", "3", "4", "6", "21", "29"]),
                                           bridgeLocations: [:],
                                           validEntityTypes: Set(["Bridge"]),
-                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
+                                          minDate: Calendar.current.date(byAdding: .year,
+                                                                         value: -10,
+                                                                         to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year,
+                                                                         value: 1,
+                                                                         to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
-    #expect(result == .invalidLongitude(-190.0), "Invalid longitude should be rejected")
+    #expect(result == .invalidLongitude(-190.0),
+            "Invalid longitude should be rejected")
   }
 
   @Test("rejects negative minutes open")
@@ -214,10 +271,15 @@ struct BridgeRecordValidatorTests {
     let validator = BridgeRecordValidator(knownBridgeIDs: Set(["1", "2", "3", "4", "6", "21", "29"]),
                                           bridgeLocations: [:],
                                           validEntityTypes: Set(["Bridge"]),
-                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
+                                          minDate: Calendar.current.date(byAdding: .year,
+                                                                         value: -10,
+                                                                         to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year,
+                                                                         value: 1,
+                                                                         to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
-    #expect(result == .negativeMinutesOpen(-5), "Negative minutes open should be rejected")
+    #expect(result == .negativeMinutesOpen(-5),
+            "Negative minutes open should be rejected")
   }
 
   @Test("rejects minutes open mismatch")
@@ -233,8 +295,12 @@ struct BridgeRecordValidatorTests {
     let validator = BridgeRecordValidator(knownBridgeIDs: Set(["1", "2", "3", "4", "6", "21", "29"]),
                                           bridgeLocations: [:],
                                           validEntityTypes: Set(["Bridge"]),
-                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
+                                          minDate: Calendar.current.date(byAdding: .year,
+                                                                         value: -10,
+                                                                         to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year,
+                                                                         value: 1,
+                                                                         to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     #expect(result == .minutesOpenMismatch(reported: 10, actual: 5),
             "Minutes open mismatch should be rejected")
@@ -253,11 +319,18 @@ struct BridgeRecordValidatorTests {
     let validator = BridgeRecordValidator(knownBridgeIDs: Set(["1", "2", "3", "4", "6", "21", "29"]),
                                           bridgeLocations: ["1": (47.542213439941406, -122.33446502685547)],
                                           validEntityTypes: Set(["Bridge"]),
-                                          minDate: Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date(),
-                                          maxDate: Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date())
+                                          minDate: Calendar.current.date(byAdding: .year,
+                                                                         value: -10,
+                                                                         to: Date()) ?? Date(),
+                                          maxDate: Calendar.current.date(byAdding: .year,
+                                                                         value: 1,
+                                                                         to: Date()) ?? Date())
     let result = validator.validationFailure(for: record)
     #expect(result
-      == .geospatialMismatch(expectedLat: 47.542213439941406, expectedLon: -122.33446502685547, actualLat: 47.0,
-                             actualLon: -122.0), "Geospatial mismatch should be rejected")
+      == .geospatialMismatch(expectedLat: 47.542213439941406,
+                             expectedLon: -122.33446502685547,
+                             actualLat: 47.0,
+                             actualLon: -122.0),
+      "Geospatial mismatch should be rejected")
   }
 }

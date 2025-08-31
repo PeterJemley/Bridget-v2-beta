@@ -55,7 +55,8 @@ public class PathScoringService {
   /// Feature cache for bridge-specific features with FIFO eviction
   private var featureCache: [String: [Double]] = [:]
   private var cacheInsertionOrder: [String] = []  // Track insertion order for FIFO eviction
-  private let featureCacheQueue = DispatchQueue(label: "feature-cache", attributes: .concurrent)
+  private let featureCacheQueue = DispatchQueue(label: "feature-cache",
+                                                attributes: .concurrent)
   private let featureCacheMaxSize = 1000  // Maximum number of cached feature vectors
 
   /// Cache statistics for monitoring
@@ -99,17 +100,24 @@ public class PathScoringService {
   /// - Throws: PathScoringError.configurationError if configuration is invalid
   private func validateConfiguration() throws {
     // Validate scoring configuration
-    guard config.scoring.minProbability >= 0.0, config.scoring.minProbability <= 1.0 else {
+    guard config.scoring.minProbability >= 0.0,
+          config.scoring.minProbability <= 1.0
+    else {
       throw PathScoringError.configurationError(
-        "minProbability must be between 0.0 and 1.0, got \(config.scoring.minProbability)")
+        "minProbability must be between 0.0 and 1.0, got \(config.scoring.minProbability)"
+      )
     }
 
-    guard config.scoring.maxProbability >= 0.0, config.scoring.maxProbability <= 1.0 else {
+    guard config.scoring.maxProbability >= 0.0,
+          config.scoring.maxProbability <= 1.0
+    else {
       throw PathScoringError.configurationError(
-        "maxProbability must be between 0.0 and 1.0, got \(config.scoring.maxProbability)")
+        "maxProbability must be between 0.0 and 1.0, got \(config.scoring.maxProbability)"
+      )
     }
 
-    guard config.scoring.minProbability <= config.scoring.maxProbability else {
+    guard config.scoring.minProbability <= config.scoring.maxProbability
+    else {
       throw PathScoringError.configurationError(
         "minProbability (\(config.scoring.minProbability)) must be <= maxProbability (\(config.scoring.maxProbability))"
       )
@@ -118,13 +126,15 @@ public class PathScoringService {
     // Validate performance configuration
     guard config.performance.maxScoringTime > 0.0 else {
       throw PathScoringError.configurationError(
-        "maxScoringTime must be positive, got \(config.performance.maxScoringTime)")
+        "maxScoringTime must be positive, got \(config.performance.maxScoringTime)"
+      )
     }
 
     // Validate predictor configuration
     guard predictor.maxBatchSize > 0 else {
       throw PathScoringError.configurationError(
-        "Predictor maxBatchSize must be positive, got \(predictor.maxBatchSize)")
+        "Predictor maxBatchSize must be positive, got \(predictor.maxBatchSize)"
+      )
     }
 
     print("✅ PathScoringService configuration validated successfully")
@@ -137,7 +147,8 @@ public class PathScoringService {
   private func featureCacheKey(bridgeID: String, eta: Date) -> String {
     let calendar = Calendar.current
     let minuteOfDay =
-      calendar.component(.minute, from: eta) + calendar.component(.hour, from: eta) * 60
+      calendar.component(.minute, from: eta) + calendar.component(.hour,
+                                                                  from: eta) * 60
     let timeBucket = minuteOfDay / 5  // 5-minute buckets
     return "\(bridgeID)_\(timeBucket)"
   }
@@ -188,7 +199,8 @@ public class PathScoringService {
   /// - Returns: Current memory usage in bytes
   private func getCurrentMemoryUsage() -> Int64 {
     var info = mach_task_basic_info()
-    var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+    var count =
+      mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
 
     let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
       $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
@@ -211,11 +223,14 @@ public class PathScoringService {
   ///   - values: Array of values to analyze
   ///   - mean: Pre-calculated mean of the values
   /// - Returns: Standard deviation
-  private func calculateStandardDeviation(_ values: [Double], mean: Double) -> Double {
+  private func calculateStandardDeviation(_ values: [Double], mean: Double)
+    -> Double
+  {
     guard values.count > 1 else { return 0.0 }
 
     let squaredDifferences = values.map { pow($0 - mean, 2) }
-    let variance = squaredDifferences.reduce(0, +) / Double(values.count - 1)
+    let variance =
+      squaredDifferences.reduce(0, +) / Double(values.count - 1)
     return sqrt(variance)
   }
 
@@ -262,7 +277,9 @@ public class PathScoringService {
     } catch let error as MultiPathError {
       throw PathScoringError.invalidPath(error.localizedDescription)
     } catch {
-      throw PathScoringError.invalidPath("Unknown validation error: \(error.localizedDescription)")
+      throw PathScoringError.invalidPath(
+        "Unknown validation error: \(error.localizedDescription)"
+      )
     }
 
     // Get bridge ETAs with IDs for prediction
@@ -284,7 +301,9 @@ public class PathScoringService {
     var policyRejected: [String] = []
 
     for (bridgeID, eta) in bridgeETAs {
-      if SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) {
+      if SeattleDrawbridges.isAcceptedBridgeID(bridgeID,
+                                               allowSynthetic: true)
+      {
         acceptedBridgeETAs.append((bridgeID: bridgeID, eta: eta))
       } else {
         policyRejected.append(bridgeID)
@@ -327,28 +346,35 @@ public class PathScoringService {
                                                          departureTime: departureTime)
     } catch {
       throw PathScoringError.featureGenerationFailed(
-        "Failed to build prediction inputs: \(error.localizedDescription)")
+        "Failed to build prediction inputs: \(error.localizedDescription)"
+      )
     }
     featureGenerationTime = Date().timeIntervalSince(featureStartTime)
 
     // Validate prediction inputs
     guard !predictionInputs.isEmpty else {
-      throw PathScoringError.predictionFailed("No prediction inputs generated")
+      throw PathScoringError.predictionFailed(
+        "No prediction inputs generated"
+      )
     }
 
     // Batch predict bridge opening probabilities for accepted bridges
     let predictionStartTime = Date()
     let predictionResult: BatchPredictionResult
     do {
-      predictionResult = try await predictor.predictBatch(predictionInputs)
+      predictionResult = try await predictor.predictBatch(
+        predictionInputs
+      )
     } catch {
       throw PathScoringError.predictionFailed(
-        "Batch prediction failed: \(error.localizedDescription)")
+        "Batch prediction failed: \(error.localizedDescription)"
+      )
     }
     bridgePredictionTime = Date().timeIntervalSince(predictionStartTime)
 
     // Validate prediction results count
-    guard predictionResult.predictions.count == acceptedBridgeETAs.count else {
+    guard predictionResult.predictions.count == acceptedBridgeETAs.count
+    else {
       throw PathScoringError.predictionFailed(
         "Prediction result count (\(predictionResult.predictions.count)) doesn't match accepted bridge count (\(acceptedBridgeETAs.count))"
       )
@@ -369,7 +395,8 @@ public class PathScoringService {
       // Validate probability value
       guard prediction.openProbability.isFinite else {
         throw PathScoringError.predictionFailed(
-          "Invalid probability value for bridge \(bridgeID): \(prediction.openProbability)")
+          "Invalid probability value for bridge \(bridgeID): \(prediction.openProbability)"
+        )
       }
 
       // Clamp individual bridge probability to configuration bounds
@@ -381,13 +408,19 @@ public class PathScoringService {
 
     // Aggregate probabilities using log-domain math for numerical stability
     let aggregationStartTime = Date()
-    let (logProbability, linearProbability) = aggregateProbabilities(probabilities)
+    let (logProbability, linearProbability) = aggregateProbabilities(
+      probabilities
+    )
     aggregationTime = Date().timeIntervalSince(aggregationStartTime)
 
     // Validate final probabilities
-    guard linearProbability.isFinite && linearProbability >= 0.0 && linearProbability <= 1.0 else {
+    guard
+      linearProbability.isFinite && linearProbability >= 0.0
+      && linearProbability <= 1.0
+    else {
       throw PathScoringError.predictionFailed(
-        "Invalid aggregated probability: \(linearProbability)")
+        "Invalid aggregated probability: \(linearProbability)"
+      )
     }
 
     // Log warnings for policy-rejected and predictor-unsupported bridges
@@ -406,7 +439,8 @@ public class PathScoringService {
     if config.performance.enablePerformanceLogging {
       let totalScoringTime = Date().timeIntervalSince(startTime)
       let bridgesProcessed = bridgeETAs.count
-      let defaultProbabilityBridges = policyRejected.count + unsupportedBridges.count
+      let defaultProbabilityBridges =
+        policyRejected.count + unsupportedBridges.count
       let cacheStats = getCacheStatistics()
 
       let metrics = ScoringMetrics(totalScoringTime: totalScoringTime,
@@ -416,8 +450,10 @@ public class PathScoringService {
                                    featureGenerationTime: featureGenerationTime,
                                    pathsScored: 1,
                                    bridgesProcessed: bridgesProcessed,
-                                   pathsPerSecond: totalScoringTime > 0 ? 1.0 / totalScoringTime : 0.0,
-                                   bridgesPerSecond: totalScoringTime > 0 ? Double(bridgesProcessed) / totalScoringTime : 0.0,
+                                   pathsPerSecond: totalScoringTime > 0
+                                     ? 1.0 / totalScoringTime : 0.0,
+                                   bridgesPerSecond: totalScoringTime > 0
+                                     ? Double(bridgesProcessed) / totalScoringTime : 0.0,
                                    featureCacheHitRate: cacheStats.hitRate,
                                    cacheHits: cacheStats.hits,
                                    cacheMisses: cacheStats.misses,
@@ -451,7 +487,8 @@ public class PathScoringService {
     // Check for configuration limits
     if paths.count > Int(config.performance.maxScoringTime * 10) {  // Rough estimate: 10 paths per second
       logWarning(
-        "⚠️ Warning: Large path set (\(paths.count) paths) may take significant time to process")
+        "⚠️ Warning: Large path set (\(paths.count) paths) may take significant time to process"
+      )
     }
 
     var pathScores: [PathScore] = []
@@ -463,7 +500,8 @@ public class PathScoringService {
     // Process paths with error handling
     for (index, path) in paths.enumerated() {
       do {
-        let score = try await scorePath(path, departureTime: departureTime)
+        let score = try await scorePath(path,
+                                        departureTime: departureTime)
         pathScores.append(score)
 
         // Collect metrics for batch analysis
@@ -471,7 +509,8 @@ public class PathScoringService {
         totalDefaultProbabilityBridges +=
           path.edges.filter {
             $0.isBridge
-              && !SeattleDrawbridges.isAcceptedBridgeID($0.bridgeID ?? "", allowSynthetic: true)
+              && !SeattleDrawbridges.isAcceptedBridgeID($0.bridgeID ?? "",
+                                                        allowSynthetic: true)
           }.count
         pathProbabilities.append(score.linearProbability)
 
@@ -481,7 +520,9 @@ public class PathScoringService {
         // Continue processing other paths unless this is a critical error
         if error is PathScoringError {
           // For path-specific errors, continue with other paths
-          logWarning("⚠️ Warning: Failed to score path \(index): \(error.localizedDescription)")
+          logWarning(
+            "⚠️ Warning: Failed to score path \(index): \(error.localizedDescription)"
+          )
         } else {
           // For unexpected errors, re-throw
           throw error
@@ -503,8 +544,11 @@ public class PathScoringService {
       let totalScoringTime = Date().timeIntervalSince(startTime)
       let averagePathProbability =
         pathProbabilities.isEmpty
-          ? 0.0 : pathProbabilities.reduce(0, +) / Double(pathProbabilities.count)
-      let pathProbabilityStdDev = calculateStandardDeviation(pathProbabilities, mean: averagePathProbability)
+          ? 0.0
+          : pathProbabilities.reduce(0, +)
+          / Double(pathProbabilities.count)
+      let pathProbabilityStdDev = calculateStandardDeviation(pathProbabilities,
+                                                             mean: averagePathProbability)
       let cacheStats = getCacheStatistics()
 
       let metrics = ScoringMetrics(totalScoringTime: totalScoringTime,
@@ -514,7 +558,8 @@ public class PathScoringService {
                                    featureGenerationTime: 0.0,  // Not tracked separately for batch
                                    pathsScored: paths.count,
                                    bridgesProcessed: totalBridgesProcessed,
-                                   pathsPerSecond: totalScoringTime > 0 ? Double(paths.count) / totalScoringTime : 0.0,
+                                   pathsPerSecond: totalScoringTime > 0
+                                     ? Double(paths.count) / totalScoringTime : 0.0,
                                    bridgesPerSecond: totalScoringTime > 0
                                      ? Double(totalBridgesProcessed) / totalScoringTime : 0.0,
                                    featureCacheHitRate: cacheStats.hitRate,
@@ -526,7 +571,8 @@ public class PathScoringService {
                                    pathProbabilityStdDev: pathProbabilityStdDev,
                                    peakMemoryUsage: getCurrentMemoryUsage(),
                                    memoryPerPath: totalScoringTime > 0
-                                     ? Double(getCurrentMemoryUsage()) / Double(paths.count) : 0.0)
+                                     ? Double(getCurrentMemoryUsage()) / Double(paths.count)
+                                     : 0.0)
 
       globalScoringMetrics.recordMetrics(metrics)
     }
@@ -568,42 +614,58 @@ public class PathScoringService {
     // Score all paths
     let pathScores: [PathScore]
     do {
-      pathScores = try await scorePaths(paths, departureTime: departureTime)
+      pathScores = try await scorePaths(paths,
+                                        departureTime: departureTime)
     } catch {
       throw PathScoringError.predictionFailed(
-        "Failed to score paths for journey analysis: \(error.localizedDescription)")
+        "Failed to score paths for journey analysis: \(error.localizedDescription)"
+      )
     }
 
     // Validate path scores
     guard !pathScores.isEmpty else {
-      throw PathScoringError.predictionFailed("No valid path scores generated")
+      throw PathScoringError.predictionFailed(
+        "No valid path scores generated"
+      )
     }
 
     // Compute network-level probability using union formula
     let networkProbability = computeNetworkProbability(pathScores)
 
     // Validate network probability
-    guard networkProbability.isFinite && networkProbability >= 0.0 && networkProbability <= 1.0
+    guard
+      networkProbability.isFinite && networkProbability >= 0.0
+      && networkProbability <= 1.0
     else {
-      throw PathScoringError.predictionFailed("Invalid network probability: \(networkProbability)")
+      throw PathScoringError.predictionFailed(
+        "Invalid network probability: \(networkProbability)"
+      )
     }
 
     // Find best path probability
-    let bestPathProbability = pathScores.map { $0.linearProbability }.max() ?? 0.0
+    let bestPathProbability =
+      pathScores.map { $0.linearProbability }.max() ?? 0.0
 
     // Validate best path probability
-    guard bestPathProbability.isFinite && bestPathProbability >= 0.0 && bestPathProbability <= 1.0
+    guard
+      bestPathProbability.isFinite && bestPathProbability >= 0.0
+      && bestPathProbability <= 1.0
     else {
       throw PathScoringError.predictionFailed(
-        "Invalid best path probability: \(bestPathProbability)")
+        "Invalid best path probability: \(bestPathProbability)"
+      )
     }
 
     // Log analysis summary
     print("📊 Journey Analysis Complete:")
     print("   • Start: \(startNode) → End: \(endNode)")
     print("   • Paths analyzed: \(paths.count)")
-    print("   • Network probability: \(String(format: "%.3f", networkProbability))")
-    print("   • Best path probability: \(String(format: "%.3f", bestPathProbability))")
+    print(
+      "   • Network probability: \(String(format: "%.3f", networkProbability))"
+    )
+    print(
+      "   • Best path probability: \(String(format: "%.3f", bestPathProbability))"
+    )
 
     return JourneyAnalysis(startNode: startNode,
                            endNode: endNode,
@@ -672,7 +734,8 @@ public class PathScoringService {
     // Extract time-based features using the same patterns as FeatureEngineeringService
     let calendar = Calendar.current
     let minuteOfDay =
-      calendar.component(.minute, from: eta) + calendar.component(.hour, from: eta) * 60
+      calendar.component(.minute, from: eta) + calendar.component(.hour,
+                                                                  from: eta) * 60
     let dayOfWeek = calendar.component(.weekday, from: eta)
 
     // Cyclical encoding for time features (same as FeatureEngineeringService)
@@ -708,7 +771,8 @@ public class PathScoringService {
     let hour = calendar.component(.hour, from: eta)
     let isRushHour = (hour >= 7 && hour <= 9) || (hour >= 16 && hour <= 18)
     let isWeekend =
-      calendar.component(.weekday, from: eta) == 1 || calendar.component(.weekday, from: eta) == 7
+      calendar.component(.weekday, from: eta) == 1
+        || calendar.component(.weekday, from: eta) == 7
 
     // Base features with time-of-day adjustments
     let baseOpenRate = isWeekend ? 0.8 : 0.7
@@ -717,23 +781,33 @@ public class PathScoringService {
     // Add some deterministic variation based on bridge ID and time
     let bridgeHash = bridgeID.hashValue
     let timeHash =
-      calendar.component(.minute, from: eta) + calendar.component(.hour, from: eta) * 60
+      calendar.component(.minute, from: eta) + calendar.component(.hour,
+                                                                  from: eta) * 60
     let seed = UInt64(abs(bridgeHash + timeHash))
     let random = SimpleDeterministicRandom(seed: seed)
 
-    let open5m = max(0.1, min(0.9, baseOpenRate + rushHourAdjustment + random.nextDouble() * 0.1 - 0.05))
-    let open30m = max(0.1, min(0.9, baseOpenRate + rushHourAdjustment + random.nextDouble() * 0.16 - 0.08))
+    let open5m = max(0.1,
+                     min(0.9,
+                         baseOpenRate + rushHourAdjustment + random.nextDouble() * 0.1
+                           - 0.05))
+    let open30m = max(0.1,
+                      min(0.9,
+                          baseOpenRate + rushHourAdjustment + random.nextDouble() * 0.16
+                            - 0.08))
 
     // Path-specific features
     let pathLength = path.nodes.count
-    let detourDelta = Double(pathLength) * 30.0 + 60.0 + random.nextDouble() * 120.0
-    let crossRate = max(0.5, min(0.95, 0.8 + random.nextDouble() * 0.2 - 0.1))
+    let detourDelta =
+      Double(pathLength) * 30.0 + 60.0 + random.nextDouble() * 120.0
+    let crossRate = max(0.5,
+                        min(0.95, 0.8 + random.nextDouble() * 0.2 - 0.1))
 
     // Traffic speed based on time and path complexity
     let baseSpeed = isRushHour ? 20.0 : 35.0
     let speedVariation = random.nextDouble() * 10.0 - 5.0
     let currentSpeed = max(10.0, min(50.0, baseSpeed + speedVariation))
-    let normalSpeed = max(25.0, min(45.0, 35.0 + random.nextDouble() * 6.0 - 3.0))
+    let normalSpeed = max(25.0,
+                          min(45.0, 35.0 + random.nextDouble() * 6.0 - 3.0))
 
     return BridgeFeatures(open5m: open5m,
                           open30m: open30m,

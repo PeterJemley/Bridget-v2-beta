@@ -21,7 +21,8 @@ public struct PipelineDocumentationView: View {
           - Data Availability checks for today, last week, and historical completeness.
           - Export configuration with selectable destination and date.
           - Automation with daily export scheduling and notifications.
-          """)
+          """
+        )
 
         Text("Export Formats")
           .font(.title2)
@@ -34,7 +35,8 @@ public struct PipelineDocumentationView: View {
           - `minutes_YYYY-MM-DD.ndjson`, where `YYYY-MM-DD` is the export date.
 
           Exports can be saved either to the Documents or Downloads folder (macOS only).
-          """)
+          """
+        )
 
         Text("Help and Support")
           .font(.title2)
@@ -46,7 +48,8 @@ public struct PipelineDocumentationView: View {
           If you encounter issues with automated exports, ensure background tasks are enabled and the chosen export time is reasonable.
 
           Contact support or consult the app documentation for advanced help.
-          """)
+          """
+        )
       }
       .padding()
     }

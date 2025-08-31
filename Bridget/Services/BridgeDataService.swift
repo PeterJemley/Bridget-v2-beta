@@ -92,14 +92,19 @@ class BridgeDataService {
     // Fetch from network using NetworkClient
     do {
       let data = try await fetchFromNetwork()
-      let (bridges, validationFailures) = try dataProcessor.processHistoricalData(data)
+      let (bridges, validationFailures) =
+        try dataProcessor.processHistoricalData(data)
       // Log and report validation failures for debugging/monitoring
       if !validationFailures.isEmpty {
         #if DEBUG
           for failure in validationFailures {
-            print("[ValidationFailure] \(failure.reason) for record: \(failure.record)")
+            print(
+              "[ValidationFailure] \(failure.reason) for record: \(failure.record)"
+            )
           }
-          print("Filtered out \(validationFailures.count) invalid records from network response.")
+          print(
+            "Filtered out \(validationFailures.count) invalid records from network response."
+          )
         #else
           // Integrate with your monitoring/analytics solution here (e.g., Sentry, DataDog)
           // MonitoringService.recordValidationFailures(validationFailures)
@@ -115,8 +120,9 @@ class BridgeDataService {
       return (cleanedBridges, validationFailures)
     } catch {
       // Graceful degradation: return stale cache if network failed
-      if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache([BridgeStatusModel].self,
-                                                                             for: "historical_bridges")
+      if let cachedBridges: [BridgeStatusModel] =
+        cacheService.loadFromCache([BridgeStatusModel].self,
+                                   for: "historical_bridges")
       {
         cachedBridges.forEach { $0.markAsStale() }
         return (cachedBridges, [])
@@ -155,10 +161,14 @@ class BridgeDataService {
       #endif
 
       // Fetch a single batch
-      let batchData = try await fetchBatch(offset: offset, limit: batchSize)
+      let batchData = try await fetchBatch(offset: offset,
+                                           limit: batchSize)
 
       // Parse the JSON to check if we got any records
-      guard let jsonArray = try JSONSerialization.jsonObject(with: batchData) as? [[String: Any]]
+      guard
+        let jsonArray = try JSONSerialization.jsonObject(
+          with: batchData
+        ) as? [[String: Any]]
       else {
         throw NetworkError.invalidResponse
       }
@@ -175,7 +185,9 @@ class BridgeDataService {
         offset += batchSize
 
         #if DEBUG
-          print("Fetched \(jsonArray.count) records (total: \(allRecords.count))")
+          print(
+            "Fetched \(jsonArray.count) records (total: \(allRecords.count))"
+          )
         #endif
 
         // If we got fewer records than requested, we've reached the end
@@ -191,7 +203,9 @@ class BridgeDataService {
     }
 
     #if DEBUG
-      print("Batch fetching completed. Total records: \(allRecords.count)")
+      print(
+        "Batch fetching completed. Total records: \(allRecords.count)"
+      )
     #endif
 
     // Convert the aggregated records back to JSON Data
@@ -199,7 +213,8 @@ class BridgeDataService {
       throw NetworkError.noData
     }
 
-    return try JSONSerialization.data(withJSONObject: allRecords, options: [])
+    return try JSONSerialization.data(withJSONObject: allRecords,
+                                      options: [])
   }
 
   /// Fetches a single batch of historical bridge data.
@@ -304,10 +319,14 @@ class BridgeDataService {
   ///
   /// - Parameter models: The array of `BridgeStatusModel` to sanitize.
   /// - Returns: A filtered array of `BridgeStatusModel` with valid, unique entries.
-  private static func sanitizeBridgeModels(_ models: [BridgeStatusModel]) -> [BridgeStatusModel] {
+  private static func sanitizeBridgeModels(_ models: [BridgeStatusModel])
+    -> [BridgeStatusModel]
+  {
     var seen = Set<String>()
     return models.filter { model in
-      if model.bridgeName.isEmpty || model.apiBridgeID == nil { return false }
+      if model.bridgeName.isEmpty || model.apiBridgeID == nil {
+        return false
+      }
       if seen.contains(model.bridgeName) { return false }
       seen.insert(model.bridgeName)
       return true

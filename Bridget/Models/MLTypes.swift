@@ -265,14 +265,17 @@ public struct ETASummary: Codable, Equatable {
     }
 
     let mean = values.reduce(0, +) / Double(values.count)
-    let variance = values.reduce(0) { $0 + pow($1 - mean, 2) } / Double(values.count)
+    let variance =
+      values.reduce(0) { $0 + pow($1 - mean, 2) } / Double(values.count)
     let sorted = values.sorted()
     let min = sorted.first!
     let max = sorted.last!
 
     // Calculate percentiles if we have enough data
-    let p10 = values.count >= 10 ? sorted[Int(Double(values.count) * 0.10)] : nil
-    let p90 = values.count >= 10 ? sorted[Int(Double(values.count) * 0.90)] : nil
+    let p10 =
+      values.count >= 10 ? sorted[Int(Double(values.count) * 0.10)] : nil
+    let p90 =
+      values.count >= 10 ? sorted[Int(Double(values.count) * 0.90)] : nil
 
     return ETASummary(mean: mean,
                       variance: variance,
@@ -308,8 +311,10 @@ public struct ETASummary: Codable, Equatable {
   public var summary: String {
     let ci95 = confidenceInterval(level: 0.95)
     let ciString =
-      ci95.map { "95% CI: \(String(format: "%.1f", $0.lower))-\(String(format: "%.1f", $0.upper))" }
-        ?? "CI: N/A"
+      ci95.map {
+        "95% CI: \(String(format: "%.1f", $0.lower))-\(String(format: "%.1f", $0.upper))"
+      }
+      ?? "CI: N/A"
 
     return """
     Mean: \(String(format: "%.1f", mean))
@@ -354,7 +359,8 @@ public extension Array where Element == Double {
     // Handle single value case
     guard count > 1 else {
       let singleValue = self[0]
-      return (mean: singleValue, variance: 0.0, stdDev: 0.0, min: singleValue, max: singleValue)
+      return (mean: singleValue, variance: 0.0, stdDev: 0.0, min: singleValue,
+              max: singleValue)
     }
 
     let mean = reduce(0, +) / Double(count)

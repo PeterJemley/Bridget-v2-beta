@@ -142,17 +142,23 @@ public struct Graph: Codable {
     // Check for edges with invalid node references
     for edge in allEdges {
       if !contains(nodeID: edge.from) {
-        errors.append("Edge references non-existent source node: \(edge.from)")
+        errors.append(
+          "Edge references non-existent source node: \(edge.from)"
+        )
       }
       if !contains(nodeID: edge.to) {
-        errors.append("Edge references non-existent destination node: \(edge.to)")
+        errors.append(
+          "Edge references non-existent destination node: \(edge.to)"
+        )
       }
     }
 
     // Check for bridge edges without bridgeID
     for edge in allEdges {
       if edge.isBridge && edge.bridgeID == nil {
-        errors.append("Bridge edge from \(edge.from) to \(edge.to) missing bridgeID")
+        errors.append(
+          "Bridge edge from \(edge.from) to \(edge.to) missing bridgeID"
+        )
       }
     }
 
@@ -160,7 +166,9 @@ public struct Graph: Codable {
     // Allow synthetic test IDs (e.g., "bridge1", "bridge2") for testing purposes
     for edge in allEdges {
       if edge.isBridge, let bridgeID = edge.bridgeID {
-        if !SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) {
+        if !SeattleDrawbridges.isAcceptedBridgeID(bridgeID,
+                                                  allowSynthetic: true)
+        {
           errors.append(
             "Bridge edge from \(edge.from) to \(edge.to) has non-canonical bridgeID '\(bridgeID)'. Must be one of: \(SeattleDrawbridges.BridgeID.allIDs) or synthetic test IDs (e.g., 'bridge1', 'bridge2')"
           )
@@ -171,21 +179,27 @@ public struct Graph: Codable {
     // Check for non-bridge edges with bridgeID
     for edge in allEdges {
       if !edge.isBridge && edge.bridgeID != nil {
-        warnings.append("Non-bridge edge from \(edge.from) to \(edge.to) has bridgeID")
+        warnings.append(
+          "Non-bridge edge from \(edge.from) to \(edge.to) has bridgeID"
+        )
       }
     }
 
     // Check for negative travel times
     for edge in allEdges {
       if edge.travelTime < 0 {
-        errors.append("Edge from \(edge.from) to \(edge.to) has negative travel time")
+        errors.append(
+          "Edge from \(edge.from) to \(edge.to) has negative travel time"
+        )
       }
     }
 
     // Check for negative distances
     for edge in allEdges {
       if edge.distance < 0 {
-        errors.append("Edge from \(edge.from) to \(edge.to) has negative distance")
+        errors.append(
+          "Edge from \(edge.from) to \(edge.to) has negative distance"
+        )
       }
     }
 
@@ -203,7 +217,8 @@ public struct Graph: Codable {
     let result = validate()
     if !result.isValid {
       throw MultiPathError.invalidGraph(
-        "Graph validation failed: \(result.errors.joined(separator: "; "))")
+        "Graph validation failed: \(result.errors.joined(separator: "; "))"
+      )
     }
   }
 
@@ -243,7 +258,8 @@ public struct Graph: Codable {
     while !unvisited.isEmpty {
       // Find unvisited node with minimum distance
       let current = unvisited.min {
-        distances[$0] ?? TimeInterval.infinity < distances[$1] ?? TimeInterval.infinity
+        distances[$0] ?? TimeInterval.infinity < distances[$1]
+          ?? TimeInterval.infinity
       }
       guard let current = current else { break }
 
@@ -257,8 +273,12 @@ public struct Graph: Codable {
       for edge in outgoingEdges(from: current) {
         let neighbor = edge.to
         if unvisited.contains(neighbor) {
-          let newDistance = (distances[current] ?? TimeInterval.infinity) + edge.travelTime
-          if newDistance < (distances[neighbor] ?? TimeInterval.infinity) {
+          let newDistance =
+            (distances[current] ?? TimeInterval.infinity)
+              + edge.travelTime
+          if newDistance
+            < (distances[neighbor] ?? TimeInterval.infinity)
+          {
             distances[neighbor] = newDistance
             previous[neighbor] = current
           }
@@ -277,10 +297,14 @@ public struct Graph: Codable {
 
     while current != start {
       path.append(current)
-      guard let prev = previous[current], let prev = prev else { return nil }
+      guard let prev = previous[current], let prev = prev else {
+        return nil
+      }
 
       // Find edge from prev to current
-      if let edge = outgoingEdges(from: prev).first(where: { $0.to == current }) {
+      if let edge = outgoingEdges(from: prev).first(where: {
+        $0.to == current
+      }) {
         edges.append(edge)
       }
 
@@ -313,11 +337,29 @@ public extension Graph {
     ]
 
     let edges = [
-      Edge(from: "A", to: "B", travelTime: 300, distance: 500, isBridge: true, bridgeID: "bridge1"),
-      Edge(from: "B", to: "C", travelTime: 200, distance: 300, isBridge: false),
+      Edge(from: "A",
+           to: "B",
+           travelTime: 300,
+           distance: 500,
+           isBridge: true,
+           bridgeID: "bridge1"),
+      Edge(from: "B",
+           to: "C",
+           travelTime: 200,
+           distance: 300,
+           isBridge: false),
       // Bidirectional edges
-      Edge(from: "B", to: "A", travelTime: 300, distance: 500, isBridge: true, bridgeID: "bridge1"),
-      Edge(from: "C", to: "B", travelTime: 200, distance: 300, isBridge: false),
+      Edge(from: "B",
+           to: "A",
+           travelTime: 300,
+           distance: 500,
+           isBridge: true,
+           bridgeID: "bridge1"),
+      Edge(from: "C",
+           to: "B",
+           travelTime: 200,
+           distance: 300,
+           isBridge: false),
     ]
 
     do {
@@ -338,18 +380,54 @@ public extension Graph {
 
     let edges = [
       // Path 1: A -> B -> D
-      Edge(from: "A", to: "B", travelTime: 300, distance: 500, isBridge: true, bridgeID: "bridge1"),
-      Edge(from: "B", to: "D", travelTime: 400, distance: 600, isBridge: false),
+      Edge(from: "A",
+           to: "B",
+           travelTime: 300,
+           distance: 500,
+           isBridge: true,
+           bridgeID: "bridge1"),
+      Edge(from: "B",
+           to: "D",
+           travelTime: 400,
+           distance: 600,
+           isBridge: false),
 
       // Path 2: A -> C -> D
-      Edge(from: "A", to: "C", travelTime: 500, distance: 800, isBridge: true, bridgeID: "bridge2"),
-      Edge(from: "C", to: "D", travelTime: 200, distance: 300, isBridge: false),
+      Edge(from: "A",
+           to: "C",
+           travelTime: 500,
+           distance: 800,
+           isBridge: true,
+           bridgeID: "bridge2"),
+      Edge(from: "C",
+           to: "D",
+           travelTime: 200,
+           distance: 300,
+           isBridge: false),
 
       // Bidirectional edges
-      Edge(from: "B", to: "A", travelTime: 300, distance: 500, isBridge: true, bridgeID: "bridge1"),
-      Edge(from: "D", to: "B", travelTime: 400, distance: 600, isBridge: false),
-      Edge(from: "C", to: "A", travelTime: 500, distance: 800, isBridge: true, bridgeID: "bridge2"),
-      Edge(from: "D", to: "C", travelTime: 200, distance: 300, isBridge: false),
+      Edge(from: "B",
+           to: "A",
+           travelTime: 300,
+           distance: 500,
+           isBridge: true,
+           bridgeID: "bridge1"),
+      Edge(from: "D",
+           to: "B",
+           travelTime: 400,
+           distance: 600,
+           isBridge: false),
+      Edge(from: "C",
+           to: "A",
+           travelTime: 500,
+           distance: 800,
+           isBridge: true,
+           bridgeID: "bridge2"),
+      Edge(from: "D",
+           to: "C",
+           travelTime: 200,
+           distance: 300,
+           isBridge: false),
     ]
 
     do {

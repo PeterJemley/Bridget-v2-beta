@@ -49,30 +49,53 @@ struct ScoringMetricsTests {
 
     // Add road edge from start to first bridge
     edges.append(
-      Edge(from: "Start", to: "Bridge1", travelTime: 300, distance: 1000, isBridge: false))
+      Edge(from: "Start",
+           to: "Bridge1",
+           travelTime: 300,
+           distance: 1000,
+           isBridge: false)
+    )
 
     // Add bridge edges - only create bridge edges for valid bridge IDs
     for (index, bridgeID) in bridgeIDs.enumerated() {
       let fromNode = index == 0 ? "Bridge1" : "Bridge\(index)"
-      let toNode = index == bridgeIDs.count - 1 ? "End" : "Bridge\(index + 1)"
+      let toNode =
+        index == bridgeIDs.count - 1 ? "End" : "Bridge\(index + 1)"
 
       // Check if this is a valid bridge ID
-      if SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) {
+      if SeattleDrawbridges.isAcceptedBridgeID(bridgeID,
+                                               allowSynthetic: true)
+      {
         // Valid bridge ID - create bridge edge
         edges.append(
-          Edge(from: fromNode, to: toNode, travelTime: 600, distance: 2000, isBridge: true,
-               bridgeID: bridgeID))
+          Edge(from: fromNode,
+               to: toNode,
+               travelTime: 600,
+               distance: 2000,
+               isBridge: true,
+               bridgeID: bridgeID)
+        )
       } else {
         // Invalid bridge ID - create road edge instead (fallback behavior)
         edges.append(
-          Edge(from: fromNode, to: toNode, travelTime: 600, distance: 2000, isBridge: false))
+          Edge(from: fromNode,
+               to: toNode,
+               travelTime: 600,
+               distance: 2000,
+               isBridge: false)
+        )
       }
     }
 
     // Add road edge from last bridge to end
     if bridgeIDs.count == 1 {
       edges.append(
-        Edge(from: "Bridge1", to: "End", travelTime: 300, distance: 1000, isBridge: false))
+        Edge(from: "Bridge1",
+             to: "End",
+             travelTime: 300,
+             distance: 1000,
+             isBridge: false)
+      )
     }
 
     return RoutePath(nodes: nodes, edges: edges)
@@ -232,10 +255,13 @@ struct ScoringMetricsTests {
     let departureTime = Date()
 
     // Score the path
-    let score = try await service.scorePath(path, departureTime: departureTime)
+    let score = try await service.scorePath(path,
+                                            departureTime: departureTime)
 
     // Verify scoring worked
-    #expect(score.linearProbability >= 0.0 && score.linearProbability <= 1.0)
+    #expect(
+      score.linearProbability >= 0.0 && score.linearProbability <= 1.0
+    )
     #expect(score.bridgeProbabilities.count == 2)  // Two bridges
 
     // Get aggregated metrics
@@ -255,13 +281,27 @@ struct ScoringMetricsTests {
     #expect(metrics.memoryPerPath > 0.0)
 
     print("📊 Single Path Metrics:")
-    print("  Total time: \(String(format: "%.3f", metrics.totalScoringTime))s")
-    print("  ETA estimation: \(String(format: "%.3f", metrics.etaEstimationTime))s")
-    print("  Bridge prediction: \(String(format: "%.3f", metrics.bridgePredictionTime))s")
-    print("  Aggregation: \(String(format: "%.3f", metrics.aggregationTime))s")
-    print("  Feature generation: \(String(format: "%.3f", metrics.featureGenerationTime))s")
-    print("  Paths per second: \(String(format: "%.2f", metrics.pathsPerSecond))")
-    print("  Bridges per second: \(String(format: "%.2f", metrics.bridgesPerSecond))")
+    print(
+      "  Total time: \(String(format: "%.3f", metrics.totalScoringTime))s"
+    )
+    print(
+      "  ETA estimation: \(String(format: "%.3f", metrics.etaEstimationTime))s"
+    )
+    print(
+      "  Bridge prediction: \(String(format: "%.3f", metrics.bridgePredictionTime))s"
+    )
+    print(
+      "  Aggregation: \(String(format: "%.3f", metrics.aggregationTime))s"
+    )
+    print(
+      "  Feature generation: \(String(format: "%.3f", metrics.featureGenerationTime))s"
+    )
+    print(
+      "  Paths per second: \(String(format: "%.2f", metrics.pathsPerSecond))"
+    )
+    print(
+      "  Bridges per second: \(String(format: "%.2f", metrics.bridgesPerSecond))"
+    )
     print("  Memory usage: \(metrics.peakMemoryUsage) bytes")
   }
 
@@ -280,12 +320,15 @@ struct ScoringMetricsTests {
     let departureTime = Date()
 
     // Score the paths
-    let scores = try await service.scorePaths(paths, departureTime: departureTime)
+    let scores = try await service.scorePaths(paths,
+                                              departureTime: departureTime)
 
     // Verify scoring worked
     #expect(scores.count == 4)
     for score in scores {
-      #expect(score.linearProbability >= 0.0 && score.linearProbability <= 1.0)
+      #expect(
+        score.linearProbability >= 0.0 && score.linearProbability <= 1.0
+      )
     }
 
     // Get aggregated metrics
@@ -302,14 +345,24 @@ struct ScoringMetricsTests {
     #expect(metrics.averagePathProbability > 0.0)
 
     print("📊 Batch Path Metrics:")
-    print("  Total time: \(String(format: "%.3f", metrics.totalScoringTime))s")
+    print(
+      "  Total time: \(String(format: "%.3f", metrics.totalScoringTime))s"
+    )
     print("  Paths scored: \(metrics.pathsScored)")
     print("  Bridges processed: \(metrics.bridgesProcessed)")
-    print("  Paths per second: \(String(format: "%.2f", metrics.pathsPerSecond))")
-    print("  Bridges per second: \(String(format: "%.2f", metrics.bridgesPerSecond))")
-    print("  Average path probability: \(String(format: "%.3f", metrics.averagePathProbability))")
+    print(
+      "  Paths per second: \(String(format: "%.2f", metrics.pathsPerSecond))"
+    )
+    print(
+      "  Bridges per second: \(String(format: "%.2f", metrics.bridgesPerSecond))"
+    )
+    print(
+      "  Average path probability: \(String(format: "%.3f", metrics.averagePathProbability))"
+    )
     print("  Memory usage: \(metrics.peakMemoryUsage) bytes")
-    print("  Memory per path: \(String(format: "%.0f", metrics.memoryPerPath)) bytes")
+    print(
+      "  Memory per path: \(String(format: "%.0f", metrics.memoryPerPath)) bytes"
+    )
   }
 
   @Test("PathScoringService cache statistics integration")
@@ -322,8 +375,10 @@ struct ScoringMetricsTests {
     let departureTime = Date()
 
     // Score the same path twice to test cache behavior
-    let score1 = try await service.scorePath(path, departureTime: departureTime)
-    let score2 = try await service.scorePath(path, departureTime: departureTime)
+    let score1 = try await service.scorePath(path,
+                                             departureTime: departureTime)
+    let score2 = try await service.scorePath(path,
+                                             departureTime: departureTime)
 
     // Verify both scores are identical (cached)
     #expect(score1.linearProbability == score2.linearProbability)
@@ -334,12 +389,17 @@ struct ScoringMetricsTests {
     // Verify cache statistics were collected
     #expect(metrics.cacheHits >= 0)
     #expect(metrics.cacheMisses >= 0)
-    #expect(metrics.featureCacheHitRate >= 0.0 && metrics.featureCacheHitRate <= 1.0)
+    #expect(
+      metrics.featureCacheHitRate >= 0.0
+        && metrics.featureCacheHitRate <= 1.0
+    )
 
     print("📊 Cache Statistics:")
     print("  Cache hits: \(metrics.cacheHits)")
     print("  Cache misses: \(metrics.cacheMisses)")
-    print("  Cache hit rate: \(String(format: "%.2f", metrics.featureCacheHitRate))")
+    print(
+      "  Cache hit rate: \(String(format: "%.2f", metrics.featureCacheHitRate))"
+    )
   }
 
   @Test("PathScoringService performance with disabled logging")
@@ -372,10 +432,13 @@ struct ScoringMetricsTests {
     let departureTime = Date()
 
     // Score the path
-    let score = try await service.scorePath(path, departureTime: departureTime)
+    let score = try await service.scorePath(path,
+                                            departureTime: departureTime)
 
     // Verify scoring still works
-    #expect(score.linearProbability >= 0.0 && score.linearProbability <= 1.0)
+    #expect(
+      score.linearProbability >= 0.0 && score.linearProbability <= 1.0
+    )
 
     // Get aggregated metrics - should be empty since logging is disabled
     let metrics = globalScoringMetrics.getAggregatedMetrics()
@@ -403,7 +466,8 @@ struct ScoringMetricsTests {
     let departureTime = Date()
 
     // Score multiple paths to test memory tracking
-    let scores = try await service.scorePaths(paths, departureTime: departureTime)
+    let scores = try await service.scorePaths(paths,
+                                              departureTime: departureTime)
 
     // Verify scoring worked
     #expect(scores.count == 3)
@@ -417,7 +481,9 @@ struct ScoringMetricsTests {
 
     print("📊 Memory Usage:")
     print("  Peak memory: \(metrics.peakMemoryUsage) bytes")
-    print("  Memory per path: \(String(format: "%.0f", metrics.memoryPerPath)) bytes")
+    print(
+      "  Memory per path: \(String(format: "%.0f", metrics.memoryPerPath)) bytes"
+    )
     print("  Total paths: \(metrics.pathsScored)")
   }
 
@@ -455,7 +521,10 @@ struct ScoringMetricsTests {
       try aggregator.exportToCSV(filename: filename)
 
       // Verify file was created
-      let documentsPath = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+      let documentsPath = try FileManager.default.url(for: .documentDirectory,
+                                                      in: .userDomainMask,
+                                                      appropriateFor: nil,
+                                                      create: true)
       let csvURL = documentsPath.appendingPathComponent(filename)
 
       #expect(FileManager.default.fileExists(atPath: csvURL.path))

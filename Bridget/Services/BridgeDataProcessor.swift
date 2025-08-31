@@ -57,8 +57,9 @@ class BridgeDataProcessor {
   /// Known bridge IDs for validation.
   private let knownBridgeIDs = SeattleDrawbridges.BridgeID.allIDs
 
-  private let bridgeLocations: [String: (lat: Double, lon: Double)] = SeattleDrawbridges
-    .bridgeLocations
+  private let bridgeLocations: [String: (lat: Double, lon: Double)] =
+    SeattleDrawbridges
+      .bridgeLocations
 
   private let validEntityTypes = Set(["Bridge"])  // Expand as needed
 
@@ -90,10 +91,13 @@ class BridgeDataProcessor {
     var validRecords: [BridgeOpeningRecord] = []
     let decoder = JSONDecoder.bridgeDecoder()
     do {
-      let records = try decoder.decode([BridgeOpeningRecord].self, from: data)
+      let records = try decoder.decode([BridgeOpeningRecord].self,
+                                       from: data)
       for record in records {
         if let reason = validator.validationFailure(for: record) {
-          failures.append(ValidationFailure(record: record, reason: reason))
+          failures.append(
+            ValidationFailure(record: record, reason: reason)
+          )
           continue
         }
         validRecords.append(record)
@@ -105,15 +109,23 @@ class BridgeDataProcessor {
     }
     var modelMap = [String: (name: String, openings: [Date])]()
     for record in validRecords {
-      if isNotEmpty(record.entityid), isNotEmpty(record.entityname), record.openDate != nil {
-        modelMap[record.entityid, default: (record.entityname, [])].openings.append(
-          record.openDate!)
+      if isNotEmpty(record.entityid), isNotEmpty(record.entityname),
+         record.openDate != nil
+      {
+        modelMap[record.entityid, default: (record.entityname, [])]
+          .openings.append(
+            record.openDate!
+          )
       }
     }
     let models: [BridgeStatusModel] = modelMap.compactMap { id, val in
-      if let bridgeID = SeattleDrawbridges.BridgeID(rawValue: id), isNotEmpty(val.name) {
+      if let bridgeID = SeattleDrawbridges.BridgeID(rawValue: id),
+         isNotEmpty(val.name)
+      {
         let sortedOpenings = val.openings.sorted()
-        return BridgeStatusModel(bridgeName: val.name, apiBridgeID: bridgeID, historicalOpenings: sortedOpenings)
+        return BridgeStatusModel(bridgeName: val.name,
+                                 apiBridgeID: bridgeID,
+                                 historicalOpenings: sortedOpenings)
       }
       return nil
     }

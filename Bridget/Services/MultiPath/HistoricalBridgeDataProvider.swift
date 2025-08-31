@@ -27,7 +27,8 @@ public struct DateBucket: Codable, Hashable, Equatable {
 
   public init(from date: Date) {
     let calendar = Calendar.current
-    let components = calendar.dateComponents([.hour, .minute, .weekday], from: date)
+    let components = calendar.dateComponents([.hour, .minute, .weekday],
+                                             from: date)
 
     self.hour = components.hour ?? 0
     self.minute = ((components.minute ?? 0) / 5) * 5
@@ -67,7 +68,11 @@ public struct BridgeOpeningStats: Codable, Equatable {
   public let lastSeen: Date?
   public let sampleCount: Int
 
-  public init(openCount: Int, totalCount: Int, lastSeen: Date? = nil, sampleCount: Int = 0) {
+  public init(openCount: Int,
+              totalCount: Int,
+              lastSeen: Date? = nil,
+              sampleCount: Int = 0)
+  {
     self.openCount = openCount
     self.totalCount = totalCount
     self.lastSeen = lastSeen
@@ -99,7 +104,10 @@ public struct BridgeHistoricalData: Codable, Equatable {
   public let bucketStats: [DateBucket: BridgeOpeningStats]
   public let lastUpdated: Date
 
-  public init(bridgeID: String, bucketStats: [DateBucket: BridgeOpeningStats], lastUpdated: Date = Date()) {
+  public init(bridgeID: String,
+              bucketStats: [DateBucket: BridgeOpeningStats],
+              lastUpdated: Date = Date())
+  {
     self.bridgeID = bridgeID
     self.bucketStats = bucketStats
     self.lastUpdated = lastUpdated
@@ -131,14 +139,16 @@ public protocol HistoricalBridgeDataProvider {
   ///   - bridgeID: The bridge identifier
   ///   - bucket: The 5-minute time bucket
   /// - Returns: Opening statistics if available, nil otherwise
-  func getOpeningStats(bridgeID: String, bucket: DateBucket) -> BridgeOpeningStats?
+  func getOpeningStats(bridgeID: String, bucket: DateBucket)
+    -> BridgeOpeningStats?
 
   /// Get opening statistics for a bridge across multiple time buckets
   /// - Parameters:
   ///   - bridgeID: The bridge identifier
   ///   - buckets: Array of time buckets
   /// - Returns: Dictionary mapping buckets to statistics
-  func getOpeningStats(bridgeID: String, buckets: [DateBucket]) -> [DateBucket: BridgeOpeningStats]
+  func getOpeningStats(bridgeID: String, buckets: [DateBucket])
+    -> [DateBucket: BridgeOpeningStats]
 
   /// Get all available bridge IDs
   /// - Returns: Array of bridge IDs that have historical data
@@ -168,19 +178,23 @@ public class FileBasedHistoricalBridgeDataProvider: HistoricalBridgeDataProvider
   private let dataDirectory: URL
   private let fileManager: FileManager
   private var cache: [String: BridgeHistoricalData] = [:]
-  private let cacheQueue = DispatchQueue(label: "com.bridget.historicaldata.cache", attributes: .concurrent)
+  private let cacheQueue = DispatchQueue(label: "com.bridget.historicaldata.cache",
+                                         attributes: .concurrent)
 
   public init(dataDirectory: URL) {
     self.dataDirectory = dataDirectory
     self.fileManager = FileManager.default
 
     // Create directory if it doesn't exist
-    try? fileManager.createDirectory(at: dataDirectory, withIntermediateDirectories: true)
+    try? fileManager.createDirectory(at: dataDirectory,
+                                     withIntermediateDirectories: true)
   }
 
   // MARK: - HistoricalBridgeDataProvider Implementation
 
-  public func getOpeningStats(bridgeID: String, bucket: DateBucket) -> BridgeOpeningStats? {
+  public func getOpeningStats(bridgeID: String, bucket: DateBucket)
+    -> BridgeOpeningStats?
+  {
     return cacheQueue.sync {
       if let data = cache[bridgeID] {
         return data.stats(for: bucket)
@@ -196,10 +210,12 @@ public class FileBasedHistoricalBridgeDataProvider: HistoricalBridgeDataProvider
     }
   }
 
-  public func getOpeningStats(bridgeID: String, buckets: [DateBucket]) -> [
-    DateBucket:
-      BridgeOpeningStats
-  ] {
+  public func getOpeningStats(bridgeID: String, buckets: [DateBucket])
+    -> [
+      DateBucket:
+        BridgeOpeningStats
+    ]
+  {
     return cacheQueue.sync {
       if let data = cache[bridgeID] {
         var result: [DateBucket: BridgeOpeningStats] = [:]
@@ -230,7 +246,8 @@ public class FileBasedHistoricalBridgeDataProvider: HistoricalBridgeDataProvider
   public func getAvailableBridgeIDs() -> [String] {
     return cacheQueue.sync {
       do {
-        let files = try fileManager.contentsOfDirectory(at: dataDirectory, includingPropertiesForKeys: nil)
+        let files = try fileManager.contentsOfDirectory(at: dataDirectory,
+                                                        includingPropertiesForKeys: nil)
         return files.compactMap { url in
           let filename = url.lastPathComponent
           if filename.hasSuffix(".json") {
@@ -267,7 +284,9 @@ public class FileBasedHistoricalBridgeDataProvider: HistoricalBridgeDataProvider
         return true
       }
 
-      let fileURL = dataDirectory.appendingPathComponent("\(bridgeID).json")
+      let fileURL = dataDirectory.appendingPathComponent(
+        "\(bridgeID).json"
+      )
       return fileManager.fileExists(atPath: fileURL.path)
     }
   }
@@ -293,7 +312,9 @@ public class FileBasedHistoricalBridgeDataProvider: HistoricalBridgeDataProvider
   /// - Parameter data: The historical data to save
   /// - Throws: Error if saving fails
   public func saveHistoricalData(_ data: BridgeHistoricalData) throws {
-    let fileURL = dataDirectory.appendingPathComponent("\(data.bridgeID).json")
+    let fileURL = dataDirectory.appendingPathComponent(
+      "\(data.bridgeID).json"
+    )
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .iso8601
     encoder.outputFormatting = .prettyPrinted
@@ -313,16 +334,25 @@ public class FileBasedHistoricalBridgeDataProvider: HistoricalBridgeDataProvider
   ///   - wasOpen: Whether the bridge was open
   ///   - timestamp: When this observation occurred
   /// - Throws: Error if saving fails
-  public func updateOpeningStats(bridgeID: String, bucket: DateBucket, wasOpen: Bool, timestamp: Date) throws {
+  public func updateOpeningStats(bridgeID: String,
+                                 bucket: DateBucket,
+                                 wasOpen: Bool,
+                                 timestamp: Date) throws
+  {
     let data =
-      getHistoricalData(for: bridgeID) ?? BridgeHistoricalData(bridgeID: bridgeID, bucketStats: [:])
+      getHistoricalData(for: bridgeID)
+        ?? BridgeHistoricalData(bridgeID: bridgeID, bucketStats: [:])
 
-    let stats = data.bucketStats[bucket] ?? BridgeOpeningStats(openCount: 0, totalCount: 0)
+    let stats =
+      data.bucketStats[bucket]
+        ?? BridgeOpeningStats(openCount: 0, totalCount: 0)
 
     // Update statistics
     let newOpenCount = stats.openCount + (wasOpen ? 1 : 0)
     let newTotalCount = stats.totalCount + 1
-    let newLastSeen = timestamp > (stats.lastSeen ?? Date.distantPast) ? timestamp : stats.lastSeen
+    let newLastSeen =
+      timestamp > (stats.lastSeen ?? Date.distantPast)
+        ? timestamp : stats.lastSeen
     let newSampleCount = stats.sampleCount + 1
 
     let updatedStats = BridgeOpeningStats(openCount: newOpenCount,
@@ -357,7 +387,9 @@ public class FileBasedHistoricalBridgeDataProvider: HistoricalBridgeDataProvider
 
   // MARK: - Private Methods
 
-  private func loadHistoricalData(for bridgeID: String) -> BridgeHistoricalData? {
+  private func loadHistoricalData(for bridgeID: String)
+    -> BridgeHistoricalData?
+  {
     let fileURL = dataDirectory.appendingPathComponent("\(bridgeID).json")
 
     guard fileManager.fileExists(atPath: fileURL.path) else {
@@ -371,7 +403,9 @@ public class FileBasedHistoricalBridgeDataProvider: HistoricalBridgeDataProvider
 
       return try decoder.decode(BridgeHistoricalData.self, from: jsonData)
     } catch {
-      print("Error loading historical data for bridge \(bridgeID): \(error)")
+      print(
+        "Error loading historical data for bridge \(bridgeID): \(error)"
+      )
       return nil
     }
   }
@@ -389,24 +423,35 @@ public class MockHistoricalBridgeDataProvider: HistoricalBridgeDataProvider {
     mockData[data.bridgeID] = data
   }
 
-  public func setMockStats(bridgeID: String, bucket: DateBucket, stats: BridgeOpeningStats) {
-    var data = mockData[bridgeID] ?? BridgeHistoricalData(bridgeID: bridgeID, bucketStats: [:])
+  public func setMockStats(bridgeID: String,
+                           bucket: DateBucket,
+                           stats: BridgeOpeningStats)
+  {
+    var data =
+      mockData[bridgeID]
+        ?? BridgeHistoricalData(bridgeID: bridgeID, bucketStats: [:])
     var bucketStats = data.bucketStats
     bucketStats[bucket] = stats
-    data = BridgeHistoricalData(bridgeID: bridgeID, bucketStats: bucketStats, lastUpdated: Date())
+    data = BridgeHistoricalData(bridgeID: bridgeID,
+                                bucketStats: bucketStats,
+                                lastUpdated: Date())
     mockData[bridgeID] = data
   }
 
   // MARK: - HistoricalBridgeDataProvider Implementation
 
-  public func getOpeningStats(bridgeID: String, bucket: DateBucket) -> BridgeOpeningStats? {
+  public func getOpeningStats(bridgeID: String, bucket: DateBucket)
+    -> BridgeOpeningStats?
+  {
     return mockData[bridgeID]?.stats(for: bucket)
   }
 
-  public func getOpeningStats(bridgeID: String, buckets: [DateBucket]) -> [
-    DateBucket:
-      BridgeOpeningStats
-  ] {
+  public func getOpeningStats(bridgeID: String, buckets: [DateBucket])
+    -> [
+      DateBucket:
+        BridgeOpeningStats
+    ]
+  {
     guard let data = mockData[bridgeID] else { return [:] }
 
     var result: [DateBucket: BridgeOpeningStats] = [:]

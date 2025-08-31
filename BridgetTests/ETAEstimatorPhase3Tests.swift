@@ -89,7 +89,9 @@ struct ETAEstimatorPhase3Tests {
     // Check destination node (C)
     let destinationEstimate = estimates[2]
     #expect(destinationEstimate.nodeID == "C")
-    #expect(destinationEstimate.summary.mean > intermediateEstimate.summary.mean)
+    #expect(
+      destinationEstimate.summary.mean > intermediateEstimate.summary.mean
+    )
   }
 
   @Test("estimateBridgeETAsWithUncertainty returns bridge-only summaries")
@@ -116,7 +118,9 @@ struct ETAEstimatorPhase3Tests {
 
   // TODO: Original complex path statistics test intentionally disabled.
 
-  @Test("PathTravelStatisticsWithUncertainty formatted output and compatibility")
+  @Test(
+    "PathTravelStatisticsWithUncertainty formatted output and compatibility"
+  )
   func pathTravelStatisticsWithUncertaintyFormattedOutput() throws {
     let summary = ETASummary(mean: 300.0,  // 5 minutes
                              variance: 25.0,
@@ -159,12 +163,18 @@ struct ETAEstimatorPhase3Tests {
     )
 
     // Morning rush hour
-    let morningRush = Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())!
+    let morningRush = Calendar.current.date(bySettingHour: 8,
+                                            minute: 0,
+                                            second: 0,
+                                            of: Date())!
     let morningEstimates = estimator.estimateETAsWithUncertainty(for: path,
                                                                  departureTime: morningRush)
 
     // Late night
-    let lateNight = Calendar.current.date(bySettingHour: 23, minute: 0, second: 0, of: Date())!
+    let lateNight = Calendar.current.date(bySettingHour: 23,
+                                          minute: 0,
+                                          second: 0,
+                                          of: Date())!
     let lateNightEstimates = estimator.estimateETAsWithUncertainty(for: path,
                                                                    departureTime: lateNight)
 

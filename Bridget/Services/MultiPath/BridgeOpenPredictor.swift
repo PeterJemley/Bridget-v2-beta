@@ -31,7 +31,11 @@ public struct BridgePredictionResult: Codable {
   public let openProbability: Double  // probability bridge will be open
   public let confidence: Double?  // optional confidence score
 
-  public init(bridgeID: String, eta: Date, openProbability: Double, confidence: Double? = nil) {
+  public init(bridgeID: String,
+              eta: Date,
+              openProbability: Double,
+              confidence: Double? = nil)
+  {
     self.bridgeID = bridgeID
     self.eta = eta
     self.openProbability = max(0.0, min(1.0, openProbability))  // clamp to [0,1]
@@ -45,7 +49,10 @@ public struct BatchPredictionResult: Codable {
   public let processingTime: TimeInterval
   public let batchSize: Int
 
-  public init(predictions: [BridgePredictionResult], processingTime: TimeInterval, batchSize: Int) {
+  public init(predictions: [BridgePredictionResult],
+              processingTime: TimeInterval,
+              batchSize: Int)
+  {
     self.predictions = predictions
     self.processingTime = processingTime
     self.batchSize = batchSize
@@ -61,7 +68,8 @@ public protocol BridgeOpenPredictor {
 
   /// Predict opening probabilities for multiple bridges (batch)
   /// More efficient than multiple single predictions
-  func predictBatch(_ inputs: [BridgePredictionInput]) async throws -> BatchPredictionResult
+  func predictBatch(_ inputs: [BridgePredictionInput]) async throws
+    -> BatchPredictionResult
 
   /// Get the default probability for bridges not supported by this predictor
   var defaultProbability: Double { get }
@@ -103,26 +111,35 @@ public enum BridgePredictionError: Error, LocalizedError {
 
 public extension BridgeOpenPredictor {
   /// Default implementation of single prediction using batch
-  func predict(bridgeID: String, eta: Date, features: [Double]) async throws
+  func predict(bridgeID: String, eta: Date, features: [Double])
+    async throws
     -> BridgePredictionResult
   {
-    let input = BridgePredictionInput(bridgeID: bridgeID, eta: eta, features: features)
+    let input = BridgePredictionInput(bridgeID: bridgeID,
+                                      eta: eta,
+                                      features: features)
     let batchResult = try await predictBatch([input])
 
     guard let result = batchResult.predictions.first else {
-      throw BridgePredictionError.predictionFailed("No prediction returned from batch")
+      throw BridgePredictionError.predictionFailed(
+        "No prediction returned from batch"
+      )
     }
 
     return result
   }
 
   /// Default implementation of batch prediction using single predictions
-  func predictBatch(_ inputs: [BridgePredictionInput]) async throws -> BatchPredictionResult {
+  func predictBatch(_ inputs: [BridgePredictionInput]) async throws
+    -> BatchPredictionResult
+  {
     let startTime = Date()
     var predictions: [BridgePredictionResult] = []
 
     for input in inputs {
-      let result = try await predict(bridgeID: input.bridgeID, eta: input.eta, features: input.features)
+      let result = try await predict(bridgeID: input.bridgeID,
+                                     eta: input.eta,
+                                     features: input.features)
       predictions.append(result)
     }
 
@@ -150,32 +167,43 @@ public enum BridgePredictionUtils {
   /// Validate prediction inputs
   public static func validateInput(_ input: BridgePredictionInput) throws {
     if input.bridgeID.isEmpty {
-      throw BridgePredictionError.invalidFeatures("Bridge ID cannot be empty")
+      throw BridgePredictionError.invalidFeatures(
+        "Bridge ID cannot be empty"
+      )
     }
 
     if input.features.isEmpty {
-      throw BridgePredictionError.invalidFeatures("Features cannot be empty")
+      throw BridgePredictionError.invalidFeatures(
+        "Features cannot be empty"
+      )
     }
 
     // Check for NaN or infinite values
     for (index, feature) in input.features.enumerated() {
       if feature.isNaN {
-        throw BridgePredictionError.invalidFeatures("Feature \(index) is NaN")
+        throw BridgePredictionError.invalidFeatures(
+          "Feature \(index) is NaN"
+        )
       }
       if feature.isInfinite {
-        throw BridgePredictionError.invalidFeatures("Feature \(index) is infinite")
+        throw BridgePredictionError.invalidFeatures(
+          "Feature \(index) is infinite"
+        )
       }
     }
   }
 
   /// Validate batch inputs
-  public static func validateBatch(_ inputs: [BridgePredictionInput], maxBatchSize: Int) throws {
+  public static func validateBatch(_ inputs: [BridgePredictionInput],
+                                   maxBatchSize: Int) throws
+  {
     if inputs.isEmpty {
       throw BridgePredictionError.invalidFeatures("Batch cannot be empty")
     }
 
     if inputs.count > maxBatchSize {
-      throw BridgePredictionError.batchSizeExceeded(inputs.count, maxBatchSize)
+      throw BridgePredictionError.batchSizeExceeded(inputs.count,
+                                                    maxBatchSize)
     }
 
     for input in inputs {

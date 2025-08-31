@@ -15,19 +15,22 @@ struct TrafficAlertsView: View {
 
             // Sample traffic alert cards
             TrafficAlertCard(title: "Fremont Bridge Delay",
-                             description: "Bridge opening in progress. Expect 5-10 minute delay.",
+                             description:
+                             "Bridge opening in progress. Expect 5-10 minute delay.",
                              severity: .moderate,
                              location: "Fremont Bridge",
                              timeAgo: "3 minutes ago")
 
             TrafficAlertCard(title: "Ballard Bridge Maintenance",
-                             description: "Scheduled maintenance causing lane closures.",
+                             description:
+                             "Scheduled maintenance causing lane closures.",
                              severity: .minor,
                              location: "Ballard Bridge",
                              timeAgo: "15 minutes ago")
 
             TrafficAlertCard(title: "University Bridge Incident",
-                             description: "Vehicle breakdown blocking right lane.",
+                             description:
+                             "Vehicle breakdown blocking right lane.",
                              severity: .major,
                              location: "University Bridge",
                              timeAgo: "8 minutes ago")

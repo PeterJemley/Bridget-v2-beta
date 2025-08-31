@@ -58,7 +58,8 @@ import OSLog
 final class PipelinePerformanceLogger: NSObject {
   static let shared = PipelinePerformanceLogger()
 
-  private let logger = Logger(subsystem: "Bridget", category: "PipelinePerformance")
+  private let logger = Logger(subsystem: "Bridget",
+                              category: "PipelinePerformance")
   private let metricManager = MXMetricManager.shared
 
   // MARK: - Performance Tracking
@@ -91,7 +92,9 @@ final class PipelinePerformanceLogger: NSObject {
     self.memoryPeak = self.memoryBaseline
 
     self.logger.info("🚀 Pipeline execution started")
-    self.logger.info("📊 Memory baseline: \(self.formatBytes(self.memoryBaseline))")
+    self.logger.info(
+      "📊 Memory baseline: \(self.formatBytes(self.memoryBaseline))"
+    )
   }
 
   /// Ends timing the overall pipeline execution.
@@ -106,7 +109,9 @@ final class PipelinePerformanceLogger: NSObject {
     let finalMemory = self.getCurrentMemoryUsage()
 
     self.logger.info("✅ Pipeline execution completed")
-    self.logger.info("⏱️ Total execution time: \(String(format: "%.3f", totalTime))s")
+    self.logger.info(
+      "⏱️ Total execution time: \(String(format: "%.3f", totalTime))s"
+    )
     self.logger.info("📊 Memory peak: \(self.formatBytes(self.memoryPeak))")
     self.logger.info("📊 Final memory: \(self.formatBytes(finalMemory))")
 
@@ -133,7 +138,9 @@ final class PipelinePerformanceLogger: NSObject {
     let duration = Date().timeIntervalSince(startTime)
     self.stepTimings[stepName] = duration
 
-    self.logger.info("⏹️ Step completed: \(stepName) (\(String(format: "%.3f", duration))s)")
+    self.logger.info(
+      "⏹️ Step completed: \(stepName) (\(String(format: "%.3f", duration))s)"
+    )
   }
 
   // MARK: - Metrics Collection
@@ -159,7 +166,9 @@ final class PipelinePerformanceLogger: NSObject {
   func recordValidationMetrics(failures: Int, corrections: Int) {
     self.validationFailures = failures
     self.correctedRows = corrections
-    self.logger.info("✅ Validation: \(failures) failures, \(corrections) corrections")
+    self.logger.info(
+      "✅ Validation: \(failures) failures, \(corrections) corrections"
+    )
   }
 
   /// Records file output metrics.
@@ -173,7 +182,9 @@ final class PipelinePerformanceLogger: NSObject {
   func recordMemoryCheckpoint() {
     let currentMemory = self.getCurrentMemoryUsage()
     self.memoryPeak = max(self.memoryPeak, currentMemory)
-    self.logger.info("📊 Memory checkpoint: \(self.formatBytes(currentMemory))")
+    self.logger.info(
+      "📊 Memory checkpoint: \(self.formatBytes(currentMemory))"
+    )
   }
 
   // MARK: - Report Generation
@@ -218,7 +229,9 @@ final class PipelinePerformanceLogger: NSObject {
     ## Step-by-Step Timings
     """
 
-    for (stepName, duration) in self.stepTimings.sorted(by: { $0.value > $1.value }) {
+    for (stepName, duration) in self.stepTimings.sorted(by: {
+      $0.value > $1.value
+    }) {
       let percentage = (duration / totalTime) * 100
       report +=
         "\n- \(stepName): \(String(format: "%.3f", duration))s (\(String(format: "%.1f", percentage))%)"
@@ -249,17 +262,22 @@ final class PipelinePerformanceLogger: NSObject {
     do {
       documentsPath = try FileManagerUtils.documentsDirectory()
     } catch {
-      self.logger.error("Failed to access Documents directory: \(error.localizedDescription)")
+      self.logger.error(
+        "Failed to access Documents directory: \(error.localizedDescription)"
+      )
       return
     }
     let reportURL = documentsPath.appendingPathComponent(
-      "pipeline_performance_\(Date().timeIntervalSince1970).md")
+      "pipeline_performance_\(Date().timeIntervalSince1970).md"
+    )
 
     do {
       try report.write(to: reportURL, atomically: true, encoding: .utf8)
       self.logger.info("📄 Performance report saved to: \(reportURL.path)")
     } catch {
-      self.logger.error("Failed to save performance report: \(error.localizedDescription)")
+      self.logger.error(
+        "Failed to save performance report: \(error.localizedDescription)"
+      )
     }
   }
 
@@ -267,7 +285,8 @@ final class PipelinePerformanceLogger: NSObject {
 
   private func getCurrentMemoryUsage() -> Int64 {
     var info = mach_task_basic_info()
-    var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+    var count =
+      mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
 
     let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
       $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
@@ -293,7 +312,9 @@ final class PipelinePerformanceLogger: NSObject {
     return formatter.string(fromByteCount: bytes)
   }
 
-  private func getEfficiencyRating(totalTime: TimeInterval, recordCount: Int) -> String {
+  private func getEfficiencyRating(totalTime: TimeInterval, recordCount: Int)
+    -> String
+  {
     let recordsPerSecond = Double(recordCount) / totalTime
 
     switch recordsPerSecond {
@@ -327,7 +348,9 @@ extension PipelinePerformanceLogger {
   ///   - stepName: Name of the step
   ///   - operation: Block of code to time
   /// - Returns: Result of the operation
-  func timeStep<T>(_ stepName: String, operation: () throws -> T) rethrows -> T {
+  func timeStep<T>(_ stepName: String, operation: () throws -> T) rethrows
+    -> T
+  {
     self.startStep(stepName)
     defer { self.endStep(stepName) }
     return try operation()
@@ -338,7 +361,9 @@ extension PipelinePerformanceLogger {
   ///   - stepName: Name of the step
   ///   - operation: Async block of code to time
   /// - Returns: Result of the operation
-  func timeStep<T>(_ stepName: String, operation: () async throws -> T) async rethrows -> T {
+  func timeStep<T>(_ stepName: String, operation: () async throws -> T)
+    async rethrows -> T
+  {
     self.startStep(stepName)
     defer { self.endStep(stepName) }
     return try await operation()

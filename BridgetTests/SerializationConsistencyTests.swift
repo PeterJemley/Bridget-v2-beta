@@ -24,7 +24,10 @@ struct SerializationConsistencyTests {
 
   @Test("round-trip encoding/decoding with bridge factories: default config")
   func roundTripDefault() async throws {
-    let model = SampleModel(id: 1, name: "Test", date: sampleDate, snakeCaseField: "value")
+    let model = SampleModel(id: 1,
+                            name: "Test",
+                            date: sampleDate,
+                            snakeCaseField: "value")
     let encoder = JSONEncoder.bridgeEncoder()
     let decoder = JSONDecoder.bridgeDecoder()
     let data = try encoder.encode(model)
@@ -34,8 +37,13 @@ struct SerializationConsistencyTests {
 
   @Test("round-trip with prettyPrinted and sortedKeys")
   func roundTripPrettyPrintedSortedKeys() async throws {
-    let model = SampleModel(id: 2, name: "Pretty", date: sampleDate, snakeCaseField: "val2")
-    let encoder = JSONEncoder.bridgeEncoder(outputFormatting: [.prettyPrinted, .sortedKeys])
+    let model = SampleModel(id: 2,
+                            name: "Pretty",
+                            date: sampleDate,
+                            snakeCaseField: "val2")
+    let encoder = JSONEncoder.bridgeEncoder(outputFormatting: [
+      .prettyPrinted, .sortedKeys,
+    ])
     let decoder = JSONDecoder.bridgeDecoder()
     let data = try encoder.encode(model)
     let decoded = try decoder.decode(SampleModel.self, from: data)
@@ -59,7 +67,10 @@ struct SerializationConsistencyTests {
 
   @Test("bridgeEncoder honors custom date encoding strategy")
   func customDateEncodingStrategy() async throws {
-    let model = SampleModel(id: 4, name: "CustomDate", date: sampleDate, snakeCaseField: "custom")
+    let model = SampleModel(id: 4,
+                            name: "CustomDate",
+                            date: sampleDate,
+                            snakeCaseField: "custom")
     let encoder = JSONEncoder.bridgeEncoder(dateEncodingStrategy: .iso8601)
     let data = try encoder.encode(model)
     // decode with bridge decoder (which handles ISO8601)
@@ -70,8 +81,13 @@ struct SerializationConsistencyTests {
 
   @Test("bridgeEncoder/bridgeDecoder fail on mismatched date strategy")
   func mismatchedDateStrategies() async throws {
-    let model = SampleModel(id: 5, name: "Mismatch", date: sampleDate, snakeCaseField: "fail")
-    let encoder = JSONEncoder.bridgeEncoder(dateEncodingStrategy: .secondsSince1970)
+    let model = SampleModel(id: 5,
+                            name: "Mismatch",
+                            date: sampleDate,
+                            snakeCaseField: "fail")
+    let encoder = JSONEncoder.bridgeEncoder(
+      dateEncodingStrategy: .secondsSince1970
+    )
     let data = try encoder.encode(model)
     let decoder = JSONDecoder.bridgeDecoder()
 

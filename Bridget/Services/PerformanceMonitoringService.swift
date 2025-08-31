@@ -48,7 +48,8 @@ public struct PerformanceMetrics {
     self.validationTimeMs = validationTimeMs
     self.peakMemoryMB = peakMemoryMB
     self.totalTimeMs =
-      parseTimeMs + featureEngineeringTimeMs + mlMultiArrayConversionTimeMs + trainingTimeMs
+      parseTimeMs + featureEngineeringTimeMs
+        + mlMultiArrayConversionTimeMs + trainingTimeMs
         + validationTimeMs
   }
 }
@@ -103,7 +104,9 @@ public struct BudgetValidationResult {
   public let performanceRating: String
   public let recommendations: [String]
 
-  public init(isWithinBudget: Bool, exceededStages: [String], performanceRating: String,
+  public init(isWithinBudget: Bool,
+              exceededStages: [String],
+              performanceRating: String,
               recommendations: [String])
   {
     self.isWithinBudget = isWithinBudget
@@ -116,7 +119,8 @@ public struct BudgetValidationResult {
 // MARK: - Main Service
 
 public class PerformanceMonitoringService {
-  private let logger = Logger(subsystem: "com.bridget.pipeline", category: "performance")
+  private let logger = Logger(subsystem: "com.bridget.pipeline",
+                              category: "performance")
   private let budget: PerformanceBudget
   private var startTimes: [String: Date] = [:]
   private var metrics = PerformanceMetrics()
@@ -141,21 +145,25 @@ public class PerformanceMonitoringService {
     }
 
     let duration = Date().timeIntervalSince(startTime) * 1000  // Convert to milliseconds
-    logger.info("Completed stage: \(stage) in \(String(format: "%.2f", duration))ms")
+    logger.info(
+      "Completed stage: \(stage) in \(String(format: "%.2f", duration))ms"
+    )
 
     // Update metrics based on stage
     switch stage {
     case "parse":
       metrics = PerformanceMetrics(parseTimeMs: duration,
                                    featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
-                                   mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
+                                   mlMultiArrayConversionTimeMs: metrics
+                                     .mlMultiArrayConversionTimeMs,
                                    trainingTimeMs: metrics.trainingTimeMs,
                                    validationTimeMs: metrics.validationTimeMs,
                                    peakMemoryMB: metrics.peakMemoryMB)
     case "featureEngineering":
       metrics = PerformanceMetrics(parseTimeMs: metrics.parseTimeMs,
                                    featureEngineeringTimeMs: duration,
-                                   mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
+                                   mlMultiArrayConversionTimeMs: metrics
+                                     .mlMultiArrayConversionTimeMs,
                                    trainingTimeMs: metrics.trainingTimeMs,
                                    validationTimeMs: metrics.validationTimeMs,
                                    peakMemoryMB: metrics.peakMemoryMB)
@@ -169,14 +177,16 @@ public class PerformanceMonitoringService {
     case "training":
       metrics = PerformanceMetrics(parseTimeMs: metrics.parseTimeMs,
                                    featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
-                                   mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
+                                   mlMultiArrayConversionTimeMs: metrics
+                                     .mlMultiArrayConversionTimeMs,
                                    trainingTimeMs: duration,
                                    validationTimeMs: metrics.validationTimeMs,
                                    peakMemoryMB: metrics.peakMemoryMB)
     case "validation":
       metrics = PerformanceMetrics(parseTimeMs: metrics.parseTimeMs,
                                    featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
-                                   mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
+                                   mlMultiArrayConversionTimeMs: metrics
+                                     .mlMultiArrayConversionTimeMs,
                                    trainingTimeMs: metrics.trainingTimeMs,
                                    validationTimeMs: duration,
                                    peakMemoryMB: metrics.peakMemoryMB)
@@ -193,7 +203,8 @@ public class PerformanceMonitoringService {
     if memoryMB > metrics.peakMemoryMB {
       metrics = PerformanceMetrics(parseTimeMs: metrics.parseTimeMs,
                                    featureEngineeringTimeMs: metrics.featureEngineeringTimeMs,
-                                   mlMultiArrayConversionTimeMs: metrics.mlMultiArrayConversionTimeMs,
+                                   mlMultiArrayConversionTimeMs: metrics
+                                     .mlMultiArrayConversionTimeMs,
                                    trainingTimeMs: metrics.trainingTimeMs,
                                    validationTimeMs: metrics.validationTimeMs,
                                    peakMemoryMB: memoryMB)
@@ -214,36 +225,51 @@ public class PerformanceMonitoringService {
 
     if metrics.parseTimeMs > budget.parseTimeMs {
       exceededStages.append("Parse")
-      recommendations.append("Optimize NDJSON parsing with streaming or batch processing")
+      recommendations.append(
+        "Optimize NDJSON parsing with streaming or batch processing"
+      )
     }
 
     if metrics.featureEngineeringTimeMs > budget.featureEngineeringTimeMs {
       exceededStages.append("Feature Engineering")
-      recommendations.append("Consider parallel processing or caching intermediate results")
+      recommendations.append(
+        "Consider parallel processing or caching intermediate results"
+      )
     }
 
-    if metrics.mlMultiArrayConversionTimeMs > budget.mlMultiArrayConversionTimeMs {
+    if metrics.mlMultiArrayConversionTimeMs
+      > budget.mlMultiArrayConversionTimeMs
+    {
       exceededStages.append("MLMultiArray Conversion")
-      recommendations.append("Pre-allocate arrays or use batch conversion")
+      recommendations.append(
+        "Pre-allocate arrays or use batch conversion"
+      )
     }
 
     if metrics.trainingTimeMs > budget.trainingTimeMs {
       exceededStages.append("Training")
-      recommendations.append("Reduce batch size, use ANE, or implement early stopping")
+      recommendations.append(
+        "Reduce batch size, use ANE, or implement early stopping"
+      )
     }
 
     if metrics.validationTimeMs > budget.validationTimeMs {
       exceededStages.append("Validation")
-      recommendations.append("Optimize validation data loading or use sampling")
+      recommendations.append(
+        "Optimize validation data loading or use sampling"
+      )
     }
 
     if metrics.peakMemoryMB > budget.peakMemoryMB {
       exceededStages.append("Memory")
-      recommendations.append("Implement memory pooling or reduce batch sizes")
+      recommendations.append(
+        "Implement memory pooling or reduce batch sizes"
+      )
     }
 
     let isWithinBudget = exceededStages.isEmpty
-    let performanceRating = isWithinBudget ? "Excellent" : "Needs Optimization"
+    let performanceRating =
+      isWithinBudget ? "Excellent" : "Needs Optimization"
 
     return BudgetValidationResult(isWithinBudget: isWithinBudget,
                                   exceededStages: exceededStages,
@@ -292,13 +318,19 @@ public func createPerformanceMonitor(budget: PerformanceBudget = .production)
   return PerformanceMonitoringService(budget: budget)
 }
 
-public func measurePerformance<T>(_ stage: String, monitor: PerformanceMonitoringService, operation: () throws -> T) rethrows -> T {
+public func measurePerformance<T>(_ stage: String,
+                                  monitor: PerformanceMonitoringService,
+                                  operation: () throws -> T) rethrows -> T
+{
   monitor.startStage(stage)
   defer { monitor.endStage(stage) }
   return try operation()
 }
 
-public func measurePerformanceAsync<T>(_ stage: String, monitor: PerformanceMonitoringService, operation: () async throws -> T) async rethrows -> T {
+public func measurePerformanceAsync<T>(_ stage: String,
+                                       monitor: PerformanceMonitoringService,
+                                       operation: () async throws -> T) async rethrows -> T
+{
   monitor.startStage(stage)
   defer { monitor.endStage(stage) }
   return try await operation()

@@ -52,16 +52,38 @@ final class PathScoringServiceTests: XCTestCase {
 
     // Create test graph with bridges
     let nodes = [
-      Node(id: "A", name: "Start", coordinates: (latitude: 47.6062, longitude: -122.3321)),
-      Node(id: "B", name: "Bridge1", coordinates: (latitude: 47.6063, longitude: -122.3322)),
-      Node(id: "C", name: "Bridge2", coordinates: (latitude: 47.6064, longitude: -122.3323)),
-      Node(id: "D", name: "End", coordinates: (latitude: 47.6065, longitude: -122.3324)),
+      Node(id: "A",
+           name: "Start",
+           coordinates: (latitude: 47.6062, longitude: -122.3321)),
+      Node(id: "B",
+           name: "Bridge1",
+           coordinates: (latitude: 47.6063, longitude: -122.3322)),
+      Node(id: "C",
+           name: "Bridge2",
+           coordinates: (latitude: 47.6064, longitude: -122.3323)),
+      Node(id: "D",
+           name: "End",
+           coordinates: (latitude: 47.6065, longitude: -122.3324)),
     ]
 
     let edges = [
-      Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-      Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
-      Edge(from: "C", to: "D", travelTime: 300, distance: 1000, isBridge: true, bridgeID: "bridge2"),
+      Edge(from: "A",
+           to: "B",
+           travelTime: 300,
+           distance: 1000,
+           isBridge: false),
+      Edge(from: "B",
+           to: "C",
+           travelTime: 600,
+           distance: 2000,
+           isBridge: true,
+           bridgeID: "bridge1"),
+      Edge(from: "C",
+           to: "D",
+           travelTime: 300,
+           distance: 1000,
+           isBridge: true,
+           bridgeID: "bridge2"),
     ]
 
     testGraph = try Graph(nodes: nodes, edges: edges)
@@ -93,13 +115,23 @@ final class PathScoringServiceTests: XCTestCase {
     // Given: A path with one bridge
     let path = RoutePath(nodes: ["A", "B", "C"],
                          edges: [
-                           Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                           Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
+                           Edge(from: "A",
+                                to: "B",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: false),
+                           Edge(from: "B",
+                                to: "C",
+                                travelTime: 600,
+                                distance: 2000,
+                                isBridge: true,
+                                bridgeID: "bridge1"),
                          ])
     let departureTime = Date()
 
     // When: Score the path
-    let score = try await pathScoringService.scorePath(path, departureTime: departureTime)
+    let score = try await pathScoringService.scorePath(path,
+                                                       departureTime: departureTime)
 
     // Then: Verify basic properties
     XCTAssertEqual(score.path, path)
@@ -116,14 +148,29 @@ final class PathScoringServiceTests: XCTestCase {
     // Given: A path with two bridges
     let path = RoutePath(nodes: ["A", "B", "C", "D"],
                          edges: [
-                           Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                           Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
-                           Edge(from: "C", to: "D", travelTime: 300, distance: 1000, isBridge: true, bridgeID: "bridge2"),
+                           Edge(from: "A",
+                                to: "B",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: false),
+                           Edge(from: "B",
+                                to: "C",
+                                travelTime: 600,
+                                distance: 2000,
+                                isBridge: true,
+                                bridgeID: "bridge1"),
+                           Edge(from: "C",
+                                to: "D",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: true,
+                                bridgeID: "bridge2"),
                          ])
     let departureTime = Date()
 
     // When: Score the path
-    let score = try await pathScoringService.scorePath(path, departureTime: departureTime)
+    let score = try await pathScoringService.scorePath(path,
+                                                       departureTime: departureTime)
 
     // Then: Verify multiple bridge probabilities
     XCTAssertEqual(score.bridgeProbabilities.count, 2)
@@ -131,20 +178,28 @@ final class PathScoringServiceTests: XCTestCase {
     XCTAssertTrue(score.bridgeProbabilities.keys.contains("bridge2"))
 
     // Verify that path probability is product of individual bridge probabilities (after clamping)
-    let expectedProbability = score.bridgeProbabilities.values.reduce(1.0, *)
-    XCTAssertEqual(score.linearProbability, expectedProbability, accuracy: 1e-10)
+    let expectedProbability = score.bridgeProbabilities.values.reduce(1.0,
+                                                                      *)
+    XCTAssertEqual(score.linearProbability,
+                   expectedProbability,
+                   accuracy: 1e-10)
   }
 
   func testScorePathNoBridges() async throws {
     // Given: A path with no bridges
     let path = RoutePath(nodes: ["A", "B"],
                          edges: [
-                           Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
+                           Edge(from: "A",
+                                to: "B",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: false),
                          ])
     let departureTime = Date()
 
     // When: Score the path
-    let score = try await pathScoringService.scorePath(path, departureTime: departureTime)
+    let score = try await pathScoringService.scorePath(path,
+                                                       departureTime: departureTime)
 
     // Then: Should have probability 1.0 (always passable)
     XCTAssertEqual(score.linearProbability, 1.0, accuracy: 1e-10)
@@ -158,9 +213,23 @@ final class PathScoringServiceTests: XCTestCase {
     // Given: A path with very small bridge probabilities
     let path = RoutePath(nodes: ["A", "B", "C", "D"],
                          edges: [
-                           Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                           Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
-                           Edge(from: "C", to: "D", travelTime: 300, distance: 1000, isBridge: true, bridgeID: "bridge2"),
+                           Edge(from: "A",
+                                to: "B",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: false),
+                           Edge(from: "B",
+                                to: "C",
+                                travelTime: 600,
+                                distance: 2000,
+                                isBridge: true,
+                                bridgeID: "bridge1"),
+                           Edge(from: "C",
+                                to: "D",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: true,
+                                bridgeID: "bridge2"),
                          ])
     let departureTime = Date()
 
@@ -171,7 +240,8 @@ final class PathScoringServiceTests: XCTestCase {
                                                   config: testConfig)
 
     // When: Score the path
-    let score = try await smallProbService.scorePath(path, departureTime: departureTime)
+    let score = try await smallProbService.scorePath(path,
+                                                     departureTime: departureTime)
 
     // Then: Should handle small probabilities without underflow
     XCTAssertGreaterThan(score.linearProbability, 0.0)
@@ -183,8 +253,17 @@ final class PathScoringServiceTests: XCTestCase {
     // Given: A path with large bridge probabilities
     let path = RoutePath(nodes: ["A", "B", "C"],
                          edges: [
-                           Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                           Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
+                           Edge(from: "A",
+                                to: "B",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: false),
+                           Edge(from: "B",
+                                to: "C",
+                                travelTime: 600,
+                                distance: 2000,
+                                isBridge: true,
+                                bridgeID: "bridge1"),
                          ])
     let departureTime = Date()
 
@@ -195,7 +274,8 @@ final class PathScoringServiceTests: XCTestCase {
                                                   config: testConfig)
 
     // When: Score the path
-    let score = try await largeProbService.scorePath(path, departureTime: departureTime)
+    let score = try await largeProbService.scorePath(path,
+                                                     departureTime: departureTime)
 
     // Then: Should handle large probabilities correctly
     XCTAssertGreaterThan(score.linearProbability, 0.9)
@@ -208,17 +288,33 @@ final class PathScoringServiceTests: XCTestCase {
   func testScoreMultiplePathsBatch() async throws {
     // Given: Multiple paths
     let path1 = RoutePath(nodes: ["A", "B"],
-                          edges: [Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false)])
+                          edges: [
+                            Edge(from: "A",
+                                 to: "B",
+                                 travelTime: 300,
+                                 distance: 1000,
+                                 isBridge: false),
+                          ])
     let path2 = RoutePath(nodes: ["A", "B", "C"],
                           edges: [
-                            Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                            Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
+                            Edge(from: "A",
+                                 to: "B",
+                                 travelTime: 300,
+                                 distance: 1000,
+                                 isBridge: false),
+                            Edge(from: "B",
+                                 to: "C",
+                                 travelTime: 600,
+                                 distance: 2000,
+                                 isBridge: true,
+                                 bridgeID: "bridge1"),
                           ])
     let paths = [path1, path2]
     let departureTime = Date()
 
     // When: Score multiple paths
-    let scores = try await pathScoringService.scorePaths(paths, departureTime: departureTime)
+    let scores = try await pathScoringService.scorePaths(paths,
+                                                         departureTime: departureTime)
 
     // Then: Should return scores in same order as input
     XCTAssertEqual(scores.count, 2)
@@ -237,12 +333,32 @@ final class PathScoringServiceTests: XCTestCase {
   func testAnalyzeJourneyMultiplePaths() async throws {
     // Given: Multiple paths for a journey
     let path1 = RoutePath(nodes: ["A", "B"],
-                          edges: [Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false)])
+                          edges: [
+                            Edge(from: "A",
+                                 to: "B",
+                                 travelTime: 300,
+                                 distance: 1000,
+                                 isBridge: false),
+                          ])
     let path2 = RoutePath(nodes: ["A", "B", "C", "D"],
                           edges: [
-                            Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                            Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
-                            Edge(from: "C", to: "D", travelTime: 300, distance: 1000, isBridge: true, bridgeID: "bridge2"),
+                            Edge(from: "A",
+                                 to: "B",
+                                 travelTime: 300,
+                                 distance: 1000,
+                                 isBridge: false),
+                            Edge(from: "B",
+                                 to: "C",
+                                 travelTime: 600,
+                                 distance: 2000,
+                                 isBridge: true,
+                                 bridgeID: "bridge1"),
+                            Edge(from: "C",
+                                 to: "D",
+                                 travelTime: 300,
+                                 distance: 1000,
+                                 isBridge: true,
+                                 bridgeID: "bridge2"),
                           ])
     let paths = [path1, path2]
     let departureTime = Date()
@@ -261,7 +377,8 @@ final class PathScoringServiceTests: XCTestCase {
     XCTAssertEqual(analysis.totalPathsAnalyzed, 2)
 
     // Network probability should be >= best path probability
-    XCTAssertGreaterThanOrEqual(analysis.networkProbability, analysis.bestPathProbability)
+    XCTAssertGreaterThanOrEqual(analysis.networkProbability,
+                                analysis.bestPathProbability)
 
     // Network probability should be <= 1.0
     XCTAssertLessThanOrEqual(analysis.networkProbability, 1.0)
@@ -274,8 +391,17 @@ final class PathScoringServiceTests: XCTestCase {
     // Given: Single path for a journey
     let path = RoutePath(nodes: ["A", "B", "C"],
                          edges: [
-                           Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                           Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
+                           Edge(from: "A",
+                                to: "B",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: false),
+                           Edge(from: "B",
+                                to: "C",
+                                travelTime: 600,
+                                distance: 2000,
+                                isBridge: true,
+                                bridgeID: "bridge1"),
                          ])
     let paths = [path]
     let departureTime = Date()
@@ -287,7 +413,9 @@ final class PathScoringServiceTests: XCTestCase {
                                                                departureTime: departureTime)
 
     // Then: Network probability should equal path probability for single path
-    XCTAssertEqual(analysis.networkProbability, analysis.bestPathProbability, accuracy: 1e-10)
+    XCTAssertEqual(analysis.networkProbability,
+                   analysis.bestPathProbability,
+                   accuracy: 1e-10)
     XCTAssertEqual(analysis.pathScores.count, 1)
     XCTAssertEqual(analysis.totalPathsAnalyzed, 1)
   }
@@ -316,14 +444,24 @@ final class PathScoringServiceTests: XCTestCase {
     // Given: Invalid path (non-contiguous)
     let invalidPath = RoutePath(nodes: ["A", "C"],  // Missing B
                                 edges: [
-                                  Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                                  Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
+                                  Edge(from: "A",
+                                       to: "B",
+                                       travelTime: 300,
+                                       distance: 1000,
+                                       isBridge: false),
+                                  Edge(from: "B",
+                                       to: "C",
+                                       travelTime: 600,
+                                       distance: 2000,
+                                       isBridge: true,
+                                       bridgeID: "bridge1"),
                                 ])
     let departureTime = Date()
 
     // When/Then: Should throw error for invalid path
     do {
-      _ = try await pathScoringService.scorePath(invalidPath, departureTime: departureTime)
+      _ = try await pathScoringService.scorePath(invalidPath,
+                                                 departureTime: departureTime)
       XCTFail("Expected error for invalid path")
     } catch {
       XCTAssertTrue(error is PathScoringError)
@@ -336,8 +474,17 @@ final class PathScoringServiceTests: XCTestCase {
     // Given: Same path and seeded predictor
     let path = RoutePath(nodes: ["A", "B", "C"],
                          edges: [
-                           Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                           Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
+                           Edge(from: "A",
+                                to: "B",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: false),
+                           Edge(from: "B",
+                                to: "C",
+                                travelTime: 600,
+                                distance: 2000,
+                                isBridge: true,
+                                bridgeID: "bridge1"),
                          ])
     let departureTime = Date()
 
@@ -353,12 +500,18 @@ final class PathScoringServiceTests: XCTestCase {
                                           config: testConfig)
 
     // When: Score same path with both services
-    let score1 = try await service1.scorePath(path, departureTime: departureTime)
-    let score2 = try await service2.scorePath(path, departureTime: departureTime)
+    let score1 = try await service1.scorePath(path,
+                                              departureTime: departureTime)
+    let score2 = try await service2.scorePath(path,
+                                              departureTime: departureTime)
 
     // Then: Results should be identical
-    XCTAssertEqual(score1.linearProbability, score2.linearProbability, accuracy: 1e-10)
-    XCTAssertEqual(score1.logProbability, score2.logProbability, accuracy: 1e-10)
+    XCTAssertEqual(score1.linearProbability,
+                   score2.linearProbability,
+                   accuracy: 1e-10)
+    XCTAssertEqual(score1.logProbability,
+                   score2.logProbability,
+                   accuracy: 1e-10)
     XCTAssertEqual(score1.bridgeProbabilities, score2.bridgeProbabilities)
   }
 
@@ -381,13 +534,23 @@ final class PathScoringServiceTests: XCTestCase {
 
     let path = RoutePath(nodes: ["A", "B", "C"],
                          edges: [
-                           Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                           Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
+                           Edge(from: "A",
+                                to: "B",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: false),
+                           Edge(from: "B",
+                                to: "C",
+                                travelTime: 600,
+                                distance: 2000,
+                                isBridge: true,
+                                bridgeID: "bridge1"),
                          ])
     let departureTime = Date()
 
     // When: Score path with bounded configuration
-    let score = try await boundedService.scorePath(path, departureTime: departureTime)
+    let score = try await boundedService.scorePath(path,
+                                                   departureTime: departureTime)
 
     // Then: Bridge probabilities should respect bounds
     for (_, probability) in score.bridgeProbabilities {
@@ -402,24 +565,48 @@ final class PathScoringServiceTests: XCTestCase {
     // Given: A path with multiple bridges
     let path = RoutePath(nodes: ["A", "B", "C", "D"],
                          edges: [
-                           Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                           Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
-                           Edge(from: "C", to: "D", travelTime: 300, distance: 1000, isBridge: true, bridgeID: "bridge2"),
+                           Edge(from: "A",
+                                to: "B",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: false),
+                           Edge(from: "B",
+                                to: "C",
+                                travelTime: 600,
+                                distance: 2000,
+                                isBridge: true,
+                                bridgeID: "bridge1"),
+                           Edge(from: "C",
+                                to: "D",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: true,
+                                bridgeID: "bridge2"),
                          ])
     let departureTime = Date()
 
     // When: Score the same path twice
-    let score1 = try await pathScoringService.scorePath(path, departureTime: departureTime)
-    let score2 = try await pathScoringService.scorePath(path, departureTime: departureTime)
+    let score1 = try await pathScoringService.scorePath(path,
+                                                        departureTime: departureTime)
+    let score2 = try await pathScoringService.scorePath(path,
+                                                        departureTime: departureTime)
 
     // Then: Results should be identical (cached features)
-    XCTAssertEqual(score1.linearProbability, score2.linearProbability, accuracy: 1e-10)
-    XCTAssertEqual(score1.logProbability, score2.logProbability, accuracy: 1e-10)
+    XCTAssertEqual(score1.linearProbability,
+                   score2.linearProbability,
+                   accuracy: 1e-10)
+    XCTAssertEqual(score1.logProbability,
+                   score2.logProbability,
+                   accuracy: 1e-10)
 
     // And: Cache statistics should show hits
     let stats = pathScoringService.getCacheStatistics()
-    XCTAssertGreaterThan(stats.hits, 0, "Cache should have hits for repeated bridge/time combinations")
-    XCTAssertGreaterThan(stats.hitRate, 0.0, "Cache hit rate should be positive")
+    XCTAssertGreaterThan(stats.hits,
+                         0,
+                         "Cache should have hits for repeated bridge/time combinations")
+    XCTAssertGreaterThan(stats.hitRate,
+                         0.0,
+                         "Cache hit rate should be positive")
   }
 
   func testCacheStatistics() async throws {
@@ -432,12 +619,22 @@ final class PathScoringServiceTests: XCTestCase {
     // When: Score a path (should miss cache)
     let path = RoutePath(nodes: ["A", "B", "C"],
                          edges: [
-                           Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                           Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
+                           Edge(from: "A",
+                                to: "B",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: false),
+                           Edge(from: "B",
+                                to: "C",
+                                travelTime: 600,
+                                distance: 2000,
+                                isBridge: true,
+                                bridgeID: "bridge1"),
                          ])
     let departureTime = Date()
 
-    _ = try await pathScoringService.scorePath(path, departureTime: departureTime)
+    _ = try await pathScoringService.scorePath(path,
+                                               departureTime: departureTime)
 
     // Then: Should have misses
     let afterFirstScore = pathScoringService.getCacheStatistics()
@@ -445,7 +642,8 @@ final class PathScoringServiceTests: XCTestCase {
     XCTAssertEqual(afterFirstScore.hits, 0)
 
     // When: Score same path again (should hit cache)
-    _ = try await pathScoringService.scorePath(path, departureTime: departureTime)
+    _ = try await pathScoringService.scorePath(path,
+                                               departureTime: departureTime)
 
     // Then: Should have hits
     let afterSecondScore = pathScoringService.getCacheStatistics()
@@ -457,13 +655,23 @@ final class PathScoringServiceTests: XCTestCase {
     // Given: A path that will populate cache
     let path = RoutePath(nodes: ["A", "B", "C"],
                          edges: [
-                           Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                           Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
+                           Edge(from: "A",
+                                to: "B",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: false),
+                           Edge(from: "B",
+                                to: "C",
+                                travelTime: 600,
+                                distance: 2000,
+                                isBridge: true,
+                                bridgeID: "bridge1"),
                          ])
     let departureTime = Date()
 
     // When: Score path to populate cache
-    _ = try await pathScoringService.scorePath(path, departureTime: departureTime)
+    _ = try await pathScoringService.scorePath(path,
+                                               departureTime: departureTime)
     let statsBeforeClear = pathScoringService.getCacheStatistics()
     XCTAssertGreaterThan(statsBeforeClear.misses, 0)
 
@@ -477,7 +685,8 @@ final class PathScoringServiceTests: XCTestCase {
     XCTAssertEqual(statsAfterClear.hitRate, 0.0)
 
     // When: Score same path again after clear
-    _ = try await pathScoringService.scorePath(path, departureTime: departureTime)
+    _ = try await pathScoringService.scorePath(path,
+                                               departureTime: departureTime)
 
     // Then: Should miss cache again
     let statsAfterReScore = pathScoringService.getCacheStatistics()
@@ -489,8 +698,17 @@ final class PathScoringServiceTests: XCTestCase {
     // Given: Same bridge at different departure times that result in same ETA bucket
     let path = RoutePath(nodes: ["A", "B", "C"],
                          edges: [
-                           Edge(from: "A", to: "B", travelTime: 300, distance: 1000, isBridge: false),
-                           Edge(from: "B", to: "C", travelTime: 600, distance: 2000, isBridge: true, bridgeID: "bridge1"),
+                           Edge(from: "A",
+                                to: "B",
+                                travelTime: 300,
+                                distance: 1000,
+                                isBridge: false),
+                           Edge(from: "B",
+                                to: "C",
+                                travelTime: 600,
+                                distance: 2000,
+                                isBridge: true,
+                                bridgeID: "bridge1"),
                          ])
 
     let calendar = Calendar.current
@@ -501,18 +719,32 @@ final class PathScoringServiceTests: XCTestCase {
 
     // Departure 1: 10:00:00 -> Bridge ETA: 10:15:00 (bucket 1230)
     let departure1 = calendar.date(
-      from: DateComponents(year: 2024, month: 1, day: 1, hour: 10, minute: 0, second: 0))!
+      from: DateComponents(year: 2024,
+                           month: 1,
+                           day: 1,
+                           hour: 10,
+                           minute: 0,
+                           second: 0)
+    )!
 
     // Departure 2: 10:00:30 -> Bridge ETA: 10:15:30 (same bucket 1230)
     let departure2 = calendar.date(
-      from: DateComponents(year: 2024, month: 1, day: 1, hour: 10, minute: 0, second: 30))!
+      from: DateComponents(year: 2024,
+                           month: 1,
+                           day: 1,
+                           hour: 10,
+                           minute: 0,
+                           second: 30)
+    )!
 
     // When: Score with departure1 (should miss cache)
-    _ = try await pathScoringService.scorePath(path, departureTime: departure1)
+    _ = try await pathScoringService.scorePath(path,
+                                               departureTime: departure1)
     let statsAfterFirst = pathScoringService.getCacheStatistics()
 
     // When: Score with departure2 (should hit cache - same ETA bucket)
-    _ = try await pathScoringService.scorePath(path, departureTime: departure2)
+    _ = try await pathScoringService.scorePath(path,
+                                               departureTime: departure2)
     let statsAfterSecond = pathScoringService.getCacheStatistics()
 
     // Then: Should have cache hits due to same ETA time bucket
@@ -539,7 +771,9 @@ private class ConstantMockPredictor: BridgeOpenPredictor {
                                   confidence: 0.8)
   }
 
-  func predictBatch(_ inputs: [BridgePredictionInput]) async throws -> BatchPredictionResult {
+  func predictBatch(_ inputs: [BridgePredictionInput]) async throws
+    -> BatchPredictionResult
+  {
     let predictions = inputs.map { input in
       BridgePredictionResult(bridgeID: input.bridgeID,
                              eta: input.eta,

@@ -26,7 +26,8 @@ public struct PipelineStatusRow: View {
 #Preview {
   VStack(spacing: 12) {
     PipelineStatusRow(title: "Data Availability",
-                      subtitle: "Today: Available • Last Week: Available • Historical: Complete",
+                      subtitle:
+                      "Today: Available • Last Week: Available • Historical: Complete",
                       icon: "checkmark.circle.fill",
                       color: .green)
 

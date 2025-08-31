@@ -4,7 +4,8 @@ import SwiftUI
 
 /// Replace with your real calibrator implementation, which should provide async calibration for a bridge.
 protocol BridgeCalibrator {
-  func discoverCrossRoute(bridge: BridgeStatusModel) async throws -> CrossRouteResult
+  func discoverCrossRoute(bridge: BridgeStatusModel) async throws
+    -> CrossRouteResult
 }
 
 // Stub structs for compilation - replace with real result types
@@ -45,7 +46,8 @@ final class CalibrationVM {
     self.calibrator = calibrator
     self.bridges = bridges
     self.rows = bridges.map {
-      .init(id: $0.apiBridgeID?.rawValue ?? $0.bridgeName, name: $0.bridgeName)
+      .init(id: $0.apiBridgeID?.rawValue ?? $0.bridgeName,
+            name: $0.bridgeName)
     }
   }
 
@@ -64,7 +66,9 @@ final class CalibrationVM {
         do {
           let cr = try await calibrator.discoverCrossRoute(bridge: b)
           let q = String(format: "center=%.0fm, n=%d, geo=%.2f",
-                         cr.quality.minCenterDistanceM, cr.quality.sampleCount, cr.quality.geocodeConfidence)
+                         cr.quality.minCenterDistanceM,
+                         cr.quality.sampleCount,
+                         cr.quality.geocodeConfidence)
           await MainActor.run {
             rows[i].state = .success
             rows[i].qualityText = q
@@ -88,13 +92,16 @@ final class CalibrationVM {
 /// Sample calibrator implementation for development and testing.
 /// Replace with your real calibration logic.
 final class DefaultBridgeCalibrator: BridgeCalibrator {
-  func discoverCrossRoute(bridge _: BridgeStatusModel) async throws -> CrossRouteResult {
+  func discoverCrossRoute(bridge _: BridgeStatusModel) async throws
+    -> CrossRouteResult
+  {
     // Replace this mock logic with real calibration/calculation/ML, etc.
     let simulatedQuality = CrossRouteQuality(minCenterDistanceM: Double.random(in: 20 ... 100),
                                              sampleCount: Int.random(in: 10 ... 100),
                                              geocodeConfidence: Double.random(in: 0.7 ... 1.0))
     // Simulate calibration time
     try await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
-    return CrossRouteResult(quality: simulatedQuality, lastValidatedAt: Date())
+    return CrossRouteResult(quality: simulatedQuality,
+                            lastValidatedAt: Date())
   }
 }

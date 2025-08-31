@@ -1,0 +1,72 @@
+{
+  "source": "/Users/peterjemley/Developer/Bridget/Bridget/Views/PipelineDocumentationView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Documentation",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 53
+        }
+      },
+      {
+        "comment": "",
+        "key": "ML Pipeline Documentation",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 7
+        }
+      },
+      {
+        "comment": "",
+        "key": "Overview",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 11
+        }
+      },
+      {
+        "comment": "",
+        "key": "The ML Training Data Pipeline ingests probe tick data from various sources, organizes it by day, and exports it in NDJSON format for machine learning model training.\n\nThis pipeline provides automated daily exports, manual data population for specific date ranges, and troubleshooting tools to ensure data readiness.\n\nKey features:\n- Data Availability checks for today, last week, and historical completeness.\n- Export configuration with selectable destination and date.\n- Automation with daily export scheduling and notifications.",
+        "location": {
+          "startingColumn": 11,
+          "startingLine": 15
+        }
+      },
+      {
+        "comment": "",
+        "key": "Export Formats",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 26
+        }
+      },
+      {
+        "comment": "",
+        "key": "Exports are done in NDJSON (newline-delimited JSON) format. Each line represents a serialized ProbeTick object, suitable for streaming ingestion.\n\nFile naming convention:\n- `minutes_YYYY-MM-DD.ndjson`, where `YYYY-MM-DD` is the export date.\n\nExports can be saved either to the Documents or Downloads folder (macOS only).",
+        "location": {
+          "startingColumn": 11,
+          "startingLine": 30
+        }
+      },
+      {
+        "comment": "",
+        "key": "Help and Support",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 39
+        }
+      },
+      {
+        "comment": "",
+        "key": "For troubleshooting, use the 'Troubleshooting' section to view logs and run health checks.\n\nIf you encounter issues with automated exports, ensure background tasks are enabled and the chosen export time is reasonable.\n\nContact support or consult the app documentation for advanced help.",
+        "location": {
+          "startingColumn": 11,
+          "startingLine": 43
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -21,7 +21,9 @@ public func isNotEmpty<T: Collection>(_ value: T?) -> Bool {
 
 /// Utility for numeric range validation.
 @inline(__always)
-public func isInRange<T: Comparable>(_ value: T?, _ range: ClosedRange<T>) -> Bool {
+public func isInRange<T: Comparable>(_ value: T?, _ range: ClosedRange<T>)
+  -> Bool
+{
   guard let value = value else { return false }
   return range.contains(value)
 }

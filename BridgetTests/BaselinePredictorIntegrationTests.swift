@@ -56,7 +56,8 @@ struct BaselinePredictorIntegrationTests {
 
   // MARK: - Test Harness Setup
 
-  private func makeBaselineHarness() throws -> (service: PathScoringService, predictor: BaselinePredictor, eta: ETAEstimator,
+  private func makeBaselineHarness() throws -> (service: PathScoringService, predictor: BaselinePredictor,
+                                                eta: ETAEstimator,
                                                 config: MultiPathConfig)
   {
     let config = makeTestConfig()
@@ -77,7 +78,8 @@ struct BaselinePredictorIntegrationTests {
     return (service, predictor, eta, config)
   }
 
-  private func makeMockHarness() throws -> (service: PathScoringService, predictor: MockBridgePredictor, eta: ETAEstimator,
+  private func makeMockHarness() throws -> (service: PathScoringService, predictor: MockBridgePredictor,
+                                            eta: ETAEstimator,
                                             config: MultiPathConfig)
   {
     let config = makeTestConfig()
@@ -99,30 +101,53 @@ struct BaselinePredictorIntegrationTests {
 
     // Add road edge from start to first bridge
     edges.append(
-      Edge(from: "Start", to: "Bridge1", travelTime: 300, distance: 1000, isBridge: false))
+      Edge(from: "Start",
+           to: "Bridge1",
+           travelTime: 300,
+           distance: 1000,
+           isBridge: false)
+    )
 
     // Add bridge edges - only create bridge edges for valid bridge IDs
     for (index, bridgeID) in bridgeIDs.enumerated() {
       let fromNode = index == 0 ? "Bridge1" : "Bridge\(index)"
-      let toNode = index == bridgeIDs.count - 1 ? "End" : "Bridge\(index + 1)"
+      let toNode =
+        index == bridgeIDs.count - 1 ? "End" : "Bridge\(index + 1)"
 
       // Check if this is a valid bridge ID
-      if SeattleDrawbridges.isAcceptedBridgeID(bridgeID, allowSynthetic: true) {
+      if SeattleDrawbridges.isAcceptedBridgeID(bridgeID,
+                                               allowSynthetic: true)
+      {
         // Valid bridge ID - create bridge edge
         edges.append(
-          Edge(from: fromNode, to: toNode, travelTime: 600, distance: 2000, isBridge: true,
-               bridgeID: bridgeID))
+          Edge(from: fromNode,
+               to: toNode,
+               travelTime: 600,
+               distance: 2000,
+               isBridge: true,
+               bridgeID: bridgeID)
+        )
       } else {
         // Invalid bridge ID - create road edge instead (fallback behavior)
         edges.append(
-          Edge(from: fromNode, to: toNode, travelTime: 600, distance: 2000, isBridge: false))
+          Edge(from: fromNode,
+               to: toNode,
+               travelTime: 600,
+               distance: 2000,
+               isBridge: false)
+        )
       }
     }
 
     // Add road edge from last bridge to end
     if bridgeIDs.count == 1 {
       edges.append(
-        Edge(from: "Bridge1", to: "End", travelTime: 300, distance: 1000, isBridge: false))
+        Edge(from: "Bridge1",
+             to: "End",
+             travelTime: 300,
+             distance: 1000,
+             isBridge: false)
+      )
     }
 
     return RoutePath(nodes: nodes, edges: edges)
@@ -150,7 +175,9 @@ struct BaselinePredictorIntegrationTests {
                                          config: config)
 
     // Basic validation that service was created successfully
-    print("✅ PathScoringService created successfully with BaselinePredictor")
+    print(
+      "✅ PathScoringService created successfully with BaselinePredictor"
+    )
   }
 
   @Test("BaselinePredictor basic functionality")
@@ -167,7 +194,9 @@ struct BaselinePredictorIntegrationTests {
     let eta = Date()
     let features = [1.0, 2.0, 3.0]  // Dummy features
 
-    let result = try await predictor.predict(bridgeID: bridgeID, eta: eta, features: features)
+    let result = try await predictor.predict(bridgeID: bridgeID,
+                                             eta: eta,
+                                             features: features)
 
     // Basic validation
     #expect(result.bridgeID == bridgeID)
@@ -192,7 +221,9 @@ struct BaselinePredictorIntegrationTests {
     let features = [1.0, 2.0, 3.0]  // Dummy features
 
     let startTime = Date()
-    let result = try await predictor.predict(bridgeID: bridgeID, eta: eta, features: features)
+    let result = try await predictor.predict(bridgeID: bridgeID,
+                                             eta: eta,
+                                             features: features)
     let singlePredictionTime = Date().timeIntervalSince(startTime)
 
     // Test batch prediction performance
@@ -207,18 +238,24 @@ struct BaselinePredictorIntegrationTests {
     #expect(batchResult.count == bridgeIDs.count)
 
     // Performance should be reasonable
-    #expect(singlePredictionTime < 0.1, "Single prediction took \(singlePredictionTime)s")
-    #expect(batchPredictionTime < 0.5, "Batch prediction took \(batchPredictionTime)s")
+    #expect(singlePredictionTime < 0.1,
+            "Single prediction took \(singlePredictionTime)s")
+    #expect(batchPredictionTime < 0.5,
+            "Batch prediction took \(batchPredictionTime)s")
 
     print("📊 BaselinePredictor Performance Metrics:")
-    print("  Single prediction: \(String(format: "%.3f", singlePredictionTime))s")
+    print(
+      "  Single prediction: \(String(format: "%.3f", singlePredictionTime))s"
+    )
     print(
       "  Batch prediction (\(bridgeIDs.count) bridges): \(String(format: "%.3f", batchPredictionTime))s"
     )
     print(
       "  Average per bridge: \(String(format: "%.3f", batchPredictionTime / Double(bridgeIDs.count)))s"
     )
-    print("  Single bridge probability: \(String(format: "%.3f", result.openProbability))")
+    print(
+      "  Single bridge probability: \(String(format: "%.3f", result.openProbability))"
+    )
   }
 
   @Test("BaselinePredictor integrates successfully with PathScoringService")
@@ -229,10 +266,13 @@ struct BaselinePredictorIntegrationTests {
     let path = makeSeattlePath(withBridgeIDs: ["2"])  // Ballard Bridge
     let departureTime = Date()
 
-    let score = try await service.scorePath(path, departureTime: departureTime)
+    let score = try await service.scorePath(path,
+                                            departureTime: departureTime)
 
     // Validate basic scoring properties
-    #expect(score.linearProbability >= 0.0 && score.linearProbability <= 1.0)
+    #expect(
+      score.linearProbability >= 0.0 && score.linearProbability <= 1.0
+    )
     #expect(score.logProbability.isFinite)
     #expect(score.bridgeProbabilities.count == 1)
     #expect(score.bridgeProbabilities["2"] != nil)
@@ -251,7 +291,8 @@ struct BaselinePredictorIntegrationTests {
     let path = makeSeattlePath(withBridgeIDs: ["2", "3"])  // Ballard + Fremont
     let departureTime = Date()
 
-    let score = try await service.scorePath(path, departureTime: departureTime)
+    let score = try await service.scorePath(path,
+                                            departureTime: departureTime)
 
     // Validate multiple bridge handling
     #expect(score.bridgeProbabilities.count == 2)
@@ -279,7 +320,8 @@ struct BaselinePredictorIntegrationTests {
     let path = makeSeattlePath(withBridgeIDs: ["999"])  // Non-existent bridge
     let departureTime = Date()
 
-    let score = try await service.scorePath(path, departureTime: departureTime)
+    let score = try await service.scorePath(path,
+                                            departureTime: departureTime)
 
     // Since "999" is treated as a road edge, there should be no bridge probabilities
     #expect(score.bridgeProbabilities.isEmpty)
@@ -296,12 +338,14 @@ struct BaselinePredictorIntegrationTests {
 
     // Time BaselinePredictor
     let baselineStart = Date()
-    let baselineScore = try await baselineHarness.service.scorePath(path, departureTime: departureTime)
+    let baselineScore = try await baselineHarness.service.scorePath(path,
+                                                                    departureTime: departureTime)
     let baselineTime = Date().timeIntervalSince(baselineStart)
 
     // Time MockBridgePredictor
     let mockStart = Date()
-    let mockScore = try await mockHarness.service.scorePath(path, departureTime: departureTime)
+    let mockScore = try await mockHarness.service.scorePath(path,
+                                                            departureTime: departureTime)
     let mockTime = Date().timeIntervalSince(mockStart)
 
     // Both should complete successfully
@@ -348,7 +392,8 @@ struct BaselinePredictorIntegrationTests {
                                            etaEstimator: eta,
                                            config: config)
 
-      let score = try await service.scorePath(path, departureTime: departureTime)
+      let score = try await service.scorePath(path,
+                                              departureTime: departureTime)
       results[name] = score.bridgeProbabilities["2"]!
     }
 
@@ -386,7 +431,8 @@ struct BaselinePredictorIntegrationTests {
     var scores: [PathScore] = []
 
     for path in paths {
-      let score = try await service.scorePath(path, departureTime: departureTime)
+      let score = try await service.scorePath(path,
+                                              departureTime: departureTime)
       scores.append(score)
     }
 
@@ -397,11 +443,14 @@ struct BaselinePredictorIntegrationTests {
     #expect(scores.count == paths.count)
     for score in scores {
       #expect(score.linearProbability.isFinite)
-      #expect(score.linearProbability >= 0.0 && score.linearProbability <= 1.0)
+      #expect(
+        score.linearProbability >= 0.0 && score.linearProbability <= 1.0
+      )
     }
 
     // Performance should be reasonable
-    #expect(avgTime < 1.0, "Average scoring time \(avgTime)s per path is too slow")
+    #expect(avgTime < 1.0,
+            "Average scoring time \(avgTime)s per path is too slow")
 
     print("📊 Batch Prediction Performance:")
     print("  Total paths: \(paths.count)")
@@ -420,7 +469,8 @@ struct BaselinePredictorIntegrationTests {
     let initialStats = service.getCacheStatistics()
 
     // Score the path
-    let score = try await service.scorePath(path, departureTime: departureTime)
+    let score = try await service.scorePath(path,
+                                            departureTime: departureTime)
     #expect(score.linearProbability.isFinite)
 
     // Get final cache stats

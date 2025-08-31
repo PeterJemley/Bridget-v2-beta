@@ -97,7 +97,9 @@ public class DataValidationService {
   /// Cached ISO8601 date formatter for performance
   private static let iso8601Formatter: ISO8601DateFormatter = {
     let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+    formatter.formatOptions = [
+      .withInternetDateTime, .withFractionalSeconds, .withTimeZone,
+    ]
     return formatter
   }()
 
@@ -114,7 +116,8 @@ public class DataValidationService {
 
     // Basic format validation
     guard trimmed.contains("T"),
-          trimmed.contains("Z") || trimmed.contains("+") || trimmed.contains("-")
+          trimmed.contains("Z") || trimmed.contains("+")
+          || trimmed.contains("-")
     else {
       return nil
     }
@@ -178,7 +181,9 @@ public class DataValidationService {
   ///
   /// - Parameter ticks: Array of raw probe tick data to validate
   /// - Returns: Comprehensive validation result with detailed metrics and actionable feedback
-  public func validateAsync(ticks: [ProbeTickRaw]) async -> DataValidationResult {
+  public func validateAsync(ticks: [ProbeTickRaw]) async
+    -> DataValidationResult
+  {
     var result = DataValidationResult()
 
     if !isNotEmpty(ticks) {
@@ -190,18 +195,31 @@ public class DataValidationService {
     // Basic metrics
     result.totalRecords = ticks.count
     result.bridgeCount = Set(ticks.map { $0.bridge_id }).count
-    result.recordsPerBridge = Dictionary(grouping: ticks, by: { $0.bridge_id })
+    result.recordsPerBridge = Dictionary(grouping: ticks,
+                                         by: { $0.bridge_id })
       .mapValues { $0.count }
 
     // Run built-in validators in parallel if enabled
     if config.performanceConfig.enableParallelValidation {
-      async let rangeCheckResult = Task { checkRanges(ticks: ticks) }.value
-      async let timestampResult = Task { checkTimestampMonotonicity(ticks: ticks) }.value
-      async let timestampWindowResult = Task { checkTimestampWindows(ticks: ticks) }.value
-      async let duplicateResult = Task { checkDuplicates(ticks: ticks) }.value
-      async let missingDataResult = Task { checkMissingData(ticks: ticks) }.value
-      async let missingRatioResult = Task { checkMissingRatios(ticks: ticks) }.value
-      async let coverageResult = Task { checkHorizonCoverage(ticks: ticks) }.value
+      async let rangeCheckResult = Task { checkRanges(ticks: ticks) }
+        .value
+      async let timestampResult = Task {
+        checkTimestampMonotonicity(ticks: ticks)
+      }.value
+      async let timestampWindowResult = Task {
+        checkTimestampWindows(ticks: ticks)
+      }.value
+      async let duplicateResult = Task { checkDuplicates(ticks: ticks) }
+        .value
+      async let missingDataResult = Task {
+        checkMissingData(ticks: ticks)
+      }.value
+      async let missingRatioResult = Task {
+        checkMissingRatios(ticks: ticks)
+      }.value
+      async let coverageResult = Task {
+        checkHorizonCoverage(ticks: ticks)
+      }.value
       async let outlierResult = Task { checkOutliers(ticks: ticks) }.value
 
       // Wait for all results
@@ -228,7 +246,9 @@ public class DataValidationService {
       result.invalidCrossRatios = results[0].invalidCrossRatios
       result.timestampRange = results[1].timestampRange
       result.horizonCoverage = results[6].horizonCoverage
-      result.dataQualityMetrics = aggregateDataQualityMetrics(results.map { $0.dataQualityMetrics })
+      result.dataQualityMetrics = aggregateDataQualityMetrics(
+        results.map { $0.dataQualityMetrics }
+      )
     } else {
       // Sequential validation
       let syncResult = validate(ticks: ticks)
@@ -264,7 +284,8 @@ public class DataValidationService {
     // Basic counts and setup
     result.totalRecords = ticks.count
     result.bridgeCount = Set(ticks.map { $0.bridge_id }).count
-    result.recordsPerBridge = Dictionary(grouping: ticks, by: { $0.bridge_id })
+    result.recordsPerBridge = Dictionary(grouping: ticks,
+                                         by: { $0.bridge_id })
       .mapValues { $0.count }
 
     // Run comprehensive validation checks
@@ -332,7 +353,8 @@ public class DataValidationService {
     // Basic counts and setup
     result.totalRecords = features.count
     result.bridgeCount = Set(features.map { $0.bridge_id }).count
-    result.recordsPerBridge = Dictionary(grouping: features, by: { $0.bridge_id })
+    result.recordsPerBridge = Dictionary(grouping: features,
+                                         by: { $0.bridge_id })
       .mapValues { $0.count }
 
     // Run feature-specific validation checks
@@ -389,7 +411,9 @@ public class DataValidationService {
       if let crossK = tick.cross_k, let crossN = tick.cross_n {
         if crossK < 0 || crossN < 0 || crossK > crossN {
           invalidCrossRatios += 1
-          result.warnings.append("Suspicious cross ratio: k=\(crossK), n=\(crossN)")
+          result.warnings.append(
+            "Suspicious cross ratio: k=\(crossK), n=\(crossN)"
+          )
         }
       }
 
@@ -402,7 +426,9 @@ public class DataValidationService {
       // Detour delta validation (should be reasonable)
       if let detourDelta = tick.detour_delta, abs(detourDelta) > 3600 {
         rangeViolations["detour_delta", default: 0] += 1
-        result.warnings.append("Extreme detour delta: \(detourDelta) seconds")
+        result.warnings.append(
+          "Extreme detour delta: \(detourDelta) seconds"
+        )
       }
     }
 
@@ -427,7 +453,9 @@ public class DataValidationService {
   }
 
   /// Validates timestamp monotonicity and extracts time range
-  private func checkTimestampMonotonicity(ticks: [ProbeTickRaw]) -> DataValidationResult {
+  private func checkTimestampMonotonicity(ticks: [ProbeTickRaw])
+    -> DataValidationResult
+  {
     var result = DataValidationResult()
     var timestamps: [Date] = []
     var nonMonotonicCount = 0
@@ -441,7 +469,9 @@ public class DataValidationService {
         timestamps.append(date)
       } else {
         parsingFailures += 1
-        result.errors.append("Invalid timestamp format at index \(index): \(tick.ts_utc)")
+        result.errors.append(
+          "Invalid timestamp format at index \(index): \(tick.ts_utc)"
+        )
       }
     }
 
@@ -459,9 +489,13 @@ public class DataValidationService {
       // Handle edge cases: empty or single-element arrays
       if timestamps.count == 1 {
         result.timestampRange = (timestamps[0], timestamps[0])
-        result.warnings.append("Single timestamp found - monotonicity check skipped")
+        result.warnings.append(
+          "Single timestamp found - monotonicity check skipped"
+        )
       } else {
-        result.warnings.append("No valid timestamps found - monotonicity check skipped")
+        result.warnings.append(
+          "No valid timestamps found - monotonicity check skipped"
+        )
       }
       return result
     }
@@ -470,7 +504,9 @@ public class DataValidationService {
     for (prev, curr) in zip(timestamps, timestamps.dropFirst()) {
       if curr < prev {  // Non-decreasing check (allows equal timestamps)
         nonMonotonicCount += 1
-        result.warnings.append("Non-monotonic timestamp detected: \(curr) < \(prev)")
+        result.warnings.append(
+          "Non-monotonic timestamp detected: \(curr) < \(prev)"
+        )
       }
     }
 
@@ -481,32 +517,43 @@ public class DataValidationService {
       let duration = last.timeIntervalSince(first)
       if duration < 300 {  // Less than 5 minutes
         result.warnings.append(
-          "Very short time span: \(String(format: "%.1f", duration / 60)) minutes")
+          "Very short time span: \(String(format: "%.1f", duration / 60)) minutes"
+        )
       }
     }
 
     if nonMonotonicCount > 0 {
-      result.warnings.append("Found \(nonMonotonicCount) non-monotonic timestamps")
+      result.warnings.append(
+        "Found \(nonMonotonicCount) non-monotonic timestamps"
+      )
     }
 
     return result
   }
 
   /// Validates timestamp windows and time-based patterns
-  private func checkTimestampWindows(ticks: [ProbeTickRaw]) -> DataValidationResult {
+  private func checkTimestampWindows(ticks: [ProbeTickRaw])
+    -> DataValidationResult
+  {
     var result = DataValidationResult()
 
     let timestamps = ticks.compactMap { tick -> Date? in
-      guard let sanitized = sanitizeTimestamp(tick.ts_utc) else { return nil }
+      guard let sanitized = sanitizeTimestamp(tick.ts_utc) else {
+        return nil
+      }
       return Self.iso8601Formatter.date(from: sanitized)
     }.sorted()
 
     // Guard against insufficient data
     guard timestamps.count >= 2 else {
       if timestamps.count == 1 {
-        result.warnings.append("Single timestamp found - time window analysis limited")
+        result.warnings.append(
+          "Single timestamp found - time window analysis limited"
+        )
       } else {
-        result.warnings.append("No valid timestamps found - time window analysis skipped")
+        result.warnings.append(
+          "No valid timestamps found - time window analysis skipped"
+        )
       }
       return result
     }
@@ -517,13 +564,15 @@ public class DataValidationService {
     // Flag very short time spans (less than 1 hour)
     if timeSpan < 3600 {
       result.warnings.append(
-        "Very short time span: \(String(format: "%.1f", timeSpan / 60)) minutes")
+        "Very short time span: \(String(format: "%.1f", timeSpan / 60)) minutes"
+      )
     }
 
     // Flag very long time spans (more than 30 days)
     if timeSpan > 30 * 24 * 3600 {
       result.warnings.append(
-        "Very long time span: \(String(format: "%.1f", timeSpan / (24 * 3600))) days")
+        "Very long time span: \(String(format: "%.1f", timeSpan / (24 * 3600))) days"
+      )
     }
 
     // Check for gaps in time series using safe pairwise iteration
@@ -538,7 +587,8 @@ public class DataValidationService {
     if !gaps.isEmpty {
       let avgGap = gaps.reduce(0, +) / Double(gaps.count)
       result.warnings.append(
-        "Found \(gaps.count) time gaps, average: \(String(format: "%.1f", avgGap / 3600)) hours")
+        "Found \(gaps.count) time gaps, average: \(String(format: "%.1f", avgGap / 3600)) hours"
+      )
     }
 
     // Check for time-of-day patterns
@@ -553,7 +603,8 @@ public class DataValidationService {
       let ratio = Double(maxHour) / Double(minHour)
       if ratio > 5.0 {
         result.warnings.append(
-          "Unbalanced hour distribution: ratio \(String(format: "%.1f", ratio))")
+          "Unbalanced hour distribution: ratio \(String(format: "%.1f", ratio))"
+        )
       }
     }
 
@@ -571,19 +622,26 @@ public class DataValidationService {
       let recordKey = "\(tick.bridge_id)_\(tick.ts_utc)"
       if seenRecords.contains(recordKey) {
         duplicateCount += 1
-        duplicateDetails.append("Bridge \(tick.bridge_id) at \(tick.ts_utc)")
+        duplicateDetails.append(
+          "Bridge \(tick.bridge_id) at \(tick.ts_utc)"
+        )
       } else {
         seenRecords.insert(recordKey)
       }
     }
 
     if duplicateCount > 0 {
-      result.warnings.append("Found \(duplicateCount) duplicate records in dataset")
+      result.warnings.append(
+        "Found \(duplicateCount) duplicate records in dataset"
+      )
       if duplicateCount <= 5 {  // Show details for small numbers of duplicates
-        result.warnings.append("Duplicate records: \(duplicateDetails.joined(separator: ", "))")
+        result.warnings.append(
+          "Duplicate records: \(duplicateDetails.joined(separator: ", "))"
+        )
       } else {
         result.warnings.append(
-          "First 5 duplicates: \(duplicateDetails.prefix(5).joined(separator: ", "))")
+          "First 5 duplicates: \(duplicateDetails.prefix(5).joined(separator: ", "))"
+        )
       }
       result.warnings.append(
         "Action: Remove duplicate records to prevent data quality issues and potential ML training problems."
@@ -632,7 +690,9 @@ public class DataValidationService {
       var infiniteCount = 0
 
       for tick in ticks {
-        let value = Mirror(reflecting: tick).children.first { $0.label == field }?.value
+        let value = Mirror(reflecting: tick).children.first {
+          $0.label == field
+        }?.value
 
         if value == nil {
           nullCount += 1
@@ -650,7 +710,8 @@ public class DataValidationService {
         let percentage = Double(nullCount) / Double(ticks.count) * 100
         if percentage > 50 {
           result.warnings.append(
-            "High null rate for \(field): \(String(format: "%.1f", percentage))%")
+            "High null rate for \(field): \(String(format: "%.1f", percentage))%"
+          )
           result.warnings.append(
             "Action: Investigate data collection for \(field) - consider data source issues or sensor problems."
           )
@@ -667,7 +728,9 @@ public class DataValidationService {
 
       if infiniteCount > 0 {
         infiniteCounts[field] = infiniteCount
-        result.errors.append("Found \(infiniteCount) infinite values in \(field)")
+        result.errors.append(
+          "Found \(infiniteCount) infinite values in \(field)"
+        )
         result.errors.append(
           "Action: Infinite values in \(field) suggest division by zero or overflow. Check mathematical operations."
         )
@@ -692,7 +755,9 @@ public class DataValidationService {
   }
 
   /// Checks for missing data ratios and provides actionable feedback
-  private func checkMissingRatios(ticks: [ProbeTickRaw]) -> DataValidationResult {
+  private func checkMissingRatios(ticks: [ProbeTickRaw])
+    -> DataValidationResult
+  {
     var result = DataValidationResult()
     var missingRatios: [String: Double] = [:]
 
@@ -705,7 +770,9 @@ public class DataValidationService {
     for field in fields {
       var nullCount = 0
       for tick in ticks {
-        let value = Mirror(reflecting: tick).children.first { $0.label == field }?.value
+        let value = Mirror(reflecting: tick).children.first {
+          $0.label == field
+        }?.value
         if value == nil {
           nullCount += 1
         }
@@ -717,10 +784,12 @@ public class DataValidationService {
       // Flag high missing ratios
       if missingRatio > 0.5 {
         result.warnings.append(
-          "High missing ratio for \(field): \(String(format: "%.1f%%", missingRatio * 100))")
+          "High missing ratio for \(field): \(String(format: "%.1f%%", missingRatio * 100))"
+        )
       } else if missingRatio > 0.1 {
         result.warnings.append(
-          "Moderate missing ratio for \(field): \(String(format: "%.1f%%", missingRatio * 100))")
+          "Moderate missing ratio for \(field): \(String(format: "%.1f%%", missingRatio * 100))"
+        )
       }
     }
 
@@ -742,7 +811,9 @@ public class DataValidationService {
   }
 
   /// Checks horizon coverage for different time intervals
-  private func checkHorizonCoverage(ticks: [ProbeTickRaw]) -> DataValidationResult {
+  private func checkHorizonCoverage(ticks: [ProbeTickRaw])
+    -> DataValidationResult
+  {
     var result = DataValidationResult()
     var horizonCoverage: [Int: Int] = [:]
 
@@ -769,7 +840,9 @@ public class DataValidationService {
 
       if actualHours < expectedHours {
         let missingHours = expectedHours - actualHours
-        result.warnings.append("Missing coverage for \(missingHours) hour(s)")
+        result.warnings.append(
+          "Missing coverage for \(missingHours) hour(s)"
+        )
       }
     }
 
@@ -799,8 +872,12 @@ public class DataValidationService {
 
       // Collect non-nil, non-NaN, non-infinite values
       for tick in ticks {
-        let value = Mirror(reflecting: tick).children.first { $0.label == field }?.value
-        if let doubleValue = value as? Double, !doubleValue.isNaN && !doubleValue.isInfinite {
+        let value = Mirror(reflecting: tick).children.first {
+          $0.label == field
+        }?.value
+        if let doubleValue = value as? Double,
+           !doubleValue.isNaN && !doubleValue.isInfinite
+        {
           values.append(doubleValue)
         }
       }
@@ -816,13 +893,17 @@ public class DataValidationService {
         let lowerBound = q1 - 1.5 * iqr
         let upperBound = q3 + 1.5 * iqr
 
-        let outlierCount = values.filter { $0 < lowerBound || $0 > upperBound }.count
+        let outlierCount = values.filter {
+          $0 < lowerBound || $0 > upperBound
+        }.count
         if outlierCount > 0 {
           outlierCounts[field] = outlierCount
-          let percentage = Double(outlierCount) / Double(values.count) * 100
+          let percentage =
+            Double(outlierCount) / Double(values.count) * 100
           if percentage > 10 {
             result.warnings.append(
-              "High outlier rate for \(field): \(String(format: "%.1f", percentage))%")
+              "High outlier rate for \(field): \(String(format: "%.1f", percentage))%"
+            )
           }
         }
       }
@@ -845,13 +926,16 @@ public class DataValidationService {
   }
 
   /// Validates feature vector ranges and values
-  private func checkFeatureRanges(features: [FeatureVector]) -> DataValidationResult {
+  private func checkFeatureRanges(features: [FeatureVector])
+    -> DataValidationResult
+  {
     var result = DataValidationResult()
     var rangeViolations: [String: Int] = [:]
 
     for feature in features {
       // Check cyclical features (should be in [-1, 1])
-      if abs(feature.min_sin) > 1.0 || abs(feature.min_cos) > 1.0 || abs(feature.dow_sin) > 1.0
+      if abs(feature.min_sin) > 1.0 || abs(feature.min_cos) > 1.0
+        || abs(feature.dow_sin) > 1.0
         || abs(feature.dow_cos) > 1.0
       {
         rangeViolations["cyclical_features", default: 0] += 1
@@ -859,12 +943,16 @@ public class DataValidationService {
       }
 
       // Check probability features (should be in [0, 1])
-      if feature.open_5m < 0 || feature.open_5m > 1 || feature.open_30m < 0 || feature.open_30m > 1
-        || feature.via_routable < 0 || feature.via_routable > 1 || feature.detour_frac < 0
+      if feature.open_5m < 0 || feature.open_5m > 1
+        || feature.open_30m < 0 || feature.open_30m > 1
+        || feature.via_routable < 0 || feature.via_routable > 1
+        || feature.detour_frac < 0
         || feature.detour_frac > 1
       {
         rangeViolations["probability_features", default: 0] += 1
-        result.warnings.append("Probability feature out of range [0, 1]")
+        result.warnings.append(
+          "Probability feature out of range [0, 1]"
+        )
       }
 
       // Check target values (should be 0 or 1)
@@ -891,7 +979,9 @@ public class DataValidationService {
   }
 
   /// Checks feature completeness and consistency
-  private func checkFeatureCompleteness(features: [FeatureVector]) -> DataValidationResult {
+  private func checkFeatureCompleteness(features: [FeatureVector])
+    -> DataValidationResult
+  {
     var result = DataValidationResult()
     var nanCounts: [String: Int] = [:]
     var infiniteCounts: [String: Int] = [:]
@@ -917,7 +1007,9 @@ public class DataValidationService {
 
       for feature in features {
         let value =
-          Mirror(reflecting: feature).children.first { $0.label == field }?.value as? Double
+          Mirror(reflecting: feature).children.first {
+            $0.label == field
+          }?.value as? Double
 
         if let doubleValue = value {
           if doubleValue.isNaN {
@@ -935,7 +1027,9 @@ public class DataValidationService {
 
       if infiniteCount > 0 {
         infiniteCounts[field] = infiniteCount
-        result.errors.append("Found \(infiniteCount) infinite values in \(field)")
+        result.errors.append(
+          "Found \(infiniteCount) infinite values in \(field)"
+        )
       }
     }
 
@@ -957,7 +1051,9 @@ public class DataValidationService {
   }
 
   /// Validates feature horizon distribution
-  private func checkFeatureHorizons(features: [FeatureVector]) -> DataValidationResult {
+  private func checkFeatureHorizons(features: [FeatureVector])
+    -> DataValidationResult
+  {
     var result = DataValidationResult()
     var horizonCoverage: [Int: Int] = [:]
 
@@ -983,7 +1079,8 @@ public class DataValidationService {
       let ratio = Double(maxCount) / Double(minCount)
       if ratio > 2.0 {
         result.warnings.append(
-          "Unbalanced horizon distribution: ratio \(String(format: "%.1f", ratio))")
+          "Unbalanced horizon distribution: ratio \(String(format: "%.1f", ratio))"
+        )
       }
     }
 
@@ -992,7 +1089,9 @@ public class DataValidationService {
   }
 
   /// Aggregates multiple data quality metrics into a single result
-  private func aggregateDataQualityMetrics(_ metrics: [DataQualityMetrics]) -> DataQualityMetrics {
+  private func aggregateDataQualityMetrics(_ metrics: [DataQualityMetrics])
+    -> DataQualityMetrics
+  {
     let totalMetrics = metrics.count
     if !isInRange(totalMetrics, 1 ... Int.max) {
       return DataQualityMetrics(dataCompleteness: 0.0,
@@ -1009,15 +1108,20 @@ public class DataValidationService {
     }
 
     let avgDataCompleteness =
-      metrics.map { $0.dataCompleteness }.reduce(0.0, +) / Double(totalMetrics)
+      metrics.map { $0.dataCompleteness }.reduce(0.0, +)
+        / Double(totalMetrics)
     let avgTimestampValidity =
-      metrics.map { $0.timestampValidity }.reduce(0.0, +) / Double(totalMetrics)
+      metrics.map { $0.timestampValidity }.reduce(0.0, +)
+        / Double(totalMetrics)
     let avgBridgeIDValidity =
-      metrics.map { $0.bridgeIDValidity }.reduce(0.0, +) / Double(totalMetrics)
+      metrics.map { $0.bridgeIDValidity }.reduce(0.0, +)
+        / Double(totalMetrics)
     let avgSpeedDataValidity =
-      metrics.map { $0.speedDataValidity }.reduce(0.0, +) / Double(totalMetrics)
+      metrics.map { $0.speedDataValidity }.reduce(0.0, +)
+        / Double(totalMetrics)
     let totalDuplicateCount = metrics.map { $0.duplicateCount }.reduce(0, +)
-    let totalMissingFieldsCount = metrics.map { $0.missingFieldsCount }.reduce(0, +)
+    let totalMissingFieldsCount = metrics.map { $0.missingFieldsCount }
+      .reduce(0, +)
 
     // Aggregate detailed counts
     var aggregatedNanCounts: [String: Int] = [:]

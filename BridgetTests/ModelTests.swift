@@ -33,7 +33,8 @@ import Testing
 
   @Test
   func bridgeStatusModelInitialization() {
-    let bridge = BridgeStatusModel(bridgeName: "Test Bridge", apiBridgeID: nil)
+    let bridge = BridgeStatusModel(bridgeName: "Test Bridge",
+                                   apiBridgeID: nil)
 
     #expect(bridge.bridgeName == "Test Bridge")
     #expect(bridge.historicalOpenings.count == 0)
@@ -51,7 +52,9 @@ import Testing
       calendar.date(byAdding: .hour, value: -3, to: now)!,
     ]
 
-    let bridge = BridgeStatusModel(bridgeName: "Test Bridge", apiBridgeID: nil, historicalOpenings: openings)
+    let bridge = BridgeStatusModel(bridgeName: "Test Bridge",
+                                   apiBridgeID: nil,
+                                   historicalOpenings: openings)
 
     #expect(bridge.bridgeName == "Test Bridge")
     #expect(bridge.historicalOpenings.count == 3)
@@ -70,7 +73,9 @@ import Testing
       BridgeStatusModel(bridgeName: "Bridge 2", apiBridgeID: nil),
     ]
 
-    let route = RouteModel(routeID: "Test Route", bridges: bridges, score: 0.5)
+    let route = RouteModel(routeID: "Test Route",
+                           bridges: bridges,
+                           score: 0.5)
 
     #expect(route.routeID == "Test Route")
     #expect(route.bridges.count == 2)
@@ -97,7 +102,9 @@ import Testing
                                       calendar.date(byAdding: .hour, value: -3, to: now)!,
                                     ])
 
-    let route = RouteModel(routeID: "Test Route", bridges: [bridge1, bridge2], score: 0.0)
+    let route = RouteModel(routeID: "Test Route",
+                           bridges: [bridge1, bridge2],
+                           score: 0.0)
 
     #expect(route.totalHistoricalOpenings == 3)
     #expect(route.complexity == 2)
@@ -184,7 +191,8 @@ import Testing
   @Test
   func bridgeDataErrorLocalization() {
     let networkError = NetworkError.networkError
-    let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")), rawData: Data())
+    let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")),
+                                                      rawData: Data())
     let invalidURLError = NetworkError.invalidResponse
 
     #expect(!networkError.localizedDescription.isEmpty)
@@ -249,7 +257,8 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
+    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self,
+                                                        from: json)
     #expect(record.entityid == "1")
     #expect(record.entityname == "1st Ave South")
     #expect(record.opendatetime == "2025-01-03T10:12:00.000")
@@ -268,7 +277,8 @@ import Testing
     """.data(using: .utf8)!
 
     #expect(throws: DecodingError.self) {
-      _ = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
+      _ = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self,
+                                                 from: json)
     }
   }
 
@@ -288,7 +298,8 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
+    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self,
+                                                        from: json)
     #expect(record.entityid == "1")
     #expect(record.entityname == "1st Ave South")
   }
@@ -308,8 +319,10 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
-    #expect(record.openDate == nil, "Should have nil openDate for malformed date")
+    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self,
+                                                        from: json)
+    #expect(record.openDate == nil,
+            "Should have nil openDate for malformed date")
     #expect(record.closeDate != nil, "Should have valid closeDate")
   }
 
@@ -317,7 +330,8 @@ import Testing
   func emptyArrayPayload() throws {
     let json = "[]".data(using: .utf8)!
 
-    let records = try JSONDecoder.bridgeDecoder().decode([BridgeOpeningRecord].self, from: json)
+    let records = try JSONDecoder.bridgeDecoder().decode([BridgeOpeningRecord].self,
+                                                         from: json)
     #expect(records.count == 0)
   }
 
@@ -336,7 +350,8 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
+    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self,
+                                                        from: json)
     #expect(record.entityid == "")
     #expect(record.entityname == "")
     #expect(record.entityid.isEmpty)
@@ -358,7 +373,8 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
+    let record = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self,
+                                                        from: json)
     #expect(record.minutesOpenValue == nil)
     #expect(record.latitudeValue == nil)
     #expect(record.longitudeValue == nil)
@@ -371,7 +387,8 @@ import Testing
     let networkError = NetworkError.networkError
     let invalidContentTypeError = NetworkError.invalidContentType
     let payloadSizeError = NetworkError.payloadSizeError
-    let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")), rawData: Data())
+    let decodingError = BridgeDataError.decodingError(.dataCorrupted(.init(codingPath: [], debugDescription: "test")),
+                                                      rawData: Data())
     let processingError = BridgeDataError.processingError("test error")
 
     #expect(!networkError.localizedDescription.isEmpty)
@@ -396,7 +413,8 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    _ = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
+    _ = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self,
+                                               from: json)
     #expect(true)
   }
 
@@ -415,7 +433,8 @@ import Testing
     }
     """.data(using: .utf8)!
 
-    _ = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self, from: json)
+    _ = try JSONDecoder.bridgeDecoder().decode(BridgeOpeningRecord.self,
+                                               from: json)
     #expect(true)
   }
 
@@ -477,7 +496,9 @@ import Testing
         "longitude": "-122.334465"
     }]
     """.data(using: .utf8)!
-    #expect(try processor.processHistoricalData(invalidMinutesJSON).0.isEmpty)
+    #expect(
+      try processor.processHistoricalData(invalidMinutesJSON).0.isEmpty
+    )
 
     let oldDateJSON = """
     [{

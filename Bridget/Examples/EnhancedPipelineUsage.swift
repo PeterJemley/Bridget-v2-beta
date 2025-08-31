@@ -165,7 +165,9 @@ public class ExampleProgressDelegate: EnhancedPipelineProgressDelegate {
     print("🔄 Starting stage: \(stage.displayName)")
   }
 
-  public func pipelineDidUpdateStageProgress(_ stage: PipelineStage, progress: Double) {
+  public func pipelineDidUpdateStageProgress(_ stage: PipelineStage,
+                                             progress: Double)
+  {
     let percentage = Int(progress * 100)
     print("📊 \(stage.displayName): \(percentage)% complete")
   }
@@ -175,38 +177,58 @@ public class ExampleProgressDelegate: EnhancedPipelineProgressDelegate {
   }
 
   public func pipelineDidFailStage(_ stage: PipelineStage, error: Error) {
-    print("❌ Stage failed: \(stage.displayName) - \(error.localizedDescription)")
+    print(
+      "❌ Stage failed: \(stage.displayName) - \(error.localizedDescription)"
+    )
   }
 
   // MARK: - Checkpointing
 
-  public func pipelineDidCreateCheckpoint(_ stage: PipelineStage, at path: String) {
+  public func pipelineDidCreateCheckpoint(_ stage: PipelineStage,
+                                          at path: String)
+  {
     print("💾 Created checkpoint for \(stage.displayName) at: \(path)")
   }
 
-  public func pipelineDidResumeFromCheckpoint(_ stage: PipelineStage, at path: String) {
+  public func pipelineDidResumeFromCheckpoint(_ stage: PipelineStage,
+                                              at path: String)
+  {
     print("🔄 Resumed from checkpoint for \(stage.displayName) at: \(path)")
   }
 
   // MARK: - Validation Gates
 
-  public func pipelineDidEvaluateDataQualityGate(_ result: DataValidationResult) -> Bool {
-    let passed = result.isValid && result.validationRate >= 0.95 && result.errors.count <= 5
+  public func pipelineDidEvaluateDataQualityGate(
+    _ result: DataValidationResult
+  ) -> Bool {
+    let passed =
+      result.isValid && result.validationRate >= 0.95
+        && result.errors.count <= 5
 
     if passed {
-      print("✅ Data quality gate passed: \(result.validRecordCount) valid records")
+      print(
+        "✅ Data quality gate passed: \(result.validRecordCount) valid records"
+      )
     } else {
-      print("❌ Data quality gate failed: \(result.errors.joined(separator: ", "))")
+      print(
+        "❌ Data quality gate failed: \(result.errors.joined(separator: ", "))"
+      )
     }
 
     return passed
   }
 
-  public func pipelineDidEvaluateModelPerformanceGate(_ metrics: ModelPerformanceMetrics) -> Bool {
-    let passed = metrics.accuracy >= 0.75 && metrics.loss <= 0.5 && metrics.f1Score >= 0.70
+  public func pipelineDidEvaluateModelPerformanceGate(
+    _ metrics: ModelPerformanceMetrics
+  ) -> Bool {
+    let passed =
+      metrics.accuracy >= 0.75 && metrics.loss <= 0.5
+        && metrics.f1Score >= 0.70
 
     if passed {
-      print("✅ Model performance gate passed: accuracy \(String(format: "%.3f", metrics.accuracy))")
+      print(
+        "✅ Model performance gate passed: accuracy \(String(format: "%.3f", metrics.accuracy))"
+      )
     } else {
       print(
         "❌ Model performance gate failed: accuracy \(String(format: "%.3f", metrics.accuracy)), loss \(String(format: "%.3f", metrics.loss))"
@@ -223,7 +245,9 @@ public class ExampleProgressDelegate: EnhancedPipelineProgressDelegate {
 
     // Log stage durations
     for (stage, duration) in metrics.stageDurations {
-      print("   \(stage.displayName): \(String(format: "%.2f", duration))s")
+      print(
+        "   \(stage.displayName): \(String(format: "%.2f", duration))s"
+      )
     }
 
     // Log memory usage
@@ -264,7 +288,8 @@ public enum EnhancedPipelineDemo {
       // Example 1: Run with JSON configuration
       if FileManagerUtils.fileExists(at: "config/enhanced_pipeline.json") {
         try await EnhancedPipelineExample.runWithJSONConfig(
-          configPath: "config/enhanced_pipeline.json")
+          configPath: "config/enhanced_pipeline.json"
+        )
       }
 
       // Example 2: Run with programmatic configuration
@@ -279,7 +304,9 @@ public enum EnhancedPipelineDemo {
       print("\n🎉 All enhanced pipeline examples completed successfully!")
 
     } catch {
-      print("❌ Enhanced pipeline demo failed: \(error.localizedDescription)")
+      print(
+        "❌ Enhanced pipeline demo failed: \(error.localizedDescription)"
+      )
       exit(1)
     }
   }

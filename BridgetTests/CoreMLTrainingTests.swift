@@ -21,7 +21,9 @@ struct CoreMLTrainingTests {
 
   init() {
     // Generate synthetic test data
-    self.syntheticFeatures = CoreMLTraining.generateSyntheticData(count: 100)
+    self.syntheticFeatures = CoreMLTraining.generateSyntheticData(
+      count: 100
+    )
     // Create validation configuration for fast testing
     self.trainingConfig = .validation
     // Create trainer instance
@@ -59,7 +61,8 @@ struct CoreMLTrainingTests {
   func batchedArraysWithValidInput() throws {
     let features = Array(syntheticFeatures.prefix(25))
     let batchSize = 10
-    let batches = try CoreMLTraining.batchedArrays(from: features, batchSize: batchSize)
+    let batches = try CoreMLTraining.batchedArrays(from: features,
+                                                   batchSize: batchSize)
 
     #expect(batches.count == 3)
     for (index, batch) in batches.enumerated() {
@@ -77,7 +80,8 @@ struct CoreMLTrainingTests {
   func batchedArraysWithInvalidBatchSize() {
     let batchSize = 0
     #expect(throws: CoreMLTrainingError.self) {
-      _ = try CoreMLTraining.batchedArrays(from: syntheticFeatures, batchSize: batchSize)
+      _ = try CoreMLTraining.batchedArrays(from: syntheticFeatures,
+                                           batchSize: batchSize)
     }
   }
 
@@ -86,23 +90,30 @@ struct CoreMLTrainingTests {
     let features = Array(syntheticFeatures.prefix(5))
     let batchSize = 10
     #expect(throws: CoreMLTrainingError.self) {
-      _ = try CoreMLTraining.batchedArrays(from: features, batchSize: batchSize)
+      _ = try CoreMLTraining.batchedArrays(from: features,
+                                           batchSize: batchSize)
     }
   }
 
   // MARK: - Training Orchestration Tests
 
-  @Test("trainModel with valid data fails gracefully due to placeholder base model")
+  @Test(
+    "trainModel with valid data fails gracefully due to placeholder base model"
+  )
   func trainModelWithValidData() async {
     let features = Array(syntheticFeatures.prefix(20))
     do {
       _ = try await trainer.trainModel(with: features)
-      Issue.record("Expected training to fail since actual training requires base model")
+      Issue.record(
+        "Expected training to fail since actual training requires base model"
+      )
     } catch {
       if case let CoreMLTrainingError.trainingFailed(reason, _) = error {
         #expect(reason.contains(missingBaseModelMessage))
       } else {
-        Issue.record("Expected trainingFailed error, got \(String(describing: error))")
+        Issue.record(
+          "Expected trainingFailed error, got \(String(describing: error))"
+        )
       }
     }
   }
@@ -114,15 +125,21 @@ struct CoreMLTrainingTests {
       _ = try await trainer.trainModel(with: features)
       Issue.record("Expected insufficient data error")
     } catch {
-      if case CoreMLTrainingError.insufficientData(required: 10, available: 5) = error {
+      if case CoreMLTrainingError.insufficientData(required: 10,
+                                                   available: 5) = error
+      {
         // pass
       } else {
-        Issue.record("Expected insufficientData error, got \(String(describing: error))")
+        Issue.record(
+          "Expected insufficientData error, got \(String(describing: error))"
+        )
       }
     }
   }
 
-  @Test("trainModel with invalid features ultimately fails due to placeholder model")
+  @Test(
+    "trainModel with invalid features ultimately fails due to placeholder model"
+  )
   func trainModelWithInvalidFeatures() async {
     let invalidFeatures = syntheticFeatures
     do {
@@ -132,7 +149,9 @@ struct CoreMLTrainingTests {
       if case let CoreMLTrainingError.trainingFailed(reason, _) = error {
         #expect(reason.contains(missingBaseModelMessage))
       } else {
-        Issue.record("Expected trainingFailed error, got \(String(describing: error))")
+        Issue.record(
+          "Expected trainingFailed error, got \(String(describing: error))"
+        )
       }
     }
   }
@@ -189,27 +208,42 @@ struct CoreMLTrainingTests {
 
   @Test("CoreMLTrainingError descriptions and recursion flags")
   func coreMLTrainingErrorDescriptions() {
-    let shapeError = CoreMLTrainingError.shapeMismatch(expected: [14], found: [12], context: "test")
-    let driftError = CoreMLTrainingError.featureDrift(description: "test drift", expectedCount: 14, actualCount: 12)
-    let trainingError = CoreMLTrainingError.trainingFailed(reason: "test failure", underlyingError: nil)
+    let shapeError = CoreMLTrainingError.shapeMismatch(expected: [14],
+                                                       found: [12],
+                                                       context: "test")
+    let driftError = CoreMLTrainingError.featureDrift(description: "test drift",
+                                                      expectedCount: 14,
+                                                      actualCount: 12)
+    let trainingError = CoreMLTrainingError.trainingFailed(reason: "test failure",
+                                                           underlyingError: nil)
 
     #expect(shapeError.errorDescription?.contains("Shape mismatch") == true)
     #expect(driftError.errorDescription?.contains("Feature drift") == true)
-    #expect(trainingError.errorDescription?.contains("Training failed") == true)
+    #expect(
+      trainingError.errorDescription?.contains("Training failed") == true
+    )
 
     // Recursion triggers
     #expect(shapeError.shouldTriggerRecursion)
     #expect(driftError.shouldTriggerRecursion)
-    let invalidError = CoreMLTrainingError.invalidFeatureVector(index: 0, reason: "test")
+    let invalidError = CoreMLTrainingError.invalidFeatureVector(index: 0,
+                                                                reason: "test")
     #expect(invalidError.shouldTriggerRecursion)
 
     // Non-recursive
     #expect(
-      !CoreMLTrainingError.trainingFailed(reason: "test", underlyingError: nil)
-        .shouldTriggerRecursion)
+      !CoreMLTrainingError.trainingFailed(reason: "test",
+                                          underlyingError: nil)
+        .shouldTriggerRecursion
+    )
     let validationError = CoreMLTrainingError.validationFailed(
-      metrics: CoreMLModelValidationResult(accuracy: 0.5, loss: 0.5, f1Score: 0.5, precision: 0.5, recall: 0.5,
-                                           confusionMatrix: [[1, 1], [1, 1]]))
+      metrics: CoreMLModelValidationResult(accuracy: 0.5,
+                                           loss: 0.5,
+                                           f1Score: 0.5,
+                                           precision: 0.5,
+                                           recall: 0.5,
+                                           confusionMatrix: [[1, 1], [1, 1]])
+    )
     #expect(!validationError.shouldTriggerRecursion)
   }
 
@@ -259,7 +293,8 @@ struct CoreMLTrainingTests {
   func batchProcessingOnDevice() throws {
     let features = Array(syntheticFeatures.prefix(20))
     let batchSize = 5
-    let batches = try CoreMLTraining.batchedArrays(from: features, batchSize: batchSize)
+    let batches = try CoreMLTraining.batchedArrays(from: features,
+                                                   batchSize: batchSize)
     #expect(batches.count == 4)
     for batch in batches {
       #expect(batch.array.dataType == .double)

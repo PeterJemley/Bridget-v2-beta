@@ -5,21 +5,27 @@ import SwiftUI
 final class SettingsViewModel {
   // MARK: - Persisted Settings
 
-  @AppStorage("MLAutoExportEnabled") @ObservationIgnored var autoExportEnabled: Bool = false
+  @AppStorage("MLAutoExportEnabled") @ObservationIgnored
+  var autoExportEnabled: Bool = false
   // HH:mm format
-  @AppStorage("MLAutoExportTime") @ObservationIgnored var autoExportTime: String = "01:00"
+  @AppStorage("MLAutoExportTime") @ObservationIgnored var autoExportTime:
+    String = "01:00"
 
   // MARK: - Notification Settings
 
-  @AppStorage("MLPipelineNotificationsEnabled") @ObservationIgnored var notificationsEnabled: Bool =
+  @AppStorage("MLPipelineNotificationsEnabled") @ObservationIgnored
+  var notificationsEnabled: Bool =
     true
-  @AppStorage("MLPipelineSuccessNotifications") @ObservationIgnored var successNotifications: Bool =
+  @AppStorage("MLPipelineSuccessNotifications") @ObservationIgnored
+  var successNotifications: Bool =
     true
-  @AppStorage("MLPipelineFailureNotifications") @ObservationIgnored var failureNotifications: Bool =
+  @AppStorage("MLPipelineFailureNotifications") @ObservationIgnored
+  var failureNotifications: Bool =
     true
-  @AppStorage("MLPipelineProgressNotifications") @ObservationIgnored var progressNotifications:
-    Bool = false
-  @AppStorage("MLPipelineHealthNotifications") @ObservationIgnored var healthNotifications: Bool =
+  @AppStorage("MLPipelineProgressNotifications") @ObservationIgnored
+  var progressNotifications: Bool = false
+  @AppStorage("MLPipelineHealthNotifications") @ObservationIgnored
+  var healthNotifications: Bool =
     true
 
   // MARK: - UI State
@@ -34,10 +40,14 @@ final class SettingsViewModel {
   func configureNotifications() {
     let notificationManager = MLPipelineNotificationManager.shared
     notificationManager.setNotificationsEnabled(notificationsEnabled)
-    notificationManager.setNotificationTypeEnabled(.success, enabled: successNotifications)
-    notificationManager.setNotificationTypeEnabled(.failure, enabled: failureNotifications)
-    notificationManager.setNotificationTypeEnabled(.progress, enabled: progressNotifications)
-    notificationManager.setNotificationTypeEnabled(.health, enabled: healthNotifications)
+    notificationManager.setNotificationTypeEnabled(.success,
+                                                   enabled: successNotifications)
+    notificationManager.setNotificationTypeEnabled(.failure,
+                                                   enabled: failureNotifications)
+    notificationManager.setNotificationTypeEnabled(.progress,
+                                                   enabled: progressNotifications)
+    notificationManager.setNotificationTypeEnabled(.health,
+                                                   enabled: healthNotifications)
   }
 
   func scheduleAutoExport() {

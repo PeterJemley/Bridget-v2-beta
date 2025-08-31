@@ -280,7 +280,9 @@ public class TrainPrepService {
       timings.totalDuration = Date().timeIntervalSince(startTime)
 
       // Generate comprehensive training report with statistical metrics
-      logger.info("📋 Generating training report with statistical metrics...")
+      logger.info(
+        "📋 Generating training report with statistical metrics..."
+      )
       let report = generateTrainingReport(timings: timings,
                                           dataQuality: validationResult.dataQualityMetrics,
                                           modelPerformance: validationMetrics,

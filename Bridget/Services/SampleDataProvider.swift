@@ -55,7 +55,8 @@ class SampleDataProvider {
     ]
 
     return sampleBridges.map { bridgeName, openings in
-      BridgeStatusModel(bridgeName: bridgeName, historicalOpenings: openings)
+      BridgeStatusModel(bridgeName: bridgeName,
+                        historicalOpenings: openings)
     }
   }
 

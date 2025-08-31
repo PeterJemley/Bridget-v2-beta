@@ -58,21 +58,60 @@ final class YensAlgorithmTests: XCTestCase {
 
     let edges = [
       // Shortest path: A -> B -> E (300 + 200 = 500s)
-      Edge(from: "A", to: "B", travelTime: 300, distance: 500, isBridge: true, bridgeID: "bridge1"),
-      Edge(from: "B", to: "E", travelTime: 200, distance: 300, isBridge: false),
+      Edge(from: "A",
+           to: "B",
+           travelTime: 300,
+           distance: 500,
+           isBridge: true,
+           bridgeID: "bridge1"),
+      Edge(from: "B",
+           to: "E",
+           travelTime: 200,
+           distance: 300,
+           isBridge: false),
 
       // Second shortest: A -> C -> E (400 + 150 = 550s)
-      Edge(from: "A", to: "C", travelTime: 400, distance: 600, isBridge: true, bridgeID: "bridge2"),
-      Edge(from: "C", to: "E", travelTime: 150, distance: 250, isBridge: false),
+      Edge(from: "A",
+           to: "C",
+           travelTime: 400,
+           distance: 600,
+           isBridge: true,
+           bridgeID: "bridge2"),
+      Edge(from: "C",
+           to: "E",
+           travelTime: 150,
+           distance: 250,
+           isBridge: false),
 
       // Third shortest: A -> D -> E (350 + 250 = 600s)
-      Edge(from: "A", to: "D", travelTime: 350, distance: 550, isBridge: true, bridgeID: "bridge3"),
-      Edge(from: "D", to: "E", travelTime: 250, distance: 400, isBridge: false),
+      Edge(from: "A",
+           to: "D",
+           travelTime: 350,
+           distance: 550,
+           isBridge: true,
+           bridgeID: "bridge3"),
+      Edge(from: "D",
+           to: "E",
+           travelTime: 250,
+           distance: 400,
+           isBridge: false),
 
       // Alternative paths
-      Edge(from: "B", to: "C", travelTime: 100, distance: 150, isBridge: false),
-      Edge(from: "C", to: "D", travelTime: 120, distance: 180, isBridge: false),
-      Edge(from: "B", to: "D", travelTime: 180, distance: 220, isBridge: false),
+      Edge(from: "B",
+           to: "C",
+           travelTime: 100,
+           distance: 150,
+           isBridge: false),
+      Edge(from: "C",
+           to: "D",
+           travelTime: 120,
+           distance: 180,
+           isBridge: false),
+      Edge(from: "B",
+           to: "D",
+           travelTime: 180,
+           distance: 220,
+           isBridge: false),
     ]
 
     return try! Graph(nodes: nodes, edges: edges)
@@ -87,7 +126,9 @@ final class YensAlgorithmTests: XCTestCase {
                                                           in: testGraph)
 
     // Should find up to kShortestPaths (5) paths
-    XCTAssertLessThanOrEqual(paths.count, 5, "Should not exceed kShortestPaths")
+    XCTAssertLessThanOrEqual(paths.count,
+                             5,
+                             "Should not exceed kShortestPaths")
     XCTAssertGreaterThan(paths.count, 0, "Should find at least one path")
 
     // Verify paths are sorted by travel time (shortest first)
@@ -153,7 +194,9 @@ final class YensAlgorithmTests: XCTestCase {
 
     // Yen's should find the shortest paths correctly
     if let yensShortest = yensPaths.first, let dfsShortest = dfsPaths.first {
-      XCTAssertEqual(yensShortest.totalTravelTime, dfsShortest.totalTravelTime, accuracy: 0.1)
+      XCTAssertEqual(yensShortest.totalTravelTime,
+                     dfsShortest.totalTravelTime,
+                     accuracy: 0.1)
     }
   }
 
@@ -203,7 +246,9 @@ final class YensAlgorithmTests: XCTestCase {
       )
     )
 
-    let constrainedService = PathEnumerationService(config: constrainedConfig)
+    let constrainedService = PathEnumerationService(
+      config: constrainedConfig
+    )
 
     let paths = try constrainedService.enumeratePaths(from: "A",
                                                       to: "E",
@@ -211,11 +256,15 @@ final class YensAlgorithmTests: XCTestCase {
 
     // All paths should respect the constraints
     for path in paths {
-      XCTAssertLessThanOrEqual(path.totalTravelTime, 550.0, "Should respect maxTravelTime")
+      XCTAssertLessThanOrEqual(path.totalTravelTime,
+                               550.0,
+                               "Should respect maxTravelTime")
 
       if let shortestTime = paths.first?.totalTravelTime {
         let maxAllowedTime = shortestTime + 100
-        XCTAssertLessThanOrEqual(path.totalTravelTime, maxAllowedTime, "Should respect maxTimeOverShortest")
+        XCTAssertLessThanOrEqual(path.totalTravelTime,
+                                 maxAllowedTime,
+                                 "Should respect maxTimeOverShortest")
       }
     }
   }
@@ -232,12 +281,16 @@ final class YensAlgorithmTests: XCTestCase {
     let executionTime = endTime - startTime
 
     // Should complete within reasonable time (1 second)
-    XCTAssertLessThan(executionTime, 1.0, "Yen's algorithm should complete within 1 second for small graphs")
+    XCTAssertLessThan(executionTime,
+                      1.0,
+                      "Yen's algorithm should complete within 1 second for small graphs")
   }
 
   func testYensAlgorithmWithNoPath() throws {
     // Test behavior when no path exists
-    let isolatedNode = Node(id: "Z", name: "Isolated", coordinates: (47.6080, -122.3340))
+    let isolatedNode = Node(id: "Z",
+                            name: "Isolated",
+                            coordinates: (47.6080, -122.3340))
     let isolatedGraph = try Graph(nodes: [isolatedNode], edges: [])
 
     // This should throw an error because "A" doesn't exist in the graph

@@ -1,0 +1,32 @@
+{
+  "source": "/Users/peterjemley/Developer/Bridget/Bridget/Views/RecentActivityView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "No recent activities",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 21
+        }
+      },
+      {
+        "comment": "",
+        "key": "Recent Activity",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 9
+        }
+      },
+      {
+        "comment": "",
+        "key": "Refresh",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 13
+        }
+      }
+    ]
+  },
+  "version": 1
+}

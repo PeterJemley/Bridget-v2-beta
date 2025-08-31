@@ -1,0 +1,12 @@
+{
+  "/Users/peterjemley/Developer/Bridget/Bridget/Examples/EnhancedPipelineUsage.swift" : {
+    "abi-baseline-json" : "/Users/peterjemley/Developer/Bridget/build/Bridget.build/Release-iphonesimulator/Bridget.build/Objects-normal/x86_64/Bridget.abi.json",
+    "const-values" : "/Users/peterjemley/Developer/Bridget/build/Bridget.build/Release-iphonesimulator/Bridget.build/Objects-normal/x86_64/Bridget-primary.swiftconstvalues",
+    "dependencies" : "/Users/peterjemley/Developer/Bridget/build/Bridget.build/Release-iphonesimulator/Bridget.build/Objects-normal/x86_64/Bridget-primary.d",
+    "diagnostics" : "/Users/peterjemley/Developer/Bridget/build/Bridget.build/Release-iphonesimulator/Bridget.build/Objects-normal/x86_64/Bridget-primary.dia",
+    "objc-header" : "/Users/peterjemley/Developer/Bridget/build/Bridget.build/Release-iphonesimulator/Bridget.build/Objects-normal/x86_64/Bridget-Swift.h",
+    "swiftdoc" : "/Users/peterjemley/Developer/Bridget/build/Bridget.build/Release-iphonesimulator/Bridget.build/Objects-normal/x86_64/Bridget.swiftdoc",
+    "swiftmodule" : "/Users/peterjemley/Developer/Bridget/build/Bridget.build/Release-iphonesimulator/Bridget.build/Objects-normal/x86_64/Bridget.swiftmodule",
+    "swiftsourceinfo" : "/Users/peterjemley/Developer/Bridget/build/Bridget.build/Release-iphonesimulator/Bridget.build/Objects-normal/x86_64/Bridget.swiftsourceinfo"
+  }
+}

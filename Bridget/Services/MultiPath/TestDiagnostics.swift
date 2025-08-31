@@ -10,14 +10,19 @@ import Foundation
 enum TestDiagnostics {
   // Gate verbose output via env var or pass verbose: true explicitly
   static var defaultVerbose: Bool {
-    if let v = ProcessInfo.processInfo.environment["BRIDGET_VERBOSE_DIAGNOSTICS"] {
+    if let v = ProcessInfo.processInfo.environment[
+      "BRIDGET_VERBOSE_DIAGNOSTICS"
+    ] {
       return (v as NSString).boolValue
     }
     return false
   }
 
   /// Dump adjacency for nodes reachable from `start`, deterministically sorted.
-  static func dumpAdjacency(from start: NodeID, in graph: Graph, verbose: Bool = defaultVerbose) {
+  static func dumpAdjacency(from start: NodeID,
+                            in graph: Graph,
+                            verbose: Bool = defaultVerbose)
+  {
     guard verbose else { return }
     let reachable = reachableNodes(from: start, in: graph)
     let sortedNodes = reachable.sorted()
@@ -29,7 +34,10 @@ enum TestDiagnostics {
   }
 
   /// Pretty-print a list of RoutePath instances, sorted by (time, nodes).
-  static func dumpPaths(label: String, paths: [RoutePath], verbose: Bool = defaultVerbose) {
+  static func dumpPaths(label: String,
+                        paths: [RoutePath],
+                        verbose: Bool = defaultVerbose)
+  {
     guard verbose else { return }
     let sorted = paths.sorted {
       if $0.totalTravelTime == $1.totalTravelTime {
@@ -39,19 +47,25 @@ enum TestDiagnostics {
     }
     print("\(label): \(sorted.count) paths")
     for p in sorted {
-      let edgesDesc = p.edges.map { edgeDescription($0) }.joined(separator: ", ")
+      let edgesDesc = p.edges.map { edgeDescription($0) }.joined(
+        separator: ", "
+      )
       print(
         "  \(p.nodes.joined(separator: "->"))  time=\(Int(p.totalTravelTime))s  edges=[\(edgesDesc)]"
       )
     }
     // Also print set-style summary for quick diffing
-    let sigs = sorted.map { "\($0.nodes.joined(separator: "->")) @ \(Int($0.totalTravelTime))s" }
+    let sigs = sorted.map {
+      "\($0.nodes.joined(separator: "->")) @ \(Int($0.totalTravelTime))s"
+    }
     print("\(label) (signatures): \(sigs)")
   }
 
   // MARK: - Internals
 
-  private static func reachableNodes(from start: NodeID, in graph: Graph) -> Set<NodeID> {
+  private static func reachableNodes(from start: NodeID, in graph: Graph)
+    -> Set<NodeID>
+  {
     var visited: Set<NodeID> = []
     var stack: [NodeID] = [start]
     while let current = stack.popLast() {
@@ -70,7 +84,8 @@ enum TestDiagnostics {
       return
         "\(e.from)->\(e.to) [bridge \(e.bridgeID ?? "?") t:\(Int(e.travelTime)) d:\(Int(e.distance))]"
     } else {
-      return "\(e.from)->\(e.to) [t:\(Int(e.travelTime)) d:\(Int(e.distance))]"
+      return
+        "\(e.from)->\(e.to) [t:\(Int(e.travelTime)) d:\(Int(e.distance))]"
     }
   }
 }

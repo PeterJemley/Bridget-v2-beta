@@ -1,0 +1,40 @@
+{
+  "source": "/Users/peterjemley/Developer/Bridget/Bridget/Views/ExportHistoryView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "No export files found.",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 14
+        }
+      },
+      {
+        "comment": "",
+        "key": "Export History",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 17
+        }
+      },
+      {
+        "comment": "",
+        "key": "Export History",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 45
+        }
+      },
+      {
+        "comment": "",
+        "key": "Share %@",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 54
+        }
+      }
+    ]
+  },
+  "version": 1
+}

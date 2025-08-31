@@ -47,9 +47,13 @@ public enum FeatureEngineeringError: Error, LocalizedError {
 
   public var errorDescription: String? {
     switch self {
-    case let .invalidFeatureVector(bridgeId, timestamp, horizon, description):
-      return "Invalid feature vector for bridge \(bridgeId) at \(timestamp) horizon \(horizon): "
-        + "\(description)"
+    case let .invalidFeatureVector(bridgeId,
+                                   timestamp,
+                                   horizon,
+                                   description):
+      return
+        "Invalid feature vector for bridge \(bridgeId) at \(timestamp) horizon \(horizon): "
+          + "\(description)"
     case let .invalidInputData(description):
       return "Invalid input data: \(description)"
     case let .validationFailed(description):
@@ -108,7 +112,9 @@ public func rollingAverage(_ input: [Double?], window: Int) -> [Double] {
   for (_, v) in input.enumerated() {
     if let v = v { windowVals.append(v) }
     if windowVals.count > window { windowVals.removeFirst() }
-    let avg = !windowVals.isEmpty ? windowVals.reduce(0, +) / Double(windowVals.count) : 0.0
+    let avg =
+      !windowVals.isEmpty
+        ? windowVals.reduce(0, +) / Double(windowVals.count) : 0.0
     result.append(avg)
   }
   return result
@@ -255,7 +261,9 @@ public func makeFeatures(from ticks: [ProbeTickRaw],
     let open30m = rollingAverage(openLabels, window: 30)
 
     for (i, tick) in sortedTicks.enumerated() {
-      guard let date = isoFormatter.date(from: tick.ts_utc) else { continue }
+      guard let date = isoFormatter.date(from: tick.ts_utc) else {
+        continue
+      }
       let minOfDay = Double(minuteOfDay(from: date))
       let dow = Double(dayOfWeek(from: date))
       let (minSin, minCos) = cyc(minOfDay, period: 1440)
@@ -263,7 +271,9 @@ public func makeFeatures(from ticks: [ProbeTickRaw],
 
       for (hIdx, horizon) in horizons.enumerated() {
         let targetIdx = i + horizon
-        let target = (targetIdx < sortedTicks.count) ? sortedTicks[targetIdx].open_label : 0
+        let target =
+          (targetIdx < sortedTicks.count)
+            ? sortedTicks[targetIdx].open_label : 0
 
         let penaltyNorm =
           min(max(tick.via_penalty_sec ?? 0.0, 0.0),
@@ -306,7 +316,8 @@ public func makeFeatures(from ticks: [ProbeTickRaw],
           throw FeatureEngineeringError.invalidFeatureVector(bridgeId: tick.bridge_id,
                                                              timestamp: tick.ts_utc,
                                                              horizon: horizon,
-                                                             description: "Feature vector contains NaN or infinite values")
+                                                             description:
+                                                             "Feature vector contains NaN or infinite values")
         }
 
         allFeatures[hIdx].append(fv)
@@ -359,7 +370,9 @@ public class FeatureEngineeringService {
   ///
   /// - Note: Progress is reported through the delegate at start and completion.
   ///         The total feature count is reported upon completion.
-  public func generateFeatures(from ticks: [ProbeTickRaw]) throws -> [[FeatureVector]] {
+  public func generateFeatures(from ticks: [ProbeTickRaw]) throws
+    -> [[FeatureVector]]
+  {
     progressDelegate?.featureEngineeringDidStart()
 
     let allFeatures = try makeFeatures(from: ticks,

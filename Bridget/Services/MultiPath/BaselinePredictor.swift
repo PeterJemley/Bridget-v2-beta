@@ -87,7 +87,9 @@ public class BaselinePredictor: BridgeOpenPredictor {
 
   // MARK: - BridgeOpenPredictor Implementation
 
-  public func predictOpenProbability(for bridgeID: String, at time: Date) -> Double {
+  public func predictOpenProbability(for bridgeID: String, at time: Date)
+    -> Double
+  {
     guard supports(bridgeID: bridgeID) else {
       return config.defaultProbability
     }
@@ -96,18 +98,24 @@ public class BaselinePredictor: BridgeOpenPredictor {
     return predictOpenProbability(for: bridgeID, bucket: bucket)
   }
 
-  public func predictBatch(bridgeIDs: [String], at time: Date) -> [String: Double] {
+  public func predictBatch(bridgeIDs: [String], at time: Date) -> [
+    String:
+      Double
+  ] {
     let bucket = DateBucket(from: time)
     var results: [String: Double] = [:]
 
     for bridgeID in bridgeIDs {
-      results[bridgeID] = predictOpenProbability(for: bridgeID, bucket: bucket)
+      results[bridgeID] = predictOpenProbability(for: bridgeID,
+                                                 bucket: bucket)
     }
 
     return results
   }
 
-  public func predictBatch(_ inputs: [BridgePredictionInput]) async throws -> BatchPredictionResult {
+  public func predictBatch(_ inputs: [BridgePredictionInput]) async throws
+    -> BatchPredictionResult
+  {
     let startTime = Date()
     var predictions: [BridgePredictionResult] = []
 
@@ -122,8 +130,10 @@ public class BaselinePredictor: BridgeOpenPredictor {
         continue
       }
 
-      let probability = predictOpenProbability(for: input.bridgeID, bucket: DateBucket(from: input.eta))
-      let (_, confidence, _) = predictWithConfidence(for: input.bridgeID, at: input.eta)
+      let probability = predictOpenProbability(for: input.bridgeID,
+                                               bucket: DateBucket(from: input.eta))
+      let (_, confidence, _) = predictWithConfidence(for: input.bridgeID,
+                                                     at: input.eta)
 
       let result = BridgePredictionResult(bridgeID: input.bridgeID,
                                           eta: input.eta,
@@ -158,21 +168,30 @@ public class BaselinePredictor: BridgeOpenPredictor {
   ///   - bridgeID: The bridge identifier
   ///   - bucket: The 5-minute time bucket
   /// - Returns: Predicted opening probability (0.0 - 1.0)
-  private func predictOpenProbability(for bridgeID: String, bucket: DateBucket) -> Double {
-    guard let stats = historicalProvider.getOpeningStats(bridgeID: bridgeID, bucket: bucket) else {
+  private func predictOpenProbability(for bridgeID: String,
+                                      bucket: DateBucket) -> Double
+  {
+    guard
+      let stats = historicalProvider.getOpeningStats(bridgeID: bridgeID,
+                                                     bucket: bucket)
+    else {
       return config.defaultProbability
     }
 
     // If we have sufficient data, use Beta-smoothed probability
     if stats.hasSufficientData {
-      return stats.smoothedProbability(alpha: config.priorAlpha, beta: config.priorBeta)
+      return stats.smoothedProbability(alpha: config.priorAlpha,
+                                       beta: config.priorBeta)
     }
 
     // If blending is enabled and we have some data, blend historical with default
     if config.enableBlending && stats.sampleCount > 0 {
-      let historicalProb = stats.smoothedProbability(alpha: config.priorAlpha, beta: config.priorBeta)
-      let weight = min(config.historicalWeight, Double(stats.sampleCount) / Double(config.minSampleCount))
-      return historicalProb * weight + config.defaultProbability * (1.0 - weight)
+      let historicalProb = stats.smoothedProbability(alpha: config.priorAlpha,
+                                                     beta: config.priorBeta)
+      let weight = min(config.historicalWeight,
+                       Double(stats.sampleCount) / Double(config.minSampleCount))
+      return historicalProb * weight + config.defaultProbability
+        * (1.0 - weight)
     }
 
     // Fall back to default probability
@@ -193,15 +212,21 @@ public class BaselinePredictor: BridgeOpenPredictor {
 
     let bucket = DateBucket(from: time)
 
-    guard let stats = historicalProvider.getOpeningStats(bridgeID: bridgeID, bucket: bucket) else {
+    guard
+      let stats = historicalProvider.getOpeningStats(bridgeID: bridgeID,
+                                                     bucket: bucket)
+    else {
       return (config.defaultProbability, 0.0, "default")
     }
 
     let probability = predictOpenProbability(for: bridgeID, bucket: bucket)
 
     // Calculate confidence based on sample count and data quality
-    let sampleConfidence = min(1.0, Double(stats.sampleCount) / Double(config.minSampleCount))
-    let recencyConfidence = calculateRecencyConfidence(lastSeen: stats.lastSeen)
+    let sampleConfidence = min(1.0,
+                               Double(stats.sampleCount) / Double(config.minSampleCount))
+    let recencyConfidence = calculateRecencyConfidence(
+      lastSeen: stats.lastSeen
+    )
     let confidence = (sampleConfidence + recencyConfidence) / 2.0
 
     let dataSource = stats.hasSufficientData ? "historical" : "blended"
@@ -225,17 +250,24 @@ public class BaselinePredictor: BridgeOpenPredictor {
       return []
     }
 
-    var results: [(time: Date, probability: Double, confidence: Double)] = []
+    var results: [(time: Date, probability: Double, confidence: Double)] =
+      []
     var currentTime = startTime
 
     while currentTime <= endTime {
-      let (probability, confidence, _) = predictWithConfidence(for: bridgeID, at: currentTime)
+      let (probability, confidence, _) = predictWithConfidence(for: bridgeID,
+                                                               at: currentTime)
 
-      results.append((time: currentTime, probability: probability, confidence: confidence))
+      results.append(
+        (time: currentTime, probability: probability,
+         confidence: confidence)
+      )
 
       currentTime =
-        Calendar.current.date(byAdding: .minute, value: intervalMinutes, to: currentTime)
-          ?? currentTime
+        Calendar.current.date(byAdding: .minute,
+                              value: intervalMinutes,
+                              to: currentTime)
+        ?? currentTime
     }
 
     return results
@@ -244,9 +276,13 @@ public class BaselinePredictor: BridgeOpenPredictor {
   /// Get prediction summary for a bridge across all time buckets
   /// - Parameter bridgeID: The bridge identifier
   /// - Returns: Summary statistics for the bridge
-  public func getPredictionSummary(for bridgeID: String) -> BridgePredictionSummary? {
+  public func getPredictionSummary(for bridgeID: String)
+    -> BridgePredictionSummary?
+  {
     guard supports(bridgeID: bridgeID),
-          let historicalData = historicalProvider.getHistoricalData(for: bridgeID)
+          let historicalData = historicalProvider.getHistoricalData(
+            for: bridgeID
+          )
     else {
       return nil
     }
@@ -261,7 +297,8 @@ public class BaselinePredictor: BridgeOpenPredictor {
     var bucketCount = 0
 
     for bucket in buckets {
-      let (probability, confidence, _) = predictWithConfidence(for: bridgeID, at: createDateFromBucket(bucket))
+      let (probability, confidence, _) = predictWithConfidence(for: bridgeID,
+                                                               at: createDateFromBucket(bucket))
       totalProbability += probability
       totalConfidence += confidence
       bucketCount += 1
@@ -288,7 +325,8 @@ public class BaselinePredictor: BridgeOpenPredictor {
       return 0.0
     }
 
-    let daysSinceUpdate = Date().timeIntervalSince(lastSeen) / (24 * 60 * 60)
+    let daysSinceUpdate =
+      Date().timeIntervalSince(lastSeen) / (24 * 60 * 60)
 
     // Exponential decay: 1.0 for same day, 0.5 for 7 days, 0.1 for 30 days
     let decayRate = 0.1
@@ -302,7 +340,8 @@ public class BaselinePredictor: BridgeOpenPredictor {
     let calendar = Calendar.current
     let now = Date()
 
-    var components = calendar.dateComponents([.year, .month, .day], from: now)
+    var components = calendar.dateComponents([.year, .month, .day],
+                                             from: now)
     components.hour = bucket.hour
     components.minute = bucket.minute
     components.second = 0
@@ -355,7 +394,9 @@ public extension BaselinePredictor {
   /// Create a BaselinePredictor with default configuration
   /// - Parameter historicalProvider: The historical data provider
   /// - Returns: Configured BaselinePredictor instance
-  static func createDefault(historicalProvider: HistoricalBridgeDataProvider)
+  static func createDefault(
+    historicalProvider: HistoricalBridgeDataProvider
+  )
     -> BaselinePredictor
   {
     return BaselinePredictor(historicalProvider: historicalProvider,
@@ -365,7 +406,9 @@ public extension BaselinePredictor {
   /// Create a BaselinePredictor with conservative configuration (higher default probability)
   /// - Parameter historicalProvider: The historical data provider
   /// - Returns: Configured BaselinePredictor instance
-  static func createConservative(historicalProvider: HistoricalBridgeDataProvider)
+  static func createConservative(
+    historicalProvider: HistoricalBridgeDataProvider
+  )
     -> BaselinePredictor
   {
     let config = BaselinePredictorConfig(priorAlpha: 2.0,
@@ -382,7 +425,9 @@ public extension BaselinePredictor {
   /// Create a BaselinePredictor with aggressive configuration (lower default probability)
   /// - Parameter historicalProvider: The historical data provider
   /// - Returns: Configured BaselinePredictor instance
-  static func createAggressive(historicalProvider: HistoricalBridgeDataProvider)
+  static func createAggressive(
+    historicalProvider: HistoricalBridgeDataProvider
+  )
     -> BaselinePredictor
   {
     let config = BaselinePredictorConfig(priorAlpha: 0.5,

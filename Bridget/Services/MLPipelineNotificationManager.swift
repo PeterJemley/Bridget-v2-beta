@@ -40,7 +40,8 @@ import UserNotifications
 final class MLPipelineNotificationManager {
   static let shared = MLPipelineNotificationManager()
 
-  private let logger = Logger(subsystem: "Bridget", category: "MLPipelineNotifications")
+  private let logger = Logger(subsystem: "Bridget",
+                              category: "MLPipelineNotifications")
 
   private let successCategoryID = "MLPipelineSuccess"
   private let failureCategoryID = "MLPipelineFailure"
@@ -58,7 +59,10 @@ final class MLPipelineNotificationManager {
     requestNotificationPermissions()
   }
 
-  func showSuccessNotification(title: String, body: String, operation: PipelineOperation) {
+  func showSuccessNotification(title: String,
+                               body: String,
+                               operation: PipelineOperation)
+  {
     guard isNotificationTypeEnabled(.success) else { return }
 
     let content = UNMutableNotificationContent()
@@ -71,20 +75,29 @@ final class MLPipelineNotificationManager {
       "timestamp": Date().timeIntervalSince1970,
     ]
 
-    let request = UNNotificationRequest(identifier: "success-\(operation.rawValue)-\(Date().timeIntervalSince1970)",
-                                        content: content,
-                                        trigger: nil)
+    let request = UNNotificationRequest(identifier:
+      "success-\(operation.rawValue)-\(Date().timeIntervalSince1970)",
+      content: content,
+      trigger: nil)
 
     UNUserNotificationCenter.current().add(request) { error in
       if let error = error {
-        self.logger.error("Failed to show success notification: \(error.localizedDescription)")
+        self.logger.error(
+          "Failed to show success notification: \(error.localizedDescription)"
+        )
       } else {
-        self.logger.info("Success notification scheduled for \(operation.rawValue)")
+        self.logger.info(
+          "Success notification scheduled for \(operation.rawValue)"
+        )
       }
     }
   }
 
-  func showFailureNotification(title: String, body: String, operation: PipelineOperation, error: Error) {
+  func showFailureNotification(title: String,
+                               body: String,
+                               operation: PipelineOperation,
+                               error: Error)
+  {
     guard isNotificationTypeEnabled(.failure) else { return }
 
     let content = UNMutableNotificationContent()
@@ -98,20 +111,29 @@ final class MLPipelineNotificationManager {
       "timestamp": Date().timeIntervalSince1970,
     ]
 
-    let request = UNNotificationRequest(identifier: "failure-\(operation.rawValue)-\(Date().timeIntervalSince1970)",
-                                        content: content,
-                                        trigger: nil)
+    let request = UNNotificationRequest(identifier:
+      "failure-\(operation.rawValue)-\(Date().timeIntervalSince1970)",
+      content: content,
+      trigger: nil)
 
     UNUserNotificationCenter.current().add(request) { error in
       if let error = error {
-        self.logger.error("Failed to show failure notification: \(error.localizedDescription)")
+        self.logger.error(
+          "Failed to show failure notification: \(error.localizedDescription)"
+        )
       } else {
-        self.logger.info("Failure notification scheduled for \(operation.rawValue)")
+        self.logger.info(
+          "Failure notification scheduled for \(operation.rawValue)"
+        )
       }
     }
   }
 
-  func showProgressNotification(title: String, body: String, operation: PipelineOperation, progress: Double) {
+  func showProgressNotification(title: String,
+                                body: String,
+                                operation: PipelineOperation,
+                                progress: Double)
+  {
     guard isNotificationTypeEnabled(.progress) else { return }
 
     let content = UNMutableNotificationContent()
@@ -125,21 +147,28 @@ final class MLPipelineNotificationManager {
       "timestamp": Date().timeIntervalSince1970,
     ]
 
-    let request = UNNotificationRequest(identifier: "progress-\(operation.rawValue)-\(Date().timeIntervalSince1970)",
-                                        content: content,
-                                        trigger: nil)
+    let request = UNNotificationRequest(identifier:
+      "progress-\(operation.rawValue)-\(Date().timeIntervalSince1970)",
+      content: content,
+      trigger: nil)
 
     UNUserNotificationCenter.current().add(request) { error in
       if let error = error {
-        self.logger.error("Failed to show progress notification: \(error.localizedDescription)")
+        self.logger.error(
+          "Failed to show progress notification: \(error.localizedDescription)"
+        )
       } else {
         self.logger.info(
-          "Progress notification scheduled for \(operation.rawValue) at \(progress * 100)%")
+          "Progress notification scheduled for \(operation.rawValue) at \(progress * 100)%"
+        )
       }
     }
   }
 
-  func showHealthNotification(title: String, body: String, healthIssue: PipelineHealthIssue) {
+  func showHealthNotification(title: String,
+                              body: String,
+                              healthIssue: PipelineHealthIssue)
+  {
     guard isNotificationTypeEnabled(.health) else { return }
 
     let content = UNMutableNotificationContent()
@@ -152,20 +181,29 @@ final class MLPipelineNotificationManager {
       "timestamp": Date().timeIntervalSince1970,
     ]
 
-    let request = UNNotificationRequest(identifier: "health-\(healthIssue.rawValue)-\(Date().timeIntervalSince1970)",
-                                        content: content,
-                                        trigger: nil)
+    let request = UNNotificationRequest(identifier:
+      "health-\(healthIssue.rawValue)-\(Date().timeIntervalSince1970)",
+      content: content,
+      trigger: nil)
 
     UNUserNotificationCenter.current().add(request) { error in
       if let error = error {
-        self.logger.error("Failed to show health notification: \(error.localizedDescription)")
+        self.logger.error(
+          "Failed to show health notification: \(error.localizedDescription)"
+        )
       } else {
-        self.logger.info("Health notification scheduled for \(healthIssue.rawValue)")
+        self.logger.info(
+          "Health notification scheduled for \(healthIssue.rawValue)"
+        )
       }
     }
   }
 
-  func scheduleOperationNotification(title: String, body: String, operation: PipelineOperation, scheduledTime: Date) {
+  func scheduleOperationNotification(title: String,
+                                     body: String,
+                                     operation: PipelineOperation,
+                                     scheduledTime: Date)
+  {
     guard isNotificationTypeEnabled(.progress) else { return }
 
     let content = UNMutableNotificationContent()
@@ -182,17 +220,20 @@ final class MLPipelineNotificationManager {
     let trigger = UNTimeIntervalNotificationTrigger(timeInterval: scheduledTime.timeIntervalSinceNow,
                                                     repeats: false)
 
-    let request = UNNotificationRequest(identifier: "scheduled-\(operation.rawValue)-\(scheduledTime.timeIntervalSince1970)",
-                                        content: content,
-                                        trigger: trigger)
+    let request = UNNotificationRequest(identifier:
+      "scheduled-\(operation.rawValue)-\(scheduledTime.timeIntervalSince1970)",
+      content: content,
+      trigger: trigger)
 
     UNUserNotificationCenter.current().add(request) { error in
       if let error = error {
         self.logger.error(
-          "Failed to schedule operation notification: \(error.localizedDescription)")
+          "Failed to schedule operation notification: \(error.localizedDescription)"
+        )
       } else {
         self.logger.info(
-          "Operation notification scheduled for \(operation.rawValue) at \(scheduledTime)")
+          "Operation notification scheduled for \(operation.rawValue) at \(scheduledTime)"
+        )
       }
     }
   }
@@ -206,9 +247,13 @@ final class MLPipelineNotificationManager {
       }
 
       let identifiers = operationRequests.map { $0.identifier }
-      center.removePendingNotificationRequests(withIdentifiers: identifiers)
+      center.removePendingNotificationRequests(
+        withIdentifiers: identifiers
+      )
 
-      self.logger.info("Cancelled \(identifiers.count) notifications for \(operation.rawValue)")
+      self.logger.info(
+        "Cancelled \(identifiers.count) notifications for \(operation.rawValue)"
+      )
     }
   }
 
@@ -217,15 +262,21 @@ final class MLPipelineNotificationManager {
 
     center.getPendingNotificationRequests { requests in
       let pipelineRequests = requests.filter { request in
-        request.identifier.contains("success-") || request.identifier.contains("failure-")
-          || request.identifier.contains("progress-") || request.identifier.contains("health-")
+        request.identifier.contains("success-")
+          || request.identifier.contains("failure-")
+          || request.identifier.contains("progress-")
+          || request.identifier.contains("health-")
           || request.identifier.contains("scheduled-")
       }
 
       let identifiers = pipelineRequests.map { $0.identifier }
-      center.removePendingNotificationRequests(withIdentifiers: identifiers)
+      center.removePendingNotificationRequests(
+        withIdentifiers: identifiers
+      )
 
-      self.logger.info("Cancelled all \(identifiers.count) ML pipeline notifications")
+      self.logger.info(
+        "Cancelled all \(identifiers.count) ML pipeline notifications"
+      )
     }
   }
 
@@ -283,8 +334,11 @@ final class MLPipelineNotificationManager {
   }
 
   private func requestNotificationPermissions() {
-    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) {
-      granted, error in
+    UNUserNotificationCenter.current().requestAuthorization(options: [
+      .alert, .sound, .badge,
+    ]) {
+      granted,
+        error in
       if granted {
         self.logger.info("Notification permissions granted")
       } else {
@@ -293,13 +347,16 @@ final class MLPipelineNotificationManager {
 
       if let error = error {
         self.logger.error(
-          "Error requesting notification permissions: \(error.localizedDescription)")
+          "Error requesting notification permissions: \(error.localizedDescription)"
+        )
       }
     }
   }
 
   func isNotificationTypeEnabled(_ type: NotificationType) -> Bool {
-    guard UserDefaults.standard.bool(forKey: notificationsEnabledKey) else { return false }
+    guard UserDefaults.standard.bool(forKey: notificationsEnabledKey) else {
+      return false
+    }
 
     switch type {
     case .success:
@@ -327,7 +384,10 @@ extension MLPipelineNotificationManager {
   }
 
   func setNotificationTypeEnabled(_ type: NotificationType, enabled: Bool) {
-    UserDefaults.standard.set(enabled, forKey: "MLPipeline\(type.rawValue)Notifications")
-    logger.info("\(type.rawValue) notifications \(enabled ? "enabled" : "disabled")")
+    UserDefaults.standard.set(enabled,
+                              forKey: "MLPipeline\(type.rawValue)Notifications")
+    logger.info(
+      "\(type.rawValue) notifications \(enabled ? "enabled" : "disabled")"
+    )
   }
 }

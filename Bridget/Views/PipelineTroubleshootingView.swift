@@ -14,7 +14,10 @@ public struct PipelineTroubleshootingView: View {
         Section(header: Text("Last Background Task Run")) {
           if let runDate = lastBackgroundTaskRun {
             Text(
-              DateFormatter.localizedString(from: runDate, dateStyle: .medium, timeStyle: .short))
+              DateFormatter.localizedString(from: runDate,
+                                            dateStyle: .medium,
+                                            timeStyle: .short)
+            )
           } else {
             Text("Never")
               .foregroundStyle(.secondary)
@@ -61,9 +64,11 @@ public struct PipelineTroubleshootingView: View {
             }
           } label: {
             if isRunningCheck {
-              Label("Running Health Checks…", systemImage: "hourglass")
+              Label("Running Health Checks…",
+                    systemImage: "hourglass")
             } else {
-              Label("Run Health Checks", systemImage: "stethoscope")
+              Label("Run Health Checks",
+                    systemImage: "stethoscope")
             }
           }
           .buttonStyle(.borderedProminent)
@@ -82,7 +87,8 @@ public struct PipelineTroubleshootingView: View {
 
     // For now, provide a simple health check summary
     // In a more sophisticated implementation, this would query the actual health status
-    let healthCheckSummary = "Health checks completed. Check logs for detailed results."
+    let healthCheckSummary =
+      "Health checks completed. Check logs for detailed results."
 
     await MainActor.run {
       healthCheckResult = healthCheckSummary
@@ -103,7 +109,8 @@ public struct PipelineTroubleshootingView: View {
 #Preview("With Error") {
   NavigationStack {
     PipelineTroubleshootingView(lastBackgroundTaskRun: Date().addingTimeInterval(-7200),  // 2 hours ago
-                                lastBackgroundTaskError: "Network connection failed during data export",
+                                lastBackgroundTaskError:
+                                "Network connection failed during data export",
                                 onRerunHealthChecks: {
                                   print("Health checks triggered")
                                 })

@@ -12,7 +12,9 @@ final class PipelineStatusViewModel {
   var populationStatus: String = "Never"
   var exportStatus: String = "Never"
 
-  init(backgroundManager: MLPipelineBackgroundManager = .shared, modelContext: ModelContext) {
+  init(backgroundManager: MLPipelineBackgroundManager = .shared,
+       modelContext: ModelContext)
+  {
     self.backgroundManager = backgroundManager
     self.modelContext = modelContext
     refreshStatus()
@@ -28,8 +30,11 @@ final class PipelineStatusViewModel {
     // Update isPipelineHealthy
     if let lastPopulation, let lastExport {
       let populationAge =
-        calendar.dateComponents([.day], from: lastPopulation, to: today).day ?? 999
-      let exportAge = calendar.dateComponents([.day], from: lastExport, to: today).day ?? 999
+        calendar.dateComponents([.day], from: lastPopulation, to: today)
+          .day ?? 999
+      let exportAge =
+        calendar.dateComponents([.day], from: lastExport, to: today).day
+          ?? 999
       isPipelineHealthy = (populationAge <= 1 && exportAge <= 1)
     } else {
       isPipelineHealthy = false
@@ -47,7 +52,8 @@ final class PipelineStatusViewModel {
     guard let date else { return "Never" }
     let calendar = Calendar.current
     let today = calendar.startOfDay(for: Date())
-    let age = calendar.dateComponents([.day], from: date, to: today).day ?? 999
+    let age =
+      calendar.dateComponents([.day], from: date, to: today).day ?? 999
     if age == 0 { return "Today" }
     if age == 1 { return "Yesterday" }
     return "\(age) days ago"
@@ -66,22 +72,31 @@ final class PipelineStatusViewModel {
             )
             recentDescriptor.fetchLimit = 1
 
-            if let recentTick = try? modelContext.fetch(recentDescriptor).first {
+            if let recentTick = try? modelContext.fetch(
+              recentDescriptor
+            ).first {
               let calendar = Calendar.current
               let today = calendar.startOfDay(for: Date())
               let age =
-                calendar.dateComponents([.day], from: recentTick.tsUtc, to: today).day ?? 999
+                calendar.dateComponents([.day],
+                                        from: recentTick.tsUtc,
+                                        to: today).day ?? 999
               if age == 0 {
-                dataAvailabilityStatus = "Available (Today) - \(count) records"
+                dataAvailabilityStatus =
+                  "Available (Today) - \(count) records"
               } else if age == 1 {
-                dataAvailabilityStatus = "Available (Yesterday) - \(count) records"
+                dataAvailabilityStatus =
+                  "Available (Yesterday) - \(count) records"
               } else if age <= 7 {
-                dataAvailabilityStatus = "Available (\(age) days ago) - \(count) records"
+                dataAvailabilityStatus =
+                  "Available (\(age) days ago) - \(count) records"
               } else {
-                dataAvailabilityStatus = "Stale (\(age) days old) - \(count) records"
+                dataAvailabilityStatus =
+                  "Stale (\(age) days old) - \(count) records"
               }
             } else {
-              dataAvailabilityStatus = "Available - \(count) records"
+              dataAvailabilityStatus =
+                "Available - \(count) records"
             }
           } else {
             dataAvailabilityStatus = "No Data"

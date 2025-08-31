@@ -71,14 +71,62 @@ class CacheService {
 
   // MARK: - Initialization
 
-  private init() {}
+  private init() {
+    // Diagnostic probe to test directory creation capabilities
+    runDirectoryCreationProbe()
+  }
+
+  // MARK: - Diagnostic Methods
+
+  /// One-off probe to test directory creation capabilities at app launch
+  private func runDirectoryCreationProbe() {
+    print("🔍 Running directory creation probe...")
+
+    // Test Documents directory
+    do {
+      let base = try FileManagerUtils.documentsDirectory()
+      let dir = base.appendingPathComponent("Probe", isDirectory: true)
+      print("📍 Testing Documents: \(dir.path)")
+      try FileManagerUtils.ensureDirectoryExists(dir)
+      print("✅ Documents directory creation successful")
+    } catch {
+      print("❌ Documents directory creation failed: \(error)")
+      if let nsError = error as NSError? {
+        print("   Domain: \(nsError.domain), Code: \(nsError.code)")
+        print("   UserInfo: \(nsError.userInfo)")
+      }
+    }
+
+    // Test Temporary directory
+    do {
+      let tmp = FileManagerUtils.temporaryDirectory()
+        .appendingPathComponent("Probe", isDirectory: true)
+      print("📍 Testing Temp: \(tmp.path)")
+      try FileManagerUtils.ensureDirectoryExists(tmp)
+      print("✅ Temporary directory creation successful")
+    } catch {
+      print("❌ Temporary directory creation failed: \(error)")
+      if let nsError = error as NSError? {
+        print("   Domain: \(nsError.domain), Code: \(nsError.code)")
+        print("   UserInfo: \(nsError.userInfo)")
+      }
+    }
+
+    // Log container information (portable across Apple platforms)
+    let homePath = NSHomeDirectory()
+    print("🏠 Home directory: \(homePath)")
+    let bundleURL = Bundle.main.bundleURL
+    let containerPath = bundleURL.deletingLastPathComponent().path
+    print("📱 App container path: \(containerPath)")
+  }
 
   // MARK: - Private Methods
 
   private func getCacheDirectory() -> URL? {
     do {
       let documentsPath = try FileManagerUtils.documentsDirectory()
-      let cacheURL = documentsPath.appendingPathComponent(cacheDirectory)
+      let cacheURL = documentsPath.appendingPathComponent(cacheDirectory,
+                                                          isDirectory: true)
 
       // Create cache directory if it doesn't exist
       try FileManagerUtils.ensureDirectoryExists(cacheURL)
@@ -91,7 +139,8 @@ class CacheService {
   }
 
   private func getCacheFileURL(for key: String) -> URL? {
-    return getCacheDirectory()?.appendingPathComponent("\(key).json")
+    return getCacheDirectory()?.appendingPathComponent("\(key).json",
+                                                       isDirectory: false)
   }
 
   // MARK: - Cache Operations
@@ -112,17 +161,33 @@ class CacheService {
   /// CacheService.shared.saveToCache(bridges, for: "historical_bridges")
   /// ```
   func saveToCache<T: Codable>(_ data: T, for key: String) {
-    guard let cacheURL = getCacheFileURL(for: key) else { return }
+    print("💾 Attempting to save cache for key: \(key)")
+
+    guard let cacheURL = getCacheFileURL(for: key) else {
+      print("❌ Failed to get cache file URL for key: \(key)")
+      return
+    }
+
+    print("📍 Cache file URL: \(cacheURL.path)")
 
     do {
       // Ensure cache directory exists
       _ = getCacheDirectory()
 
-      let encoder = JSONEncoder.bridgeEncoder(dateEncodingStrategy: .iso8601)
+      let encoder = JSONEncoder.bridgeEncoder(
+        dateEncodingStrategy: .iso8601
+      )
       let data = try encoder.encode(data)
+      print("✅ Data encoded successfully, size: \(data.count) bytes")
+
       try data.write(to: cacheURL)
+      print("✅ Cache file written successfully to: \(cacheURL.path)")
     } catch {
-      print("Failed to save cache for key \(key): \(error)")
+      print("❌ Failed to save cache for key \(key): \(error)")
+      if let nsError = error as NSError? {
+        print("   Domain: \(nsError.domain), Code: \(nsError.code)")
+        print("   UserInfo: \(nsError.userInfo)")
+      }
     }
   }
 
@@ -147,14 +212,29 @@ class CacheService {
   /// }
   /// ```
   func loadFromCache<T: Codable>(_ type: T.Type, for key: String) -> T? {
-    guard let cacheURL = getCacheFileURL(for: key) else { return nil }
+    print("📖 Attempting to load cache for key: \(key)")
+
+    guard let cacheURL = getCacheFileURL(for: key) else {
+      print("❌ Failed to get cache file URL for key: \(key)")
+      return nil
+    }
+
+    print("📍 Cache file URL: \(cacheURL.path)")
 
     do {
       let data = try Data(contentsOf: cacheURL)
+      print("✅ Cache file read successfully, size: \(data.count) bytes")
+
       let decoder = JSONDecoder.bridgeDecoder()
-      return try decoder.decode(type, from: data)
+      let result = try decoder.decode(type, from: data)
+      print("✅ Cache data decoded successfully")
+      return result
     } catch {
-      print("Failed to load cache for key \(key): \(error)")
+      print("❌ Failed to load cache for key \(key): \(error)")
+      if let nsError = error as NSError? {
+        print("   Domain: \(nsError.domain), Code: \(nsError.code)")
+        print("   UserInfo: \(nsError.userInfo)")
+      }
       return nil
     }
   }

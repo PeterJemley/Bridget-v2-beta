@@ -1,0 +1,120 @@
+{
+  "source": "/Users/peterjemley/Developer/Bridget/Bridget/Views/PipelineSettingsView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Automation Settings",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 11
+        }
+      },
+      {
+        "comment": "",
+        "key": "Auto Export",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 14
+        }
+      },
+      {
+        "comment": "",
+        "key": "Export Time:",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 18
+        }
+      },
+      {
+        "comment": "",
+        "key": "Notifications",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 29
+        }
+      },
+      {
+        "comment": "",
+        "key": "Enable Notifications",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 32
+        }
+      },
+      {
+        "comment": "",
+        "key": "Success Notifications",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 35
+        }
+      },
+      {
+        "comment": "",
+        "key": "Failure Notifications",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 36
+        }
+      },
+      {
+        "comment": "",
+        "key": "Progress Notifications",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 37
+        }
+      },
+      {
+        "comment": "",
+        "key": "Health Notifications",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 38
+        }
+      },
+      {
+        "comment": "",
+        "key": "Apply Settings",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 44
+        }
+      },
+      {
+        "comment": "",
+        "key": "Set Export Time",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 60
+        }
+      },
+      {
+        "comment": "",
+        "key": "Export Time",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 55
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 64
+        }
+      },
+      {
+        "comment": "",
+        "key": "Cancel",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 72
+        }
+      }
+    ]
+  },
+  "version": 1
+}

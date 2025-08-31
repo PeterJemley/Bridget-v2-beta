@@ -181,7 +181,8 @@ struct MLPipelineTabView: View {
         LazyVGrid(columns: [
           GridItem(.flexible()),
           GridItem(.flexible()),
-        ], spacing: 8) {
+        ],
+        spacing: 8) {
           ForEach(defaultHorizons, id: \.self) { horizon in
             Button(action: {
               startSingleHorizonTraining(horizon: horizon)
@@ -214,16 +215,21 @@ struct MLPipelineTabView: View {
       }
 
       VStack(alignment: .leading, spacing: 8) {
-        ForEach(Array(viewModel.trainedModels.keys.sorted()), id: \.self) { horizon in
+        ForEach(Array(viewModel.trainedModels.keys.sorted()),
+                id: \.self)
+        { horizon in
           if let modelPath = viewModel.trainedModels[horizon] {
             HStack {
               Text("\(horizon)-min horizon:")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
               Spacer()
-              Text(modelPath.components(separatedBy: "/").last ?? "Unknown")
-                .font(.caption)
-                .foregroundColor(.blue)
+              Text(
+                modelPath.components(separatedBy: "/").last
+                  ?? "Unknown"
+              )
+              .font(.caption)
+              .foregroundColor(.blue)
             }
           }
         }

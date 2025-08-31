@@ -126,7 +126,9 @@ final class MetricKitObserver: NSObject, MXMetricManagerSubscriber {
       // GPU Metrics (Not publicly available / no gpuMetrics property in MXMetricPayload)
       // Removed as per instruction
 
-      print("  📅 Time Range: \(payload.timeStampBegin) to \(payload.timeStampEnd)")
+      print(
+        "  📅 Time Range: \(payload.timeStampBegin) to \(payload.timeStampEnd)"
+      )
       print("")
     }
 
@@ -153,12 +155,16 @@ class BridgetMetricsCollector {
 
   private var dateValidationMetrics: [String: TimeInterval] = [:]
   private var validationCounts: [String: Int] = [:]
-  private let queue = DispatchQueue(label: "com.bridget.metrics", qos: .utility)
+  private let queue = DispatchQueue(label: "com.bridget.metrics",
+                                    qos: .utility)
 
   private init() {}
 
   /// Track date validation performance
-  func trackDateValidation(format: String, duration: TimeInterval, success: Bool) {
+  func trackDateValidation(format: String,
+                           duration: TimeInterval,
+                           success: Bool)
+  {
     queue.async {
       let key = "\(format)_\(success ? "success" : "failure")"
       self.dateValidationMetrics[key, default: 0] += duration
@@ -212,7 +218,8 @@ struct BridgeDecoderTests {
     let json = #"{"date": "2025-01-03T10:12:00.000"}"#.data(using: .utf8)!
     let dateString = "2025-01-03T10:12:00.000"
     let reporter = ConsoleDateValidationErrorReporter()
-    let context = DateValidationContext(recordID: "test-validPrimaryFormat", source: "BridgeDecoderTests")
+    let context = DateValidationContext(recordID: "test-validPrimaryFormat",
+                                        source: "BridgeDecoderTests")
     let valResult = DateValidator.validate(dateString)
     if case let .failure(error) = valResult {
       reporter.report(error, level: .error, context: context)
@@ -230,7 +237,8 @@ struct BridgeDecoderTests {
     let json = #"{"date": "2025-01-03T10:12:00Z"}"#.data(using: .utf8)!
     let dateString = "2025-01-03T10:12:00Z"
     let reporter = ConsoleDateValidationErrorReporter()
-    let context = DateValidationContext(recordID: "test-validISO8601Format", source: "BridgeDecoderTests")
+    let context = DateValidationContext(recordID: "test-validISO8601Format",
+                                        source: "BridgeDecoderTests")
     let valResult = DateValidator.validate(dateString)
     if case let .failure(error) = valResult {
       reporter.report(error, level: .error, context: context)
@@ -248,7 +256,8 @@ struct BridgeDecoderTests {
     let json = #"{"date": "not-a-date"}"#.data(using: .utf8)!
     let reporter = ConsoleDateValidationErrorReporter()
     let dateString = "not-a-date"
-    let context = DateValidationContext(recordID: "test-malformedDate", source: "BridgeDecoderTests")
+    let context = DateValidationContext(recordID: "test-malformedDate",
+                                        source: "BridgeDecoderTests")
     let valResult = DateValidator.validate(dateString)
     if case let .failure(error) = valResult {
       reporter.report(error, level: .error, context: context)
@@ -272,7 +281,9 @@ struct BridgeDecoderTests {
   /// Tests that extra unknown fields in the JSON do not prevent successful decoding.
   @Test("extra unknown fields")
   func extraUnknownFields() async throws {
-    let json = #"{"date": "2025-01-03T10:12:00.000", "unknown": 42}"#.data(using: .utf8)!
+    let json = #"{"date": "2025-01-03T10:12:00.000", "unknown": 42}"#.data(
+      using: .utf8
+    )!
     let obj = try decoder.decode(DateTestModel.self, from: json)
     #expect(Calendar.current.component(.year, from: obj.date) == 2025)
   }
@@ -314,21 +325,46 @@ struct BridgeDecoderTests {
   @Test("business validation: empty and malformed date")
   func businessValidationEmptyAndMalformed() async throws {
     let reporter = ConsoleDateValidationErrorReporter()
-    let context = DateValidationContext(recordID: "test-businessValidation", source: "BridgeDecoderTests")
+    let context = DateValidationContext(recordID: "test-businessValidation",
+                                        source: "BridgeDecoderTests")
     let emptyResult = DateValidator.validate("")
-    #expect({ if case .failure = emptyResult { return true } else { return false } }())
+    #expect(
+      {
+        if case .failure = emptyResult {
+          return true
+        } else {
+          return false
+        }
+      }()
+    )
     if case let .failure(err) = emptyResult {
       reporter.report(err, level: .error, context: context)
     }
 
     let malformedResult = DateValidator.validate("not-a-date")
-    #expect({ if case .failure = malformedResult { return true } else { return false } }())
+    #expect(
+      {
+        if case .failure = malformedResult {
+          return true
+        } else {
+          return false
+        }
+      }()
+    )
     if case let .failure(err) = malformedResult {
       reporter.report(err, level: .error, context: context)
     }
 
     let validResult = DateValidator.validate("2025-08-07T12:34:56.000")
-    #expect({ if case .success = validResult { return true } else { return false } }())
+    #expect(
+      {
+        if case .success = validResult {
+          return true
+        } else {
+          return false
+        }
+      }()
+    )
   }
 
   /// Tests edge cases and boundary conditions for date validation, including
@@ -336,69 +372,102 @@ struct BridgeDecoderTests {
   @Test("date edge and boundary cases")
   func dateEdgeAndBoundaryCases() async throws {
     let reporter = ConsoleDateValidationErrorReporter()
-    let ctx = DateValidationContext(recordID: "test-dateEdgeCases", source: "BridgeDecoderTests")
+    let ctx = DateValidationContext(recordID: "test-dateEdgeCases",
+                                    source: "BridgeDecoderTests")
 
     // Invalid calendar date: February 30th
     let feb30 = "2025-02-30T10:00:00"
     let result1 = DateValidator.validate(feb30)
-    #expect({ if case .failure = result1 { return true } else { return false } }(),
-            "February 30th should fail")
-    if case let .failure(err) = result1 { reporter.report(err, level: .error, context: ctx) }
+    #expect({
+      if case .failure = result1 { return true } else { return false }
+    }(),
+    "February 30th should fail")
+    if case let .failure(err) = result1 {
+      reporter.report(err, level: .error, context: ctx)
+    }
 
     // Invalid calendar date: April 31st
     let apr31 = "2025-04-31T10:00:00"
     let result2 = DateValidator.validate(apr31)
-    #expect({ if case .failure = result2 { return true } else { return false } }(),
-            "April 31st should fail")
-    if case let .failure(err) = result2 { reporter.report(err, level: .error, context: ctx) }
+    #expect({
+      if case .failure = result2 { return true } else { return false }
+    }(),
+    "April 31st should fail")
+    if case let .failure(err) = result2 {
+      reporter.report(err, level: .error, context: ctx)
+    }
 
     // Valid leap year: Feb 29, 2024
     let leap = "2024-02-29T12:00:00"
     let result3 = DateValidator.validate(leap)
-    #expect({ if case .success = result3 { return true } else { return false } }(),
-            "Leap year Feb 29 should pass")
+    #expect({
+      if case .success = result3 { return true } else { return false }
+    }(),
+    "Leap year Feb 29 should pass")
 
     // Invalid leap year: Feb 29, 2023
     let notLeap = "2023-02-29T12:00:00"
     let result4 = DateValidator.validate(notLeap)
-    #expect({ if case .failure = result4 { return true } else { return false } }(),
-            "Non-leap year Feb 29 should fail")
-    if case let .failure(err) = result4 { reporter.report(err, level: .error, context: ctx) }
+    #expect({
+      if case .failure = result4 { return true } else { return false }
+    }(),
+    "Non-leap year Feb 29 should fail")
+    if case let .failure(err) = result4 {
+      reporter.report(err, level: .error, context: ctx)
+    }
 
     // Valid timezone offset, positive
     let tzpos = "2025-01-01T12:00:00+05:00"
     let result5 = DateValidator.validate(tzpos)
-    #expect({ if case .success = result5 { return true } else { return false } }(),
-            "Positive timezone offset should pass")
+    #expect({
+      if case .success = result5 { return true } else { return false }
+    }(),
+    "Positive timezone offset should pass")
 
     // Valid timezone offset, negative
     let tzneg = "2025-01-01T12:00:00-08:00"
     let result6 = DateValidator.validate(tzneg)
-    #expect({ if case .success = result6 { return true } else { return false } }(),
-            "Negative timezone offset should pass")
+    #expect({
+      if case .success = result6 { return true } else { return false }
+    }(),
+    "Negative timezone offset should pass")
 
     // Boundary year: 1900
     let y1900 = "1900-01-01T00:00:00Z"
     let result7 = DateValidator.validate(y1900)
-    #expect({ if case .success = result7 { return true } else { return false } }(),
-            "Year 1900 should pass")
+    #expect({
+      if case .success = result7 { return true } else { return false }
+    }(),
+    "Year 1900 should pass")
 
     // Boundary year: 2100
     let y2100 = "2100-12-31T23:59:59Z"
     let result8 = DateValidator.validate(y2100)
-    #expect({ if case .success = result8 { return true } else { return false } }(),
-            "Year 2100 should pass")
+    #expect({
+      if case .success = result8 { return true } else { return false }
+    }(),
+    "Year 2100 should pass")
 
     // Extra whitespace
     let ws = " 2025-01-01T12:00:00Z "
-    let result9 = DateValidator.validate(ws.trimmingCharacters(in: .whitespaces))
-    #expect({ if case .success = result9 { return true } else { return false } }(),
-            "Whitespace-trimmed string should pass")
+    let result9 = DateValidator.validate(
+      ws.trimmingCharacters(in: .whitespaces)
+    )
+    #expect({
+      if case .success = result9 { return true } else { return false }
+    }(),
+    "Whitespace-trimmed string should pass")
 
     // Null/optional handling
     let result10 = DateValidator.validate(nil)
-    #expect({ if case .failure = result10 { return true } else { return false } }(),
-            "Nil string should fail")
+    #expect({
+      if case .failure = result10 {
+        return true
+      } else {
+        return false
+      }
+    }(),
+    "Nil string should fail")
   }
 
   /// Measures performance of date validation for 10,000 records with a realistic date string.
@@ -408,9 +477,13 @@ struct BridgeDecoderTests {
     // Reset metrics collector
     BridgetMetricsCollector.shared.reset()
 
-    let log = OSLog(subsystem: "com.yourcompany.BridgeDecoderTests", category: "performance")
+    let log = OSLog(subsystem: "com.yourcompany.BridgeDecoderTests",
+                    category: "performance")
     let signpostID = OSSignpostID(log: log)
-    os_signpost(.begin, log: log, name: "ValidationLoop", signpostID: signpostID)
+    os_signpost(.begin,
+                log: log,
+                name: "ValidationLoop",
+                signpostID: signpostID)
 
     let baseDates = [
       "2025-01-03T10:12:00.000",  // Standard format
@@ -437,17 +510,23 @@ struct BridgeDecoderTests {
     var failCount = 0
     for date in testDates {
       let startTime = CFAbsoluteTimeGetCurrent()
-      let result = DateValidator.validate(date.trimmingCharacters(in: .whitespaces))
+      let result = DateValidator.validate(
+        date.trimmingCharacters(in: .whitespaces)
+      )
       let endTime = CFAbsoluteTimeGetCurrent()
       let duration = endTime - startTime
 
       // Track metrics for each validation
       let format = String(date.prefix(19))  // Get format type
       if case .success = result {
-        BridgetMetricsCollector.shared.trackDateValidation(format: format, duration: duration, success: true)
+        BridgetMetricsCollector.shared.trackDateValidation(format: format,
+                                                           duration: duration,
+                                                           success: true)
         successCount += 1
       } else {
-        BridgetMetricsCollector.shared.trackDateValidation(format: format, duration: duration, success: false)
+        BridgetMetricsCollector.shared.trackDateValidation(format: format,
+                                                           duration: duration,
+                                                           success: false)
         failCount += 1
       }
     }
@@ -459,7 +538,10 @@ struct BridgeDecoderTests {
     // Print Bridget-specific metrics
     print(BridgetMetricsCollector.shared.getPerformanceSummary())
 
-    os_signpost(.end, log: log, name: "ValidationLoop", signpostID: signpostID)
+    os_signpost(.end,
+                log: log,
+                name: "ValidationLoop",
+                signpostID: signpostID)
 
     // The test validates 10,000 dates, but some may be rejected by improved validation
     // We expect the total to be 10,000, but the exact success/fail distribution may vary
@@ -467,43 +549,60 @@ struct BridgeDecoderTests {
     #expect(totalValidations == 10000,
             "Validation did not cover all records: success=\(successCount) fail=\(failCount) total=\(totalValidations)")
     #expect(successCount > 0, "No successful validations")
-    #expect(failCount > 0, "No failed validations - validation may be too permissive")
+    #expect(failCount > 0,
+            "No failed validations - validation may be too permissive")
   }
 
   /// Compares date validation performance vs. a trivial baseline for multiple data sizes (1K, 10K, 100K).
   /// Prints timings for both baseline (isEmpty check) and full validation for each size. Useful for regression tracking.
   @Test("date validation performance: comparative and scaling")
   func dateValidationComparativeScaling() async throws {
-    let log = OSLog(subsystem: "com.yourcompany.BridgeDecoderTests", category: "performance")
+    let log = OSLog(subsystem: "com.yourcompany.BridgeDecoderTests",
+                    category: "performance")
 
     let baseDates = [
-      "2025-01-03T10:12:00.000", "2025-01-03T10:12:00Z", "2025-01-03T10:12:00+05:00",
+      "2025-01-03T10:12:00.000", "2025-01-03T10:12:00Z",
+      "2025-01-03T10:12:00+05:00",
       "2024-02-29T12:00:00", "1900-01-01T00:00:00Z", "invalid-date",
-      "2023-02-29T12:00:00", "2025-02-30T10:00:00", "2025-01-01T12:00:00-08:00",
-      "2025-01-01T12:00:00", " 2025-01-01T12:00:00Z ", "2025-01-03T10:12:00.500",
+      "2023-02-29T12:00:00", "2025-02-30T10:00:00",
+      "2025-01-01T12:00:00-08:00",
+      "2025-01-01T12:00:00", " 2025-01-01T12:00:00Z ",
+      "2025-01-03T10:12:00.500",
     ]
     let sizes = [1000, 10000, 100_000]
 
     for size in sizes {
       let repeats = size / baseDates.count + 1
-      let testDates = Array(repeating: baseDates, count: repeats).flatMap { $0 }.prefix(size)
+      let testDates = Array(repeating: baseDates, count: repeats).flatMap
+        { $0 }.prefix(size)
 
       let baselineSignpostID = OSSignpostID(log: log)
-      os_signpost(.begin, log: log, name: "BaselineCheck", signpostID: baselineSignpostID)
+      os_signpost(.begin,
+                  log: log,
+                  name: "BaselineCheck",
+                  signpostID: baselineSignpostID)
 
       for date in testDates {
         _ = !date.isEmpty
       }
 
-      os_signpost(.end, log: log, name: "BaselineCheck", signpostID: baselineSignpostID)
+      os_signpost(.end,
+                  log: log,
+                  name: "BaselineCheck",
+                  signpostID: baselineSignpostID)
 
       let validationSignpostID = OSSignpostID(log: log)
-      os_signpost(.begin, log: log, name: "FullValidation", signpostID: validationSignpostID)
+      os_signpost(.begin,
+                  log: log,
+                  name: "FullValidation",
+                  signpostID: validationSignpostID)
 
       var successCount = 0
       var failCount = 0
       for date in testDates {
-        let result = DateValidator.validate(date.trimmingCharacters(in: .whitespaces))
+        let result = DateValidator.validate(
+          date.trimmingCharacters(in: .whitespaces)
+        )
         if case .success = result {
           successCount += 1
         } else {
@@ -511,7 +610,10 @@ struct BridgeDecoderTests {
         }
       }
 
-      os_signpost(.end, log: log, name: "FullValidation", signpostID: validationSignpostID)
+      os_signpost(.end,
+                  log: log,
+                  name: "FullValidation",
+                  signpostID: validationSignpostID)
 
       #expect(successCount + failCount == size)
     }
@@ -520,24 +622,35 @@ struct BridgeDecoderTests {
   /// Enhanced performance test with custom metrics integration for automated CI/CD monitoring
   @Test("date validation performance: metrics integration")
   func dateValidationMetricsIntegration() async throws {
-    let log = OSLog(subsystem: "com.yourcompany.BridgeDecoderTests", category: "performance")
+    let log = OSLog(subsystem: "com.yourcompany.BridgeDecoderTests",
+                    category: "performance")
 
     // Test different validation scenarios with signposts
     let scenarios = [
       ("valid_only",
-       ["2025-01-03T10:12:00.000", "2025-01-03T10:12:00Z", "2025-01-03T10:12:00+05:00"]),
+       [
+         "2025-01-03T10:12:00.000", "2025-01-03T10:12:00Z",
+         "2025-01-03T10:12:00+05:00",
+       ]),
       ("mixed_validity",
-       ["2025-01-03T10:12:00.000", "invalid-date", "2025-01-03T10:12:00Z", "not-a-date"]),
+       [
+         "2025-01-03T10:12:00.000", "invalid-date",
+         "2025-01-03T10:12:00Z", "not-a-date",
+       ]),
       ("edge_cases",
        [
-         "2024-02-29T12:00:00", "2023-02-29T12:00:00", "2025-02-30T10:00:00",
+         "2024-02-29T12:00:00", "2023-02-29T12:00:00",
+         "2025-02-30T10:00:00",
          "1900-01-01T00:00:00Z",
        ]),
     ]
 
     for (_, testDates) in scenarios {
       let signpostID = OSSignpostID(log: log)
-      os_signpost(.begin, log: log, name: "Scenario", signpostID: signpostID)
+      os_signpost(.begin,
+                  log: log,
+                  name: "Scenario",
+                  signpostID: signpostID)
 
       var successCount = 0
       var failCount = 0
@@ -550,7 +663,10 @@ struct BridgeDecoderTests {
         }
       }
 
-      os_signpost(.end, log: log, name: "Scenario", signpostID: signpostID)
+      os_signpost(.end,
+                  log: log,
+                  name: "Scenario",
+                  signpostID: signpostID)
     }
 
     // Memory usage tracking

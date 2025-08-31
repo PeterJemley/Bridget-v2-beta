@@ -1,0 +1,64 @@
+{
+  "source": "/Users/peterjemley/Developer/Bridget/Bridget/Views/MyRoutesView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "My Routes",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 38
+        }
+      },
+      {
+        "comment": "",
+        "key": "My Routes",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 12
+        }
+      },
+      {
+        "comment": "",
+        "key": "Done",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 42
+        }
+      },
+      {
+        "comment": "",
+        "key": "From:",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 72
+        }
+      },
+      {
+        "comment": "",
+        "key": "To:",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 87
+        }
+      },
+      {
+        "comment": "",
+        "key": "Last used: %@",
+        "location": {
+          "startingColumn": 14,
+          "startingLine": 96
+        }
+      },
+      {
+        "comment": "",
+        "key": "Use Route",
+        "location": {
+          "startingColumn": 16,
+          "startingLine": 100
+        }
+      }
+    ]
+  },
+  "version": 1
+}

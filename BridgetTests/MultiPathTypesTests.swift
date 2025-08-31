@@ -88,8 +88,17 @@ final class MultiPathTypesTests: XCTestCase {
   func testRoutePathWithBridges() {
     let nodes = ["A", "B", "C"]
     let edges = [
-      Edge(from: "A", to: "B", travelTime: 300, distance: 500, isBridge: true, bridgeID: "bridge1"),
-      Edge(from: "B", to: "C", travelTime: 200, distance: 300, isBridge: false),
+      Edge(from: "A",
+           to: "B",
+           travelTime: 300,
+           distance: 500,
+           isBridge: true,
+           bridgeID: "bridge1"),
+      Edge(from: "B",
+           to: "C",
+           travelTime: 200,
+           distance: 300,
+           isBridge: false),
     ]
 
     let path = RoutePath(nodes: nodes, edges: edges)
@@ -232,8 +241,10 @@ final class MultiPathTypesTests: XCTestCase {
     let prodConfig = MultiPathConfig.production
     let testConfig = MultiPathConfig.testing
 
-    XCTAssertLessThan(devConfig.pathEnumeration.maxPaths, prodConfig.pathEnumeration.maxPaths)
-    XCTAssertLessThan(testConfig.pathEnumeration.maxPaths, devConfig.pathEnumeration.maxPaths)
+    XCTAssertLessThan(devConfig.pathEnumeration.maxPaths,
+                      prodConfig.pathEnumeration.maxPaths)
+    XCTAssertLessThan(testConfig.pathEnumeration.maxPaths,
+                      devConfig.pathEnumeration.maxPaths)
 
     XCTAssertTrue(devConfig.performance.enablePerformanceLogging)
     XCTAssertFalse(prodConfig.performance.enablePerformanceLogging)
@@ -270,19 +281,37 @@ final class MultiPathTypesTests: XCTestCase {
     let nodeError = MultiPathError.nodeNotFound("test_node")
     let pathError = MultiPathError.noPathExists("A", "B")
 
-    XCTAssertTrue(graphError.errorDescription?.contains("Invalid graph") ?? false)
-    XCTAssertTrue(nodeError.errorDescription?.contains("Node not found") ?? false)
-    XCTAssertTrue(pathError.errorDescription?.contains("No path exists") ?? false)
+    XCTAssertTrue(
+      graphError.errorDescription?.contains("Invalid graph") ?? false
+    )
+    XCTAssertTrue(
+      nodeError.errorDescription?.contains("Node not found") ?? false
+    )
+    XCTAssertTrue(
+      pathError.errorDescription?.contains("No path exists") ?? false
+    )
   }
 
   func testBridgePredictionErrorDescriptions() {
-    let unsupportedError = BridgePredictionError.unsupportedBridge("test_bridge")
-    let invalidError = BridgePredictionError.invalidFeatures("Test features")
+    let unsupportedError = BridgePredictionError.unsupportedBridge(
+      "test_bridge"
+    )
+    let invalidError = BridgePredictionError.invalidFeatures(
+      "Test features"
+    )
     let batchError = BridgePredictionError.batchSizeExceeded(100, 50)
 
-    XCTAssertTrue(unsupportedError.errorDescription?.contains("Bridge not supported") ?? false)
-    XCTAssertTrue(invalidError.errorDescription?.contains("Invalid features") ?? false)
     XCTAssertTrue(
-      batchError.errorDescription?.contains("Batch size 100 exceeds maximum 50") ?? false)
+      unsupportedError.errorDescription?.contains("Bridge not supported")
+        ?? false
+    )
+    XCTAssertTrue(
+      invalidError.errorDescription?.contains("Invalid features") ?? false
+    )
+    XCTAssertTrue(
+      batchError.errorDescription?.contains(
+        "Batch size 100 exceeds maximum 50"
+      ) ?? false
+    )
   }
 }

@@ -6,7 +6,11 @@ final class EdgeInitializerTests: XCTestCase {
   // MARK: - Valid Edge Creation Tests
 
   func testValidRoadEdgeCreation() throws {
-    let edge = try Edge(validatingFrom: "A", to: "B", travelTime: 60.0, distance: 100.0, isBridge: false,
+    let edge = try Edge(validatingFrom: "A",
+                        to: "B",
+                        travelTime: 60.0,
+                        distance: 100.0,
+                        isBridge: false,
                         bridgeID: nil)
 
     XCTAssertEqual(edge.from, "A")
@@ -18,7 +22,11 @@ final class EdgeInitializerTests: XCTestCase {
   }
 
   func testValidBridgeEdgeCreation() throws {
-    let edge = try Edge(validatingFrom: "A", to: "B", travelTime: 120.0, distance: 200.0, isBridge: true,
+    let edge = try Edge(validatingFrom: "A",
+                        to: "B",
+                        travelTime: 120.0,
+                        distance: 200.0,
+                        isBridge: true,
                         bridgeID: "1")
 
     XCTAssertEqual(edge.from, "A")
@@ -30,7 +38,11 @@ final class EdgeInitializerTests: XCTestCase {
   }
 
   func testValidSyntheticBridgeEdgeCreation() throws {
-    let edge = try Edge(validatingFrom: "A", to: "B", travelTime: 90.0, distance: 150.0, isBridge: true,
+    let edge = try Edge(validatingFrom: "A",
+                        to: "B",
+                        travelTime: 90.0,
+                        distance: 150.0,
+                        isBridge: true,
                         bridgeID: "bridge1")
 
     XCTAssertEqual(edge.from, "A")
@@ -45,7 +57,11 @@ final class EdgeInitializerTests: XCTestCase {
 
   func testSelfLoopThrowsError() {
     XCTAssertThrowsError(
-      try Edge(validatingFrom: "A", to: "A", travelTime: 60.0, distance: 100.0, isBridge: false,
+      try Edge(validatingFrom: "A",
+               to: "A",
+               travelTime: 60.0,
+               distance: 100.0,
+               isBridge: false,
                bridgeID: nil)
     ) { error in
       XCTAssertEqual(error as? Edge.EdgeInitError, .selfLoop)
@@ -55,7 +71,11 @@ final class EdgeInitializerTests: XCTestCase {
   func testNonPositiveDistanceThrowsError() {
     // Zero distance
     XCTAssertThrowsError(
-      try Edge(validatingFrom: "A", to: "B", travelTime: 60.0, distance: 0.0, isBridge: false,
+      try Edge(validatingFrom: "A",
+               to: "B",
+               travelTime: 60.0,
+               distance: 0.0,
+               isBridge: false,
                bridgeID: nil)
     ) { error in
       XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveDistance)
@@ -63,7 +83,11 @@ final class EdgeInitializerTests: XCTestCase {
 
     // Negative distance
     XCTAssertThrowsError(
-      try Edge(validatingFrom: "A", to: "B", travelTime: 60.0, distance: -10.0, isBridge: false,
+      try Edge(validatingFrom: "A",
+               to: "B",
+               travelTime: 60.0,
+               distance: -10.0,
+               isBridge: false,
                bridgeID: nil)
     ) { error in
       XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveDistance)
@@ -71,7 +95,11 @@ final class EdgeInitializerTests: XCTestCase {
 
     // Infinite distance
     XCTAssertThrowsError(
-      try Edge(validatingFrom: "A", to: "B", travelTime: 60.0, distance: Double.infinity, isBridge: false,
+      try Edge(validatingFrom: "A",
+               to: "B",
+               travelTime: 60.0,
+               distance: Double.infinity,
+               isBridge: false,
                bridgeID: nil)
     ) { error in
       XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveDistance)
@@ -79,7 +107,11 @@ final class EdgeInitializerTests: XCTestCase {
 
     // NaN distance
     XCTAssertThrowsError(
-      try Edge(validatingFrom: "A", to: "B", travelTime: 60.0, distance: Double.nan, isBridge: false,
+      try Edge(validatingFrom: "A",
+               to: "B",
+               travelTime: 60.0,
+               distance: Double.nan,
+               isBridge: false,
                bridgeID: nil)
     ) { error in
       XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveDistance)
@@ -89,7 +121,11 @@ final class EdgeInitializerTests: XCTestCase {
   func testNonPositiveTravelTimeThrowsError() {
     // Zero travel time
     XCTAssertThrowsError(
-      try Edge(validatingFrom: "A", to: "B", travelTime: 0.0, distance: 100.0, isBridge: false,
+      try Edge(validatingFrom: "A",
+               to: "B",
+               travelTime: 0.0,
+               distance: 100.0,
+               isBridge: false,
                bridgeID: nil)
     ) { error in
       XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveTravelTime)
@@ -97,7 +133,11 @@ final class EdgeInitializerTests: XCTestCase {
 
     // Negative travel time
     XCTAssertThrowsError(
-      try Edge(validatingFrom: "A", to: "B", travelTime: -30.0, distance: 100.0, isBridge: false,
+      try Edge(validatingFrom: "A",
+               to: "B",
+               travelTime: -30.0,
+               distance: 100.0,
+               isBridge: false,
                bridgeID: nil)
     ) { error in
       XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveTravelTime)
@@ -105,16 +145,24 @@ final class EdgeInitializerTests: XCTestCase {
 
     // Infinite travel time
     XCTAssertThrowsError(
-      try Edge(validatingFrom: "A", to: "B", travelTime: TimeInterval.infinity, distance: 100.0,
-               isBridge: false, bridgeID: nil)
+      try Edge(validatingFrom: "A",
+               to: "B",
+               travelTime: TimeInterval.infinity,
+               distance: 100.0,
+               isBridge: false,
+               bridgeID: nil)
     ) { error in
       XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveTravelTime)
     }
 
     // NaN travel time
     XCTAssertThrowsError(
-      try Edge(validatingFrom: "A", to: "B", travelTime: TimeInterval.nan, distance: 100.0,
-               isBridge: false, bridgeID: nil)
+      try Edge(validatingFrom: "A",
+               to: "B",
+               travelTime: TimeInterval.nan,
+               distance: 100.0,
+               isBridge: false,
+               bridgeID: nil)
     ) { error in
       XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveTravelTime)
     }
@@ -122,7 +170,11 @@ final class EdgeInitializerTests: XCTestCase {
 
   func testMissingBridgeIDThrowsError() {
     XCTAssertThrowsError(
-      try Edge(validatingFrom: "A", to: "B", travelTime: 60.0, distance: 100.0, isBridge: true,
+      try Edge(validatingFrom: "A",
+               to: "B",
+               travelTime: 60.0,
+               distance: 100.0,
+               isBridge: true,
                bridgeID: nil)
     ) { error in
       XCTAssertEqual(error as? Edge.EdgeInitError, .missingBridgeID)
@@ -131,7 +183,11 @@ final class EdgeInitializerTests: XCTestCase {
 
   func testUnexpectedBridgeIDThrowsError() {
     XCTAssertThrowsError(
-      try Edge(validatingFrom: "A", to: "B", travelTime: 60.0, distance: 100.0, isBridge: false,
+      try Edge(validatingFrom: "A",
+               to: "B",
+               travelTime: 60.0,
+               distance: 100.0,
+               isBridge: false,
                bridgeID: "1")
     ) { error in
       XCTAssertEqual(error as? Edge.EdgeInitError, .unexpectedBridgeID)
@@ -141,7 +197,10 @@ final class EdgeInitializerTests: XCTestCase {
   // MARK: - Convenience Initializer Tests
 
   func testRoadConvenienceInitializer() {
-    let edge = Edge.road(from: "A", to: "B", travelTime: 60.0, distance: 100.0)
+    let edge = Edge.road(from: "A",
+                         to: "B",
+                         travelTime: 60.0,
+                         distance: 100.0)
 
     XCTAssertEqual(edge.from, "A")
     XCTAssertEqual(edge.to, "B")
@@ -152,7 +211,11 @@ final class EdgeInitializerTests: XCTestCase {
   }
 
   func testBridgeConvenienceInitializerWithValidID() {
-    let edge = Edge.bridge(from: "A", to: "B", travelTime: 120.0, distance: 200.0, bridgeID: "1")
+    let edge = Edge.bridge(from: "A",
+                           to: "B",
+                           travelTime: 120.0,
+                           distance: 200.0,
+                           bridgeID: "1")
 
     XCTAssertNotNil(edge)
     XCTAssertEqual(edge?.from, "A")
@@ -164,7 +227,11 @@ final class EdgeInitializerTests: XCTestCase {
   }
 
   func testBridgeConvenienceInitializerWithSyntheticID() {
-    let edge = Edge.bridge(from: "A", to: "B", travelTime: 90.0, distance: 150.0, bridgeID: "bridge1")
+    let edge = Edge.bridge(from: "A",
+                           to: "B",
+                           travelTime: 90.0,
+                           distance: 150.0,
+                           bridgeID: "bridge1")
 
     XCTAssertNotNil(edge)
     XCTAssertEqual(edge?.from, "A")
@@ -176,13 +243,21 @@ final class EdgeInitializerTests: XCTestCase {
   }
 
   func testBridgeConvenienceInitializerWithInvalidID() {
-    let edge = Edge.bridge(from: "A", to: "B", travelTime: 120.0, distance: 200.0, bridgeID: "invalid")
+    let edge = Edge.bridge(from: "A",
+                           to: "B",
+                           travelTime: 120.0,
+                           distance: 200.0,
+                           bridgeID: "invalid")
 
     XCTAssertNil(edge)
   }
 
   func testBridgeThrowingConvenienceInitializer() throws {
-    let edge = try Edge.bridgeThrowing(from: "A", to: "B", travelTime: 120.0, distance: 200.0, bridgeID: "1")
+    let edge = try Edge.bridgeThrowing(from: "A",
+                                       to: "B",
+                                       travelTime: 120.0,
+                                       distance: 200.0,
+                                       bridgeID: "1")
 
     XCTAssertEqual(edge.from, "A")
     XCTAssertEqual(edge.to, "B")
@@ -195,12 +270,14 @@ final class EdgeInitializerTests: XCTestCase {
   // MARK: - Error Description Tests
 
   func testErrorDescriptions() {
-    XCTAssertEqual(Edge.EdgeInitError.selfLoop.localizedDescription, "Edge cannot connect a node to itself")
+    XCTAssertEqual(Edge.EdgeInitError.selfLoop.localizedDescription,
+                   "Edge cannot connect a node to itself")
     XCTAssertEqual(Edge.EdgeInitError.nonPositiveDistance.localizedDescription,
                    "Edge distance must be positive and finite")
     XCTAssertEqual(Edge.EdgeInitError.nonPositiveTravelTime.localizedDescription,
                    "Edge travel time must be positive and finite")
-    XCTAssertEqual(Edge.EdgeInitError.missingBridgeID.localizedDescription, "Bridge edge must have a bridge ID")
+    XCTAssertEqual(Edge.EdgeInitError.missingBridgeID.localizedDescription,
+                   "Bridge edge must have a bridge ID")
     XCTAssertEqual(Edge.EdgeInitError.unexpectedBridgeID.localizedDescription,
                    "Non-bridge edge should not have a bridge ID")
   }
@@ -209,7 +286,12 @@ final class EdgeInitializerTests: XCTestCase {
 
   func testBackwardCompatibleInitializer() {
     // This should work without throwing
-    let edge = Edge(from: "A", to: "B", travelTime: 60.0, distance: 100.0, isBridge: false, bridgeID: nil)
+    let edge = Edge(from: "A",
+                    to: "B",
+                    travelTime: 60.0,
+                    distance: 100.0,
+                    isBridge: false,
+                    bridgeID: nil)
 
     XCTAssertEqual(edge.from, "A")
     XCTAssertEqual(edge.to, "B")
@@ -221,7 +303,12 @@ final class EdgeInitializerTests: XCTestCase {
 
   func testBackwardCompatibleBridgeInitializer() {
     // This should work without throwing (with warnings in debug)
-    let edge = Edge(from: "A", to: "B", travelTime: 120.0, distance: 200.0, isBridge: true, bridgeID: "1")
+    let edge = Edge(from: "A",
+                    to: "B",
+                    travelTime: 120.0,
+                    distance: 200.0,
+                    isBridge: true,
+                    bridgeID: "1")
 
     XCTAssertEqual(edge.from, "A")
     XCTAssertEqual(edge.to, "B")

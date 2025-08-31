@@ -49,7 +49,8 @@ public protocol PipelineValidator {
   /// Generate statistics artifacts (optional)
   /// - Parameter features: Array of feature vectors
   /// - Returns: Statistics artifacts if supported, nil otherwise
-  func generateStatistics(from features: [FeatureVector]) -> BridgeDataStatistics?
+  func generateStatistics(from features: [FeatureVector])
+    -> BridgeDataStatistics?
 }
 
 // MARK: - Plugin Manager
@@ -61,16 +62,19 @@ public class PipelineValidationPluginManager {
   public private(set) var validators: [PipelineValidator] = []
 
   /// Validation results from the last run
-  public private(set) var lastValidationResults: [String: DataValidationResult] = [:]
+  public private(set) var lastValidationResults:
+    [String: DataValidationResult] = [:]
 
   /// Statistics artifacts from the last run
-  public private(set) var lastStatisticsArtifacts: [String: BridgeDataStatistics] = [:]
+  public private(set) var lastStatisticsArtifacts:
+    [String: BridgeDataStatistics] = [:]
 
   /// Whether plugins are enabled
   public var pluginsEnabled = true
 
   /// Logger for plugin operations
-  private let logger = Logger(subsystem: "com.bridget.pipeline", category: "ValidationPlugins")
+  private let logger = Logger(subsystem: "com.bridget.pipeline",
+                              category: "ValidationPlugins")
 
   /// Statistics service for generating comprehensive artifacts
   private let statisticsService = DataStatisticsService()
@@ -86,14 +90,18 @@ public class PipelineValidationPluginManager {
   public func registerValidator(_ validator: PipelineValidator) {
     // Check if validator with same name already exists
     if validators.contains(where: { $0.name == validator.name }) {
-      logger.warning("Validator '\(validator.name)' already registered, replacing existing one")
+      logger.warning(
+        "Validator '\(validator.name)' already registered, replacing existing one"
+      )
       validators.removeAll { $0.name == validator.name }
     }
 
     validators.append(validator)
     validators.sort { $0.priority < $1.priority }
 
-    logger.info("Registered validator '\(validator.name)' with priority \(validator.priority)")
+    logger.info(
+      "Registered validator '\(validator.name)' with priority \(validator.priority)"
+    )
   }
 
   /// Unregister a validator plugin
@@ -126,7 +134,9 @@ public class PipelineValidationPluginManager {
   /// Run all enabled validators on probe tick data
   /// - Parameter ticks: Array of probe ticks to validate
   /// - Returns: Combined validation results and statistics artifacts
-  public func validateAll(ticks: [ProbeTickRaw]) -> (results: [String: DataValidationResult], artifacts: [String: BridgeDataStatistics]) {
+  public func validateAll(ticks: [ProbeTickRaw]) -> (results: [String: DataValidationResult],
+                                                     artifacts: [String: BridgeDataStatistics])
+  {
     if !pluginsEnabled {
       logger.info("Plugins disabled, skipping validation")
       return ([:], [:])
@@ -136,7 +146,9 @@ public class PipelineValidationPluginManager {
     var artifacts: [String: BridgeDataStatistics] = [:]
 
     for validator in validators where validator.isEnabled {
-      logger.info("Running validator '\(validator.name)' on \(ticks.count) ticks")
+      logger.info(
+        "Running validator '\(validator.name)' on \(ticks.count) ticks"
+      )
 
       let result = validator.validate(ticks: ticks)
       results[validator.name] = result
@@ -144,21 +156,27 @@ public class PipelineValidationPluginManager {
       // Generate statistics artifacts if supported
       if let statistics = validator.generateStatistics(from: ticks) {
         artifacts[validator.name] = statistics
-        logger.info("Generated statistics artifacts for validator '\(validator.name)'")
+        logger.info(
+          "Generated statistics artifacts for validator '\(validator.name)'"
+        )
       }
     }
 
     lastValidationResults = results
     lastStatisticsArtifacts = artifacts
 
-    logger.info("Validation complete: \(results.count) validators, \(artifacts.count) artifacts")
+    logger.info(
+      "Validation complete: \(results.count) validators, \(artifacts.count) artifacts"
+    )
     return (results, artifacts)
   }
 
   /// Run all enabled validators on feature vectors
   /// - Parameter features: Array of feature vectors to validate
   /// - Returns: Combined validation results and statistics artifacts
-  public func validateAll(features: [FeatureVector]) -> (results: [String: DataValidationResult], artifacts: [String: BridgeDataStatistics]) {
+  public func validateAll(features: [FeatureVector]) -> (results: [String: DataValidationResult],
+                                                         artifacts: [String: BridgeDataStatistics])
+  {
     if !pluginsEnabled {
       logger.info("Plugins disabled, skipping validation")
       return ([:], [:])
@@ -168,7 +186,9 @@ public class PipelineValidationPluginManager {
     var artifacts: [String: BridgeDataStatistics] = [:]
 
     for validator in validators where validator.isEnabled {
-      logger.info("Running validator '\(validator.name)' on \(features.count) features")
+      logger.info(
+        "Running validator '\(validator.name)' on \(features.count) features"
+      )
 
       let result = validator.validate(features: features)
       results[validator.name] = result
@@ -176,21 +196,28 @@ public class PipelineValidationPluginManager {
       // Generate statistics artifacts if supported
       if let statistics = validator.generateStatistics(from: features) {
         artifacts[validator.name] = statistics
-        logger.info("Generated statistics artifacts for validator '\(validator.name)'")
+        logger.info(
+          "Generated statistics artifacts for validator '\(validator.name)'"
+        )
       }
     }
 
     lastValidationResults = results
     lastStatisticsArtifacts = artifacts
 
-    logger.info("Validation complete: \(results.count) validators, \(artifacts.count) artifacts")
+    logger.info(
+      "Validation complete: \(results.count) validators, \(artifacts.count) artifacts"
+    )
     return (results, artifacts)
   }
 
   /// Run all enabled validators on model metrics
   /// - Parameter metrics: Model performance metrics to validate
   /// - Returns: Combined validation results
-  public func validateAll(metrics: ModelPerformanceMetrics) -> [String: DataValidationResult] {
+  public func validateAll(metrics: ModelPerformanceMetrics) -> [
+    String:
+      DataValidationResult
+  ] {
     if !pluginsEnabled {
       logger.info("Plugins disabled, skipping validation")
       return [:]
@@ -199,7 +226,9 @@ public class PipelineValidationPluginManager {
     var results: [String: DataValidationResult] = [:]
 
     for validator in validators where validator.isEnabled {
-      logger.info("Running validator '\(validator.name)' on model metrics")
+      logger.info(
+        "Running validator '\(validator.name)' on model metrics"
+      )
 
       let result = validator.validate(metrics: metrics)
       results[validator.name] = result
@@ -216,8 +245,12 @@ public class PipelineValidationPluginManager {
   /// Generate comprehensive statistics for probe tick data
   /// - Parameter ticks: Array of probe ticks
   /// - Returns: Complete statistics including bridge, time, and horizon analysis
-  public func generateComprehensiveStatistics(from ticks: [ProbeTickRaw]) -> BridgeDataStatistics {
-    logger.info("Generating comprehensive statistics for \(ticks.count) ticks")
+  public func generateComprehensiveStatistics(from ticks: [ProbeTickRaw])
+    -> BridgeDataStatistics
+  {
+    logger.info(
+      "Generating comprehensive statistics for \(ticks.count) ticks"
+    )
     return statisticsService.generateStatistics(from: ticks)
   }
 
@@ -227,28 +260,36 @@ public class PipelineValidationPluginManager {
   public func generateComprehensiveStatistics(from features: [FeatureVector])
     -> BridgeDataStatistics
   {
-    logger.info("Generating comprehensive statistics for \(features.count) features")
+    logger.info(
+      "Generating comprehensive statistics for \(features.count) features"
+    )
     return statisticsService.generateStatistics(from: features)
   }
 
   /// Export statistics to JSON format
   /// - Parameter statistics: The statistics to export
   /// - Returns: JSON string representation
-  public func exportStatisticsToJSON(_ statistics: BridgeDataStatistics) throws -> String {
+  public func exportStatisticsToJSON(_ statistics: BridgeDataStatistics)
+    throws -> String
+  {
     return try statisticsService.exportToJSON(statistics)
   }
 
   /// Export statistics to CSV format
   /// - Parameter statistics: The statistics to export
   /// - Returns: CSV string representation
-  public func exportStatisticsToCSV(_ statistics: BridgeDataStatistics) -> String {
+  public func exportStatisticsToCSV(_ statistics: BridgeDataStatistics)
+    -> String
+  {
     return statisticsService.exportToCSV(statistics)
   }
 
   /// Export horizon coverage to CSV format
   /// - Parameter statistics: The statistics to export
   /// - Returns: CSV string representation of horizon coverage
-  public func exportHorizonCoverageToCSV(_ statistics: BridgeDataStatistics) -> String {
+  public func exportHorizonCoverageToCSV(_ statistics: BridgeDataStatistics)
+    -> String
+  {
     return statisticsService.exportHorizonCoverageToCSV(statistics)
   }
 
@@ -258,7 +299,9 @@ public class PipelineValidationPluginManager {
   /// - Parameters:
   ///   - name: Name of the validator
   ///   - config: New configuration parameters
-  public func updateValidatorConfiguration(_ name: String, config: [String: Any]) throws {
+  public func updateValidatorConfiguration(_ name: String,
+                                           config: [String: Any]) throws
+  {
     if var validator = getValidator(named: name) {
       try validator.updateConfiguration(config)
       logger.info("Updated configuration for validator '\(name)'")
@@ -291,7 +334,9 @@ public class PipelineValidationPluginManager {
   /// - Returns: Summary string with validation status and statistics
   public func getValidationSummary() -> String {
     let totalValidators = lastValidationResults.count
-    let passedValidators = lastValidationResults.values.filter { $0.isValid }.count
+    let passedValidators = lastValidationResults.values.filter {
+      $0.isValid
+    }.count
     let totalArtifacts = lastStatisticsArtifacts.count
 
     return """
@@ -357,7 +402,8 @@ public struct PluginConfiguration: Codable {
 /// Validator that checks for missing gate_anom values
 public struct NoMissingGateAnomValidator: PipelineValidator {
   public let name = "NoMissingGateAnom"
-  public let description = "Ensures no probe ticks are missing gate_anom values"
+  public let description =
+    "Ensures no probe ticks are missing gate_anom values"
   public var isEnabled: Bool = true
   public let priority: Int = 100
 
@@ -383,15 +429,21 @@ public struct NoMissingGateAnomValidator: PipelineValidator {
     return DataValidationResult(totalRecords: features.count,
                                 isValid: true,
                                 errors: [],
-                                warnings: ["Gate anomaly validation not applicable to feature vectors"])
+                                warnings: [
+                                  "Gate anomaly validation not applicable to feature vectors",
+                                ])
   }
 
-  public func validate(metrics _: ModelPerformanceMetrics) -> DataValidationResult {
+  public func validate(metrics _: ModelPerformanceMetrics)
+    -> DataValidationResult
+  {
     // Not applicable for model metrics
     return DataValidationResult(totalRecords: 1,
                                 isValid: true,
                                 errors: [],
-                                warnings: ["Gate anomaly validation not applicable to model metrics"])
+                                warnings: [
+                                  "Gate anomaly validation not applicable to model metrics",
+                                ])
   }
 
   public func getConfiguration() -> [String: Any] {
@@ -402,12 +454,16 @@ public struct NoMissingGateAnomValidator: PipelineValidator {
     // No configurable parameters
   }
 
-  public func generateStatistics(from _: [ProbeTickRaw]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [ProbeTickRaw])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }
 
-  public func generateStatistics(from _: [FeatureVector]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [FeatureVector])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }
@@ -416,7 +472,8 @@ public struct NoMissingGateAnomValidator: PipelineValidator {
 /// Validator that checks for reasonable detour_delta values
 public class DetourDeltaRangeValidator: PipelineValidator {
   public let name = "DetourDeltaRange"
-  public let description = "Ensures detour_delta values are within reasonable bounds"
+  public let description =
+    "Ensures detour_delta values are within reasonable bounds"
   public var isEnabled: Bool = true
   public let priority: Int = 200
 
@@ -453,15 +510,21 @@ public class DetourDeltaRangeValidator: PipelineValidator {
     return DataValidationResult(totalRecords: features.count,
                                 isValid: true,
                                 errors: [],
-                                warnings: ["Detour delta validation not applicable to feature vectors"])
+                                warnings: [
+                                  "Detour delta validation not applicable to feature vectors",
+                                ])
   }
 
-  public func validate(metrics _: ModelPerformanceMetrics) -> DataValidationResult {
+  public func validate(metrics _: ModelPerformanceMetrics)
+    -> DataValidationResult
+  {
     // Not applicable for model metrics
     return DataValidationResult(totalRecords: 1,
                                 isValid: true,
                                 errors: [],
-                                warnings: ["Detour delta validation not applicable to model metrics"])
+                                warnings: [
+                                  "Detour delta validation not applicable to model metrics",
+                                ])
   }
 
   public func getConfiguration() -> [String: Any] {
@@ -481,16 +544,22 @@ public class DetourDeltaRangeValidator: PipelineValidator {
 
     // Validate configuration
     if minDetourDelta >= maxDetourDelta {
-      throw ValidationError.invalidConfiguration("minDetourDelta must be less than maxDetourDelta")
+      throw ValidationError.invalidConfiguration(
+        "minDetourDelta must be less than maxDetourDelta"
+      )
     }
   }
 
-  public func generateStatistics(from _: [ProbeTickRaw]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [ProbeTickRaw])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }
 
-  public func generateStatistics(from _: [FeatureVector]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [FeatureVector])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }
@@ -534,9 +603,13 @@ public struct DataQualityValidator: PipelineValidator {
     }
 
     // Check for extreme values
-    let extremeDetourDelta = ticks.compactMap { $0.detour_delta }.filter { abs($0) > 1000 }.count
+    let extremeDetourDelta = ticks.compactMap { $0.detour_delta }.filter {
+      abs($0) > 1000
+    }.count
     if extremeDetourDelta > 0 {
-      warnings.append("\(extremeDetourDelta) records have extreme detour_delta values (>1000)")
+      warnings.append(
+        "\(extremeDetourDelta) records have extreme detour_delta values (>1000)"
+      )
     }
 
     errors.append(contentsOf: warnings)
@@ -557,19 +630,25 @@ public struct DataQualityValidator: PipelineValidator {
 
     for (index, feature) in features.enumerated() {
       // Check cyclical features are in valid range
-      if feature.min_sin < -1.0 || feature.min_sin > 1.0 || feature.min_cos < -1.0
-        || feature.min_cos > 1.0 || feature.dow_sin < -1.0 || feature.dow_sin > 1.0
+      if feature.min_sin < -1.0 || feature.min_sin > 1.0
+        || feature.min_cos < -1.0
+        || feature.min_cos > 1.0 || feature.dow_sin < -1.0
+        || feature.dow_sin > 1.0
         || feature.dow_cos < -1.0 || feature.dow_cos > 1.0
       {
         errorCount += 1
         if errorCount <= 5 {  // Limit error messages
-          errors.append("Feature \(index) has invalid cyclical values")
+          errors.append(
+            "Feature \(index) has invalid cyclical values"
+          )
         }
       }
     }
 
     if errorCount > 5 {
-      errors.append("... and \(errorCount - 5) more features with invalid cyclical values")
+      errors.append(
+        "... and \(errorCount - 5) more features with invalid cyclical values"
+      )
     }
 
     let isValid = errorCount == 0
@@ -580,7 +659,9 @@ public struct DataQualityValidator: PipelineValidator {
                                 warnings: [])
   }
 
-  public func validate(metrics: ModelPerformanceMetrics) -> DataValidationResult {
+  public func validate(metrics: ModelPerformanceMetrics)
+    -> DataValidationResult
+  {
     let total = 1
 
     var errorCount = 0
@@ -591,7 +672,8 @@ public struct DataQualityValidator: PipelineValidator {
     if metrics.accuracy < 0.7 {
       errorCount += 1
       errors.append(
-        "Model accuracy \(String(format: "%.3f", metrics.accuracy)) below threshold 0.7")
+        "Model accuracy \(String(format: "%.3f", metrics.accuracy)) below threshold 0.7"
+      )
     } else if metrics.accuracy < 0.8 {
       warnings.append(
         "Model accuracy \(String(format: "%.3f", metrics.accuracy)) is acceptable but could be improved"
@@ -600,13 +682,16 @@ public struct DataQualityValidator: PipelineValidator {
 
     if metrics.loss > 0.5 {
       errorCount += 1
-      errors.append("Model loss \(String(format: "%.3f", metrics.loss)) above threshold 0.5")
+      errors.append(
+        "Model loss \(String(format: "%.3f", metrics.loss)) above threshold 0.5"
+      )
     }
 
     if metrics.f1Score < 0.65 {
       errorCount += 1
       errors.append(
-        "Model F1 score \(String(format: "%.3f", metrics.f1Score)) below threshold 0.65")
+        "Model F1 score \(String(format: "%.3f", metrics.f1Score)) below threshold 0.65"
+      )
     }
 
     errors.append(contentsOf: warnings)
@@ -636,23 +721,32 @@ public struct DataQualityValidator: PipelineValidator {
 
     // Validate configuration
     if minValidationRate < 0.0 || minValidationRate > 1.0 {
-      throw ValidationError.invalidConfiguration("minValidationRate must be between 0.0 and 1.0")
+      throw ValidationError.invalidConfiguration(
+        "minValidationRate must be between 0.0 and 1.0"
+      )
     }
     if maxErrorRate < 0.0 || maxErrorRate > 1.0 {
-      throw ValidationError.invalidConfiguration("maxErrorRate must be between 0.0 and 1.0")
+      throw ValidationError.invalidConfiguration(
+        "maxErrorRate must be between 0.0 and 1.0"
+      )
     }
     if minValidationRate + maxErrorRate > 1.0 {
       throw ValidationError.invalidConfiguration(
-        "minValidationRate + maxErrorRate cannot exceed 1.0")
+        "minValidationRate + maxErrorRate cannot exceed 1.0"
+      )
     }
   }
 
-  public func generateStatistics(from _: [ProbeTickRaw]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [ProbeTickRaw])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }
 
-  public func generateStatistics(from _: [FeatureVector]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [FeatureVector])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }
@@ -680,25 +774,30 @@ public struct SpeedRangeValidator: PipelineValidator {
     var warnings: [String] = []
 
     // Validate current traffic speed
-    let currentSpeedViolations = ticks.compactMap { tick -> (ProbeTickRaw, String)? in
+    let currentSpeedViolations = ticks.compactMap {
+      tick -> (ProbeTickRaw, String)? in
       guard let speed = tick.current_traffic_speed else { return nil }
       if speed < minSpeed || speed > maxSpeed {
-        return (tick, "Current traffic speed \(speed) mph outside valid range [\(minSpeed), \(maxSpeed)]")
+        return (tick,
+                "Current traffic speed \(speed) mph outside valid range [\(minSpeed), \(maxSpeed)]")
       }
       return nil
     }
 
     // Validate normal traffic speed
-    let normalSpeedViolations = ticks.compactMap { tick -> (ProbeTickRaw, String)? in
+    let normalSpeedViolations = ticks.compactMap {
+      tick -> (ProbeTickRaw, String)? in
       guard let speed = tick.normal_traffic_speed else { return nil }
       if speed < minSpeed || speed > maxSpeed {
-        return (tick, "Normal traffic speed \(speed) mph outside valid range [\(minSpeed), \(maxSpeed)]")
+        return (tick,
+                "Normal traffic speed \(speed) mph outside valid range [\(minSpeed), \(maxSpeed)]")
       }
       return nil
     }
 
     // Check for speed ratio anomalies
-    let speedRatioViolations = ticks.compactMap { tick -> (ProbeTickRaw, String)? in
+    let speedRatioViolations = ticks.compactMap {
+      tick -> (ProbeTickRaw, String)? in
       guard let current = tick.current_traffic_speed,
             let normal = tick.normal_traffic_speed,
             normal > 0
@@ -706,14 +805,16 @@ public struct SpeedRangeValidator: PipelineValidator {
 
       let ratio = current / normal
       if ratio < 0.1 || ratio > 3.0 {  // Speed ratio should be reasonable
-        return (tick, "Speed ratio \(String(format: "%.2f", ratio)) outside reasonable bounds [0.1, 3.0]")
+        return (tick,
+                "Speed ratio \(String(format: "%.2f", ratio)) outside reasonable bounds [0.1, 3.0]")
       }
       return nil
     }
 
     // Count total violations
     let totalViolations =
-      currentSpeedViolations.count + normalSpeedViolations.count + speedRatioViolations.count
+      currentSpeedViolations.count + normalSpeedViolations.count
+        + speedRatioViolations.count
     errorCount += totalViolations
 
     // Build error messages
@@ -730,7 +831,9 @@ public struct SpeedRangeValidator: PipelineValidator {
     }
 
     if !speedRatioViolations.isEmpty {
-      errors.append("\(speedRatioViolations.count) records have unreasonable speed ratios")
+      errors.append(
+        "\(speedRatioViolations.count) records have unreasonable speed ratios"
+      )
     }
 
     // Add warnings for missing speed data
@@ -776,7 +879,8 @@ public struct SpeedRangeValidator: PipelineValidator {
 
     // Count total violations
     let totalViolations =
-      currentSpeedViolations.count + normalSpeedViolations.count + speedRatioViolations.count
+      currentSpeedViolations.count + normalSpeedViolations.count
+        + speedRatioViolations.count
     errorCount += totalViolations
 
     // Build error messages
@@ -793,13 +897,19 @@ public struct SpeedRangeValidator: PipelineValidator {
     }
 
     if !speedRatioViolations.isEmpty {
-      errors.append("\(speedRatioViolations.count) features have unreasonable speed ratios")
+      errors.append(
+        "\(speedRatioViolations.count) features have unreasonable speed ratios"
+      )
     }
 
     // Add warnings for extreme speed values
-    let extremeSpeeds = features.filter { $0.current_speed > 80 || $0.normal_speed > 80 }
+    let extremeSpeeds = features.filter {
+      $0.current_speed > 80 || $0.normal_speed > 80
+    }
     if !extremeSpeeds.isEmpty {
-      warnings.append("\(extremeSpeeds.count) features have speeds above 80 mph (highway speeds)")
+      warnings.append(
+        "\(extremeSpeeds.count) features have speeds above 80 mph (highway speeds)"
+      )
     }
 
     let isValid = errorCount == 0
@@ -810,7 +920,9 @@ public struct SpeedRangeValidator: PipelineValidator {
                                 warnings: warnings)
   }
 
-  public func validate(metrics _: ModelPerformanceMetrics) -> DataValidationResult {
+  public func validate(metrics _: ModelPerformanceMetrics)
+    -> DataValidationResult
+  {
     // Not applicable for model metrics
     return DataValidationResult(totalRecords: 1,
                                 isValid: true,
@@ -835,19 +947,27 @@ public struct SpeedRangeValidator: PipelineValidator {
 
     // Validate configuration
     if minSpeed < 0.0 {
-      throw ValidationError.invalidConfiguration("minSpeed cannot be negative")
+      throw ValidationError.invalidConfiguration(
+        "minSpeed cannot be negative"
+      )
     }
     if maxSpeed <= minSpeed {
-      throw ValidationError.invalidConfiguration("maxSpeed must be greater than minSpeed")
+      throw ValidationError.invalidConfiguration(
+        "maxSpeed must be greater than minSpeed"
+      )
     }
   }
 
-  public func generateStatistics(from _: [ProbeTickRaw]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [ProbeTickRaw])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }
 
-  public func generateStatistics(from _: [FeatureVector]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [FeatureVector])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }
@@ -856,7 +976,8 @@ public struct SpeedRangeValidator: PipelineValidator {
 /// Validator that checks timestamp monotonicity
 public struct TimestampMonotonicityValidator: PipelineValidator {
   public let name = "TimestampMonotonicity"
-  public let description = "Ensures timestamps increase monotonically without backward jumps"
+  public let description =
+    "Ensures timestamps increase monotonically without backward jumps"
   public var isEnabled: Bool = true
   public let priority: Int = 500
 
@@ -886,7 +1007,11 @@ public struct TimestampMonotonicityValidator: PipelineValidator {
     var forwardJumps = 0
 
     for tick in sortedTicks {
-      guard let currentTimestamp = ISO8601DateFormatter().date(from: tick.ts_utc) else {
+      guard
+        let currentTimestamp = ISO8601DateFormatter().date(
+          from: tick.ts_utc
+        )
+      else {
         errorCount += 1
         if errorCount <= 5 {
           errors.append("Invalid timestamp format: \(tick.ts_utc)")
@@ -895,7 +1020,9 @@ public struct TimestampMonotonicityValidator: PipelineValidator {
       }
 
       if let previous = previousTimestamp {
-        let timeDifference = currentTimestamp.timeIntervalSince(previous)
+        let timeDifference = currentTimestamp.timeIntervalSince(
+          previous
+        )
 
         if timeDifference < -maxBackwardJumpSeconds {
           backwardJumps += 1
@@ -918,10 +1045,14 @@ public struct TimestampMonotonicityValidator: PipelineValidator {
     }
 
     if backwardJumps > 3 {
-      errors.append("... and \(backwardJumps - 3) more backward timestamp jumps")
+      errors.append(
+        "... and \(backwardJumps - 3) more backward timestamp jumps"
+      )
     }
     if forwardJumps > 3 {
-      warnings.append("... and \(forwardJumps - 3) more forward timestamp jumps")
+      warnings.append(
+        "... and \(forwardJumps - 3) more forward timestamp jumps"
+      )
     }
 
     let isValid = errorCount == 0
@@ -937,15 +1068,21 @@ public struct TimestampMonotonicityValidator: PipelineValidator {
     return DataValidationResult(totalRecords: features.count,
                                 isValid: true,
                                 errors: [],
-                                warnings: ["Timestamp monotonicity validation not applicable to feature vectors"])
+                                warnings: [
+                                  "Timestamp monotonicity validation not applicable to feature vectors",
+                                ])
   }
 
-  public func validate(metrics _: ModelPerformanceMetrics) -> DataValidationResult {
+  public func validate(metrics _: ModelPerformanceMetrics)
+    -> DataValidationResult
+  {
     // Not applicable for model metrics
     return DataValidationResult(totalRecords: 1,
                                 isValid: true,
                                 errors: [],
-                                warnings: ["Timestamp monotonicity validation not applicable to model metrics"])
+                                warnings: [
+                                  "Timestamp monotonicity validation not applicable to model metrics",
+                                ])
   }
 
   public func getConfiguration() -> [String: Any] {
@@ -965,19 +1102,27 @@ public struct TimestampMonotonicityValidator: PipelineValidator {
 
     // Validate configuration
     if maxBackwardJumpSeconds < 0.0 {
-      throw ValidationError.invalidConfiguration("maxBackwardJumpSeconds cannot be negative")
+      throw ValidationError.invalidConfiguration(
+        "maxBackwardJumpSeconds cannot be negative"
+      )
     }
     if maxForwardJumpSeconds < 0.0 {
-      throw ValidationError.invalidConfiguration("maxForwardJumpSeconds cannot be negative")
+      throw ValidationError.invalidConfiguration(
+        "maxForwardJumpSeconds cannot be negative"
+      )
     }
   }
 
-  public func generateStatistics(from _: [ProbeTickRaw]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [ProbeTickRaw])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }
 
-  public func generateStatistics(from _: [FeatureVector]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [FeatureVector])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }
@@ -986,7 +1131,8 @@ public struct TimestampMonotonicityValidator: PipelineValidator {
 /// Validator that checks horizon coverage completeness
 public struct HorizonCoverageValidator: PipelineValidator {
   public let name = "HorizonCoverage"
-  public let description = "Ensures complete horizon coverage for all bridges and time periods"
+  public let description =
+    "Ensures complete horizon coverage for all bridges and time periods"
   public var isEnabled: Bool = true
   public let priority: Int = 600
 
@@ -1031,33 +1177,43 @@ public struct HorizonCoverageValidator: PipelineValidator {
 
     for (bridgeID, bridgeTicks) in bridgeGroups {
       let bridgeHorizons = detectAvailableHorizons(from: bridgeTicks)
-      let coveragePercentage = Double(bridgeHorizons.count) / Double(availableHorizons.count)
+      let coveragePercentage =
+        Double(bridgeHorizons.count) / Double(availableHorizons.count)
 
       if coveragePercentage < minCoveragePercentage {
         bridgeCoverageIssues.append(
-          "Bridge \(bridgeID): \(String(format: "%.1f%%", coveragePercentage * 100)) coverage")
+          "Bridge \(bridgeID): \(String(format: "%.1f%%", coveragePercentage * 100)) coverage"
+        )
       }
 
       // Check time-based coverage patterns
       let hourlyGroups = Dictionary(grouping: bridgeTicks) { tick in
-        Calendar.current.component(.hour, from: ISO8601DateFormatter().date(from: tick.ts_utc) ?? Date())
+        Calendar.current.component(.hour,
+                                   from: ISO8601DateFormatter().date(from: tick.ts_utc)
+                                     ?? Date())
       }
 
       let hoursWithData = hourlyGroups.keys.count
       if hoursWithData < 12 {  // Expect at least 12 hours of data
-        timeCoverageIssues.append("Bridge \(bridgeID): only \(hoursWithData) hours covered")
+        timeCoverageIssues.append(
+          "Bridge \(bridgeID): only \(hoursWithData) hours covered"
+        )
       }
     }
 
     // Add coverage issues to errors
     if !bridgeCoverageIssues.isEmpty {
       errorCount += bridgeCoverageIssues.count
-      errors.append("Bridge coverage issues: \(bridgeCoverageIssues.joined(separator: ", "))")
+      errors.append(
+        "Bridge coverage issues: \(bridgeCoverageIssues.joined(separator: ", "))"
+      )
     }
 
     if !timeCoverageIssues.isEmpty {
       errorCount += timeCoverageIssues.count
-      errors.append("Time coverage issues: \(timeCoverageIssues.joined(separator: ", "))")
+      errors.append(
+        "Time coverage issues: \(timeCoverageIssues.joined(separator: ", "))"
+      )
     }
 
     // Add warnings for coverage patterns
@@ -1118,7 +1274,9 @@ public struct HorizonCoverageValidator: PipelineValidator {
 
     for (bridgeID, bridgeFeatures) in bridgeGroups {
       let bridgeHorizons = Set(bridgeFeatures.map { $0.horizon_min })
-      let missingHorizons = Set(availableHorizons).subtracting(bridgeHorizons)
+      let missingHorizons = Set(availableHorizons).subtracting(
+        bridgeHorizons
+      )
 
       if !missingHorizons.isEmpty {
         bridgeCoverageIssues.append(
@@ -1129,7 +1287,9 @@ public struct HorizonCoverageValidator: PipelineValidator {
 
     if !bridgeCoverageIssues.isEmpty {
       errorCount += bridgeCoverageIssues.count
-      errors.append("Bridge coverage issues: \(bridgeCoverageIssues.joined(separator: ", "))")
+      errors.append(
+        "Bridge coverage issues: \(bridgeCoverageIssues.joined(separator: ", "))"
+      )
     }
 
     // Check coverage percentage
@@ -1138,7 +1298,8 @@ public struct HorizonCoverageValidator: PipelineValidator {
     let totalCovered = features.count
 
     if totalExpected > 0 {
-      let coveragePercentage = Double(totalCovered) / Double(totalExpected)
+      let coveragePercentage =
+        Double(totalCovered) / Double(totalExpected)
       if coveragePercentage < minCoveragePercentage {
         errorCount += 1
         errors.append(
@@ -1148,7 +1309,8 @@ public struct HorizonCoverageValidator: PipelineValidator {
     }
 
     // Add warnings for coverage patterns
-    let avgFeaturesPerHorizon = Double(total) / Double(availableHorizons.count)
+    let avgFeaturesPerHorizon =
+      Double(total) / Double(availableHorizons.count)
     if avgFeaturesPerHorizon < 10 {
       warnings.append(
         "Average features per horizon (\(String(format: "%.1f", avgFeaturesPerHorizon))) is below recommended minimum (10)"
@@ -1163,12 +1325,16 @@ public struct HorizonCoverageValidator: PipelineValidator {
                                 warnings: warnings)
   }
 
-  public func validate(metrics _: ModelPerformanceMetrics) -> DataValidationResult {
+  public func validate(metrics _: ModelPerformanceMetrics)
+    -> DataValidationResult
+  {
     // Not applicable for model metrics
     return DataValidationResult(totalRecords: 1,
                                 isValid: true,
                                 errors: [],
-                                warnings: ["Horizon coverage validation not applicable to model metrics"])
+                                warnings: [
+                                  "Horizon coverage validation not applicable to model metrics",
+                                ])
   }
 
   public func getConfiguration() -> [String: Any] {
@@ -1189,10 +1355,13 @@ public struct HorizonCoverageValidator: PipelineValidator {
     // Validate configuration
     if minCoveragePercentage < 0.0 || minCoveragePercentage > 1.0 {
       throw ValidationError.invalidConfiguration(
-        "minCoveragePercentage must be between 0.0 and 1.0")
+        "minCoveragePercentage must be between 0.0 and 1.0"
+      )
     }
     if minHorizonCount < 1 {
-      throw ValidationError.invalidConfiguration("minHorizonCount must be at least 1")
+      throw ValidationError.invalidConfiguration(
+        "minHorizonCount must be at least 1"
+      )
     }
   }
 
@@ -1228,12 +1397,16 @@ public struct HorizonCoverageValidator: PipelineValidator {
     return gaps
   }
 
-  public func generateStatistics(from _: [ProbeTickRaw]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [ProbeTickRaw])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }
 
-  public func generateStatistics(from _: [FeatureVector]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [FeatureVector])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }
@@ -1242,7 +1415,8 @@ public struct HorizonCoverageValidator: PipelineValidator {
 /// Validator that explicitly checks for NaN and infinite values
 public struct NaNInfValidator: PipelineValidator {
   public let name = "NaNInf"
-  public let description = "Explicitly checks for NaN and infinite values in numeric fields"
+  public let description =
+    "Explicitly checks for NaN and infinite values in numeric fields"
   public var isEnabled: Bool = true
   public let priority: Int = 700
 
@@ -1263,7 +1437,9 @@ public struct NaNInfValidator: PipelineValidator {
         } else if detourDelta.isInfinite {
           errorCount += 1
           if errorCount <= 5 {
-            errors.append("Record \(index) has infinite detour_delta")
+            errors.append(
+              "Record \(index) has infinite detour_delta"
+            )
           }
         }
       }
@@ -1272,7 +1448,9 @@ public struct NaNInfValidator: PipelineValidator {
     }
 
     if errorCount > 5 {
-      errors.append("... and \(errorCount - 5) more records with NaN/Inf values")
+      errors.append(
+        "... and \(errorCount - 5) more records with NaN/Inf values"
+      )
     }
 
     let isValid = errorCount == 0
@@ -1292,13 +1470,17 @@ public struct NaNInfValidator: PipelineValidator {
     // Check for NaN/Inf in feature values
     for (index, feature) in features.enumerated() {
       // Check cyclical features
-      if feature.min_sin.isNaN || feature.min_sin.isInfinite || feature.min_cos.isNaN
-        || feature.min_cos.isInfinite || feature.dow_sin.isNaN || feature.dow_sin.isInfinite
+      if feature.min_sin.isNaN || feature.min_sin.isInfinite
+        || feature.min_cos.isNaN
+        || feature.min_cos.isInfinite || feature.dow_sin.isNaN
+        || feature.dow_sin.isInfinite
         || feature.dow_cos.isNaN || feature.dow_cos.isInfinite
       {
         errorCount += 1
         if errorCount <= 5 {
-          errors.append("Feature \(index) has NaN/Inf cyclical values")
+          errors.append(
+            "Feature \(index) has NaN/Inf cyclical values"
+          )
         }
       }
 
@@ -1306,7 +1488,9 @@ public struct NaNInfValidator: PipelineValidator {
     }
 
     if errorCount > 5 {
-      errors.append("... and \(errorCount - 5) more features with NaN/Inf values")
+      errors.append(
+        "... and \(errorCount - 5) more features with NaN/Inf values"
+      )
     }
 
     let isValid = errorCount == 0
@@ -1317,7 +1501,9 @@ public struct NaNInfValidator: PipelineValidator {
                                 warnings: [])
   }
 
-  public func validate(metrics: ModelPerformanceMetrics) -> DataValidationResult {
+  public func validate(metrics: ModelPerformanceMetrics)
+    -> DataValidationResult
+  {
     let total = 1
 
     var errorCount = 0
@@ -1353,12 +1539,16 @@ public struct NaNInfValidator: PipelineValidator {
     // No configurable parameters
   }
 
-  public func generateStatistics(from _: [ProbeTickRaw]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [ProbeTickRaw])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }
 
-  public func generateStatistics(from _: [FeatureVector]) -> BridgeDataStatistics? {
+  public func generateStatistics(from _: [FeatureVector])
+    -> BridgeDataStatistics?
+  {
     // No statistics generation for this validator
     return nil
   }

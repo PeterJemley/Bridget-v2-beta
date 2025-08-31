@@ -68,7 +68,8 @@ public enum CircuitBreakerState {
 
 /// Service for handling retry logic and recovery operations
 public class RetryRecoveryService {
-  private let logger = Logger(subsystem: "com.peterjemley.Bridget", category: "RetryRecovery")
+  private let logger = Logger(subsystem: "com.peterjemley.Bridget",
+                              category: "RetryRecovery")
   private let policy: RetryPolicy
   private var circuitBreakerState: CircuitBreakerState = .closed
   private var failureCount: Int = 0
@@ -86,7 +87,9 @@ public class RetryRecoveryService {
   }
 
   /// Execute operation with retry logic
-  public func executeWithRetry<T>(_ operation: () async throws -> T) async throws -> T {
+  public func executeWithRetry<T>(_ operation: () async throws -> T)
+    async throws -> T
+  {
     var lastError: Error?
 
     for attempt in 1 ... policy.maxAttempts {
@@ -109,7 +112,9 @@ public class RetryRecoveryService {
 
         // Check if error is retryable
         guard shouldRetry(error, attempt: attempt) else {
-          logger.error("Error is not retryable: \(error.localizedDescription)")
+          logger.error(
+            "Error is not retryable: \(error.localizedDescription)"
+          )
           throw error
         }
 
@@ -118,13 +123,17 @@ public class RetryRecoveryService {
 
         // If this is the last attempt, throw the error
         if attempt == policy.maxAttempts {
-          logger.error("Max retry attempts reached: \(error.localizedDescription)")
+          logger.error(
+            "Max retry attempts reached: \(error.localizedDescription)"
+          )
           throw error
         }
 
         // Calculate delay and wait
         let delay = calculateDelay(for: attempt)
-        logger.info("Waiting \(delay)s before retry attempt \(attempt + 1)")
+        logger.info(
+          "Waiting \(delay)s before retry attempt \(attempt + 1)"
+        )
         try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
       }
     }
@@ -152,19 +161,25 @@ public class RetryRecoveryService {
         )
 
         guard shouldRetry(error, attempt) else {
-          logger.error("Error is not retryable: \(error.localizedDescription)")
+          logger.error(
+            "Error is not retryable: \(error.localizedDescription)"
+          )
           throw error
         }
 
         onFailure()
 
         if attempt == policy.maxAttempts {
-          logger.error("Max retry attempts reached: \(error.localizedDescription)")
+          logger.error(
+            "Max retry attempts reached: \(error.localizedDescription)"
+          )
           throw error
         }
 
         let delay = delayCalculator(attempt)
-        logger.info("Waiting \(delay)s before retry attempt \(attempt + 1)")
+        logger.info(
+          "Waiting \(delay)s before retry attempt \(attempt + 1)"
+        )
         try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
       }
     }
@@ -186,17 +201,21 @@ public class RetryRecoveryService {
     // Default retry logic for common error types
     switch error {
     case let urlError as URLError:
-      return urlError.code == .networkConnectionLost || urlError.code == .timedOut
+      return urlError.code == .networkConnectionLost
+        || urlError.code == .timedOut
         || urlError.code == .serverCertificateUntrusted
     case let posixError as POSIXError:
-      return posixError.code == .EIO || posixError.code == .ENOMEM || posixError.code == .ETIMEDOUT
+      return posixError.code == .EIO || posixError.code == .ENOMEM
+        || posixError.code == .ETIMEDOUT
     default:
       return true  // Retry by default for unknown errors
     }
   }
 
   private func calculateDelay(for attempt: Int) -> TimeInterval {
-    let exponentialDelay = policy.baseDelay * pow(policy.backoffMultiplier, Double(attempt - 1))
+    let exponentialDelay =
+      policy.baseDelay
+        * pow(policy.backoffMultiplier, Double(attempt - 1))
     let cappedDelay = min(exponentialDelay, policy.maxDelay)
 
     if policy.enableJitter {
@@ -240,7 +259,9 @@ public class RetryRecoveryService {
 
     if failureCount >= circuitBreakerThreshold {
       circuitBreakerState = .open
-      logger.warning("Circuit breaker opened after \(self.failureCount) failures")
+      logger.warning(
+        "Circuit breaker opened after \(self.failureCount) failures"
+      )
     }
   }
 }
@@ -249,7 +270,8 @@ public class RetryRecoveryService {
 
 /// Service for managing recovery operations and checkpoints
 public class RecoveryService {
-  private let logger = Logger(subsystem: "com.peterjemley.Bridget", category: "Recovery")
+  private let logger = Logger(subsystem: "com.peterjemley.Bridget",
+                              category: "Recovery")
   private let checkpointDirectory: String
 
   public init(checkpointDirectory: String) {
@@ -258,62 +280,84 @@ public class RecoveryService {
   }
 
   /// Create recovery checkpoint
-  public func createCheckpoint<T: Codable>(_ data: T, for stage: PipelineStage, id: String) throws
+  public func createCheckpoint<T: Codable>(_ data: T,
+                                           for stage: PipelineStage,
+                                           id: String) throws
     -> String
   {
-    let checkpointPath = "\(checkpointDirectory)/\(stage.rawValue)_\(id).checkpoint"
+    let checkpointPath =
+      "\(checkpointDirectory)/\(stage.rawValue)_\(id).checkpoint"
 
     do {
-      let encoder = JSONEncoder.bridgeEncoder(outputFormatting: .prettyPrinted)
+      let encoder = JSONEncoder.bridgeEncoder(
+        outputFormatting: .prettyPrinted
+      )
       let checkpointData = try encoder.encode(data)
       try checkpointData.write(to: URL(fileURLWithPath: checkpointPath))
 
-      logger.info("Created checkpoint for stage \(stage.rawValue) at \(checkpointPath)")
+      logger.info(
+        "Created checkpoint for stage \(stage.rawValue) at \(checkpointPath)"
+      )
       return checkpointPath
 
     } catch {
       logger.error(
-        "Failed to create checkpoint for stage \(stage.rawValue): \(error.localizedDescription)")
+        "Failed to create checkpoint for stage \(stage.rawValue): \(error.localizedDescription)"
+      )
       throw RecoveryError.checkpointCreationFailed(error)
     }
   }
 
   /// Load recovery checkpoint
-  public func loadCheckpoint<T: Codable>(_ type: T.Type, for stage: PipelineStage, id: String)
+  public func loadCheckpoint<T: Codable>(_ type: T.Type,
+                                         for stage: PipelineStage,
+                                         id: String)
     throws -> T?
   {
-    let checkpointPath = "\(checkpointDirectory)/\(stage.rawValue)_\(id).checkpoint"
+    let checkpointPath =
+      "\(checkpointDirectory)/\(stage.rawValue)_\(id).checkpoint"
 
     guard FileManagerUtils.fileExists(at: checkpointPath) else {
-      logger.debug("No checkpoint found for stage \(stage.rawValue) at \(checkpointPath)")
+      logger.debug(
+        "No checkpoint found for stage \(stage.rawValue) at \(checkpointPath)"
+      )
       return nil
     }
 
     do {
-      let checkpointData = try Data(contentsOf: URL(fileURLWithPath: checkpointPath))
+      let checkpointData = try Data(
+        contentsOf: URL(fileURLWithPath: checkpointPath)
+      )
       let decoder = JSONDecoder.bridgeDecoder()
       let checkpoint = try decoder.decode(type, from: checkpointData)
 
-      logger.info("Loaded checkpoint for stage \(stage.rawValue) from \(checkpointPath)")
+      logger.info(
+        "Loaded checkpoint for stage \(stage.rawValue) from \(checkpointPath)"
+      )
       return checkpoint
 
     } catch {
       logger.error(
-        "Failed to load checkpoint for stage \(stage.rawValue): \(error.localizedDescription)")
+        "Failed to load checkpoint for stage \(stage.rawValue): \(error.localizedDescription)"
+      )
       throw RecoveryError.checkpointLoadingFailed(error)
     }
   }
 
   /// Delete recovery checkpoint
   public func deleteCheckpoint(for stage: PipelineStage, id: String) throws {
-    let checkpointPath = "\(checkpointDirectory)/\(stage.rawValue)_\(id).checkpoint"
+    let checkpointPath =
+      "\(checkpointDirectory)/\(stage.rawValue)_\(id).checkpoint"
 
     do {
       try FileManagerUtils.removeFile(at: checkpointPath)
-      logger.info("Deleted checkpoint for stage \(stage.rawValue) at \(checkpointPath)")
+      logger.info(
+        "Deleted checkpoint for stage \(stage.rawValue) at \(checkpointPath)"
+      )
     } catch {
       logger.error(
-        "Failed to delete checkpoint for stage \(stage.rawValue): \(error.localizedDescription)")
+        "Failed to delete checkpoint for stage \(stage.rawValue): \(error.localizedDescription)"
+      )
       throw RecoveryError.checkpointDeletionFailed(error)
     }
   }
@@ -321,12 +365,16 @@ public class RecoveryService {
   /// List available checkpoints
   public func listCheckpoints() -> [String] {
     do {
-      let files = try FileManagerUtils.enumerateFiles(at: checkpointDirectory) { url in
+      let files = try FileManagerUtils.enumerateFiles(
+        at: checkpointDirectory
+      ) { url in
         url.lastPathComponent.hasSuffix(".checkpoint")
       }
       return files.map { $0.lastPathComponent }
     } catch {
-      logger.error("Failed to list checkpoints: \(error.localizedDescription)")
+      logger.error(
+        "Failed to list checkpoints: \(error.localizedDescription)"
+      )
       return []
     }
   }
@@ -346,9 +394,13 @@ public class RecoveryService {
   private func createCheckpointDirectoryIfNeeded() {
     do {
       try FileManagerUtils.ensureDirectoryExists(at: checkpointDirectory)
-      logger.info("Created checkpoint directory: \(self.checkpointDirectory)")
+      logger.info(
+        "Created checkpoint directory: \(self.checkpointDirectory)"
+      )
     } catch {
-      logger.error("Failed to create checkpoint directory: \(error.localizedDescription)")
+      logger.error(
+        "Failed to create checkpoint directory: \(error.localizedDescription)"
+      )
     }
   }
 }

@@ -28,13 +28,16 @@ struct BridgeIDBridgeLocationsCoverageTests {
 
     // 1: Check every knownBridgeID has a location
     for id in knownBridgeIDs {
-      #expect(bridgeLocations.keys.contains(id), "Missing location for bridge ID: \(id)")
+      #expect(bridgeLocations.keys.contains(id),
+              "Missing location for bridge ID: \(id)")
     }
     // 2: Check there are no extra entries in bridgeLocations
     for id in bridgeLocations.keys {
-      #expect(knownBridgeIDs.contains(id), "Extra bridge location in bridgeLocations: \(id)")
+      #expect(knownBridgeIDs.contains(id),
+              "Extra bridge location in bridgeLocations: \(id)")
     }
     // 3: Check 1-to-1 count
-    #expect(knownBridgeIDs.count == bridgeLocations.count, "BridgeID and bridgeLocations count mismatch.")
+    #expect(knownBridgeIDs.count == bridgeLocations.count,
+            "BridgeID and bridgeLocations count mismatch.")
   }
 }

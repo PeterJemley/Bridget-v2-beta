@@ -6,7 +6,8 @@ public struct ExportHistoryView: View {
   @State private var selectedFileURL: URL?
   @State private var showingFilePreview = false
 
-  private let logger = Logger(subsystem: "Bridget", category: "ExportHistoryView")
+  private let logger = Logger(subsystem: "Bridget",
+                              category: "ExportHistoryView")
 
   public var body: some View {
     NavigationStack {
@@ -71,7 +72,8 @@ public struct ExportHistoryView: View {
     do {
       let documentURLs = try [FileManagerUtils.documentsDirectory()]
       let downloadsURLs =
-        FileManagerUtils.downloadsDirectory() != nil ? [FileManagerUtils.downloadsDirectory()!] : []
+        FileManagerUtils.downloadsDirectory() != nil
+          ? [FileManagerUtils.downloadsDirectory()!] : []
 
       let searchURLs = documentURLs + downloadsURLs
 
@@ -79,20 +81,31 @@ public struct ExportHistoryView: View {
         do {
           let contents = try FileManagerUtils.enumerateFiles(in: baseURL,
                                                              properties: [.contentModificationDateKey])
-          let ndjsonFiles = contents.filter { $0.pathExtension.lowercased() == "ndjson" }
+          let ndjsonFiles = contents.filter {
+            $0.pathExtension.lowercased() == "ndjson"
+          }
 
           for fileURL in ndjsonFiles {
-            let resourceValues = try fileURL.resourceValues(forKeys: [.contentModificationDateKey])
-            let modDate = resourceValues.contentModificationDate ?? Date.distantPast
-            let exportedFile = ExportedFile(url: fileURL, name: fileURL.lastPathComponent, date: modDate)
+            let resourceValues = try fileURL.resourceValues(
+              forKeys: [.contentModificationDateKey])
+            let modDate =
+              resourceValues.contentModificationDate
+                ?? Date.distantPast
+            let exportedFile = ExportedFile(url: fileURL,
+                                            name: fileURL.lastPathComponent,
+                                            date: modDate)
             files.append(exportedFile)
           }
         } catch {
-          logger.error("Failed to list directory \(baseURL.path): \(error.localizedDescription)")
+          logger.error(
+            "Failed to list directory \(baseURL.path): \(error.localizedDescription)"
+          )
         }
       }
     } catch {
-      logger.error("Failed to access directories: \(error.localizedDescription)")
+      logger.error(
+        "Failed to access directories: \(error.localizedDescription)"
+      )
     }
 
     // Sort files newest first
@@ -110,7 +123,9 @@ public struct ExportHistoryView: View {
       do {
         try FileManagerUtils.removeFile(at: file.url)
       } catch {
-        logger.error("Failed to delete file \(file.url.path): \(error.localizedDescription)")
+        logger.error(
+          "Failed to delete file \(file.url.path): \(error.localizedDescription)"
+        )
       }
     }
     exportedFiles.remove(atOffsets: offsets)
@@ -125,7 +140,9 @@ struct ExportedFile: Identifiable {
   var date: Date
 
   var dateText: String {
-    DateFormatter.localizedString(from: date, dateStyle: .medium, timeStyle: .short)
+    DateFormatter.localizedString(from: date,
+                                  dateStyle: .medium,
+                                  timeStyle: .short)
   }
 }
 

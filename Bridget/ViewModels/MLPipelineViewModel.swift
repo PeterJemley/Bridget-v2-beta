@@ -4,7 +4,9 @@ import SwiftData
 
 @Observable
 @MainActor
-final class MLPipelineViewModel: CoreMLTrainingProgressDelegate, TrainPrepProgressDelegate {
+final class MLPipelineViewModel: CoreMLTrainingProgressDelegate,
+  TrainPrepProgressDelegate
+{
   let pipelineStatus: PipelineStatusViewModel
   let quickActions: QuickActionsViewModel
   let recentActivity: RecentActivityViewModel
@@ -71,7 +73,8 @@ final class MLPipelineViewModel: CoreMLTrainingProgressDelegate, TrainPrepProgre
   var pipelineStatusSummary: String {
     let healthStatus = isPipelineHealthy ? "Healthy" : "Needs Attention"
     let dataStatus = pipelineStatus.dataAvailabilityStatus
-    let lastActivity = recentActivity.recentActivities.first?.title ?? "No recent activity"
+    let lastActivity =
+      recentActivity.recentActivities.first?.title ?? "No recent activity"
 
     return """
     Pipeline Status: \(healthStatus)
@@ -153,20 +156,23 @@ final class MLPipelineViewModel: CoreMLTrainingProgressDelegate, TrainPrepProgre
                                                      config: config,
                                                      progress: self)
 
-        let modelPath = "\(outputDirectory)/BridgeLiftPredictor_horizon_\(horizon).mlmodel"
+        let modelPath =
+          "\(outputDirectory)/BridgeLiftPredictor_horizon_\(horizon).mlmodel"
 
         await MainActor.run {
           self.trainedModels[horizon] = modelPath
           self.isTraining = false
           self.trainingProgress = 1.0
-          self.trainingStatus = "Training completed for \(horizon)-minute horizon"
+          self.trainingStatus =
+            "Training completed for \(horizon)-minute horizon"
         }
 
       } catch {
         await MainActor.run {
           self.isTraining = false
           self.trainingError = error.localizedDescription
-          self.trainingStatus = "Training failed for \(horizon)-minute horizon"
+          self.trainingStatus =
+            "Training failed for \(horizon)-minute horizon"
         }
       }
     }
@@ -232,21 +238,24 @@ extension MLPipelineViewModel {
 
   func pipelineDidStartTraining(_ horizon: Int) {
     Task { @MainActor in
-      pipelineStatusText = "Training model for \(horizon)-minute horizon..."
+      pipelineStatusText =
+        "Training model for \(horizon)-minute horizon..."
       pipelineProgress = 0.4 + (Double(horizon) * 0.1)
     }
   }
 
   func pipelineDidCompleteTraining(_ horizon: Int, modelPath _: String) {
     Task { @MainActor in
-      pipelineStatusText = "Completed training for \(horizon)-minute horizon"
+      pipelineStatusText =
+        "Completed training for \(horizon)-minute horizon"
       pipelineProgress = 0.5 + (Double(horizon) * 0.1)
     }
   }
 
   func pipelineDidComplete(_ models: [Int: String]) {
     Task { @MainActor in
-      pipelineStatusText = "Pipeline completed with \(models.count) trained models"
+      pipelineStatusText =
+        "Pipeline completed with \(models.count) trained models"
       pipelineProgress = 1.0
     }
   }
@@ -271,7 +280,8 @@ extension MLPipelineViewModel {
 
   func trainPrepDidProcessHorizon(_ horizon: Int, featureCount: Int) {
     Task { @MainActor in
-      trainingStatus = "Processed \(horizon)-minute horizon with \(featureCount) features"
+      trainingStatus =
+        "Processed \(horizon)-minute horizon with \(featureCount) features"
       trainingProgress = 0.3
     }
   }

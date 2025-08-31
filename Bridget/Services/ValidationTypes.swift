@@ -77,7 +77,10 @@ public enum ValidationFailureReason: CustomStringConvertible, Equatable {
   case malformedLatitude(String)
   case malformedLongitude(String)
   case malformedMinutesOpen(String)
-  case geospatialMismatch(expectedLat: Double, expectedLon: Double, actualLat: Double, actualLon: Double)
+  case geospatialMismatch(expectedLat: Double,
+                          expectedLon: Double,
+                          actualLat: Double,
+                          actualLon: Double)
   case missingRequiredField(String)
   case duplicateRecord
   case other(String)
@@ -105,23 +108,30 @@ public enum ValidationFailureReason: CustomStringConvertible, Equatable {
     case let .closeDateNotAfterOpenDate(open, close):
       return "Close date (\(close)) is not after open date (\(open))"
     case let .invalidLatitude(value):
-      return "Invalid latitude: \(String(describing: value)) (must be between -90 and 90)"
+      return
+        "Invalid latitude: \(String(describing: value)) (must be between -90 and 90)"
     case let .invalidLongitude(value):
-      return "Invalid longitude: \(String(describing: value)) (must be between -180 and 180)"
+      return
+        "Invalid longitude: \(String(describing: value)) (must be between -180 and 180)"
     case let .negativeMinutesOpen(value):
       return "Negative minutes open: \(String(describing: value))"
     case let .minutesOpenMismatch(reported, actual):
-      return "minutesopen mismatch: reported \(reported), actual \(actual) "
-        + "(should match the difference between open/close times)"
+      return
+        "minutesopen mismatch: reported \(reported), actual \(actual) "
+          + "(should match the difference between open/close times)"
     case let .malformedLatitude(raw):
       return "Malformed latitude: \(raw) (not a valid number)"
     case let .malformedLongitude(raw):
       return "Malformed longitude: \(raw) (not a valid number)"
     case let .malformedMinutesOpen(raw):
       return "Malformed minutesopen: \(raw) (not a valid number)"
-    case let .geospatialMismatch(expectedLat, expectedLon, actualLat, actualLon):
-      return "Geospatial mismatch: expected (\(expectedLat), \(expectedLon)), "
-        + "got (\(actualLat), \(actualLon)) (too far from known location)"
+    case let .geospatialMismatch(expectedLat,
+                                 expectedLon,
+                                 actualLat,
+                                 actualLon):
+      return
+        "Geospatial mismatch: expected (\(expectedLat), \(expectedLon)), "
+          + "got (\(actualLat), \(actualLon)) (too far from known location)"
     case let .missingRequiredField(name):
       return "Missing required field: \(name)"
     case .duplicateRecord:
@@ -142,7 +152,8 @@ public enum DateValidationError: Error, CustomStringConvertible, Equatable {
     switch self {
     case .emptyOrNull: return "Date string is empty or null."
     case let .invalidFormat(str): return "Invalid date format: \(str)"
-    case let .valueOutOfRange(message): return "Value out of range: \(message)"
+    case let .valueOutOfRange(message):
+      return "Value out of range: \(message)"
     }
   }
 }
@@ -167,12 +178,17 @@ public struct DateValidationContext {
 
 /// Protocol for reporting date validation errors with context and level.
 public protocol DateValidationErrorReporter {
-  func report(_ error: DateValidationError, level: LogLevel, context: DateValidationContext)
+  func report(_ error: DateValidationError,
+              level: LogLevel,
+              context: DateValidationContext)
 }
 
 /// Console reporter for date validation errors.
 public struct ConsoleDateValidationErrorReporter: DateValidationErrorReporter {
-  public func report(_ error: DateValidationError, level: LogLevel, context: DateValidationContext) {
+  public func report(_ error: DateValidationError,
+                     level: LogLevel,
+                     context: DateValidationContext)
+  {
     let id = context.recordID.map { "RecordID: \($0)" } ?? "RecordID: N/A"
     let src = context.source ?? ""
     let ts = ISO8601DateFormatter().string(from: context.timestamp)
@@ -181,7 +197,8 @@ public struct ConsoleDateValidationErrorReporter: DateValidationErrorReporter {
       case .emptyOrNull:
         return "Suggestion: Ensure the date string is not missing."
       case .invalidFormat:
-        return "Suggestion: Check that the date matches supported formats."
+        return
+          "Suggestion: Check that the date matches supported formats."
       case .valueOutOfRange:
         return "Suggestion: Ensure the date is within a valid range."
       }
@@ -194,14 +211,20 @@ public struct ConsoleDateValidationErrorReporter: DateValidationErrorReporter {
 
 /// Stub: File reporter for future use.
 public struct FileDateValidationErrorReporter: DateValidationErrorReporter {
-  public func report(_: DateValidationError, level _: LogLevel, context _: DateValidationContext) {
+  public func report(_: DateValidationError,
+                     level _: LogLevel,
+                     context _: DateValidationContext)
+  {
     // Stub: Write to file
   }
 }
 
 /// Stub: Monitoring reporter for future integration (e.g., Sentry, DataDog).
 public struct MonitoringDateValidationErrorReporter: DateValidationErrorReporter {
-  public func report(_: DateValidationError, level _: LogLevel, context _: DateValidationContext) {
+  public func report(_: DateValidationError,
+                     level _: LogLevel,
+                     context _: DateValidationContext)
+  {
     // Stub: Send to monitoring/logging service
   }
 }
@@ -253,7 +276,9 @@ public enum DateValidator {
   /// Validates a date string for emptiness, format, and actual calendar correctness.
   /// Supports Seattle API, ISO8601, and common timezone offset formats.
   public static func validate(_ dateString: String?) -> Result<Void, DateValidationError> {
-    guard let s = dateString, !s.trimmingCharacters(in: .whitespaces).isEmpty else {
+    guard let s = dateString,
+          !s.trimmingCharacters(in: .whitespaces).isEmpty
+    else {
       return .failure(.emptyOrNull)
     }
     guard s.range(of: regex, options: .regularExpression) != nil else {
@@ -265,7 +290,8 @@ public enum DateValidator {
     let monthStr = String(s.dropFirst(5).prefix(2))
     let dayStr = String(s.dropFirst(8).prefix(2))
 
-    guard let y = Int(yearStr), let m = Int(monthStr), let d = Int(dayStr) else {
+    guard let y = Int(yearStr), let m = Int(monthStr), let d = Int(dayStr)
+    else {
       return .failure(.invalidFormat(s))
     }
 
@@ -281,8 +307,12 @@ public enum DateValidator {
     }
 
     // Verify the date components match what we extracted (double-check)
-    let extractedComps = calendar.dateComponents([.year, .month, .day], from: date)
-    guard extractedComps.year == y && extractedComps.month == m && extractedComps.day == d else {
+    let extractedComps = calendar.dateComponents([.year, .month, .day],
+                                                 from: date)
+    guard
+      extractedComps.year == y && extractedComps.month == m
+      && extractedComps.day == d
+    else {
       return .failure(.invalidFormat(s))
     }
 
