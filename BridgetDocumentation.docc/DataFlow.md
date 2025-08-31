@@ -2,7 +2,7 @@
 
 ## Overview
 
-Bridget implements a sophisticated data flow that prioritizes user experience through caching, error handling, and reactive state management. This document details how data moves through the system from external APIs to the user interface.
+Bridget implements a sophisticated data flow that prioritizes user experience through caching, error handling, and reactive state management. The system now includes a comprehensive MultiPath traffic prediction pipeline with background task processing, statistical modeling, and performance monitoring. This document details how data moves through the system from external APIs to the user interface, including the advanced MultiPath system.
 
 ## Data Flow Architecture
 
@@ -17,6 +17,10 @@ sequenceDiagram
     participant Network as NetworkClient
     participant API as Seattle Open Data API
     participant Processor as BridgeDataProcessor
+    
+    participant MultiPath as MultiPath System
+    participant Background as Background Tasks
+    participant SwiftData as SwiftData Storage
 
     UI->>State: App Launch
     State->>Service: Request Bridge Data
@@ -36,253 +40,309 @@ sequenceDiagram
         Service-->>State: Update with Fresh Data
         State-->>UI: Update UI
     end
+    
+    %% MultiPath System Flow
+    UI->>MultiPath: Route Optimization Request
+    MultiPath->>Background: Schedule Background Processing
+    Background->>SwiftData: Create Background Context
+    Background->>MultiPath: Execute Path Enumeration
+    MultiPath->>MultiPath: ETA Estimation & Scoring
+    MultiPath-->>UI: Route Analysis Results
 ```
 
-## Detailed Data Flow
+## MultiPath System Data Flow
 
-### 1. Application Initialization
+### 1. Path Enumeration Pipeline
 
-**Trigger**: App launch or foreground activation
+**Input**: Origin, destination, departure time, configuration
+**Output**: Candidate paths with travel times and bridge crossings
 
 **Flow**:
-1. `BridgetApp` initializes SwiftData `ModelContainer`
-2. `ContentView` creates `AppStateModel` instance
-3. `AppStateModel` triggers initial data load
-4. `BridgeDataService` begins data acquisition process
+1. **Graph Loading**: Load Seattle bridge network from JSON datasets
+2. **Algorithm Selection**: Choose DFS or Yen's based on graph size and K parameter
+3. **Path Enumeration**: Generate candidate paths with pruning constraints
+4. **Validation**: Ensure path contiguity and respect configuration limits
 
 **Key Components**:
-- `BridgetApp`: Application lifecycle management
-- `ContentView`: Root view coordinator
-- `AppStateModel`: Global state management
+- `PathEnumerationService`: Core enumeration engine
+- `Graph`: Network representation with adjacency lists
+- `PathEnumConfig`: Enumeration parameters and constraints
 
-### 2. Cache-First Data Strategy
+### 2. ETA Estimation Pipeline
 
-**Strategy**: Check cache before making network requests
-
-**Flow**:
-1. **Cache Check**: `BridgeDataService` queries `CacheService`
-2. **Cache Validation**: Verify cache freshness and validity
-3. **Cache Hit**: Return cached data if valid
-4. **Cache Miss**: Proceed to network fetch
-
-**Cache Validation Rules**:
-- **Freshness**: Cache must be less than 24 hours old
-- **Completeness**: Cache must contain valid bridge data
-- **Schema Version**: Cache must match current data schema
-
-**Benefits**:
-- **Fast Response**: Immediate data availability
-- **Offline Support**: Works without network connectivity
-- **Reduced Bandwidth**: Minimizes API calls
-- **Better UX**: No loading delays for cached data
-
-### 3. Network Data Acquisition
-
-**Trigger**: Cache miss, stale data, or manual refresh
+**Input**: RoutePath, departure time, traffic profiles
+**Output**: ETA estimates with statistical uncertainty
 
 **Flow**:
-1. **Request Preparation**: `NetworkClient` prepares HTTP request
-2. **Request Execution**: Send request to Seattle Open Data API
-3. **Response Validation**: Validate HTTP response and content
-4. **Data Processing**: Transform raw JSON to structured data
-5. **Cache Update**: Store fresh data in cache
-6. **State Update**: Update application state
+1. **Edge Traversal**: Advance time on each edge (bridge or road)
+2. **Traffic Modeling**: Apply time-of-day multipliers and weekend adjustments
+3. **Statistical Calculation**: Compute mean, variance, confidence intervals
+4. **Uncertainty Quantification**: Generate comprehensive statistical summaries
 
-**API Endpoint**: `https://data.seattle.gov/resource/gm8h-9449.json`
+**Key Components**:
+- `ETAEstimator`: Statistical ETA computation
+- `TrafficProfileProvider`: Time-of-day traffic patterns
+- `ETASummary`: Statistical uncertainty representation
 
-**Request Headers**:
-```http
-Accept: application/json
-User-Agent: Bridget/1.0
-```
+### 3. Bridge Prediction Pipeline
 
-**Response Validation**:
-- **HTTP Status**: Must be 200 OK
-- **Content-Type**: Must be `application/json`
-- **Payload Size**: Must be under 5MB
-- **Data Structure**: Must be valid JSON array
-
-### 4. Data Processing Pipeline
-
-**Raw Data**: JSON array of bridge opening records
-
-**Processing Steps**:
-1. **JSON Decoding**: Parse raw JSON into `BridgeOpeningRecord` structs
-2. **Data Validation**: Filter out invalid or incomplete records
-3. **Business Logic**: Apply business rules and transformations
-4. **Model Creation**: Create `BridgeStatusModel` instances
-5. **Route Generation**: Generate `RouteModel` instances with scoring
-
-**Data Validation Rules**:
-- **Required Fields**: All essential fields must be present
-- **Bridge ID Validation**: Only known bridge IDs (1-10)
-- **Date Range**: Records within 10 years back, 1 year forward
-- **Coordinate Validation**: Valid latitude/longitude values
-
-**Business Logic**:
-- **Record Grouping**: Group records by bridge ID
-- **Opening Aggregation**: Calculate total openings per bridge
-- **Frequency Analysis**: Determine opening patterns
-- **Route Scoring**: Calculate optimization scores
-
-### 5. State Management Flow
-
-**Reactive Updates**: Changes propagate automatically through Observation framework
+**Input**: Bridge IDs, ETAs, feature vectors
+**Output**: Bridge opening probabilities with confidence scores
 
 **Flow**:
-1. **Data Update**: `BridgeDataService` updates `AppStateModel`
-2. **State Change**: `AppStateModel` properties change
-3. **UI Notification**: SwiftUI views automatically update
-4. **View Refresh**: UI reflects new data state
+1. **Feature Engineering**: Generate bridge-specific and time-based features
+2. **Historical Data**: Query HistoricalBridgeDataProvider for opening rates
+3. **Prediction**: Use BaselinePredictor or ML model for probability estimation
+4. **Batch Processing**: Efficient prediction for multiple bridges
 
-**State Properties**:
-- `routes`: Array of available routes
-- `isLoading`: Loading state indicator
-- `error`: Current error state
-- `selectedRouteID`: Currently selected route
+**Key Components**:
+- `BridgeOpenPredictor`: Prediction protocol implementation
+- `BaselinePredictor`: Beta smoothing with historical calibration
+- `HistoricalBridgeDataProvider`: Historical data access
+- `FeatureEngineeringService`: Feature vector generation
 
-**Reactive Characteristics**:
-- **Automatic Updates**: UI updates without manual refresh
-- **Granular Updates**: Only changed views update
-- **Performance Optimized**: Efficient observation tracking
+### 4. Path Scoring & Aggregation Pipeline
 
-### 6. Error Handling Flow
+**Input**: Paths with bridge probabilities, feature vectors
+**Output**: Path scores and network-level probability
 
-**Error Classification**: Comprehensive error categorization and handling
+**Flow**:
+1. **Feature Caching**: Check cache for existing feature vectors
+2. **Log-Domain Math**: Convert probabilities to log domain for numerical stability
+3. **Path Scoring**: Compute individual path probabilities
+4. **Network Aggregation**: Calculate anyPathOK using union (not sum)
 
-**Error Types**:
-- **Network Errors**: Connection failures, timeouts, HTTP errors
-- **Data Errors**: Invalid JSON, missing fields, parsing failures
-- **Business Errors**: Invalid bridge IDs, out-of-range dates
-- **Cache Errors**: Storage failures, corruption
+**Key Components**:
+- `PathScoringService`: End-to-end scoring pipeline
+- `FeatureCache`: Thread-safe feature vector caching
+- `JourneyAnalysis`: Complete analysis results
 
-**Error Flow**:
-1. **Error Detection**: Error occurs in service layer
-2. **Error Classification**: Categorize error type and severity
-3. **Error Propagation**: Pass error up through service hierarchy
-4. **State Update**: Update `AppStateModel` with error state
-5. **UI Update**: Display appropriate error message to user
-6. **Recovery Options**: Provide retry mechanisms
+## Background Task Data Flow
 
-**Error Recovery**:
-- **Automatic Retry**: Exponential backoff for transient errors
-- **Manual Retry**: User-initiated retry buttons
-- **Fallback Data**: Sample data when all else fails
-- **Graceful Degradation**: Partial functionality when possible
+### 1. Task Scheduling
 
-### 7. Caching Strategy
+**Trigger**: App lifecycle events, user actions, or scheduled intervals
+**Flow**:
+1. **Task Registration**: Register background task identifiers with iOS
+2. **Schedule Management**: Intelligent scheduling with debouncing
+3. **Context Creation**: Create SwiftData ModelContext for background operations
+4. **Task Execution**: Execute task with proper completion handling
 
-**Multi-Level Caching**: Comprehensive caching for optimal performance
+**Key Components**:
+- `MLPipelineBackgroundManager`: Task orchestration
+- `BGTaskScheduler`: iOS background task management
+- `ModelContainer`: SwiftData container for background contexts
 
-**Cache Levels**:
-1. **Memory Cache**: Fast access to frequently used data
-2. **Disk Cache**: Persistent storage for offline access
-3. **HTTP Cache**: Future ETag support for bandwidth optimization
+### 2. Background Processing
 
-**Cache Operations**:
-- **Write**: Store fresh data with metadata
-- **Read**: Retrieve cached data with validation
-- **Update**: Refresh existing cache entries
-- **Eviction**: Remove stale or oversized cache entries
+**Input**: Background task with ModelContext
+**Output**: Updated data and performance metrics
 
-**Cache Metadata**:
-- `lastUpdated`: Timestamp of last successful fetch
-- `cacheExpiration`: Time-based invalidation
-- `dataVersion`: Schema version for migration
-- `size`: Cache entry size for management
+**Flow**:
+1. **Data Population**: Update bridge opening statistics and historical data
+2. **Data Export**: Export performance metrics and cache statistics
+3. **Maintenance**: Clean up old data and optimize performance
+4. **Metrics Collection**: Gather performance and cache statistics
 
-### 8. Background Processing
+**Key Components**:
+- `ProbeTickDataService`: Bridge data population
+- `BridgeDataExporter`: Data export and analysis
+- `PipelinePerformanceLogger`: Performance monitoring
 
-**Asynchronous Operations**: Non-blocking data processing
+### 3. Performance Monitoring
 
-**Background Tasks**:
-- **Network Requests**: HTTP requests on background queues
-- **Data Processing**: JSON parsing and transformation
-- **Cache Operations**: Disk I/O operations
-- **Route Generation**: Computational intensive scoring
+**Input**: Runtime metrics and cache statistics
+**Output**: Performance reports and optimization insights
 
-**Threading Strategy**:
-- **Main Thread**: UI updates and user interactions
-- **Background Queues**: Network and processing operations
-- **Serial Queues**: Cache operations for consistency
-- **Concurrent Queues**: Parallel data processing
+**Flow**:
+1. **Metrics Collection**: Gather timing, memory, and cache statistics
+2. **Statistical Analysis**: Compute means, standard deviations, percentiles
+3. **Performance Logging**: Log performance data for analysis
+4. **Cache Optimization**: Monitor cache hit rates and optimize strategies
 
-### 9. Performance Optimization
+**Key Components**:
+- `ScoringMetrics`: Performance metrics aggregation
+- `CacheStatistics`: Cache performance monitoring
+- `PipelinePerformanceLogger`: Comprehensive logging
 
-**Optimization Strategies**: Multiple approaches for optimal performance
+## SwiftData Integration
 
-**Memory Optimization**:
-- **Lazy Loading**: Load data on-demand
-- **Image Caching**: Efficient image storage and retrieval
-- **Memory Pressure**: Respond to system memory warnings
-- **Cache Eviction**: Automatic cleanup of old data
+### 1. Context Management
 
-**Network Optimization**:
-- **Request Batching**: Combine multiple requests
-- **Response Compression**: Minimize bandwidth usage
-- **Conditional Requests**: Future ETag support
-- **Connection Pooling**: Reuse HTTP connections
+**Main Context**: UI operations and user interactions
+**Background Context**: Background task processing and data updates
 
-**UI Optimization**:
-- **Lazy Views**: Load UI components on-demand
-- **Observation Tracking**: Efficient state observation
-- **Background Updates**: Update UI on background threads
-- **View Recycling**: Reuse view components
+**Flow**:
+1. **Context Creation**: Create appropriate context for operation type
+2. **Data Operations**: Perform SwiftData operations within context
+3. **Context Lifecycle**: Proper context lifecycle management
+4. **Error Handling**: Graceful handling of context errors
 
-## Data Transformation Examples
+### 2. Data Persistence
 
-### Raw API Response
-```json
-[
-  {
-    "entitytype": "Bridge",
-    "entityname": "1st Ave South",
-    "entityid": "1",
-    "opendatetime": "2025-01-03T10:12:00.000",
-    "closedatetime": "2025-01-03T10:20:00.000",
-    "minutesopen": "8",
-    "latitude": "47.542213439941406",
-    "longitude": "-122.33446502685547"
-  }
-]
-```
+**Input**: Bridge data, performance metrics, cache statistics
+**Output**: Persistent storage with proper error handling
 
-### Processed BridgeStatusModel
-```swift
-BridgeStatusModel(
-    bridgeName: "1st Ave South",
-    apiBridgeID: "1",
-    historicalOpenings: [Date],
-    realTimeDelay: nil
-)
-```
+**Flow**:
+1. **Data Validation**: Validate data before persistence
+2. **Transaction Management**: Use SwiftData transactions for consistency
+3. **Error Handling**: Handle persistence errors gracefully
+4. **Performance Optimization**: Optimize for background operations
 
-### Generated RouteModel
-```swift
-RouteModel(
-    routeID: "Route-1",
-    bridges: [BridgeStatusModel],
-    score: 0.85,
-    complexity: 3
-)
-```
+## Cache Strategy
 
-## Monitoring and Analytics
+### 1. Multi-Level Caching
 
-### Performance Metrics
-- **Load Time**: Time from request to UI update
-- **Cache Hit Rate**: Percentage of cache hits vs misses
-- **Error Rate**: Frequency of different error types
-- **Memory Usage**: Application memory consumption
+**Feature Cache**: Bridge-specific features with 5-minute time buckets
+**Path Cache**: Enumerated paths with memoization
+**Data Cache**: Bridge status and historical data
 
-### User Experience Metrics
-- **Time to Interactive**: Time until user can interact
-- **Error Recovery**: Success rate of error recovery
-- **Offline Usage**: Usage patterns when offline
-- **Route Selection**: Most popular route selections
+**Flow**:
+1. **Cache Check**: Check appropriate cache level for data
+2. **Cache Hit**: Return cached data with performance metrics
+3. **Cache Miss**: Generate data and update cache
+4. **Cache Management**: Eviction and size management
 
-### Debugging Information
-- **Request Logs**: Detailed network request information
-- **Cache Logs**: Cache hit/miss and storage operations
-- **Error Logs**: Comprehensive error context and stack traces
-- **Performance Logs**: Timing information for operations 
+### 2. Cache Performance Monitoring
+
+**Input**: Cache operations and hit rates
+**Output**: Performance insights and optimization recommendations
+
+**Flow**:
+1. **Statistics Collection**: Gather cache hit/miss statistics
+2. **Performance Analysis**: Analyze cache performance patterns
+3. **Optimization**: Adjust cache strategies based on performance
+4. **Reporting**: Provide cache performance insights
+
+## Error Handling & Resilience
+
+### 1. MultiPath Error Handling
+
+**Input Validation**: Validate all input parameters and configurations
+**Algorithm Errors**: Handle path enumeration and scoring errors
+**Data Errors**: Handle missing or invalid bridge data
+**Performance Errors**: Handle timeout and resource constraints
+
+**Flow**:
+1. **Error Detection**: Detect errors at appropriate levels
+2. **Error Classification**: Classify errors by type and severity
+3. **Error Recovery**: Attempt recovery where possible
+4. **Error Reporting**: Report errors with context and suggestions
+
+### 2. Background Task Resilience
+
+**Task Expiration**: Handle task expiration gracefully
+**Context Errors**: Handle SwiftData context errors
+**Network Errors**: Handle network connectivity issues
+**Resource Errors**: Handle memory and performance constraints
+
+**Flow**:
+1. **Error Detection**: Detect errors during task execution
+2. **Task Completion**: Complete task with appropriate success/failure status
+3. **Error Logging**: Log errors for debugging and monitoring
+4. **Recovery Planning**: Plan for error recovery and retry
+
+## Performance Optimization
+
+### 1. Algorithm Selection
+
+**DFS Algorithm**: Simple path enumeration for small graphs
+**Yen's Algorithm**: K-shortest paths for large networks
+**Auto-Selection**: Dynamic algorithm choice based on parameters
+
+**Flow**:
+1. **Parameter Analysis**: Analyze graph size and K parameter
+2. **Algorithm Choice**: Select appropriate algorithm
+3. **Performance Monitoring**: Monitor algorithm performance
+4. **Optimization**: Optimize based on performance data
+
+### 2. Batch Processing
+
+**Feature Generation**: Batch feature generation for multiple bridges
+**Bridge Prediction**: Batch prediction for multiple bridges
+**Path Scoring**: Batch scoring for multiple paths
+
+**Flow**:
+1. **Batch Preparation**: Prepare batch of operations
+2. **Batch Execution**: Execute batch efficiently
+3. **Result Processing**: Process batch results
+4. **Performance Analysis**: Analyze batch performance
+
+## Data Quality & Validation
+
+### 1. Input Validation
+
+**Graph Validation**: Validate network connectivity and constraints
+**Bridge Validation**: Validate bridge IDs and metadata
+**Configuration Validation**: Validate algorithm parameters
+**Data Validation**: Validate input data quality
+
+**Flow**:
+1. **Validation Rules**: Apply appropriate validation rules
+2. **Error Detection**: Detect validation errors
+3. **Error Reporting**: Report validation errors clearly
+4. **Recovery**: Suggest recovery actions
+
+### 2. Output Validation
+
+**Path Validation**: Validate generated paths
+**Probability Validation**: Validate probability calculations
+**Statistical Validation**: Validate statistical measures
+**Performance Validation**: Validate performance metrics
+
+**Flow**:
+1. **Output Checking**: Check output validity
+2. **Constraint Verification**: Verify output constraints
+3. **Quality Assessment**: Assess output quality
+4. **Error Handling**: Handle output errors
+
+## Monitoring & Observability
+
+### 1. Performance Metrics
+
+**Timing Metrics**: Path enumeration, ETA estimation, scoring times
+**Memory Metrics**: Memory usage and allocation patterns
+**Cache Metrics**: Cache hit rates and performance
+**Algorithm Metrics**: Algorithm performance and efficiency
+
+**Flow**:
+1. **Metrics Collection**: Collect performance metrics
+2. **Statistical Analysis**: Analyze metric patterns
+3. **Performance Logging**: Log performance data
+4. **Optimization**: Use metrics for optimization
+
+### 2. Error Monitoring
+
+**Error Rates**: Track error frequencies and patterns
+**Error Types**: Categorize errors by type and severity
+**Error Context**: Capture error context and conditions
+**Error Trends**: Monitor error trends over time
+
+**Flow**:
+1. **Error Tracking**: Track all errors and exceptions
+2. **Error Analysis**: Analyze error patterns and causes
+3. **Error Reporting**: Report errors for debugging
+4. **Prevention**: Use insights to prevent future errors
+
+## Future Enhancements
+
+### 1. ML Model Integration
+
+**Feature Contracts**: Freeze feature vector specifications
+**Model Wrapping**: Protocol-based model integration
+**A/B Testing**: Seamless switching between models
+**Training Pipeline**: Dataset generation and model training
+
+### 2. Real-Time Integration
+
+**Live Data Sources**: Real-time bridge status updates
+**Traffic Profiles**: Dynamic traffic pattern integration
+**User Feedback**: Learning from user preferences
+**Predictive Analytics**: Advanced prediction models
+
+### 3. Performance Optimization
+
+**Parallel Processing**: Multi-threaded operations
+**Advanced Caching**: Intelligent cache strategies
+**Memory Optimization**: Advanced memory management
+**Algorithm Optimization**: Continuous algorithm improvement 

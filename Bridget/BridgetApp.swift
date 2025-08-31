@@ -83,14 +83,15 @@ struct BridgetApp: App {
 
   var body: some Scene {
     WindowGroup {
-      VStack {
-        ContentView()
-        AppLifecycleObserver(onDidBecomeActive: handleAppDidBecomeActive,
-                             onWillResignActive: handleAppWillResignActive,
-                             onDidEnterBackground: handleAppDidEnterBackground,
-                             onWillEnterForeground: handleAppWillEnterForeground)
-      }
-      .task { initializeMLPipeline() }
+      ContentView()
+        .overlay(
+          AppLifecycleObserver(onDidBecomeActive: handleAppDidBecomeActive,
+                               onWillResignActive: handleAppWillResignActive,
+                               onDidEnterBackground: handleAppDidEnterBackground,
+                               onWillEnterForeground: handleAppWillEnterForeground)
+            .allowsHitTesting(false)
+        )
+        .task { initializeMLPipeline() }
     }
     .modelContainer(sharedModelContainer)
   }
@@ -98,8 +99,11 @@ struct BridgetApp: App {
   private func initializeMLPipeline() {
     logger.info("Initializing ML Training Data Pipeline")
 
-    backgroundManager.registerBackgroundTasks()
+    // Ensure the background manager has the ModelContainer before any registration/scheduling
+    backgroundManager.configure(container: sharedModelContainer)
 
+    // Register and schedule background tasks (iOS-only runtime will handle availability)
+    backgroundManager.registerBackgroundTasks()
     backgroundManager.scheduleNextExecution()
 
     if UserDefaults.standard.object(forKey: "MLPipelineFirstLaunch") == nil {
@@ -178,3 +182,4 @@ struct BridgetApp: App {
                                                 operation: .maintenance)
   }
 }
+
