@@ -43,4 +43,5 @@ iOSInjectionProject/
 
 # SwiftLint and SwiftFormat
 .swiftlint.yml.bak
-.swiftformat.bak 
+.swiftformat.bak TestResults/
+build/

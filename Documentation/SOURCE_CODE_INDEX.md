@@ -4,31 +4,30 @@
 
 ### `BridgetApp.swift`
 - **Purpose**: Main application entry point and configuration
-- **Key Features**: App lifecycle management, environment setup, SwiftData schema configuration
-- **Dependencies**: SwiftUI, Observation framework, SwiftData
+- **Key Features**: App lifecycle management, environment setup
+- **Dependencies**: SwiftUI, Observation framework
 - **File Size**: 5.6KB, 181 lines
 
 ## 🏗️ Models (Data Layer)
 
 ### Core Models
-- **`AppStateModel.swift`** (16KB, 417 lines)
+- **`AppStateModel.swift`** (12KB, 353 lines)
   - Global application state management
   - Navigation state and user preferences
   - Uses `@Observable` for reactive updates
-  - Validation failure tracking and debugging
 
 - **`BridgeStatusModel.swift`** (11KB, 277 lines)
   - Bridge opening/closing status data
   - Historical bridge event information
   - Real-time status updates
 
-- **`RouteModel.swift`** (886B, 29 lines)
+- **`RouteModel.swift** (886B, 29 lines)
   - Route representation and optimization
   - Route scoring and preferences
   - Basic route structure
 
 ### ML and Data Models
-- **`MLTypes.swift`** (34KB, 1007 lines)
+- **`MLTypes.swift`** (34KB, 1001 lines)
   - Machine learning data types and structures
   - Core ML integration types
   - Training and inference data models
@@ -44,22 +43,15 @@
   - Data collection and processing
 
 ### Specialized Models
-- **`RoutePreference.swift`** (10KB, 287 lines)
+- **`RoutePreference.swift`** (10KB, 279 lines)
   - User route preferences and settings
   - Optimization parameters
   - User customization options
 
 - **`BridgeTopologyModels.swift`** (10KB, 253 lines)
-  - ML feature vector schema for bridge lift prediction
-  - 14 standardized features for Core ML training
-  - Schema contract between Swift and Python ML pipeline
-  - `LiftFeatures` struct with `packedVector()` method
-
-- **`TrafficProfile.swift`** (3.9KB, 126 lines)
-  - SwiftData model for traffic profile management
-  - Time-of-day multipliers (morning rush, evening rush, etc.)
-  - Day-type multipliers (weekday/weekend)
-  - Segment-type multipliers (arterial, highway, local)
+  - Bridge network topology representation
+  - Graph structure for pathfinding
+  - Spatial relationships
 
 - **`TrafficInferenceCache.swift`** (8.6KB, 268 lines)
   - Traffic inference result caching
@@ -76,7 +68,7 @@
   - Congestion patterns
   - Traffic analysis
 
-- **`PipelineActivity.swift`** (698B, 35 lines)
+- **`PipelineActivity.swift`** (699B, 36 lines)
   - Pipeline execution tracking
   - Activity monitoring
   - Performance metrics
@@ -86,154 +78,125 @@
   - Error classification
   - User-friendly error messages
 
-- **`SeattleDrawbridges.swift`** (7.8KB, 219 lines)
-  - Canonical source for Seattle bridge information
-  - Bridge ID validation and location lookups
-  - Bridge metadata and spatial data
-
-- **`Protocols.swift`** (6.0KB, 180 lines)
-  - Protocol definitions for services
-  - Interface contracts
-  - Dependency injection support
-
 ## 🔧 Services (Business Logic Layer)
 
 ### Core Data Services
-- **`BridgeDataService.swift`** (12KB, 345 lines)
+- **`BridgeDataService.swift`** (12KB, 326 lines)
   - Main data orchestration service
   - Coordinates data operations
   - Manages data flow between components
 
-- **`BridgeDataProcessor.swift`** (5.2KB, 135 lines)
+- **`BridgeDataProcessor.swift`** (5.0KB, 122 lines)
   - Data transformation and processing
   - Business logic implementation
   - Data validation coordination
 
-- **`BridgeDataExporter.swift`** (21KB, 593 lines)
+- **`BridgeDataExporter.swift`** (20KB, 559 lines)
   - Data export functionality
   - Multiple format support
   - Export configuration management
 
 ### Machine Learning Services
-- **`CoreMLTraining.swift`** (44KB, 1097 lines)
+- **`CoreMLTraining.swift`** (43KB, 1077 lines)
   - On-device ML training service
   - Apple Neural Engine integration
   - Training session management
 
-- **`FeatureEngineeringService.swift`** (19KB, 469 lines)
+- **`FeatureEngineeringService.swift`** (19KB, 456 lines)
   - ML feature extraction
   - Data preprocessing
   - Feature transformation
 
-- **`MLPipelineBackgroundManager.swift`** (22KB, 721 lines)
+- **`MLPipelineBackgroundManager.swift`** (15KB, 477 lines)
   - Background ML pipeline management
   - Resource management
   - Performance optimization
 
-- **`MLPipelineNotificationManager.swift`** (14KB, 394 lines)
+- **`MLPipelineNotificationManager.swift`** (14KB, 334 lines)
   - ML pipeline notifications
   - User communication
   - Status updates
 
-### Traffic Profile Services
-- **`BasicTrafficProfileProvider.swift`** (7.7KB, 255 lines)
-  - Traffic profile management with SwiftData
-  - Time-of-day traffic modeling
-  - Traffic multiplier calculations
-  - Profile creation, activation, and deletion
-
 ### Validation and Quality Services
-- **`DataValidationService.swift`** (43KB, 1164 lines)
+- **`DataValidationService.swift`** (42KB, 1060 lines)
   - Comprehensive data validation
   - Quality assurance
   - Error detection and reporting
 
-- **`BridgeRecordValidator.swift`** (4.3KB, 122 lines)
-  - Bridge record validation with geospatial checks
+- **`BridgeRecordValidator.swift`** (2.5KB, 70 lines)
+  - Bridge record validation
   - Business rule enforcement
   - Data integrity checks
-  - Haversine distance validation
 
-- **`ValidationTypes.swift`** (11KB, 334 lines)
+- **`ValidationTypes.swift`** (11KB, 304 lines)
   - Validation result types
   - Error classification
   - Validation metadata
 
-- **`ValidationUtils.swift`** (1.2KB, 43 lines)
+- **`ValidationUtils.swift`** (1.2KB, 41 lines)
   - Validation utility functions
   - Common validation patterns
   - Reusable validation logic
 
-### Pipeline and Validation Services
-- **`PipelineParityValidator.swift`** (45KB, 1232 lines)
-  - Pipeline validation
-  - Consistency checking
-  - Quality assurance
-
-- **`PipelineValidationPluginSystem.swift`** (49KB, 1572 lines)
-  - Plugin system for validation
-  - Extensible validation
-  - Custom validation rules
-
 ### Path Optimization Services
-- **`PathScoringService.swift`** (Service for route scoring and optimization)
+- **`PathScoringService.swift** (Service for route scoring and optimization)
 - **`MultiPath/`** (Directory containing multi-path optimization services)
 
 ### Infrastructure Services
-- **`NetworkClient.swift`** (5.4KB, 183 lines)
+- **`NetworkClient.swift`** (5.4KB, 178 lines)
   - HTTP networking with retry logic
   - API integration
   - Network error handling
 
-- **`CacheService.swift`** (11KB, 321 lines)
+- **`CacheService.swift`** (7.6KB, 241 lines)
   - Data caching and persistence
   - Cache invalidation
   - Performance optimization
 
-- **`FileManagerUtils.swift`** (18KB, 501 lines)
+- **`FileManagerUtils.swift`** (15KB, 394 lines)
   - Centralized file operations
   - Error handling
   - File system utilities
 
-- **`RetryRecoveryService.swift`** (13KB, 440 lines)
+- **`RetryRecoveryService.swift`** (12KB, 388 lines)
   - Retry logic and recovery
   - Fault tolerance
   - Error recovery strategies
 
 ### Monitoring and Performance Services
-- **`PerformanceMonitoringService.swift`** (13KB, 338 lines)
+- **`PerformanceMonitoringService.swift`** (12KB, 306 lines)
   - Performance monitoring
   - Metrics collection
   - Performance analysis
 
-- **`PipelinePerformanceLogger.swift`** (11KB, 372 lines)
+- **`PipelinePerformanceLogger.swift`** (11KB, 347 lines)
   - Pipeline performance logging
   - Performance metrics
   - Optimization insights
 
-- **`DataStatisticsService.swift`** (32KB, 925 lines)
+- **`DataStatisticsService.swift`** (30KB, 810 lines)
   - Statistical analysis
   - Data insights
   - Performance metrics
 
 ### Training and Preparation Services
-- **`TrainPrepService.swift`** (21KB, 499 lines)
+- **`TrainPrepService.swift`** (21KB, 498 lines)
   - Training data preparation
   - Data preprocessing
   - Training pipeline setup
 
-- **`EnhancedTrainPrepService.swift`** (20KB, 619 lines)
+- **`EnhancedTrainPrepService.swift`** (19KB, 538 lines)
   - Enhanced training preparation
   - Advanced preprocessing
   - Quality improvements
 
-- **`TrainingConfig.swift`** (8.5KB, 247 lines)
+- **`TrainingConfig.swift`** (8.5KB, 246 lines)
   - Training configuration
   - Parameter management
   - Configuration validation
 
 ### Specialized Services
-- **`ProbeTickDataService.swift`** (15KB, 405 lines)
+- **`ProbeTickDataService.swift`** (14KB, 366 lines)
   - Probe data processing
   - Real-time data handling
   - Data quality management
@@ -243,10 +206,21 @@
   - Data storage
   - Retrieval optimization
 
-- **`SampleDataProvider.swift`** (2.5KB, 81 lines)
+- **`SampleDataProvider.swift`** (2.5KB, 80 lines)
   - Mock data generation
   - Testing support
   - Development assistance
+
+### Pipeline and Validation Services
+- **`PipelineParityValidator.swift`** (43KB, 1139 lines)
+  - Pipeline validation
+  - Consistency checking
+  - Quality assurance
+
+- **`PipelineValidationPluginSystem.swift`** (47KB, 1382 lines)
+  - Plugin system for validation
+  - Extensible validation
+  - Custom validation rules
 
 ### Utility Services
 - **`DebugUtils.swift`** (248B, 13 lines)
@@ -254,10 +228,10 @@
   - Development tools
   - Debugging assistance
 
-- **`Extensions 2.swift`** (3.7KB, 96 lines)
-  - Swift extensions for Date, Array, String
-  - Safe array subscript implementation
-  - Utility extensions
+- **`TestSupport.swift`** (217B, 10 lines)
+  - Testing support utilities
+  - Test helper functions
+  - Testing assistance
 
 ## 🎨 Views (Presentation Layer)
 
@@ -298,6 +272,11 @@
   - Traffic alert notifications
   - Alert management
   - User notifications
+
+- **`RouteListView.swift`** (16KB, 484 lines)
+  - Route list display
+  - Route management
+  - User interaction
 
 ### Pipeline Management Views
 - **`PipelineTroubleshootingView.swift`** (3.8KB, 122 lines)
@@ -361,9 +340,6 @@
   - Application settings
   - Configuration management
   - User preferences
-  - Developer mode integration
-
-- **`TrafficProfileManagementView.swift`** (Traffic profile management interface)
 
 ## 🔄 ViewModels (State Management)
 
@@ -379,8 +355,9 @@
 
 ### Swift Extensions
 - **`Extensions/`** (Directory containing Swift extensions)
-  - **`JSONDecoder+Bridge.swift`** (Centralized JSON decoding utilities)
-  - **`JSONEncoder+Bridge.swift`** (Centralized JSON encoding utilities)
+  - **`Extensions.swift`** (General Swift extensions)
+  - **`Extensions 2.swift`** (Additional extensions)
+  - **`Extensions 3.swift`** (More extensions)
 
 ## 📊 Data and Configuration
 
@@ -416,8 +393,6 @@
 - **`PipelineParityValidatorTests.swift`** - Pipeline validation tests
 - **`SeattleDrawbridgesTests.swift`** - Bridge data tests
 - **`ThreadSanitizerTests.swift`** - Thread safety tests
-- **`BasicTrafficProfileProviderTests.swift`** - Traffic profile provider tests
-- **`ValidationFailureDiagnosticTest.swift`** - Validation failure diagnostics
 
 ### Test Resources
 - **`TestResources/`** - Test data and fixtures
@@ -453,11 +428,11 @@
 ```
 Bridget/
 ├── BridgetApp.swift              # App entry point
-├── Models/                       # 16 files - Data models
+├── Models/                       # 15 files - Data models
 ├── Services/                     # 42 files - Business logic
-├── Views/                        # 20 files - User interface
+├── Views/                        # 19 files - User interface
 ├── ViewModels/                   # 6 files - State management
-├── Extensions/                   # 2 files - Swift extensions
+├── Extensions/                   # 3 files - Swift extensions
 ├── Assets.xcassets/              # App resources
 ├── Documentation/                # App-specific docs
 └── Configuration files           # Info.plist, entitlements, etc.
@@ -481,19 +456,12 @@ Scripts/                         # 6 utility scripts
 - **CoreMLTraining** depends on **FeatureEngineeringService**
 - **DataValidationService** validates data from multiple sources
 - **CacheService** provides caching for multiple services
-- **BasicTrafficProfileProvider** integrates with **ETAEstimator**
 
 ### View Hierarchy
 - **ContentView** is the root coordinator
-- **SettingsTabView** manages settings and developer tools
+- **MLPipelineTabView** manages ML pipeline views
 - **RouteListView** displays route information
 - **PipelineMetricsDashboard** shows performance data
-
-### ML Pipeline Integration
-- **BridgeTopologyModels** provides schema for Python ML training
-- **BasicTrafficProfileProvider** applies traffic multipliers to ETA calculations
-- **CoreMLTraining** handles on-device model training
-- **FeatureEngineeringService** processes raw data into ML features
 
 ---
 
