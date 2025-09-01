@@ -317,8 +317,24 @@ Encapsulates all business-specific validation rules for `BridgeOpeningRecord` in
 - Entity ID validation
 - Entity name validation
 - Date format validation
-- Coordinate validation
+- **Coordinate validation with transformation** - Uses coordinate system transformation for accurate validation (500m threshold) with 8km fallback
 - Business rule enforcement
+
+## Coordinate Transformation Validation
+
+The application now uses coordinate system transformation to provide accurate geospatial validation instead of tolerance-based acceptance:
+
+### Transformation-Based Validation
+- **Primary**: 500m tight threshold using coordinate transformation
+- **Fallback**: 8km threshold if transformation fails
+- **Accuracy**: Dramatic improvement in validation accuracy (e.g., Bridge 1: 6205m → 42m)
+
+### Implementation Details
+- **`CoordinateTransformService`**: Handles coordinate system transformations
+- **`BridgeRecordValidator`**: Integrates transformation into validation pipeline
+- **Testing**: Comprehensive test suite validates transformation accuracy and performance
+
+For complete implementation details, see <doc:CoordinateTransformationPlan>.
 
 ## Validation Failure Types
 

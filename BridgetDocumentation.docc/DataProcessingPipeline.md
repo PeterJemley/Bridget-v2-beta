@@ -135,7 +135,7 @@ Enhance DocC documentation to explain implementation choices and supported forma
 The application now uses a centralized validation system to eliminate code duplication and ensure consistent validation patterns:
 
 - **`ValidationUtils`**: Reusable utility functions for common validation patterns
-- **`BridgeRecordValidator`**: Business-specific validation logic for bridge records  
+- **`BridgeRecordValidator`**: Business-specific validation logic for bridge records with coordinate transformation  
 - **`ValidationTypes`**: Shared data structures for validation results
 
 #### Benefits

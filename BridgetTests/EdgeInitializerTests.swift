@@ -1,320 +1,367 @@
-import XCTest
+import Foundation
+import Testing
 
 @testable import Bridget
 
-final class EdgeInitializerTests: XCTestCase {
-  // MARK: - Valid Edge Creation Tests
+@Suite("Edge Initializer Tests")
+struct EdgeInitializerTests {
 
-  func testValidRoadEdgeCreation() throws {
-    let edge = try Edge(validatingFrom: "A",
-                        to: "B",
-                        travelTime: 60.0,
-                        distance: 100.0,
-                        isBridge: false,
-                        bridgeID: nil)
+    // MARK: - Valid Edge Creation Tests
 
-    XCTAssertEqual(edge.from, "A")
-    XCTAssertEqual(edge.to, "B")
-    XCTAssertEqual(edge.travelTime, 60.0)
-    XCTAssertEqual(edge.distance, 100.0)
-    XCTAssertFalse(edge.isBridge)
-    XCTAssertNil(edge.bridgeID)
-  }
+    @Test("Valid road edge creation")
+    func validRoadEdgeCreation() throws {
+        let edge = try Edge(
+            validatingFrom: "A",
+            to: "B",
+            travelTime: 60.0,
+            distance: 100.0,
+            isBridge: false,
+            bridgeID: nil
+        )
 
-  func testValidBridgeEdgeCreation() throws {
-    let edge = try Edge(validatingFrom: "A",
-                        to: "B",
-                        travelTime: 120.0,
-                        distance: 200.0,
-                        isBridge: true,
-                        bridgeID: "1")
-
-    XCTAssertEqual(edge.from, "A")
-    XCTAssertEqual(edge.to, "B")
-    XCTAssertEqual(edge.travelTime, 120.0)
-    XCTAssertEqual(edge.distance, 200.0)
-    XCTAssertTrue(edge.isBridge)
-    XCTAssertEqual(edge.bridgeID, "1")
-  }
-
-  func testValidSyntheticBridgeEdgeCreation() throws {
-    let edge = try Edge(validatingFrom: "A",
-                        to: "B",
-                        travelTime: 90.0,
-                        distance: 150.0,
-                        isBridge: true,
-                        bridgeID: "bridge1")
-
-    XCTAssertEqual(edge.from, "A")
-    XCTAssertEqual(edge.to, "B")
-    XCTAssertEqual(edge.travelTime, 90.0)
-    XCTAssertEqual(edge.distance, 150.0)
-    XCTAssertTrue(edge.isBridge)
-    XCTAssertEqual(edge.bridgeID, "bridge1")
-  }
-
-  // MARK: - Error Cases Tests
-
-  func testSelfLoopThrowsError() {
-    XCTAssertThrowsError(
-      try Edge(validatingFrom: "A",
-               to: "A",
-               travelTime: 60.0,
-               distance: 100.0,
-               isBridge: false,
-               bridgeID: nil)
-    ) { error in
-      XCTAssertEqual(error as? Edge.EdgeInitError, .selfLoop)
-    }
-  }
-
-  func testNonPositiveDistanceThrowsError() {
-    // Zero distance
-    XCTAssertThrowsError(
-      try Edge(validatingFrom: "A",
-               to: "B",
-               travelTime: 60.0,
-               distance: 0.0,
-               isBridge: false,
-               bridgeID: nil)
-    ) { error in
-      XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveDistance)
+        #expect(edge.from == "A")
+        #expect(edge.to == "B")
+        #expect(edge.travelTime == 60.0)
+        #expect(edge.distance == 100.0)
+        #expect(edge.isBridge == false)
+        #expect(edge.bridgeID == nil)
     }
 
-    // Negative distance
-    XCTAssertThrowsError(
-      try Edge(validatingFrom: "A",
-               to: "B",
-               travelTime: 60.0,
-               distance: -10.0,
-               isBridge: false,
-               bridgeID: nil)
-    ) { error in
-      XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveDistance)
+    @Test("Valid canonical bridge edge creation")
+    func validBridgeEdgeCreation() throws {
+        let edge = try Edge(
+            validatingFrom: "A",
+            to: "B",
+            travelTime: 120.0,
+            distance: 200.0,
+            isBridge: true,
+            bridgeID: "1"
+        )
+
+        #expect(edge.from == "A")
+        #expect(edge.to == "B")
+        #expect(edge.travelTime == 120.0)
+        #expect(edge.distance == 200.0)
+        #expect(edge.isBridge == true)
+        #expect(edge.bridgeID == "1")
     }
 
-    // Infinite distance
-    XCTAssertThrowsError(
-      try Edge(validatingFrom: "A",
-               to: "B",
-               travelTime: 60.0,
-               distance: Double.infinity,
-               isBridge: false,
-               bridgeID: nil)
-    ) { error in
-      XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveDistance)
+    @Test("Valid synthetic bridge edge creation")
+    func validSyntheticBridgeEdgeCreation() throws {
+        let edge = try Edge(
+            validatingFrom: "A",
+            to: "B",
+            travelTime: 90.0,
+            distance: 150.0,
+            isBridge: true,
+            bridgeID: "bridge1"
+        )
+
+        #expect(edge.from == "A")
+        #expect(edge.to == "B")
+        #expect(edge.travelTime == 90.0)
+        #expect(edge.distance == 150.0)
+        #expect(edge.isBridge == true)
+        #expect(edge.bridgeID == "bridge1")
     }
 
-    // NaN distance
-    XCTAssertThrowsError(
-      try Edge(validatingFrom: "A",
-               to: "B",
-               travelTime: 60.0,
-               distance: Double.nan,
-               isBridge: false,
-               bridgeID: nil)
-    ) { error in
-      XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveDistance)
-    }
-  }
+    // MARK: - Error Cases Tests
 
-  func testNonPositiveTravelTimeThrowsError() {
-    // Zero travel time
-    XCTAssertThrowsError(
-      try Edge(validatingFrom: "A",
-               to: "B",
-               travelTime: 0.0,
-               distance: 100.0,
-               isBridge: false,
-               bridgeID: nil)
-    ) { error in
-      XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveTravelTime)
+    @Test("Self-loop throws .selfLoop")
+    func selfLoopThrowsError() {
+        #expect(throws: Edge.EdgeInitError.selfLoop) {
+            _ = try Edge(
+                validatingFrom: "A",
+                to: "A",
+                travelTime: 60.0,
+                distance: 100.0,
+                isBridge: false,
+                bridgeID: nil
+            )
+        }
     }
 
-    // Negative travel time
-    XCTAssertThrowsError(
-      try Edge(validatingFrom: "A",
-               to: "B",
-               travelTime: -30.0,
-               distance: 100.0,
-               isBridge: false,
-               bridgeID: nil)
-    ) { error in
-      XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveTravelTime)
+    @Test("Non-positive or invalid distance throws .nonPositiveDistance")
+    func nonPositiveDistanceThrowsError() {
+        // Zero distance
+        #expect(throws: Edge.EdgeInitError.nonPositiveDistance) {
+            _ = try Edge(
+                validatingFrom: "A",
+                to: "B",
+                travelTime: 60.0,
+                distance: 0.0,
+                isBridge: false,
+                bridgeID: nil
+            )
+        }
+
+        // Negative distance
+        #expect(throws: Edge.EdgeInitError.nonPositiveDistance) {
+            _ = try Edge(
+                validatingFrom: "A",
+                to: "B",
+                travelTime: 60.0,
+                distance: -10.0,
+                isBridge: false,
+                bridgeID: nil
+            )
+        }
+
+        // Infinite distance
+        #expect(throws: Edge.EdgeInitError.nonPositiveDistance) {
+            _ = try Edge(
+                validatingFrom: "A",
+                to: "B",
+                travelTime: 60.0,
+                distance: .infinity,
+                isBridge: false,
+                bridgeID: nil
+            )
+        }
+
+        // NaN distance
+        #expect(throws: Edge.EdgeInitError.nonPositiveDistance) {
+            _ = try Edge(
+                validatingFrom: "A",
+                to: "B",
+                travelTime: 60.0,
+                distance: .nan,
+                isBridge: false,
+                bridgeID: nil
+            )
+        }
     }
 
-    // Infinite travel time
-    XCTAssertThrowsError(
-      try Edge(validatingFrom: "A",
-               to: "B",
-               travelTime: TimeInterval.infinity,
-               distance: 100.0,
-               isBridge: false,
-               bridgeID: nil)
-    ) { error in
-      XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveTravelTime)
+    @Test("Non-positive or invalid travel time throws .nonPositiveTravelTime")
+    func nonPositiveTravelTimeThrowsError() {
+        // Zero travel time
+        #expect(throws: Edge.EdgeInitError.nonPositiveTravelTime) {
+            _ = try Edge(
+                validatingFrom: "A",
+                to: "B",
+                travelTime: 0.0,
+                distance: 100.0,
+                isBridge: false,
+                bridgeID: nil
+            )
+        }
+
+        // Negative travel time
+        #expect(throws: Edge.EdgeInitError.nonPositiveTravelTime) {
+            _ = try Edge(
+                validatingFrom: "A",
+                to: "B",
+                travelTime: -30.0,
+                distance: 100.0,
+                isBridge: false,
+                bridgeID: nil
+            )
+        }
+
+        // Infinite travel time
+        #expect(throws: Edge.EdgeInitError.nonPositiveTravelTime) {
+            _ = try Edge(
+                validatingFrom: "A",
+                to: "B",
+                travelTime: .infinity,
+                distance: 100.0,
+                isBridge: false,
+                bridgeID: nil
+            )
+        }
+
+        // NaN travel time
+        #expect(throws: Edge.EdgeInitError.nonPositiveTravelTime) {
+            _ = try Edge(
+                validatingFrom: "A",
+                to: "B",
+                travelTime: .nan,
+                distance: 100.0,
+                isBridge: false,
+                bridgeID: nil
+            )
+        }
     }
 
-    // NaN travel time
-    XCTAssertThrowsError(
-      try Edge(validatingFrom: "A",
-               to: "B",
-               travelTime: TimeInterval.nan,
-               distance: 100.0,
-               isBridge: false,
-               bridgeID: nil)
-    ) { error in
-      XCTAssertEqual(error as? Edge.EdgeInitError, .nonPositiveTravelTime)
+    @Test("Missing bridgeID throws .missingBridgeID")
+    func missingBridgeIDThrowsError() {
+        #expect(throws: Edge.EdgeInitError.missingBridgeID) {
+            _ = try Edge(
+                validatingFrom: "A",
+                to: "B",
+                travelTime: 60.0,
+                distance: 100.0,
+                isBridge: true,
+                bridgeID: nil
+            )
+        }
     }
-  }
 
-  func testMissingBridgeIDThrowsError() {
-    XCTAssertThrowsError(
-      try Edge(validatingFrom: "A",
-               to: "B",
-               travelTime: 60.0,
-               distance: 100.0,
-               isBridge: true,
-               bridgeID: nil)
-    ) { error in
-      XCTAssertEqual(error as? Edge.EdgeInitError, .missingBridgeID)
+    @Test("Unexpected bridgeID throws .unexpectedBridgeID")
+    func unexpectedBridgeIDThrowsError() {
+        #expect(throws: Edge.EdgeInitError.unexpectedBridgeID) {
+            _ = try Edge(
+                validatingFrom: "A",
+                to: "B",
+                travelTime: 60.0,
+                distance: 100.0,
+                isBridge: false,
+                bridgeID: "1"
+            )
+        }
     }
-  }
 
-  func testUnexpectedBridgeIDThrowsError() {
-    XCTAssertThrowsError(
-      try Edge(validatingFrom: "A",
-               to: "B",
-               travelTime: 60.0,
-               distance: 100.0,
-               isBridge: false,
-               bridgeID: "1")
-    ) { error in
-      XCTAssertEqual(error as? Edge.EdgeInitError, .unexpectedBridgeID)
+    // MARK: - Convenience Initializer Tests
+
+    @Test("Road convenience initializer")
+    func roadConvenienceInitializer() {
+        let edge = Edge.road(
+            from: "A",
+            to: "B",
+            travelTime: 60.0,
+            distance: 100.0
+        )
+
+        #expect(edge.from == "A")
+        #expect(edge.to == "B")
+        #expect(edge.travelTime == 60.0)
+        #expect(edge.distance == 100.0)
+        #expect(edge.isBridge == false)
+        #expect(edge.bridgeID == nil)
     }
-  }
 
-  // MARK: - Convenience Initializer Tests
+    @Test("Bridge convenience initializer with canonical ID returns non-nil")
+    func bridgeConvenienceInitializerWithValidID() {
+        let edge = Edge.bridge(
+            from: "A",
+            to: "B",
+            travelTime: 120.0,
+            distance: 200.0,
+            bridgeID: "1"
+        )
 
-  func testRoadConvenienceInitializer() {
-    let edge = Edge.road(from: "A",
-                         to: "B",
-                         travelTime: 60.0,
-                         distance: 100.0)
+        #expect(edge != nil)
+        #expect(edge?.from == "A")
+        #expect(edge?.to == "B")
+        #expect(edge?.travelTime == 120.0)
+        #expect(edge?.distance == 200.0)
+        #expect(edge?.isBridge == true)
+        #expect(edge?.bridgeID == "1")
+    }
 
-    XCTAssertEqual(edge.from, "A")
-    XCTAssertEqual(edge.to, "B")
-    XCTAssertEqual(edge.travelTime, 60.0)
-    XCTAssertEqual(edge.distance, 100.0)
-    XCTAssertFalse(edge.isBridge)
-    XCTAssertNil(edge.bridgeID)
-  }
+    @Test("Bridge convenience initializer with synthetic ID returns non-nil")
+    func bridgeConvenienceInitializerWithSyntheticID() {
+        let edge = Edge.bridge(
+            from: "A",
+            to: "B",
+            travelTime: 90.0,
+            distance: 150.0,
+            bridgeID: "bridge1"
+        )
 
-  func testBridgeConvenienceInitializerWithValidID() {
-    let edge = Edge.bridge(from: "A",
-                           to: "B",
-                           travelTime: 120.0,
-                           distance: 200.0,
-                           bridgeID: "1")
+        #expect(edge != nil)
+        #expect(edge?.from == "A")
+        #expect(edge?.to == "B")
+        #expect(edge?.travelTime == 90.0)
+        #expect(edge?.distance == 150.0)
+        #expect(edge?.isBridge == true)
+        #expect(edge?.bridgeID == "bridge1")
+    }
 
-    XCTAssertNotNil(edge)
-    XCTAssertEqual(edge?.from, "A")
-    XCTAssertEqual(edge?.to, "B")
-    XCTAssertEqual(edge?.travelTime, 120.0)
-    XCTAssertEqual(edge?.distance, 200.0)
-    XCTAssertTrue(edge?.isBridge ?? false)
-    XCTAssertEqual(edge?.bridgeID, "1")
-  }
+    @Test("Bridge convenience initializer returns nil for invalid ID")
+    func bridgeConvenienceInitializerWithInvalidID() {
+        let edge = Edge.bridge(
+            from: "A",
+            to: "B",
+            travelTime: 120.0,
+            distance: 200.0,
+            bridgeID: "invalid"
+        )
 
-  func testBridgeConvenienceInitializerWithSyntheticID() {
-    let edge = Edge.bridge(from: "A",
-                           to: "B",
-                           travelTime: 90.0,
-                           distance: 150.0,
-                           bridgeID: "bridge1")
+        #expect(edge == nil)
+    }
 
-    XCTAssertNotNil(edge)
-    XCTAssertEqual(edge?.from, "A")
-    XCTAssertEqual(edge?.to, "B")
-    XCTAssertEqual(edge?.travelTime, 90.0)
-    XCTAssertEqual(edge?.distance, 150.0)
-    XCTAssertTrue(edge?.isBridge ?? false)
-    XCTAssertEqual(edge?.bridgeID, "bridge1")
-  }
+    @Test("Bridge throwing convenience initializer with canonical ID")
+    func bridgeThrowingConvenienceInitializer() throws {
+        let edge = try Edge.bridgeThrowing(
+            from: "A",
+            to: "B",
+            travelTime: 120.0,
+            distance: 200.0,
+            bridgeID: "1"
+        )
 
-  func testBridgeConvenienceInitializerWithInvalidID() {
-    let edge = Edge.bridge(from: "A",
-                           to: "B",
-                           travelTime: 120.0,
-                           distance: 200.0,
-                           bridgeID: "invalid")
+        #expect(edge.from == "A")
+        #expect(edge.to == "B")
+        #expect(edge.travelTime == 120.0)
+        #expect(edge.distance == 200.0)
+        #expect(edge.isBridge == true)
+        #expect(edge.bridgeID == "1")
+    }
 
-    XCTAssertNil(edge)
-  }
+    // MARK: - Error Description Tests
 
-  func testBridgeThrowingConvenienceInitializer() throws {
-    let edge = try Edge.bridgeThrowing(from: "A",
-                                       to: "B",
-                                       travelTime: 120.0,
-                                       distance: 200.0,
-                                       bridgeID: "1")
+    @Test("EdgeInitError localized descriptions")
+    func errorDescriptions() {
+        #expect(
+            Edge.EdgeInitError.selfLoop.localizedDescription
+                == "Edge cannot connect a node to itself"
+        )
+        #expect(
+            Edge.EdgeInitError.nonPositiveDistance.localizedDescription
+                == "Edge distance must be positive and finite"
+        )
+        #expect(
+            Edge.EdgeInitError.nonPositiveTravelTime.localizedDescription
+                == "Edge travel time must be positive and finite"
+        )
+        #expect(
+            Edge.EdgeInitError.missingBridgeID.localizedDescription
+                == "Bridge edge must have a bridge ID"
+        )
+        #expect(
+            Edge.EdgeInitError.unexpectedBridgeID.localizedDescription
+                == "Non-bridge edge should not have a bridge ID"
+        )
+    }
 
-    XCTAssertEqual(edge.from, "A")
-    XCTAssertEqual(edge.to, "B")
-    XCTAssertEqual(edge.travelTime, 120.0)
-    XCTAssertEqual(edge.distance, 200.0)
-    XCTAssertTrue(edge.isBridge)
-    XCTAssertEqual(edge.bridgeID, "1")
-  }
+    // MARK: - Backward Compatibility Tests
 
-  // MARK: - Error Description Tests
+    @Test("Backward-compatible non-throwing initializer (road)")
+    func backwardCompatibleInitializer() {
+        let edge = Edge(
+            from: "A",
+            to: "B",
+            travelTime: 60.0,
+            distance: 100.0,
+            isBridge: false,
+            bridgeID: nil
+        )
 
-  func testErrorDescriptions() {
-    XCTAssertEqual(Edge.EdgeInitError.selfLoop.localizedDescription,
-                   "Edge cannot connect a node to itself")
-    XCTAssertEqual(Edge.EdgeInitError.nonPositiveDistance.localizedDescription,
-                   "Edge distance must be positive and finite")
-    XCTAssertEqual(Edge.EdgeInitError.nonPositiveTravelTime.localizedDescription,
-                   "Edge travel time must be positive and finite")
-    XCTAssertEqual(Edge.EdgeInitError.missingBridgeID.localizedDescription,
-                   "Bridge edge must have a bridge ID")
-    XCTAssertEqual(Edge.EdgeInitError.unexpectedBridgeID.localizedDescription,
-                   "Non-bridge edge should not have a bridge ID")
-  }
+        #expect(edge.from == "A")
+        #expect(edge.to == "B")
+        #expect(edge.travelTime == 60.0)
+        #expect(edge.distance == 100.0)
+        #expect(edge.isBridge == false)
+        #expect(edge.bridgeID == nil)
+    }
 
-  // MARK: - Backward Compatibility Tests
+    @Test("Backward-compatible non-throwing initializer (bridge)")
+    func backwardCompatibleBridgeInitializer() {
+        let edge = Edge(
+            from: "A",
+            to: "B",
+            travelTime: 120.0,
+            distance: 200.0,
+            isBridge: true,
+            bridgeID: "1"
+        )
 
-  func testBackwardCompatibleInitializer() {
-    // This should work without throwing
-    let edge = Edge(from: "A",
-                    to: "B",
-                    travelTime: 60.0,
-                    distance: 100.0,
-                    isBridge: false,
-                    bridgeID: nil)
-
-    XCTAssertEqual(edge.from, "A")
-    XCTAssertEqual(edge.to, "B")
-    XCTAssertEqual(edge.travelTime, 60.0)
-    XCTAssertEqual(edge.distance, 100.0)
-    XCTAssertFalse(edge.isBridge)
-    XCTAssertNil(edge.bridgeID)
-  }
-
-  func testBackwardCompatibleBridgeInitializer() {
-    // This should work without throwing (with warnings in debug)
-    let edge = Edge(from: "A",
-                    to: "B",
-                    travelTime: 120.0,
-                    distance: 200.0,
-                    isBridge: true,
-                    bridgeID: "1")
-
-    XCTAssertEqual(edge.from, "A")
-    XCTAssertEqual(edge.to, "B")
-    XCTAssertEqual(edge.travelTime, 120.0)
-    XCTAssertEqual(edge.distance, 200.0)
-    XCTAssertTrue(edge.isBridge)
-    XCTAssertEqual(edge.bridgeID, "1")
-  }
+        #expect(edge.from == "A")
+        #expect(edge.to == "B")
+        #expect(edge.travelTime == 120.0)
+        #expect(edge.distance == 200.0)
+        #expect(edge.isBridge == true)
+        #expect(edge.bridgeID == "1")
+    }
 }

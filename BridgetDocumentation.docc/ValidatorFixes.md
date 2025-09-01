@@ -123,7 +123,7 @@ The project builds successfully with all fixes applied. The validators now provi
 
 1. **Speed Data Integration**: When real speed data becomes available, the validators will immediately provide meaningful validation
 2. **Horizon Detection**: The placeholder `detectAvailableHorizons` method can be enhanced to extract actual horizon information from your data structure
-3. **Configuration**: Both validators support runtime configuration updates for tuning validation thresholds
+3. **Configuration**: Both validators support runtime configuration updates for tuning validation thresholds, including coordinate transformation settings (500m tight threshold, 8km fallback)
 
 ## Files Modified
 

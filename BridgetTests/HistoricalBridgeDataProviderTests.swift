@@ -3,62 +3,78 @@
 //  BridgetTests
 //
 
-import XCTest
+import Foundation
+import Testing
 
 @testable import Bridget
 
-final class HistoricalBridgeDataProviderTests: XCTestCase {
-  // MARK: - Simple Debug Tests
+@Suite("Historical Bridge Data Provider Tests")
+struct HistoricalBridgeDataProviderTests {
 
-  func testSimpleBaselinePredictor() {
-    let provider = MockHistoricalBridgeDataProvider()
-    let predictor = BaselinePredictor(historicalProvider: provider)
+    // MARK: - Simple Debug Tests
 
-    // Test basic functionality
-    XCTAssertEqual(predictor.defaultProbability, 0.1, accuracy: 0.001)
-    XCTAssertEqual(predictor.maxBatchSize, 100)
-    XCTAssertFalse(predictor.supports(bridgeID: "unknown"))
-  }
+    @Test("BaselinePredictor simple defaults and support checks")
+    func simpleBaselinePredictor() {
+        let provider = MockHistoricalBridgeDataProvider()
+        let predictor = BaselinePredictor(historicalProvider: provider)
 
-  func testSimpleDateBucket() {
-    let bucket = DateBucket(hour: 14, minute: 20, isWeekend: false)
-    XCTAssertEqual(bucket.hour, 14)
-    XCTAssertEqual(bucket.minute, 20)
-    XCTAssertFalse(bucket.isWeekend)
-  }
+        #expect(
+            predictor.defaultProbability == 0.1,
+            "Default probability should be 0.1"
+        )
+        #expect(predictor.maxBatchSize == 100)
+        #expect(predictor.supports(bridgeID: "unknown") == false)
+    }
 
-  func testSimpleBridgeOpeningStats() {
-    let stats = BridgeOpeningStats(openCount: 3, totalCount: 10)
-    XCTAssertEqual(stats.rawProbability, 0.3, accuracy: 0.001)
-    XCTAssertEqual(stats.smoothedProbability(alpha: 1.0, beta: 9.0),
-                   0.2,
-                   accuracy: 0.001)
-  }
+    @Test("DateBucket basic construction")
+    func simpleDateBucket() {
+        let bucket = DateBucket(hour: 14, minute: 20, isWeekend: false)
+        #expect(bucket.hour == 14)
+        #expect(bucket.minute == 20)
+        #expect(bucket.isWeekend == false)
+    }
 
-  func testSimpleMockProvider() {
-    let provider = MockHistoricalBridgeDataProvider()
+    @Test("BridgeOpeningStats raw and smoothed probabilities")
+    func simpleBridgeOpeningStats() {
+        let stats = BridgeOpeningStats(openCount: 3, totalCount: 10)
+        #expect(abs(stats.rawProbability - 0.3) < 0.001)
+        #expect(
+            abs(stats.smoothedProbability(alpha: 1.0, beta: 9.0) - 0.2) < 0.001
+        )
+    }
 
-    let bucket = DateBucket(hour: 14, minute: 20, isWeekend: false)
-    let stats = BridgeOpeningStats(openCount: 3,
-                                   totalCount: 10,
-                                   sampleCount: 10)
+    @Test("Mock provider basic set/get")
+    func simpleMockProvider() {
+        let provider = MockHistoricalBridgeDataProvider()
 
-    provider.setMockStats(bridgeID: "ballard", bucket: bucket, stats: stats)
+        let bucket = DateBucket(hour: 14, minute: 20, isWeekend: false)
+        let stats = BridgeOpeningStats(
+            openCount: 3,
+            totalCount: 10,
+            sampleCount: 10
+        )
 
-    let retrievedStats = provider.getOpeningStats(bridgeID: "ballard",
-                                                  bucket: bucket)
-    XCTAssertNotNil(retrievedStats)
-    XCTAssertEqual(retrievedStats?.openCount, 3)
-    XCTAssertEqual(retrievedStats?.totalCount, 10)
-  }
+        provider.setMockStats(bridgeID: "ballard", bucket: bucket, stats: stats)
 
-  func testSimplePrediction() {
-    let provider = MockHistoricalBridgeDataProvider()
-    let predictor = BaselinePredictor(historicalProvider: provider)
+        let retrievedStats = provider.getOpeningStats(
+            bridgeID: "ballard",
+            bucket: bucket
+        )
+        #expect(retrievedStats != nil)
+        #expect(retrievedStats?.openCount == 3)
+        #expect(retrievedStats?.totalCount == 10)
+    }
 
-    // Test bridge with no historical data
-    let probability = predictor.predictOpenProbability(for: "unknown_bridge",
-                                                       at: Date())
-    XCTAssertEqual(probability, 0.1, accuracy: 0.001)  // Default probability
-  }
+    @Test("BaselinePredictor default probability without historical data")
+    func simplePrediction() {
+        let provider = MockHistoricalBridgeDataProvider()
+        let predictor = BaselinePredictor(historicalProvider: provider)
+
+        // Bridge with no historical data should use defaultProbability
+        let probability = predictor.predictOpenProbability(
+            for: "unknown_bridge",
+            at: Date()
+        )
+        #expect(abs(probability - 0.1) < 0.001)
+    }
 }
