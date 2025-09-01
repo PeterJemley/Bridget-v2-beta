@@ -1,14 +1,15 @@
+import Foundation
 import SwiftData
-import XCTest
+import Testing
 
 @testable import Bridget
 
-/// Test to analyze coordinate system offsets for all bridges
-/// This expands the sample size from 2 bridges to all 7 bridges for Phase 1.2 analysis
-final class CoordinateSystemAnalysisTest: XCTestCase {
+@Suite("Coordinate System Analysis - Swift Testing")
+struct CoordinateSystemAnalysisTest {
 
     @MainActor
-    func testCoordinateOffsetAnalysis() async throws {
+    @Test("Analyze coordinate offsets for all bridges (Phase 1.2)")
+    func coordinateOffsetAnalysis() async throws {
         // Create a model container with all required models
         let schema = Schema([
             BridgeEvent.self,
@@ -30,6 +31,7 @@ final class CoordinateSystemAnalysisTest: XCTestCase {
 
         // Create AppStateModel to trigger validation failure logging
         let appState = AppStateModel(modelContext: modelContext)
+        _ = appState  // silence unused warning while retaining side effects
 
         print("🔍 Coordinate System Analysis - Phase 1.2")
         print("📊 Analyzing coordinate offsets for all bridges...")
@@ -214,7 +216,7 @@ final class CoordinateSystemAnalysisTest: XCTestCase {
         print("   • Implement coordinate transformation service")
 
         // Just verify the test runs without crashing
-        XCTAssertTrue(true)
+        #expect(true)
     }
 }
 
