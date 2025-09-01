@@ -9,6 +9,7 @@ This folder contains **API reference, technical specifications, and implementati
 - **`ArchitectureOverview.md`** - System architecture and component relationships
 - **`DataFlow.md`** - Data flow patterns and processing pipelines
 - **`CachingStrategy.md`** - Caching implementation and strategies
+- **`CoordinateTransformationPlan.md`** - Coordinate system transformation implementation roadmap
 
 ### MultiPath System
 - **`MultiPath_Implementation_Status.md`** - Complete implementation status and roadmap
@@ -56,6 +57,7 @@ For **code-level documentation and inline API references**, see:
 | **ML Pipeline** | `MLTrainingDataPipeline.md` |
 | **API Reference** | `Documentation.md` |
 | **Caching** | `CachingStrategy.md` |
+| **Coordinate Transformation** | `CoordinateTransformationPlan.md` |
 | **Thread Safety** | `ThreadSanitizer_Setup.md` |
 | **Performance Testing** | `MultiPath_Implementation_Status.md` |
 
@@ -67,8 +69,9 @@ For **code-level documentation and inline API references**, see:
 4. **Handling errors?** Check `ErrorHandling.md`
 5. **ML pipeline questions?** See `MLTrainingDataPipeline.md`
 6. **API usage?** Review `Documentation.md`
-7. **Thread safety concerns?** See `ThreadSanitizer_Setup.md`
-8. **Performance optimization?** Check `MultiPath_Implementation_Status.md`
+7. **Coordinate transformation?** See `CoordinateTransformationPlan.md`
+8. **Thread safety concerns?** See `ThreadSanitizer_Setup.md`
+9. **Performance optimization?** Check `MultiPath_Implementation_Status.md`
 
 ## 🎯 MultiPath System Overview
 
