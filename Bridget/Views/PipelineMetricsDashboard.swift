@@ -27,13 +27,9 @@ struct PipelineStageMetric: Codable, Identifiable {
   }
 
   var statusColor: Color {
-    if errorCount > 0 {
-      return .red
-    } else if validationRate < 0.95 {
-      return .orange
-    } else {
-      return .green
-    }
+    if errorCount > 0 { return .red }
+    else if validationRate < 0.95 { return .orange }
+    else { return .green }
   }
 }
 
@@ -67,6 +63,7 @@ struct PipelineMetricsDashboard: View {
   @State private var lastUpdateTime = Date()
   @State private var autoRefresh = true
   @State private var selectedTimeRange: TimeRange = .last24Hours
+  @State private var autoRefreshTimer: Timer?
 
   enum TimeRange: String, CaseIterable {
     case lastHour = "Last Hour"
@@ -76,66 +73,43 @@ struct PipelineMetricsDashboard: View {
   }
 
   var body: some View {
-    NavigationView {
-      ScrollView {
-        VStack(spacing: 20) {
-          // Header with controls
-          headerSection
+    ScrollView {
+      VStack(spacing: 20) {
+        // Header with controls
+        headerSection
 
-          if isLoading {
-            ProgressView("Loading metrics...")
-              .frame(maxWidth: .infinity, maxHeight: .infinity)
-          } else if let data = metricsData {
-            // Metrics overview
-            metricsOverviewSection(data: data)
+        if isLoading {
+          ProgressView("Loading metrics...")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if let data = metricsData {
+          metricsOverviewSection(data: data)
+          stagePerformanceChart(data: data)
+          memoryUsageChart(data: data)
+          stageDetailsSection(data: data)
 
-            // Stage performance chart
-            stagePerformanceChart(data: data)
-
-            // Memory usage chart
-            memoryUsageChart(data: data)
-
-            // Detailed stage list
-            stageDetailsSection(data: data)
-
-            // Custom validation results
-            if let customResults = data.customValidationResults,
-               !customResults.isEmpty
-            {
-              customValidationSection(results: customResults)
-            }
-
-            // Statistical uncertainty metrics (Phase 3 enhancement)
-            if let statisticalMetrics = data.statisticalMetrics {
-              StatisticalUncertaintySection(
-                metrics: statisticalMetrics
-              )
-            }
-          } else {
-            noDataView
+          if let customResults = data.customValidationResults, !customResults.isEmpty {
+            customValidationSection(results: customResults)
           }
-        }
-        .padding()
-      }
-      .navigationTitle("Pipeline Metrics")
-      .navigationBarTitleDisplayMode(.large)
-      .toolbar {
-        ToolbarItem(placement: .navigationBarTrailing) {
-          Button(action: refreshMetrics) {
-            Image(systemName: "arrow.clockwise")
+
+          if let statisticalMetrics = data.statisticalMetrics {
+            StatisticalUncertaintySection(metrics: statisticalMetrics)
           }
+        } else {
+          noDataView
         }
       }
+      .padding()
     }
+    .refreshable { refreshMetrics() }
     .onAppear {
       loadMetrics()
-      if autoRefresh {
-        startAutoRefresh()
-      }
+      if autoRefresh { startAutoRefresh() }
     }
-    .onDisappear {
-      stopAutoRefresh()
+    .onDisappear { stopAutoRefresh() }
+    .onChange(of: autoRefresh) { _, isOn in
+      if isOn { startAutoRefresh() } else { stopAutoRefresh() }
     }
+    // Navigation title provided by parent NavigationStack in Settings.
   }
 
   // MARK: - Header Section
@@ -149,11 +123,9 @@ struct PipelineMetricsDashboard: View {
             .fontWeight(.semibold)
 
           if let data = metricsData {
-            Text(
-              "Last updated: \(data.timestamp, style: .relative)"
-            )
-            .font(.caption)
-            .foregroundColor(.secondary)
+            Text("Last updated: \(data.timestamp, style: .relative)")
+              .font(.caption)
+              .foregroundColor(.secondary)
           }
         }
 
@@ -176,17 +148,18 @@ struct PipelineMetricsDashboard: View {
       if let data = metricsData {
         HStack(spacing: 20) {
           MetricCard(title: "Total Duration",
-                     value:
-                     "\(String(format: "%.1f", data.stageDurations.values.reduce(0, +)))s",
+                     value: "\(String(format: "%.1f", data.stageDurations.values.reduce(0, +)))s",
                      color: .blue)
 
           MetricCard(title: "Total Memory",
                      value: "\(data.memoryUsage.values.reduce(0, +)) MB",
                      color: .purple)
 
+          let avgSuccess = data.validationRates.isEmpty
+            ? 1.0
+            : data.validationRates.values.reduce(0, +) / Double(data.validationRates.count)
           MetricCard(title: "Success Rate",
-                     value:
-                     "\(String(format: "%.1f", data.validationRates.values.reduce(0, +) / Double(data.validationRates.count) * 100))%",
+                     value: "\(String(format: "%.1f", avgSuccess * 100))%",
                      color: .green)
         }
       }
@@ -203,11 +176,8 @@ struct PipelineMetricsDashboard: View {
       Text("Performance Overview")
         .font(.headline)
 
-      LazyVGrid(columns: [
-        GridItem(.flexible()),
-        GridItem(.flexible()),
-      ],
-      spacing: 12) {
+      LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())],
+                spacing: 12) {
         ForEach(data.stageMetrics.prefix(6)) { metric in
           StageMetricCard(metric: metric)
         }
@@ -306,13 +276,8 @@ struct PipelineMetricsDashboard: View {
 
       ForEach(Array(results.keys.sorted()), id: \.self) { validatorName in
         HStack {
-          Image(
-            systemName: results[validatorName] == true
-              ? "checkmark.circle.fill" : "xmark.circle.fill"
-          )
-          .foregroundColor(
-            results[validatorName] == true ? .green : .red
-          )
+          Image(systemName: results[validatorName] == true ? "checkmark.circle.fill" : "xmark.circle.fill")
+            .foregroundColor(results[validatorName] == true ? .green : .red)
 
           Text(validatorName)
             .font(.subheadline)
@@ -321,18 +286,12 @@ struct PipelineMetricsDashboard: View {
 
           Text(results[validatorName] == true ? "Passed" : "Failed")
             .font(.caption)
-            .foregroundColor(
-              results[validatorName] == true ? .green : .red
-            )
+            .foregroundColor(results[validatorName] == true ? .green : .red)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(
               RoundedRectangle(cornerRadius: 4)
-                .fill(
-                  results[validatorName] == true
-                    ? Color.green.opacity(0.1)
-                    : Color.red.opacity(0.1)
-                )
+                .fill(results[validatorName] == true ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
             )
         }
         .padding(.vertical, 4)
@@ -356,12 +315,10 @@ struct PipelineMetricsDashboard: View {
         .font(.title2)
         .fontWeight(.semibold)
 
-      Text(
-        "Run the pipeline to generate metrics, or check the metrics file path."
-      )
-      .font(.body)
-      .foregroundColor(.secondary)
-      .multilineTextAlignment(.center)
+      Text("Run the pipeline to generate metrics, or check the metrics file path.")
+        .font(.body)
+        .foregroundColor(.secondary)
+        .multilineTextAlignment(.center)
 
       Button("Refresh") {
         refreshMetrics()
@@ -377,7 +334,6 @@ struct PipelineMetricsDashboard: View {
   private func loadMetrics() {
     isLoading = true
 
-    // Try multiple possible paths for the metrics file
     let possiblePaths = [
       "metrics/enhanced_pipeline_metrics.json",
       "Documents/metrics/enhanced_pipeline_metrics.json",
@@ -385,11 +341,9 @@ struct PipelineMetricsDashboard: View {
     ]
 
     for path in possiblePaths {
-      // Use fileURLWithPath for local file paths
       let url = URL(fileURLWithPath: path)
       if let data = try? Data(contentsOf: url),
-         let decoded = try? JSONDecoder.bridgeDecoder().decode(PipelineMetricsData.self,
-                                                               from: data)
+         let decoded = try? JSONDecoder.bridgeDecoder().decode(PipelineMetricsData.self, from: data)
       {
         DispatchQueue.main.async {
           self.metricsData = decoded
@@ -400,27 +354,24 @@ struct PipelineMetricsDashboard: View {
       }
     }
 
-    // If no file found, create sample data for demonstration
     DispatchQueue.main.async {
       self.metricsData = self.createSampleData()
       self.isLoading = false
     }
   }
 
-  private func refreshMetrics() {
-    loadMetrics()
-  }
+  private func refreshMetrics() { loadMetrics() }
 
   private func startAutoRefresh() {
-    Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { _ in
-      if autoRefresh {
-        loadMetrics()
-      }
+    stopAutoRefresh()
+    autoRefreshTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { _ in
+      if autoRefresh { loadMetrics() }
     }
   }
 
   private func stopAutoRefresh() {
-    // Timer will be invalidated when view disappears
+    autoRefreshTimer?.invalidate()
+    autoRefreshTimer = nil
   }
 
   private func createSampleData() -> PipelineMetricsData {
@@ -511,33 +462,55 @@ struct PipelineMetricsDashboard: View {
   }
 }
 
-// MARK: - Supporting Views
+// Supporting views (StageMetricCard, StageDetailRow, StatisticalUncertaintySection).
 
-struct MetricCard: View {
-  let title: String
-  let value: String
-  let color: Color
+// MARK: - StageMetricCard
+
+fileprivate struct StageMetricCard: View {
+  let metric: PipelineStageMetric
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 4) {
-      Text(title)
-        .font(.caption)
-        .foregroundColor(.secondary)
+    VStack(alignment: .leading, spacing: 8) {
+      HStack {
+        Circle()
+          .fill(metric.statusColor)
+          .frame(width: 8, height: 8)
+        Text(metric.displayName)
+          .font(.subheadline)
+          .fontWeight(.semibold)
+        Spacer()
+      }
 
-      Text(value)
-        .font(.title2)
-        .fontWeight(.bold)
-        .foregroundColor(color)
+      HStack(spacing: 12) {
+        Label("\(String(format: "%.1f", metric.duration))s", systemImage: "timer")
+          .font(.caption)
+          .foregroundColor(.secondary)
+        Label("\(metric.memory) MB", systemImage: "memorychip")
+          .font(.caption)
+          .foregroundColor(.secondary)
+        Label("\(Int(metric.validationRate * 100))%", systemImage: "checkmark.seal")
+          .font(.caption)
+          .foregroundColor(.secondary)
+      }
+
+      ProgressView(value: max(0, min(1, metric.validationRate))) {
+        Text("Validation")
+          .font(.caption2)
+          .foregroundColor(.secondary)
+      }
+      .tint(metric.statusColor)
     }
-    .frame(maxWidth: .infinity, alignment: .leading)
     .padding()
+    .frame(maxWidth: .infinity, alignment: .leading)
     .background(Color(.systemBackground))
-    .cornerRadius(8)
-    .shadow(radius: 1)
+    .cornerRadius(10)
+    .shadow(color: Color.black.opacity(0.05), radius: 1, x: 0, y: 1)
   }
 }
 
-struct StageMetricCard: View {
+// MARK: - StageDetailRow
+
+fileprivate struct StageDetailRow: View {
   let metric: PipelineStageMetric
 
   var body: some View {
@@ -545,235 +518,135 @@ struct StageMetricCard: View {
       HStack {
         Text(metric.displayName)
           .font(.subheadline)
-          .fontWeight(.medium)
-
+          .fontWeight(.semibold)
         Spacer()
-
-        Circle()
-          .fill(metric.statusColor)
-          .frame(width: 8, height: 8)
+        statusBadge
       }
 
-      HStack {
-        VStack(alignment: .leading, spacing: 2) {
-          Text("Duration")
-            .font(.caption2)
-            .foregroundColor(.secondary)
-          Text("\(String(format: "%.1f", metric.duration))s")
-            .font(.caption)
-            .fontWeight(.semibold)
-        }
-
-        Spacer()
-
-        VStack(alignment: .trailing, spacing: 2) {
-          Text("Memory")
-            .font(.caption2)
-            .foregroundColor(.secondary)
-          Text("\(metric.memory) MB")
-            .font(.caption)
-            .fontWeight(.semibold)
-        }
-      }
-
-      if metric.errorCount > 0 {
-        HStack {
-          Image(systemName: "exclamationmark.triangle.fill")
-            .foregroundColor(.orange)
-            .font(.caption2)
-
-          Text("\(metric.errorCount) errors")
-            .font(.caption2)
-            .foregroundColor(.orange)
-
-          Spacer()
-        }
+      HStack(spacing: 12) {
+        infoChip(icon: "timer", text: "\(String(format: "%.1f", metric.duration))s")
+        infoChip(icon: "memorychip", text: "\(metric.memory) MB")
+        infoChip(icon: "exclamationmark.triangle", text: "\(metric.errorCount) errors",
+                 color: metric.errorCount > 0 ? .red.opacity(0.15) : Color.gray.opacity(0.12),
+                 foreground: metric.errorCount > 0 ? .red : .secondary)
+        infoChip(icon: "person.3", text: "\(metric.recordCount) records")
+        infoChip(icon: "checkmark.seal", text: "\(Int(metric.validationRate * 100))%")
       }
     }
     .padding()
-    .background(Color(.systemGray6))
-    .cornerRadius(8)
+    .background(Color(.secondarySystemBackground))
+    .cornerRadius(10)
   }
-}
 
-struct StageDetailRow: View {
-  let metric: PipelineStageMetric
+  private var statusBadge: some View {
+    Text(metric.errorCount > 0 ? "Issues" : (metric.validationRate < 0.95 ? "Warning" : "OK"))
+      .font(.caption2)
+      .fontWeight(.semibold)
+      .foregroundColor(metric.statusColor)
+      .padding(.horizontal, 8)
+      .padding(.vertical, 4)
+      .background(metric.statusColor.opacity(0.12))
+      .cornerRadius(6)
+  }
 
-  var body: some View {
-    VStack(spacing: 8) {
-      HStack {
-        VStack(alignment: .leading, spacing: 4) {
-          Text(metric.displayName)
-            .font(.subheadline)
-            .fontWeight(.medium)
-
-          Text("\(metric.recordCount) records processed")
-            .font(.caption)
-            .foregroundColor(.secondary)
-        }
-
-        Spacer()
-
-        VStack(alignment: .trailing, spacing: 4) {
-          Text("\(String(format: "%.1f", metric.duration))s")
-            .font(.subheadline)
-            .fontWeight(.semibold)
-
-          Text("\(metric.memory) MB")
-            .font(.caption)
-            .foregroundColor(.secondary)
-        }
-      }
-
-      HStack {
-        HStack(spacing: 4) {
-          Image(systemName: "checkmark.circle.fill")
-            .foregroundColor(.green)
-            .font(.caption2)
-
-          Text(
-            "\(String(format: "%.1f", metric.validationRate * 100))% valid"
-          )
-          .font(.caption)
-          .foregroundColor(.green)
-        }
-
-        Spacer()
-
-        if metric.errorCount > 0 {
-          HStack(spacing: 4) {
-            Image(systemName: "exclamationmark.triangle.fill")
-              .foregroundColor(.orange)
-              .font(.caption2)
-
-            Text("\(metric.errorCount) errors")
-              .font(.caption)
-              .foregroundColor(.orange)
-          }
-        }
-      }
+  private func infoChip(icon: String,
+                        text: String,
+                        color: Color = Color.gray.opacity(0.12),
+                        foreground: Color = .secondary) -> some View
+  {
+    HStack(spacing: 6) {
+      Image(systemName: icon)
+      Text(text)
     }
-    .padding()
-    .background(Color(.systemBackground))
-    .cornerRadius(8)
-    .shadow(radius: 1)
+    .font(.caption)
+    .foregroundColor(foreground)
+    .padding(.horizontal, 8)
+    .padding(.vertical, 6)
+    .background(color)
+    .cornerRadius(6)
   }
 }
 
-// MARK: - Statistical Uncertainty Section (Phase 3 Enhancement)
+// MARK: - Statistical Uncertainty Section (added)
 
 struct StatisticalUncertaintySection: View {
   let metrics: StatisticalTrainingMetrics
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 16) {
-      Text("Statistical Uncertainty Analysis")
+    VStack(alignment: .leading, spacing: 12) {
+      Text("Model Uncertainty & Statistical Metrics")
         .font(.headline)
-        .foregroundColor(.primary)
 
-      // Training Loss Statistics
+      // Top summary cards
+      LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
+                spacing: 12) {
+        StatMiniCard(title: "Accuracy 95% CI",
+                     value: "\(percent(metrics.performanceConfidenceIntervals.accuracy95CI.lower))–\(percent(metrics.performanceConfidenceIntervals.accuracy95CI.upper))",
+                     color: .green)
+
+        StatMiniCard(title: "F1 95% CI",
+                     value: "\(percent(metrics.performanceConfidenceIntervals.f1Score95CI.lower))–\(percent(metrics.performanceConfidenceIntervals.f1Score95CI.upper))",
+                     color: .blue)
+
+        StatMiniCard(title: "Mean Error 95% CI",
+                     value: "\(String(format: "%.3f", metrics.performanceConfidenceIntervals.meanError95CI.lower))–\(String(format: "%.3f", metrics.performanceConfidenceIntervals.meanError95CI.upper))",
+                     color: .orange)
+      }
+
+      // Loss stats
       VStack(alignment: .leading, spacing: 8) {
-        Text("Training Loss Statistics")
+        Text("Loss Statistics")
           .font(.subheadline)
-          .fontWeight(.medium)
+          .foregroundStyle(.secondary)
 
-        HStack {
-          StatisticCard(title: "Mean Loss",
-                        value: String(format: "%.4f",
-                                      metrics.trainingLossStats.mean),
-                        subtitle:
-                        "±\(String(format: "%.4f", metrics.trainingLossStats.stdDev))")
-
-          StatisticCard(title: "Variance",
-                        value: String(format: "%.6f",
-                                      metrics.trainingLossStats.variance),
-                        subtitle:
-                        "Min: \(String(format: "%.4f", metrics.trainingLossStats.min))")
-
-          StatisticCard(title: "Max Loss",
-                        value: String(format: "%.4f",
-                                      metrics.trainingLossStats.max),
-                        subtitle:
-                        "Range: \(String(format: "%.4f", metrics.trainingLossStats.max - metrics.trainingLossStats.min))")
+        HStack(spacing: 16) {
+          StatValueRow(label: "Training Loss",
+                       mean: metrics.trainingLossStats.mean,
+                       stdDev: metrics.trainingLossStats.stdDev,
+                       range: (metrics.trainingLossStats.min, metrics.trainingLossStats.max),
+                       color: .teal)
+          StatValueRow(label: "Validation Loss",
+                       mean: metrics.validationLossStats.mean,
+                       stdDev: metrics.validationLossStats.stdDev,
+                       range: (metrics.validationLossStats.min, metrics.validationLossStats.max),
+                       color: .purple)
         }
       }
 
-      // Prediction Accuracy Statistics
+      // Error distribution quick chart
       VStack(alignment: .leading, spacing: 8) {
-        Text("Prediction Accuracy Statistics")
+        Text("Prediction Error Distribution")
           .font(.subheadline)
-          .fontWeight(.medium)
+          .foregroundStyle(.secondary)
 
-        HStack {
-          StatisticCard(title: "Mean Accuracy",
-                        value: String(format: "%.3f",
-                                      metrics.predictionAccuracyStats.mean),
-                        subtitle:
-                        "±\(String(format: "%.3f", metrics.predictionAccuracyStats.stdDev))")
-
-          StatisticCard(title: "95% CI Lower",
-                        value: String(format: "%.3f",
-                                      metrics.performanceConfidenceIntervals.accuracy95CI
-                                        .lower),
-                        subtitle: "Confidence Interval")
-
-          StatisticCard(title: "95% CI Upper",
-                        value: String(format: "%.3f",
-                                      metrics.performanceConfidenceIntervals.accuracy95CI
-                                        .upper),
-                        subtitle: "Confidence Interval")
+        Chart {
+          BarMark(x: .value("Within σ", "≤1σ"),
+                  y: .value("Percent", metrics.errorDistribution.withinOneStdDev))
+            .foregroundStyle(.mint.gradient)
+          BarMark(x: .value("Within σ", "≤2σ"),
+                  y: .value("Percent", metrics.errorDistribution.withinTwoStdDev))
+            .foregroundStyle(.cyan.gradient)
         }
+        .chartYAxisLabel("Percent", position: .leading)
+        .frame(height: 140)
       }
 
-      // ETA Prediction Variance
+      // Prediction accuracy and variance
       VStack(alignment: .leading, spacing: 8) {
-        Text("ETA Prediction Variance")
+        Text("Prediction Accuracy & Variance")
           .font(.subheadline)
-          .fontWeight(.medium)
+          .foregroundStyle(.secondary)
 
-        HStack {
-          StatisticCard(title: "Mean ETA",
-                        value: String(format: "%.1fs",
-                                      metrics.etaPredictionVariance.mean),
-                        subtitle:
-                        "±\(String(format: "%.1fs", metrics.etaPredictionVariance.stdDev))")
-
-          StatisticCard(title: "Variance",
-                        value: String(format: "%.1f",
-                                      metrics.etaPredictionVariance.variance),
-                        subtitle:
-                        "Min: \(String(format: "%.1fs", metrics.etaPredictionVariance.min))")
-
-          StatisticCard(title: "Max ETA",
-                        value: String(format: "%.1fs",
-                                      metrics.etaPredictionVariance.max),
-                        subtitle:
-                        "Range: \(String(format: "%.1fs", metrics.etaPredictionVariance.max - metrics.etaPredictionVariance.min))")
-        }
-      }
-
-      // Error Distribution
-      VStack(alignment: .leading, spacing: 8) {
-        Text("Error Distribution Analysis")
-          .font(.subheadline)
-          .fontWeight(.medium)
-
-        HStack {
-          StatisticCard(title: "Within 1σ",
-                        value: String(format: "%.1f%%",
-                                      metrics.errorDistribution.withinOneStdDev),
-                        subtitle: "Standard Deviation")
-
-          StatisticCard(title: "Within 2σ",
-                        value: String(format: "%.1f%%",
-                                      metrics.errorDistribution.withinTwoStdDev),
-                        subtitle: "Standard Deviation")
-
-          StatisticCard(title: "Mean Error",
-                        value: String(format: "%.4f",
-                                      metrics.errorDistribution.absoluteErrorStats.mean),
-                        subtitle:
-                        "±\(String(format: "%.4f", metrics.errorDistribution.absoluteErrorStats.stdDev))")
+        HStack(spacing: 16) {
+          StatMiniCard(title: "Accuracy Mean",
+                       value: percent(metrics.predictionAccuracyStats.mean),
+                       color: .green)
+          StatMiniCard(title: "Accuracy ±σ",
+                       value: "±\(percent(metrics.predictionAccuracyStats.stdDev))",
+                       color: .green.opacity(0.8))
+          StatMiniCard(title: "ETA Var (σ)",
+                       value: String(format: "%.1f", metrics.etaPredictionVariance.stdDev),
+                       color: .indigo)
         }
       }
     }
@@ -782,35 +655,56 @@ struct StatisticalUncertaintySection: View {
     .cornerRadius(12)
     .shadow(radius: 2)
   }
+
+  private func percent(_ value: Double) -> String {
+    "\(String(format: "%.1f", value * 100))%"
+  }
 }
 
-// MARK: - Statistic Card Component
-
-struct StatisticCard: View {
+fileprivate struct StatMiniCard: View {
   let title: String
   let value: String
-  let subtitle: String
+  let color: Color
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 4) {
+    VStack(alignment: .leading, spacing: 6) {
       Text(title)
         .font(.caption)
         .foregroundColor(.secondary)
-
       Text(value)
-        .font(.subheadline)
-        .fontWeight(.semibold)
-        .foregroundColor(.primary)
+        .font(.headline)
+        .foregroundStyle(color)
+    }
+    .padding()
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(Color(.secondarySystemBackground))
+    .cornerRadius(10)
+  }
+}
 
-      Text(subtitle)
+fileprivate struct StatValueRow: View {
+  let label: String
+  let mean: Double
+  let stdDev: Double
+  let range: (min: Double, max: Double)
+  let color: Color
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Text(label)
+        .font(.caption)
+        .foregroundColor(.secondary)
+      Text("Mean \(String(format: "%.3f", mean))  •  σ \(String(format: "%.3f", stdDev))")
+        .font(.subheadline)
+        .foregroundStyle(color)
+      Text("Range \(String(format: "%.3f", range.min)) – \(String(format: "%.3f", range.max))")
         .font(.caption2)
         .foregroundColor(.secondary)
     }
+    .padding()
     .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(.vertical, 8)
-    .padding(.horizontal, 12)
-    .background(Color(.systemGray6))
-    .cornerRadius(8)
+    .background(Color(.secondarySystemBackground))
+    .cornerRadius(10)
   }
 }
 

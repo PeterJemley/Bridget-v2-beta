@@ -15,46 +15,38 @@ struct PipelinePluginManagementView: View {
   @State private var searchText = ""
 
   var body: some View {
-    NavigationView {
-      VStack(spacing: 0) {
-        // Header with controls
-        headerSection
+    VStack(spacing: 0) {
+      // Header with controls
+      headerSection
 
-        // Search bar
-        searchSection
+      // Search bar
+      searchSection
 
-        // Plugin list
-        if pluginManager.validators.isEmpty {
-          emptyStateView
-        } else {
-          pluginListView
+      // Plugin list
+      if pluginManager.validators.isEmpty {
+        emptyStateView
+      } else {
+        pluginListView
+      }
+    }
+    .navigationTitle("Validation Plugins")
+    .navigationBarTitleDisplayMode(.large)
+    .toolbar {
+      ToolbarItem(placement: .navigationBarTrailing) {
+        Button(action: { showingAddValidator = true }) {
+          Image(systemName: "plus")
         }
       }
-      .navigationTitle("Validation Plugins")
-      .navigationBarTitleDisplayMode(.large)
-      .toolbar {
-        ToolbarItem(placement: .navigationBarTrailing) {
-          Button(action: { showingAddValidator = true }) {
-            Image(systemName: "plus")
-          }
-        }
-
-        ToolbarItem(placement: .navigationBarLeading) {
-          Button("Refresh") {
-            // Refresh plugin status
-          }
-        }
-      }
-      .sheet(isPresented: $showingAddValidator) {
-        AddValidatorView(pluginManager: pluginManager)
-      }
-      .sheet(item: $selectedValidatorName) { item in
-        if let validator = pluginManager.validators.first(where: {
-          $0.name == item.name
-        }) {
-          ValidatorConfigurationView(validator: validator,
-                                     pluginManager: pluginManager)
-        }
+    }
+    .sheet(isPresented: $showingAddValidator) {
+      AddValidatorView(pluginManager: pluginManager)
+    }
+    .sheet(item: $selectedValidatorName) { item in
+      if let validator = pluginManager.validators.first(where: {
+        $0.name == item.name
+      }) {
+        ValidatorConfigurationView(validator: validator,
+                                   pluginManager: pluginManager)
       }
     }
     .onAppear {
@@ -71,10 +63,7 @@ struct PipelinePluginManagementView: View {
     VStack(spacing: 16) {
       HStack {
         VStack(alignment: .leading) {
-          Text("Pipeline Validation Plugins")
-            .font(.title2)
-            .fontWeight(.semibold)
-
+          // Remove large duplicate title to avoid repeating the nav title.
           Text("Manage custom validation rules for your ML pipeline")
             .font(.subheadline)
             .foregroundColor(.secondary)

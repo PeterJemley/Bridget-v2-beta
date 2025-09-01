@@ -5,18 +5,16 @@ struct PipelineSettingsView: View {
   @Environment(\.dismiss) private var dismiss
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 16) {
+    Group {
       // Automation Settings
-      VStack(alignment: .leading, spacing: 8) {
-        Text("Automation Settings")
-          .font(.headline)
-
+      Section("Automation") {
         Toggle("Auto Export",
                isOn: $settingsViewModel.autoExportEnabled)
 
         if settingsViewModel.autoExportEnabled {
           HStack {
-            Text("Export Time:")
+            Text("Export Time")
+            Spacer()
             Button(settingsViewModel.autoExportTime) {
               settingsViewModel.showingTimePicker = true
             }
@@ -26,10 +24,7 @@ struct PipelineSettingsView: View {
       }
 
       // Notification Settings
-      VStack(alignment: .leading, spacing: 8) {
-        Text("Notifications")
-          .font(.headline)
-
+      Section("Notifications") {
         Toggle("Enable Notifications",
                isOn: $settingsViewModel.notificationsEnabled)
 
@@ -46,15 +41,14 @@ struct PipelineSettingsView: View {
       }
 
       // Actions
-      VStack(spacing: 8) {
+      Section {
         Button("Apply Settings") {
           settingsViewModel.configureNotifications()
           settingsViewModel.scheduleAutoExport()
         }
-        .buttonStyle(.bordered)
       }
     }
-    .padding()
+    // Present time picker as a sheet
     .sheet(isPresented: $settingsViewModel.showingTimePicker) {
       NavigationStack {
         VStack {
@@ -90,5 +84,9 @@ struct PipelineSettingsView: View {
 }
 
 #Preview {
-  PipelineSettingsView(settingsViewModel: SettingsViewModel())
+  // Embed in a List to preview system Settings styling
+  List {
+    PipelineSettingsView(settingsViewModel: SettingsViewModel())
+  }
+  .listStyle(.insetGrouped)
 }

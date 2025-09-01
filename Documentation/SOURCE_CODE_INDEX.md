@@ -299,7 +299,7 @@
   - Visual status representation
   - Status details
 
-- **`PipelineDocumentationView.swift`** (2.0KB, 62 lines)
+
   - Pipeline documentation
   - Help and guidance
   - User assistance

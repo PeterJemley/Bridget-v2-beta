@@ -1,97 +1,33 @@
-//
-//  MLPipelineTabView.swift
-//  Bridget
-//
-//  ## Purpose
-//  SwiftUI view for Core ML training pipeline with real-time progress updates
-//
-//  ## Dependencies
-//  SwiftUI framework, MLPipelineViewModel (via @Bindable)
-//
-//  ## Integration Points
-//  Displays ML training progress and controls
-//  Shows real-time training status and error handling
-//  Provides training pipeline controls for different horizons
-//  Integrates with TrainPrepService for actual Core ML training
-//
-//  ## Key Features
-//  Real-time progress updates during training
-//  Error state handling with user-friendly messages
-//  Training controls for different prediction horizons
-//  Reactive UI updates via @Bindable and @Observable
-//
-
 import SwiftData
 import SwiftUI
 
-/// A SwiftUI view that displays the Core ML training pipeline interface.
-///
-/// This view provides the main interface for users to monitor and control
-/// Core ML model training for bridge lift prediction. It shows real-time
-/// progress updates, training status, and provides controls for starting
-/// training pipelines.
-///
-/// ## Overview
-///
-/// The `MLPipelineTabView` is the primary interface for ML training operations,
-/// providing real-time feedback during training and error handling for failed
-/// training attempts.
-///
-/// ## Key Features
-///
-/// - **Real-time Progress**: Shows live training progress with progress bars
-/// - **Training Controls**: Buttons to start training for different horizons
-/// - **Error Handling**: Displays training errors with retry options
-/// - **Status Updates**: Live status text showing current training phase
-/// - **Model Management**: Shows trained models and their paths
-///
-/// ## Usage
-///
-/// ```swift
-/// MLPipelineTabView(viewModel: mlPipelineViewModel)
-/// ```
-///
-/// ## Topics
-///
-/// ### Training Controls
-/// - Start training pipeline
-/// - Train individual horizons
-/// - Monitor training progress
-///
-/// ### Progress Display
-/// - Real-time progress bars
-/// - Training status messages
-/// - Error state handling
 struct MLPipelineTabView: View {
   @Bindable var viewModel: MLPipelineViewModel
 
   var body: some View {
-    NavigationView {
-      ScrollView {
-        VStack(spacing: 20) {
-          headerView
+    ScrollView {
+      VStack(spacing: 20) {
+        headerView
 
-          if viewModel.isTraining {
-            trainingProgressView
-          }
-
-          trainingControlsView
-
-          if !viewModel.trainedModels.isEmpty {
-            trainedModelsView
-          }
-
-          if let error = viewModel.trainingError {
-            errorView(error: error)
-          }
-
-          Spacer()
+        if viewModel.isTraining {
+          trainingProgressView
         }
-        .padding()
+
+        trainingControlsView
+
+        if !viewModel.trainedModels.isEmpty {
+          trainedModelsView
+        }
+
+        if let error = viewModel.trainingError {
+          errorView(error: error)
+        }
+
+        Spacer(minLength: 0)
       }
-      .navigationTitle("ML Training Pipeline")
-      .navigationBarTitleDisplayMode(.large)
+      .padding()
     }
+    // Navigation title is applied by the presenting NavigationStack in Settings.
   }
 
   private var headerView: some View {
@@ -154,9 +90,7 @@ struct MLPipelineTabView: View {
       }
 
       VStack(spacing: 12) {
-        Button(action: {
-          startFullPipeline()
-        }) {
+        Button(action: { startFullPipeline() }) {
           HStack {
             Image(systemName: "arrow.triangle.2.circlepath")
             Text("Start Full Training Pipeline")
@@ -178,15 +112,10 @@ struct MLPipelineTabView: View {
         Text("Individual Horizon Training")
           .font(.subheadline.bold())
 
-        LazyVGrid(columns: [
-          GridItem(.flexible()),
-          GridItem(.flexible()),
-        ],
-        spacing: 8) {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())],
+                  spacing: 8) {
           ForEach(defaultHorizons, id: \.self) { horizon in
-            Button(action: {
-              startSingleHorizonTraining(horizon: horizon)
-            }) {
+            Button(action: { startSingleHorizonTraining(horizon: horizon) }) {
               Text("\(horizon) min")
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
@@ -215,21 +144,16 @@ struct MLPipelineTabView: View {
       }
 
       VStack(alignment: .leading, spacing: 8) {
-        ForEach(Array(viewModel.trainedModels.keys.sorted()),
-                id: \.self)
-        { horizon in
+        ForEach(Array(viewModel.trainedModels.keys.sorted()), id: \.self) { horizon in
           if let modelPath = viewModel.trainedModels[horizon] {
             HStack {
               Text("\(horizon)-min horizon:")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
               Spacer()
-              Text(
-                modelPath.components(separatedBy: "/").last
-                  ?? "Unknown"
-              )
-              .font(.caption)
-              .foregroundColor(.blue)
+              Text(modelPath.components(separatedBy: "/").last ?? "Unknown")
+                .font(.caption)
+                .foregroundColor(.blue)
             }
           }
         }
@@ -272,8 +196,6 @@ struct MLPipelineTabView: View {
   // MARK: - Training Actions
 
   private func startFullPipeline() {
-    // For demo purposes, use a sample path
-    // In production, this would come from BridgeDataExporter
     let sampleNDJSONPath = "/path/to/sample_data.ndjson"
     let outputDirectory = FileManagerUtils.temporaryDirectory().path
 
@@ -282,8 +204,6 @@ struct MLPipelineTabView: View {
   }
 
   private func startSingleHorizonTraining(horizon: Int) {
-    // For demo purposes, use a sample CSV path
-    // In production, this would come from TrainPrepService
     let sampleCSVPath = "/path/to/training_data_horizon_\(horizon).csv"
     let outputDirectory = FileManagerUtils.temporaryDirectory().path
 
@@ -297,5 +217,7 @@ struct MLPipelineTabView: View {
   let modelContext = try! ModelContainer(for: BridgeEvent.self).mainContext
   let viewModel = MLPipelineViewModel(modelContext: modelContext)
 
+  // Preview without nested navigation; title is provided by parent in app.
   MLPipelineTabView(viewModel: viewModel)
+    .padding()
 }

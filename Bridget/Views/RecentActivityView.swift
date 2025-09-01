@@ -10,11 +10,7 @@ struct RecentActivityView: View {
           .font(.title2)
           .bold()
         Spacer()
-        Button("Refresh") {
-          viewModel.refreshActivities()
-        }
-        .buttonStyle(.bordered)
-        .controlSize(.small)
+        // Pull-to-refresh is provided by the parent ScrollView in the dashboard.
       }
 
       if viewModel.recentActivities.isEmpty {
@@ -69,27 +65,19 @@ struct ActivityRow: View {
 
   private func iconForActivityType(_ type: ActivityType) -> String {
     switch type {
-    case .dataPopulation:
-      return "arrow.down.circle.fill"
-    case .dataExport:
-      return "square.and.arrow.up.circle.fill"
-    case .maintenance:
-      return "wrench.and.screwdriver.fill"
-    case .error:
-      return "exclamationmark.triangle.fill"
+    case .dataPopulation: return "arrow.down.circle.fill"
+    case .dataExport: return "square.and.arrow.up.circle.fill"
+    case .maintenance: return "wrench.and.screwdriver.fill"
+    case .error: return "exclamationmark.triangle.fill"
     }
   }
 
   private func colorForActivityType(_ type: ActivityType) -> Color {
     switch type {
-    case .dataPopulation:
-      return .blue
-    case .dataExport:
-      return .purple
-    case .maintenance:
-      return .orange
-    case .error:
-      return .red
+    case .dataPopulation: return .blue
+    case .dataExport: return .purple
+    case .maintenance: return .orange
+    case .error: return .red
     }
   }
 }

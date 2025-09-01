@@ -11,11 +11,6 @@ struct PipelineStatusCard: View {
           .font(.title2)
           .bold()
         Spacer()
-        Button("Refresh") {
-          viewModel.refreshStatus()
-        }
-        .buttonStyle(.bordered)
-        .controlSize(.small)
       }
 
       VStack(spacing: 12) {
@@ -52,11 +47,13 @@ struct PipelineStatusCard: View {
     var body: some View {
       Group {
         if let viewModel {
-          PipelineStatusCard(viewModel: viewModel)
-            .padding()
+          ScrollView {
+            PipelineStatusCard(viewModel: viewModel)
+              .padding()
+          }
+          .refreshable { viewModel.refreshStatus() }
         } else {
-          // Show empty state instead of loading message
-          EmptyView()  // Placeholder for loading or empty state
+          EmptyView()
         }
       }
       .onAppear {
