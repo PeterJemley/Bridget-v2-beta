@@ -113,7 +113,8 @@ struct MLPipelineTabView: View {
           .font(.subheadline.bold())
 
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())],
-                  spacing: 8) {
+                  spacing: 8)
+        {
           ForEach(defaultHorizons, id: \.self) { horizon in
             Button(action: { startSingleHorizonTraining(horizon: horizon) }) {
               Text("\(horizon) min")

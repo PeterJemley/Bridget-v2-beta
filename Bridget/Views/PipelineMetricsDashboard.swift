@@ -177,7 +177,8 @@ struct PipelineMetricsDashboard: View {
         .font(.headline)
 
       LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())],
-                spacing: 12) {
+                spacing: 12)
+      {
         ForEach(data.stageMetrics.prefix(6)) { metric in
           StageMetricCard(metric: metric)
         }
@@ -466,7 +467,7 @@ struct PipelineMetricsDashboard: View {
 
 // MARK: - StageMetricCard
 
-fileprivate struct StageMetricCard: View {
+private struct StageMetricCard: View {
   let metric: PipelineStageMetric
 
   var body: some View {
@@ -510,7 +511,7 @@ fileprivate struct StageMetricCard: View {
 
 // MARK: - StageDetailRow
 
-fileprivate struct StageDetailRow: View {
+private struct StageDetailRow: View {
   let metric: PipelineStageMetric
 
   var body: some View {
@@ -579,7 +580,8 @@ struct StatisticalUncertaintySection: View {
 
       // Top summary cards
       LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())],
-                spacing: 12) {
+                spacing: 12)
+      {
         StatMiniCard(title: "Accuracy 95% CI",
                      value: "\(percent(metrics.performanceConfidenceIntervals.accuracy95CI.lower))–\(percent(metrics.performanceConfidenceIntervals.accuracy95CI.upper))",
                      color: .green)
@@ -661,7 +663,7 @@ struct StatisticalUncertaintySection: View {
   }
 }
 
-fileprivate struct StatMiniCard: View {
+private struct StatMiniCard: View {
   let title: String
   let value: String
   let color: Color
@@ -682,7 +684,7 @@ fileprivate struct StatMiniCard: View {
   }
 }
 
-fileprivate struct StatValueRow: View {
+private struct StatValueRow: View {
   let label: String
   let mean: Double
   let stdDev: Double

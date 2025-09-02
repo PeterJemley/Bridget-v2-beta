@@ -1,5 +1,5 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct SettingsTabView: View {
   @Environment(\.modelContext) private var modelContext
@@ -108,16 +108,13 @@ struct SettingsTabView: View {
       }
       .listStyle(.insetGrouped)
       .navigationTitle("Settings")
-
       .sheet(isPresented: $showingTroubleshooting) {
         NavigationStack {
-          PipelineTroubleshootingView(
-            lastBackgroundTaskRun: MLPipelineBackgroundManager.shared.lastPopulationDate,
-            lastBackgroundTaskError: nil,  // TODO: Add error tracking to background manager
-            onRerunHealthChecks: {
-              MLPipelineBackgroundManager.shared.triggerBackgroundTask(.maintenance)
-            }
-          )
+          PipelineTroubleshootingView(lastBackgroundTaskRun: MLPipelineBackgroundManager.shared.lastPopulationDate,
+                                      lastBackgroundTaskError: nil,  // TODO: Add error tracking to background manager
+                                      onRerunHealthChecks: {
+                                        MLPipelineBackgroundManager.shared.triggerBackgroundTask(.maintenance)
+                                      })
         }
       }
       // Developer Tools sheets
