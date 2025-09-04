@@ -366,9 +366,13 @@ Avoid `@StateObject`, `@ObservedObject`, or Combine. Instead, use `@Bindable` (O
 - [x] `@ViewBuilder` - Custom view initializers for modular UI composition
 - [x] `#Preview` - Live canvas previews for all views (RouteListView, RouteDetailView, LoadingView)
 
-### Concurrency & Actor Isolation
-- [x] `@MainActor` - UI-impacting service methods (BridgeDataService, RouteScoringService)
-- [x] `@Sendable` - Task-spawned closures in TrafficInferenceService and async operations
+### Concurrency & Actor Isolation ✅ COMPREHENSIVE FIXES COMPLETE
+- [x] `@MainActor` - All shared service instances (BridgeDataService, CacheService, NetworkClient, etc.)
+- [x] `@Sendable` - All data models and configuration types (CoordinateSystem, TransformationMatrix, etc.)
+- [x] `@unchecked Sendable` - BridgeInfo with CLLocationCoordinate2D handling
+- [x] Static properties - All shared instances and configuration properties now concurrency-safe
+- [x] Task closures - Proper async/await patterns with startInitialLoad() approach
+- [x] Platform guards - iOS-specific code properly isolated with #if os(iOS)
 
 ### Custom Macros for Core ML
 - [x] Consider custom macro for repetitive MLModelConfiguration boilerplate

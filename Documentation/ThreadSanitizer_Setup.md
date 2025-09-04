@@ -4,7 +4,7 @@ This document describes the Thread Sanitizer (TSan) configuration for the Bridge
 
 ## Overview
 
-Thread Sanitizer is a dynamic analysis tool that detects data races in multithreaded programs. It's particularly valuable for Swift Concurrency code using actors, async/await, and shared state.
+Thread Sanitizer is a dynamic analysis tool that detects data races in multithreaded programs. It's particularly valuable for Swift Concurrency code using actors, async/await, and shared state. **Note: The project has completed comprehensive concurrency fixes and all shared instances are now properly isolated with @MainActor.**
 
 ## Configuration
 
