@@ -122,7 +122,7 @@ actor NetworkClient {
     }
 
     #if DEBUG
-    print("Content-Type: \(contentType)")
+      print("Content-Type: \(contentType)")
     #endif
   }
 

@@ -108,7 +108,7 @@ final class BridgeDataService {
   }
 
   private func addProcessingTime(_ seconds: Double) {
-    guard seconds.isFinite && seconds >= 0 else { return }
+    guard seconds.isFinite, seconds >= 0 else { return }
     stateQueue.sync(flags: .barrier) {
       transformationMetrics.processingTimeSeconds += seconds
     }
