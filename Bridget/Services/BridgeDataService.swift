@@ -38,7 +38,7 @@ import Foundation
 /// - Route Generation: `generateRoutes(from:)`
 /// - Cache Management: `clearCache()`, `getCacheSize()`
 /// - Coordinate Transformation: `TransformationConfig`, metrics getters/reset
-class BridgeDataService {
+final class BridgeDataService {
   static let shared = BridgeDataService()
 
   // MARK: - Transformation Configuration & Metrics
@@ -74,23 +74,44 @@ class BridgeDataService {
                                             processingTimeSeconds: 0.0)
   }
 
+  // Thread-safety: guard mutable state via a concurrent queue (reads: sync, writes: barrier)
+  private let stateQueue = DispatchQueue(label: "com.bridget.bridgedataservice.state", attributes: .concurrent)
+
   private var transformationConfig = TransformationConfig()
   private var transformationMetrics = TransformationMetrics.zero
 
+  // MARK: - Thread-safe Config & Metrics Accessors
+
   func getTransformationConfig() -> TransformationConfig {
-    return transformationConfig
+    return stateQueue.sync { transformationConfig }
   }
 
   func updateTransformationConfig(_ newConfig: TransformationConfig) {
-    transformationConfig = newConfig
+    stateQueue.sync(flags: .barrier) {
+      transformationConfig = newConfig
+    }
   }
 
   func getTransformationMetrics() -> TransformationMetrics {
-    return transformationMetrics
+    return stateQueue.sync { transformationMetrics }
   }
 
   func resetTransformationMetrics() {
-    transformationMetrics = .zero
+    stateQueue.sync(flags: .barrier) {
+      transformationMetrics = .zero
+    }
+  }
+
+  // Internal helpers to avoid direct state access in async contexts
+  private func isMetricsEnabled() -> Bool {
+    stateQueue.sync { transformationConfig.enableMetrics }
+  }
+
+  private func addProcessingTime(_ seconds: Double) {
+    guard seconds.isFinite && seconds >= 0 else { return }
+    stateQueue.sync(flags: .barrier) {
+      transformationMetrics.processingTimeSeconds += seconds
+    }
   }
 
   // MARK: - Service Dependencies
@@ -130,7 +151,8 @@ class BridgeDataService {
   /// }
   /// ```
   func loadHistoricalData() async throws -> ([BridgeStatusModel], [ValidationFailure]) {
-    let metricsStart = transformationConfig.enableMetrics ? Date() : nil
+    let metricsEnabled = isMetricsEnabled()
+    let metricsStart = metricsEnabled ? Date() : nil
 
     // Check cache first - return valid cached data if available
     if let cachedBridges: [BridgeStatusModel] = cacheService.loadFromCache([BridgeStatusModel].self,
@@ -141,11 +163,11 @@ class BridgeDataService {
       cachedBridges.forEach { $0.updateCacheMetadata() }
 
       // Minimal metrics behavior: even if metrics disabled for display, we keep counters coherent
-      if transformationConfig.enableMetrics {
+      if metricsEnabled {
         // No coordinate transformations are actually performed here yet,
         // but record processing time as near-zero and keep counters at defaults.
         let elapsed = Date().timeIntervalSince(metricsStart ?? Date())
-        transformationMetrics.processingTimeSeconds += max(0.0, elapsed)
+        addProcessingTime(max(0.0, elapsed))
       }
 
       return (cachedBridges, [])
@@ -181,11 +203,10 @@ class BridgeDataService {
       cacheService.saveToCache(cleanedBridges, for: "historical_bridges")
 
       // Update minimal transformation metrics timing if enabled
-      if transformationConfig.enableMetrics {
+      if metricsEnabled {
         let elapsed = Date().timeIntervalSince(metricsStart ?? Date())
-        transformationMetrics.processingTimeSeconds += max(0.0, elapsed)
+        addProcessingTime(max(0.0, elapsed))
         // Leave other counters at zero until coordinate transformation is integrated here.
-        // Tests only assert non-negative values and reasonable processing time.
       }
 
       return (cleanedBridges, validationFailures)
@@ -197,21 +218,18 @@ class BridgeDataService {
       {
         cachedBridges.forEach { $0.markAsStale() }
 
-        if transformationConfig.enableMetrics {
-          let elapsed = Date().timeIntervalSince(
-            metricsStart ?? Date()
-          )
-          transformationMetrics.processingTimeSeconds += max(0.0,
-                                                             elapsed)
+        if metricsEnabled {
+          let elapsed = Date().timeIntervalSince(metricsStart ?? Date())
+          addProcessingTime(max(0.0, elapsed))
         }
 
         return (cachedBridges, [])
       }
 
       // Last resort: throw the network error
-      if transformationConfig.enableMetrics {
+      if metricsEnabled {
         let elapsed = Date().timeIntervalSince(metricsStart ?? Date())
-        transformationMetrics.processingTimeSeconds += max(0.0, elapsed)
+        addProcessingTime(max(0.0, elapsed))
       }
       throw error
     }
@@ -426,3 +444,10 @@ class BridgeDataService {
     }
   }
 #endif
+
+// MARK: - Concurrency
+
+// BridgeDataService guards all mutable state via a concurrent queue with barrier writes.
+// Dependencies are singletons assumed safe for cross-actor use in this app context.
+// We mark as @unchecked Sendable to allow use across concurrency domains.
+extension BridgeDataService: @unchecked Sendable {}

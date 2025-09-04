@@ -33,10 +33,13 @@ struct PipelineMetricsDashboard: View {
                             filteredStages: filtered
                         )
 
-                        if let custom = data.customValidationResults, !custom.isEmpty {
+                        if let custom = data.customValidationResults,
+                            !custom.isEmpty
+                        {
                             CustomValidationSectionCollapsible(
                                 results: custom,
-                                isExpanded: $viewModel.isCustomValidationExpanded
+                                isExpanded: $viewModel
+                                    .isCustomValidationExpanded
                             )
                         }
 
@@ -54,6 +57,7 @@ struct PipelineMetricsDashboard: View {
                 }
                 .padding()
             }
+            .accessibilityIdentifier("PipelineMetricsDashboard")
             // Auto-scroll to charts when chart state changes
             .onChange(of: viewModel.chartKind) {
                 withAnimation {
@@ -82,7 +86,7 @@ struct PipelineMetricsDashboard: View {
     private func triggerFocusHighlight() {
         focusCharts = true
         Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 1_000_000_000) // ~1s
+            try? await Task.sleep(nanoseconds: 1_000_000_000)  // ~1s
             withAnimation(.easeOut(duration: 0.3)) {
                 focusCharts = false
             }

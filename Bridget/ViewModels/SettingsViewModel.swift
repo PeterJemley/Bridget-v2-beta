@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 @Observable
 final class SettingsViewModel {
   // MARK: - Persisted Settings

@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct ChartsContainerView: View {
     let data: PipelineMetricsData
@@ -16,7 +16,9 @@ struct ChartsContainerView: View {
         if showAll { return baseMetrics }
         switch chartKind {
         case .performance:
-            return Array(baseMetrics.sorted { $0.duration > $1.duration }.prefix(5))
+            return Array(
+                baseMetrics.sorted { $0.duration > $1.duration }.prefix(5)
+            )
         case .memory:
             return Array(baseMetrics.sorted { $0.memory > $1.memory }.prefix(5))
         }
@@ -38,11 +40,15 @@ struct ChartsContainerView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
                 Picker("Chart", selection: $chartKind) {
-                    ForEach(PipelineMetricsViewModel.ChartKind.allCases, id: \.self) {
+                    ForEach(
+                        PipelineMetricsViewModel.ChartKind.allCases,
+                        id: \.self
+                    ) {
                         Text($0.rawValue).tag($0)
                     }
                 }
                 .pickerStyle(.segmented)
+                .accessibilityIdentifier("ChartKindPicker")
 
                 Spacer()
 
@@ -57,7 +63,9 @@ struct ChartsContainerView: View {
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: 180)
-                    .help("Choose whether to show the top 5 stages or all stages")
+                    .help(
+                        "Choose whether to show the top 5 stages or all stages"
+                    )
                 }
             }
 
@@ -68,13 +76,17 @@ struct ChartsContainerView: View {
                 MemoryUsageChart(metrics: metricsForChart)
             }
         }
+        .accessibilityIdentifier("ChartsContainerView")
         .padding()
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(radius: 1)
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.accentColor.opacity(focusActive ? 0.9 : 0.0), lineWidth: 3)
+                .stroke(
+                    Color.accentColor.opacity(focusActive ? 0.9 : 0.0),
+                    lineWidth: 3
+                )
                 .animation(.easeOut(duration: 0.3), value: focusActive)
         )
         .overlay(
@@ -83,6 +95,9 @@ struct ChartsContainerView: View {
                 .animation(.easeOut(duration: 0.3), value: focusActive)
         )
         .scaleEffect(focusActive ? 1.01 : 1.0)
-        .animation(.spring(response: 0.35, dampingFraction: 0.9), value: focusActive)
+        .animation(
+            .spring(response: 0.35, dampingFraction: 0.9),
+            value: focusActive
+        )
     }
 }

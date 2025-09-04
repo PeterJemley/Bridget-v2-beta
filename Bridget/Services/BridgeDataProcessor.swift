@@ -49,7 +49,7 @@ import Foundation
 /// - Validation Rules: `ValidationFailureReason`
 /// - Error Reporting: `BridgeDataError`
 /// - Validation Delegation: Utilizes `BridgeRecordValidator` and `ValidationUtils`
-class BridgeDataProcessor {
+final class BridgeDataProcessor {
   static let shared = BridgeDataProcessor()
 
   // MARK: - Properties
@@ -132,3 +132,11 @@ class BridgeDataProcessor {
     return (models, failures)
   }
 }
+
+// MARK: - Concurrency
+
+// BridgeDataProcessor is effectively immutable after initialization:
+// - All stored properties are 'let' constants
+// - No methods mutate shared state
+// Therefore, it is safe to treat as Sendable for cross-actor use.
+extension BridgeDataProcessor: @unchecked Sendable {}

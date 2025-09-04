@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct StagePerformanceChart: View {
     let metrics: [PipelineStageMetric]
@@ -11,14 +11,19 @@ struct StagePerformanceChart: View {
 
             Chart(metrics) { metric in
                 BarMark(
-                    x: .value("Duration", metric.duration),
-                    y: .value("Stage", metric.displayName)
+                    x: .value("Stage", metric.displayName),
+                    y: .value("Duration (s)", metric.duration)
                 )
-                .foregroundStyle(metric.statusColor.gradient)
+                .foregroundStyle(.blue.gradient)
+                .annotation(position: .top, alignment: .center) {
+                    Text(Formatting.seconds(metric.duration))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
             .frame(height: 220)
-            .chartXAxis { AxisMarks(position: .bottom) }
             .chartYAxis { AxisMarks(position: .leading) }
         }
+        .accessibilityIdentifier("StagePerformanceChart")
     }
 }

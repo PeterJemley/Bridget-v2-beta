@@ -13,15 +13,18 @@ struct NoDataView: View {
                 .font(.title2)
                 .fontWeight(.semibold)
 
-            Text("Run the pipeline to generate metrics, or check the metrics file path.")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
+            Text(
+                "Run the pipeline to generate metrics, or check the metrics file path."
+            )
+            .font(.body)
+            .foregroundColor(.secondary)
+            .multilineTextAlignment(.center)
 
             Button("Refresh") { onRefresh() }
                 .buttonStyle(.borderedProminent)
         }
         .frame(maxWidth: .infinity, minHeight: 220)
         .padding()
+        .accessibilityIdentifier("NoDataView")
     }
 }

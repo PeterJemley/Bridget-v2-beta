@@ -14,7 +14,12 @@ import Foundation
 
 // MARK: - Sample Data Provider
 
-class SampleDataProvider {
+/// Stateless sample data provider (singleton).
+/// Concurrency notes:
+/// - This type holds no mutable shared state and only produces values from local data,
+///   so it is safe to use across concurrency domains.
+/// - We mark it as @unchecked Sendable to allow cross-actor access without changing callers.
+final class SampleDataProvider {
   static let shared = SampleDataProvider()
 
   private init() {}
@@ -78,3 +83,7 @@ class SampleDataProvider {
     ]
   }
 }
+
+// MARK: - Concurrency
+
+extension SampleDataProvider: @unchecked Sendable {}

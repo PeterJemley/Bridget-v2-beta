@@ -369,3 +369,9 @@ extension PipelinePerformanceLogger {
     return try await operation()
   }
 }
+
+// MARK: - Concurrency
+
+// Allow cross-actor use of the singleton. This type has shared mutable state;
+// this annotation only declares sendability to the compiler.
+extension PipelinePerformanceLogger: @unchecked Sendable {}

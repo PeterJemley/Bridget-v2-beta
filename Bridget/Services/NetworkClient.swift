@@ -35,7 +35,7 @@ import Foundation
 /// - Error Handling: `NetworkError`
 /// - Retry Logic
 /// - Payload Size Validation
-class NetworkClient {
+actor NetworkClient {
   /// Shared singleton instance of `NetworkClient`.
   ///
   /// Use this instance to perform all network requests within the app,
@@ -77,9 +77,7 @@ class NetworkClient {
 
     for attempt in 1 ... maxRetryAttempts {
       do {
-        let (data, response) = try await URLSession.shared.data(
-          from: url
-        )
+        let (data, response) = try await URLSession.shared.data(from: url)
 
         // Validate HTTP response
         try validateHTTPResponse(response)
@@ -94,9 +92,7 @@ class NetworkClient {
         // Exponential backoff: 2s, 4s, 6s delays
         if attempt < maxRetryAttempts {
           try await Task.sleep(
-            nanoseconds: UInt64(
-              retryDelay * Double(attempt) * 1_000_000_000
-            )
+            nanoseconds: UInt64(retryDelay * Double(attempt) * 1_000_000_000)
           )
         }
       }
@@ -119,16 +115,14 @@ class NetworkClient {
 
     // Validate content type
     guard
-      let contentType = httpResponse.value(
-        forHTTPHeaderField: "Content-Type"
-      ),
+      let contentType = httpResponse.value(forHTTPHeaderField: "Content-Type"),
       contentType.contains("application/json")
     else {
       throw NetworkError.invalidContentType
     }
 
     #if DEBUG
-      print("Content-Type: \(contentType)")
+    print("Content-Type: \(contentType)")
     #endif
   }
 

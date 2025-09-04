@@ -29,6 +29,7 @@ struct StageDetailsSectionCollapsible: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(radius: 1)
+        .accessibilityIdentifier("StageDetailsSection")
     }
 }
 
@@ -117,3 +118,4 @@ struct StageDetailRowCollapsible: View {
         .cornerRadius(6)
     }
 }
+

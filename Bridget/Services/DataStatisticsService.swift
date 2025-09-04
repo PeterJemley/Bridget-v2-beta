@@ -26,899 +26,844 @@ import Foundation
 // MARK: - Statistics Models
 
 /// Comprehensive statistics for bridge data analysis
-public struct BridgeDataStatistics: Codable {
-  /// Overall data summary
-  public let summary: DataSummary
-  /// Bridge-specific statistics
-  public let bridgeStats: [Int: BridgeStatistics]
-  /// Time-based statistics
-  public let timeStats: TimeStatistics
-  /// Horizon coverage details
-  public let horizonStats: HorizonStatistics
-  /// Data quality metrics
-  public let qualityMetrics: DataQualityMetrics
+public struct BridgeDataStatistics: Codable, Sendable {
+    public let summary: DataSummary
+    public let bridgeStats: [Int: BridgeStatistics]
+    public let timeStats: TimeStatistics
+    public let horizonStats: HorizonStatistics
+    public let qualityMetrics: DataQualityMetrics
 
-  public init(summary: DataSummary,
-              bridgeStats: [Int: BridgeStatistics],
-              timeStats: TimeStatistics,
-              horizonStats: HorizonStatistics,
-              qualityMetrics: DataQualityMetrics)
-  {
-    self.summary = summary
-    self.bridgeStats = bridgeStats
-    self.timeStats = timeStats
-    self.horizonStats = horizonStats
-    self.qualityMetrics = qualityMetrics
-  }
+    public init(
+        summary: DataSummary,
+        bridgeStats: [Int: BridgeStatistics],
+        timeStats: TimeStatistics,
+        horizonStats: HorizonStatistics,
+        qualityMetrics: DataQualityMetrics
+    ) {
+        self.summary = summary
+        self.bridgeStats = bridgeStats
+        self.timeStats = timeStats
+        self.horizonStats = horizonStats
+        self.qualityMetrics = qualityMetrics
+    }
 }
 
 /// Overall data summary
-public struct DataSummary: Codable {
-  /// Total number of records
-  public let totalRecords: Int
-  /// Number of unique bridges
-  public let uniqueBridges: Int
-  /// Date range of data
-  public let dateRange: DateRange
-  /// Data completeness percentage
-  public let completenessPercentage: Double
+public struct DataSummary: Codable, Sendable {
+    public let totalRecords: Int
+    public let uniqueBridges: Int
+    public let dateRange: DateRange
+    public let completenessPercentage: Double
 
-  public init(totalRecords: Int,
-              uniqueBridges: Int,
-              dateRange: DateRange,
-              completenessPercentage: Double)
-  {
-    self.totalRecords = totalRecords
-    self.uniqueBridges = uniqueBridges
-    self.dateRange = dateRange
-    self.completenessPercentage = completenessPercentage
-  }
+    public init(
+        totalRecords: Int,
+        uniqueBridges: Int,
+        dateRange: DateRange,
+        completenessPercentage: Double
+    ) {
+        self.totalRecords = totalRecords
+        self.uniqueBridges = uniqueBridges
+        self.dateRange = dateRange
+        self.completenessPercentage = completenessPercentage
+    }
 }
 
 /// Date range information
-public struct DateRange: Codable {
-  /// First timestamp in the dataset
-  public let firstTimestamp: Date
-  /// Last timestamp in the dataset
-  public let lastTimestamp: Date
-  /// Duration of the dataset
-  public let duration: TimeInterval
+public struct DateRange: Codable, Sendable {
+    public let firstTimestamp: Date
+    public let lastTimestamp: Date
+    public let duration: TimeInterval
 
-  public init(firstTimestamp: Date, lastTimestamp: Date) {
-    self.firstTimestamp = firstTimestamp
-    self.lastTimestamp = lastTimestamp
-    self.duration = lastTimestamp.timeIntervalSince(firstTimestamp)
-  }
+    public init(firstTimestamp: Date, lastTimestamp: Date) {
+        self.firstTimestamp = firstTimestamp
+        self.lastTimestamp = lastTimestamp
+        self.duration = lastTimestamp.timeIntervalSince(firstTimestamp)
+    }
 }
 
 /// Bridge-specific statistics
-public struct BridgeStatistics: Codable {
-  /// Bridge ID
-  public let bridgeID: Int
-  /// Number of records for this bridge
-  public let recordCount: Int
-  /// First timestamp for this bridge
-  public let firstTimestamp: Date
-  /// Last timestamp for this bridge
-  public let lastTimestamp: Date
-  /// Counts by minute (hour:minute -> count)
-  public let countsByMinute: [String: Int]
-  /// Counts by hour (hour -> count)
-  public let countsByHour: [Int: Int]
-  /// Counts by day of week (0=Sunday, 1=Monday, etc.)
-  public let countsByDayOfWeek: [Int: Int]
-  /// Data completeness for this bridge
-  public let completenessPercentage: Double
+public struct BridgeStatistics: Codable, Sendable {
+    public let bridgeID: Int
+    public let recordCount: Int
+    public let firstTimestamp: Date
+    public let lastTimestamp: Date
+    public let countsByMinute: [String: Int]
+    public let countsByHour: [Int: Int]
+    public let countsByDayOfWeek: [Int: Int]
+    public let completenessPercentage: Double
 
-  public init(bridgeID: Int,
-              recordCount: Int,
-              firstTimestamp: Date,
-              lastTimestamp: Date,
-              countsByMinute: [String: Int],
-              countsByHour: [Int: Int],
-              countsByDayOfWeek: [Int: Int],
-              completenessPercentage: Double)
-  {
-    self.bridgeID = bridgeID
-    self.recordCount = recordCount
-    self.firstTimestamp = firstTimestamp
-    self.lastTimestamp = lastTimestamp
-    self.countsByMinute = countsByMinute
-    self.countsByHour = countsByHour
-    self.countsByDayOfWeek = countsByDayOfWeek
-    self.completenessPercentage = completenessPercentage
-  }
+    public init(
+        bridgeID: Int,
+        recordCount: Int,
+        firstTimestamp: Date,
+        lastTimestamp: Date,
+        countsByMinute: [String: Int],
+        countsByHour: [Int: Int],
+        countsByDayOfWeek: [Int: Int],
+        completenessPercentage: Double
+    ) {
+        self.bridgeID = bridgeID
+        self.recordCount = recordCount
+        self.firstTimestamp = firstTimestamp
+        self.lastTimestamp = lastTimestamp
+        self.countsByMinute = countsByMinute
+        self.countsByHour = countsByHour
+        self.countsByDayOfWeek = countsByDayOfWeek
+        self.completenessPercentage = completenessPercentage
+    }
 }
 
 /// Time-based statistics
-public struct TimeStatistics: Codable {
-  /// Counts by minute across all bridges
-  public let countsByMinute: [String: Int]
-  /// Counts by hour across all bridges
-  public let countsByHour: [Int: Int]
-  /// Counts by day of week across all bridges
-  public let countsByDayOfWeek: [Int: Int]
-  /// Peak activity times
-  public let peakActivityTimes: [String: Int]
-  /// Low activity times
-  public let lowActivityTimes: [String: Int]
+public struct TimeStatistics: Codable, Sendable {
+    public let countsByMinute: [String: Int]
+    public let countsByHour: [Int: Int]
+    public let countsByDayOfWeek: [Int: Int]
+    public let peakActivityTimes: [String: Int]
+    public let lowActivityTimes: [String: Int]
 
-  public init(countsByMinute: [String: Int],
-              countsByHour: [Int: Int],
-              countsByDayOfWeek: [Int: Int],
-              peakActivityTimes: [String: Int],
-              lowActivityTimes: [String: Int])
-  {
-    self.countsByMinute = countsByMinute
-    self.countsByHour = countsByHour
-    self.countsByDayOfWeek = countsByDayOfWeek
-    self.peakActivityTimes = peakActivityTimes
-    self.lowActivityTimes = lowActivityTimes
-  }
+    public init(
+        countsByMinute: [String: Int],
+        countsByHour: [Int: Int],
+        countsByDayOfWeek: [Int: Int],
+        peakActivityTimes: [String: Int],
+        lowActivityTimes: [String: Int]
+    ) {
+        self.countsByMinute = countsByMinute
+        self.countsByHour = countsByHour
+        self.countsByDayOfWeek = countsByDayOfWeek
+        self.peakActivityTimes = peakActivityTimes
+        self.lowActivityTimes = lowActivityTimes
+    }
 }
 
 /// Horizon coverage statistics
-public struct HorizonStatistics: Codable {
-  /// Available horizons in the data
-  public let availableHorizons: [Int]
-  /// Coverage by horizon (horizon -> coverage percentage)
-  public let coverageByHorizon: [Int: Double]
-  /// Bridge coverage by horizon (bridge -> horizon -> coverage)
-  public let bridgeCoverageByHorizon: [Int: [Int: Double]]
-  /// Missing horizons for each bridge
-  public let missingHorizonsByBridge: [Int: [Int]]
-  /// Gap analysis in horizon sequences
-  public let horizonGaps: [Int: [Int]]
-  /// Overall horizon completeness
-  public let overallCompleteness: Double
+public struct HorizonStatistics: Codable, Sendable {
+    public let availableHorizons: [Int]
+    public let coverageByHorizon: [Int: Double]
+    public let bridgeCoverageByHorizon: [Int: [Int: Double]]
+    public let missingHorizonsByBridge: [Int: [Int]]
+    public let horizonGaps: [Int: [Int]]
+    public let overallCompleteness: Double
 
-  public init(availableHorizons: [Int],
-              coverageByHorizon: [Int: Double],
-              bridgeCoverageByHorizon: [Int: [Int: Double]],
-              missingHorizonsByBridge: [Int: [Int]],
-              horizonGaps: [Int: [Int]],
-              overallCompleteness: Double)
-  {
-    self.availableHorizons = availableHorizons
-    self.coverageByHorizon = coverageByHorizon
-    self.bridgeCoverageByHorizon = bridgeCoverageByHorizon
-    self.missingHorizonsByBridge = missingHorizonsByBridge
-    self.horizonGaps = horizonGaps
-    self.overallCompleteness = overallCompleteness
-  }
+    public init(
+        availableHorizons: [Int],
+        coverageByHorizon: [Int: Double],
+        bridgeCoverageByHorizon: [Int: [Int: Double]],
+        missingHorizonsByBridge: [Int: [Int]],
+        horizonGaps: [Int: [Int]],
+        overallCompleteness: Double
+    ) {
+        self.availableHorizons = availableHorizons
+        self.coverageByHorizon = coverageByHorizon
+        self.bridgeCoverageByHorizon = bridgeCoverageByHorizon
+        self.missingHorizonsByBridge = missingHorizonsByBridge
+        self.horizonGaps = horizonGaps
+        self.overallCompleteness = overallCompleteness
+    }
 }
 
 /// Data quality metrics
-public struct DataQualityMetrics: Codable {
-  /// Percentage of records with complete data
-  public let dataCompleteness: Double
-  /// Percentage of records with valid timestamps
-  public let timestampValidity: Double
-  /// Percentage of records with valid bridge IDs
-  public let bridgeIDValidity: Double
-  /// Percentage of records with valid speed data
-  public let speedDataValidity: Double
-  /// Number of duplicate records
-  public let duplicateCount: Int
-  /// Number of records with missing required fields
-  public let missingFieldsCount: Int
-  /// Count of NaN values by field name
-  public let nanCounts: [String: Int]
-  /// Count of infinite values by field name
-  public let infiniteCounts: [String: Int]
-  /// Count of outlier values by field name
-  public let outlierCounts: [String: Int]
-  /// Count of range violations by field name
-  public let rangeViolations: [String: Int]
-  /// Count of null values by field name
-  public let nullCounts: [String: Int]
+public struct DataQualityMetrics: Codable, Sendable {
+    public let dataCompleteness: Double
+    public let timestampValidity: Double
+    public let bridgeIDValidity: Double
+    public let speedDataValidity: Double
+    public let duplicateCount: Int
+    public let missingFieldsCount: Int
+    public let nanCounts: [String: Int]
+    public let infiniteCounts: [String: Int]
+    public let outlierCounts: [String: Int]
+    public let rangeViolations: [String: Int]
+    public let nullCounts: [String: Int]
 
-  public init(dataCompleteness: Double,
-              timestampValidity: Double,
-              bridgeIDValidity: Double,
-              speedDataValidity: Double,
-              duplicateCount: Int,
-              missingFieldsCount: Int,
-              nanCounts: [String: Int] = [:],
-              infiniteCounts: [String: Int] = [:],
-              outlierCounts: [String: Int] = [:],
-              rangeViolations: [String: Int] = [:],
-              nullCounts: [String: Int] = [:])
-  {
-    self.dataCompleteness = dataCompleteness
-    self.timestampValidity = timestampValidity
-    self.bridgeIDValidity = bridgeIDValidity
-    self.speedDataValidity = speedDataValidity
-    self.duplicateCount = duplicateCount
-    self.missingFieldsCount = missingFieldsCount
-    self.nanCounts = nanCounts
-    self.infiniteCounts = infiniteCounts
-    self.outlierCounts = outlierCounts
-    self.rangeViolations = rangeViolations
-    self.nullCounts = nullCounts
-  }
+    public init(
+        dataCompleteness: Double,
+        timestampValidity: Double,
+        bridgeIDValidity: Double,
+        speedDataValidity: Double,
+        duplicateCount: Int,
+        missingFieldsCount: Int,
+        nanCounts: [String: Int] = [:],
+        infiniteCounts: [String: Int] = [:],
+        outlierCounts: [String: Int] = [:],
+        rangeViolations: [String: Int] = [:],
+        nullCounts: [String: Int] = [:]
+    ) {
+        self.dataCompleteness = dataCompleteness
+        self.timestampValidity = timestampValidity
+        self.bridgeIDValidity = bridgeIDValidity
+        self.speedDataValidity = speedDataValidity
+        self.duplicateCount = duplicateCount
+        self.missingFieldsCount = missingFieldsCount
+        self.nanCounts = nanCounts
+        self.infiniteCounts = infiniteCounts
+        self.outlierCounts = outlierCounts
+        self.rangeViolations = rangeViolations
+        self.nullCounts = nullCounts
+    }
 }
 
 // MARK: - Data Statistics Service
 
-/// Service for generating comprehensive statistics and artifacts from bridge data
 public class DataStatisticsService {
-  /// Generates comprehensive statistics from probe tick data
-  /// - Parameter ticks: Array of probe tick data
-  /// - Returns: Complete statistics including bridge, time, and horizon analysis
-  public func generateStatistics(from ticks: [ProbeTickRaw])
-    -> BridgeDataStatistics
-  {
-    let summary = generateSummary(from: ticks)
-    let bridgeStats = generateBridgeStatistics(from: ticks)
-    let timeStats = generateTimeStatistics(from: ticks)
-    let horizonStats = generateHorizonStatistics(from: ticks)
-    let qualityMetrics = generateQualityMetrics(from: ticks)
+    public init() {}
 
-    return BridgeDataStatistics(summary: summary,
-                                bridgeStats: bridgeStats,
-                                timeStats: timeStats,
-                                horizonStats: horizonStats,
-                                qualityMetrics: qualityMetrics)
-  }
+    public func generateStatistics(from ticks: [ProbeTickRaw])
+        -> BridgeDataStatistics
+    {
+        let summary = generateSummary(from: ticks)
+        let bridgeStats = generateBridgeStatistics(from: ticks)
+        let timeStats = generateTimeStatistics(from: ticks)
+        let horizonStats = generateHorizonStatistics(from: ticks)
+        let qualityMetrics = generateQualityMetrics(from: ticks)
 
-  /// Generates comprehensive statistics from feature vectors
-  /// - Parameter features: Array of feature vectors
-  /// - Returns: Complete statistics including bridge, time, and horizon analysis
-  public func generateStatistics(from features: [FeatureVector])
-    -> BridgeDataStatistics
-  {
-    let summary = generateSummary(from: features)
-    let bridgeStats = generateBridgeStatistics(from: features)
-    let timeStats = generateTimeStatistics(from: features)
-    let horizonStats = generateHorizonStatistics(from: features)
-    let qualityMetrics = generateQualityMetrics(from: features)
-
-    return BridgeDataStatistics(summary: summary,
-                                bridgeStats: bridgeStats,
-                                timeStats: timeStats,
-                                horizonStats: horizonStats,
-                                qualityMetrics: qualityMetrics)
-  }
-
-  // MARK: - Private Methods
-
-  private func generateSummary(from ticks: [ProbeTickRaw]) -> DataSummary {
-    let totalRecords = ticks.count
-    let uniqueBridges = Set(ticks.map { $0.bridge_id }).count
-
-    let timestamps = ticks.compactMap { tick in
-      ISO8601DateFormatter().date(from: tick.ts_utc)
-    }.sorted()
-
-    let dateRange = DateRange(firstTimestamp: timestamps.first ?? Date(),
-                              lastTimestamp: timestamps.last ?? Date())
-
-    let completenessPercentage = calculateCompleteness(from: ticks)
-
-    return DataSummary(totalRecords: totalRecords,
-                       uniqueBridges: uniqueBridges,
-                       dateRange: dateRange,
-                       completenessPercentage: completenessPercentage)
-  }
-
-  private func generateSummary(from features: [FeatureVector]) -> DataSummary {
-    let totalRecords = features.count
-    let uniqueBridges = Set(features.map { $0.bridge_id }).count
-
-    // For features, we don't have direct timestamps, so we'll use a placeholder
-    let dateRange = DateRange(firstTimestamp: Date(),
-                              lastTimestamp: Date())
-
-    let completenessPercentage = calculateCompleteness(from: features)
-
-    return DataSummary(totalRecords: totalRecords,
-                       uniqueBridges: uniqueBridges,
-                       dateRange: dateRange,
-                       completenessPercentage: completenessPercentage)
-  }
-
-  private func generateBridgeStatistics(from ticks: [ProbeTickRaw]) -> [
-    Int:
-      BridgeStatistics
-  ] {
-    var bridgeStats: [Int: BridgeStatistics] = [:]
-
-    let bridgeGroups = Dictionary(grouping: ticks) { $0.bridge_id }
-
-    for (bridgeID, bridgeTicks) in bridgeGroups {
-      let recordCount = bridgeTicks.count
-
-      let timestamps = bridgeTicks.compactMap { tick in
-        ISO8601DateFormatter().date(from: tick.ts_utc)
-      }.sorted()
-
-      let firstTimestamp = timestamps.first ?? Date()
-      let lastTimestamp = timestamps.last ?? Date()
-
-      let countsByMinute = calculateCountsByMinute(from: bridgeTicks)
-      let countsByHour = calculateCountsByHour(from: bridgeTicks)
-      let countsByDayOfWeek = calculateCountsByDayOfWeek(
-        from: bridgeTicks
-      )
-
-      let completenessPercentage = calculateBridgeCompleteness(
-        from: bridgeTicks
-      )
-
-      bridgeStats[bridgeID] = BridgeStatistics(bridgeID: bridgeID,
-                                               recordCount: recordCount,
-                                               firstTimestamp: firstTimestamp,
-                                               lastTimestamp: lastTimestamp,
-                                               countsByMinute: countsByMinute,
-                                               countsByHour: countsByHour,
-                                               countsByDayOfWeek: countsByDayOfWeek,
-                                               completenessPercentage: completenessPercentage)
+        return BridgeDataStatistics(
+            summary: summary,
+            bridgeStats: bridgeStats,
+            timeStats: timeStats,
+            horizonStats: horizonStats,
+            qualityMetrics: qualityMetrics
+        )
     }
 
-    return bridgeStats
-  }
+    public func generateStatistics(from features: [FeatureVector])
+        -> BridgeDataStatistics
+    {
+        let summary = generateSummary(from: features)
+        let bridgeStats = generateBridgeStatistics(from: features)
+        let timeStats = generateTimeStatistics(from: features)
+        let horizonStats = generateHorizonStatistics(from: features)
+        let qualityMetrics = generateQualityMetrics(from: features)
 
-  private func generateBridgeStatistics(from features: [FeatureVector])
-    -> [Int: BridgeStatistics]
-  {
-    var bridgeStats: [Int: BridgeStatistics] = [:]
-
-    let bridgeGroups = Dictionary(grouping: features) { $0.bridge_id }
-
-    for (bridgeID, bridgeFeatures) in bridgeGroups {
-      let recordCount = bridgeFeatures.count
-
-      // For features, we don't have direct timestamps
-      let firstTimestamp = Date()
-      let lastTimestamp = Date()
-
-      let countsByMinute: [String: Int] = [:]  // Placeholder
-      let countsByHour: [Int: Int] = [:]  // Placeholder
-      let countsByDayOfWeek: [Int: Int] = [:]  // Placeholder
-
-      let completenessPercentage = calculateBridgeCompleteness(
-        from: bridgeFeatures
-      )
-
-      bridgeStats[bridgeID] = BridgeStatistics(bridgeID: bridgeID,
-                                               recordCount: recordCount,
-                                               firstTimestamp: firstTimestamp,
-                                               lastTimestamp: lastTimestamp,
-                                               countsByMinute: countsByMinute,
-                                               countsByHour: countsByHour,
-                                               countsByDayOfWeek: countsByDayOfWeek,
-                                               completenessPercentage: completenessPercentage)
+        return BridgeDataStatistics(
+            summary: summary,
+            bridgeStats: bridgeStats,
+            timeStats: timeStats,
+            horizonStats: horizonStats,
+            qualityMetrics: qualityMetrics
+        )
     }
 
-    return bridgeStats
-  }
+    // MARK: - Helpers for ProbeTickRaw
 
-  private func generateTimeStatistics(from ticks: [ProbeTickRaw])
-    -> TimeStatistics
-  {
-    let countsByMinute = calculateCountsByMinute(from: ticks)
-    let countsByHour = calculateCountsByHour(from: ticks)
-    let countsByDayOfWeek = calculateCountsByDayOfWeek(from: ticks)
+    private func generateSummary(from ticks: [ProbeTickRaw]) -> DataSummary {
+        let total = ticks.count
+        let uniqueBridges = Set(ticks.map { $0.bridge_id }).count
+        let iso = ISO8601DateFormatter()
 
-    let peakActivityTimes = findPeakActivityTimes(from: countsByHour)
-    let lowActivityTimes = findLowActivityTimes(from: countsByHour)
+        let dates = ticks.compactMap { iso.date(from: $0.ts_utc) }
+        let first = dates.min() ?? Date()
+        let last = dates.max() ?? first
 
-    return TimeStatistics(countsByMinute: countsByMinute,
-                          countsByHour: countsByHour,
-                          countsByDayOfWeek: countsByDayOfWeek,
-                          peakActivityTimes: peakActivityTimes,
-                          lowActivityTimes: lowActivityTimes)
-  }
+        // Simple completeness: fraction of ticks with a parsable timestamp
+        let completeness = total > 0 ? Double(dates.count) / Double(total) : 0.0
 
-  private func generateTimeStatistics(from _: [FeatureVector])
-    -> TimeStatistics
-  {
-    // For features, we don't have direct timestamps, so we'll use placeholders
-    let countsByMinute: [String: Int] = [:]
-    let countsByHour: [Int: Int] = [:]
-    let countsByDayOfWeek: [Int: Int] = [:]
-    let peakActivityTimes: [String: Int] = [:]
-    let lowActivityTimes: [String: Int] = [:]
-
-    return TimeStatistics(countsByMinute: countsByMinute,
-                          countsByHour: countsByHour,
-                          countsByDayOfWeek: countsByDayOfWeek,
-                          peakActivityTimes: peakActivityTimes,
-                          lowActivityTimes: lowActivityTimes)
-  }
-
-  private func generateHorizonStatistics(from ticks: [ProbeTickRaw])
-    -> HorizonStatistics
-  {
-    // For ticks, we need to extract horizon information from the data structure
-    // This is a placeholder implementation - you'll need to adapt based on your actual data
-    let availableHorizons = detectAvailableHorizons(from: ticks)
-    let coverageByHorizon = calculateCoverageByHorizon(from: ticks,
-                                                       horizons: availableHorizons)
-    let bridgeCoverageByHorizon = calculateBridgeCoverageByHorizon(from: ticks,
-                                                                   horizons: availableHorizons)
-    let missingHorizonsByBridge = calculateMissingHorizonsByBridge(from: ticks,
-                                                                   horizons: availableHorizons)
-    let horizonGaps = detectHorizonGaps(in: availableHorizons)
-    let overallCompleteness = calculateOverallHorizonCompleteness(from: ticks,
-                                                                  horizons: availableHorizons)
-
-    return HorizonStatistics(availableHorizons: availableHorizons,
-                             coverageByHorizon: coverageByHorizon,
-                             bridgeCoverageByHorizon: bridgeCoverageByHorizon,
-                             missingHorizonsByBridge: missingHorizonsByBridge,
-                             horizonGaps: horizonGaps,
-                             overallCompleteness: overallCompleteness)
-  }
-
-  private func generateHorizonStatistics(from features: [FeatureVector])
-    -> HorizonStatistics
-  {
-    let availableHorizons = Set(features.map { $0.horizon_min }).sorted()
-    let coverageByHorizon = calculateCoverageByHorizon(from: features,
-                                                       horizons: availableHorizons)
-    let bridgeCoverageByHorizon = calculateBridgeCoverageByHorizon(from: features,
-                                                                   horizons: availableHorizons)
-    let missingHorizonsByBridge = calculateMissingHorizonsByBridge(from: features,
-                                                                   horizons: availableHorizons)
-    let horizonGaps = detectHorizonGaps(in: availableHorizons)
-    let overallCompleteness = calculateOverallHorizonCompleteness(from: features,
-                                                                  horizons: availableHorizons)
-
-    return HorizonStatistics(availableHorizons: availableHorizons,
-                             coverageByHorizon: coverageByHorizon,
-                             bridgeCoverageByHorizon: bridgeCoverageByHorizon,
-                             missingHorizonsByBridge: missingHorizonsByBridge,
-                             horizonGaps: horizonGaps,
-                             overallCompleteness: overallCompleteness)
-  }
-
-  private func generateQualityMetrics(from ticks: [ProbeTickRaw])
-    -> DataQualityMetrics
-  {
-    let dataCompleteness = calculateDataCompleteness(from: ticks)
-    let timestampValidity = calculateTimestampValidity(from: ticks)
-    let bridgeIDValidity = calculateBridgeIDValidity(from: ticks)
-    let speedDataValidity = calculateSpeedDataValidity(from: ticks)
-    let duplicateCount = calculateDuplicateCount(from: ticks)
-    let missingFieldsCount = calculateMissingFieldsCount(from: ticks)
-
-    return DataQualityMetrics(dataCompleteness: dataCompleteness,
-                              timestampValidity: timestampValidity,
-                              bridgeIDValidity: bridgeIDValidity,
-                              speedDataValidity: speedDataValidity,
-                              duplicateCount: duplicateCount,
-                              missingFieldsCount: missingFieldsCount)
-  }
-
-  private func generateQualityMetrics(from features: [FeatureVector])
-    -> DataQualityMetrics
-  {
-    let dataCompleteness = calculateDataCompleteness(from: features)
-    let timestampValidity = 1.0  // Features don't have timestamps
-    let bridgeIDValidity = calculateBridgeIDValidity(from: features)
-    let speedDataValidity = calculateSpeedDataValidity(from: features)
-    let duplicateCount = calculateDuplicateCount(from: features)
-    let missingFieldsCount = calculateMissingFieldsCount(from: features)
-
-    return DataQualityMetrics(dataCompleteness: dataCompleteness,
-                              timestampValidity: timestampValidity,
-                              bridgeIDValidity: bridgeIDValidity,
-                              speedDataValidity: speedDataValidity,
-                              duplicateCount: duplicateCount,
-                              missingFieldsCount: missingFieldsCount)
-  }
-
-  // MARK: - Helper Methods
-
-  private func calculateCountsByMinute(from ticks: [ProbeTickRaw]) -> [
-    String:
-      Int
-  ] {
-    var counts: [String: Int] = [:]
-
-    for tick in ticks {
-      guard let date = ISO8601DateFormatter().date(from: tick.ts_utc)
-      else { continue }
-      let calendar = Calendar.current
-      let hour = calendar.component(.hour, from: date)
-      let minute = calendar.component(.minute, from: date)
-      let key = String(format: "%02d:%02d", hour, minute)
-      counts[key, default: 0] += 1
+        return DataSummary(
+            totalRecords: total,
+            uniqueBridges: uniqueBridges,
+            dateRange: DateRange(
+                firstTimestamp: first,
+                lastTimestamp: last
+            ),
+            completenessPercentage: completeness
+        )
     }
 
-    return counts
-  }
+    private func generateBridgeStatistics(from ticks: [ProbeTickRaw])
+        -> [Int: BridgeStatistics]
+    {
+        let iso = ISO8601DateFormatter()
+        let calendar = Calendar(identifier: .iso8601)
 
-  private func calculateCountsByHour(from ticks: [ProbeTickRaw]) -> [Int: Int] {
-    var counts: [Int: Int] = [:]
+        var result: [Int: BridgeStatistics] = [:]
+        let groups = Dictionary(grouping: ticks, by: { $0.bridge_id })
 
-    for tick in ticks {
-      guard let date = ISO8601DateFormatter().date(from: tick.ts_utc)
-      else { continue }
-      let calendar = Calendar.current
-      let hour = calendar.component(.hour, from: date)
-      counts[hour, default: 0] += 1
-    }
+        for (bridgeID, items) in groups {
+            let parsed = items.compactMap { (item) -> (Date, ProbeTickRaw)? in
+                guard let d = iso.date(from: item.ts_utc) else { return nil }
+                return (d, item)
+            }.sorted(by: { $0.0 < $1.0 })
 
-    return counts
-  }
+            let recordCount = items.count
+            let first = parsed.first?.0 ?? Date()
+            let last = parsed.last?.0 ?? first
 
-  private func calculateCountsByDayOfWeek(from ticks: [ProbeTickRaw]) -> [
-    Int:
-      Int
-  ] {
-    var counts: [Int: Int] = [:]
+            var countsByMinute: [String: Int] = [:]
+            var countsByHour: [Int: Int] = [:]
+            var countsByDOW: [Int: Int] = [:]
 
-    for tick in ticks {
-      guard let date = ISO8601DateFormatter().date(from: tick.ts_utc)
-      else { continue }
-      let calendar = Calendar.current
-      let dayOfWeek = calendar.component(.weekday, from: date) - 1  // 0 = Sunday
-      counts[dayOfWeek, default: 0] += 1
-    }
+            for (date, _) in parsed {
+                let hour = calendar.component(.hour, from: date)
+                let minute = calendar.component(.minute, from: date)
+                let key = String(format: "%02d:%02d", hour, minute)
+                countsByMinute[key, default: 0] += 1
+                countsByHour[hour, default: 0] += 1
+                let dow = calendar.component(.weekday, from: date)  // 1...7
+                countsByDOW[dow, default: 0] += 1
+            }
 
-    return counts
-  }
+            // Rudimentary "completeness": share of rows with parsed timestamp
+            let completeness =
+                recordCount > 0
+                ? Double(parsed.count) / Double(recordCount) : 0.0
 
-  private func findPeakActivityTimes(from countsByHour: [Int: Int])
-    -> [String: Int]
-  {
-    let sorted = countsByHour.sorted { $0.value > $1.value }
-    let top3 = Array(sorted.prefix(3))
-    return Dictionary(
-      uniqueKeysWithValues: top3.map {
-        (String(format: "%02d:00", $0.key), $0.value)
-      }
-    )
-  }
-
-  private func findLowActivityTimes(from countsByHour: [Int: Int]) -> [
-    String:
-      Int
-  ] {
-    let sorted = countsByHour.sorted { $0.value < $1.value }
-    let bottom3 = Array(sorted.prefix(3))
-    return Dictionary(
-      uniqueKeysWithValues: bottom3.map {
-        (String(format: "%02d:00", $0.key), $0.value)
-      }
-    )
-  }
-
-  private func detectAvailableHorizons(from _: [ProbeTickRaw]) -> [Int] {
-    // This is a placeholder - you'll need to implement based on your actual data structure
-    return [0, 3, 6, 9, 12]
-  }
-
-  private func calculateCoverageByHorizon(from _: [ProbeTickRaw],
-                                          horizons: [Int]) -> [Int: Double]
-  {
-    // Placeholder implementation
-    var coverage: [Int: Double] = [:]
-    for horizon in horizons {
-      coverage[horizon] = 0.8  // Placeholder value
-    }
-    return coverage
-  }
-
-  private func calculateCoverageByHorizon(from features: [FeatureVector],
-                                          horizons: [Int]) -> [
-    Int:
-      Double
-  ] {
-    var coverage: [Int: Double] = [:]
-
-    for horizon in horizons {
-      let horizonFeatures = features.filter { $0.horizon_min == horizon }
-      let coveragePercentage =
-        Double(horizonFeatures.count) / Double(features.count)
-      coverage[horizon] = coveragePercentage
-    }
-
-    return coverage
-  }
-
-  private func calculateBridgeCoverageByHorizon(from _: [ProbeTickRaw],
-                                                horizons _: [Int]) -> [
-    Int:
-      [Int: Double]
-  ] {
-    // Placeholder implementation
-    return [:]
-  }
-
-  private func calculateBridgeCoverageByHorizon(from features: [FeatureVector],
-                                                horizons: [Int])
-    -> [Int: [Int: Double]]
-  {
-    var bridgeCoverage: [Int: [Int: Double]] = [:]
-    let bridgeGroups = Dictionary(grouping: features) { $0.bridge_id }
-
-    for (bridgeID, bridgeFeatures) in bridgeGroups {
-      var horizonCoverage: [Int: Double] = [:]
-
-      for horizon in horizons {
-        let horizonFeatures = bridgeFeatures.filter {
-          $0.horizon_min == horizon
+            result[bridgeID] = BridgeStatistics(
+                bridgeID: bridgeID,
+                recordCount: recordCount,
+                firstTimestamp: first,
+                lastTimestamp: last,
+                countsByMinute: countsByMinute,
+                countsByHour: countsByHour,
+                countsByDayOfWeek: countsByDOW,
+                completenessPercentage: completeness
+            )
         }
-        let coveragePercentage =
-          Double(horizonFeatures.count) / Double(bridgeFeatures.count)
-        horizonCoverage[horizon] = coveragePercentage
-      }
 
-      bridgeCoverage[bridgeID] = horizonCoverage
+        return result
     }
 
-    return bridgeCoverage
-  }
+    private func generateTimeStatistics(from ticks: [ProbeTickRaw])
+        -> TimeStatistics
+    {
+        let iso = ISO8601DateFormatter()
+        let calendar = Calendar(identifier: .iso8601)
 
-  private func calculateMissingHorizonsByBridge(from _: [ProbeTickRaw],
-                                                horizons _: [Int]) -> [
-    Int:
-      [Int]
-  ] {
-    // Placeholder implementation
-    return [:]
-  }
+        var countsByMinute: [String: Int] = [:]
+        var countsByHour: [Int: Int] = [:]
+        var countsByDOW: [Int: Int] = [:]
 
-  private func calculateMissingHorizonsByBridge(from features: [FeatureVector],
-                                                horizons: [Int])
-    -> [Int: [Int]]
-  {
-    var missingHorizons: [Int: [Int]] = [:]
-    let bridgeGroups = Dictionary(grouping: features) { $0.bridge_id }
-
-    for (bridgeID, bridgeFeatures) in bridgeGroups {
-      let bridgeHorizons = Set(bridgeFeatures.map { $0.horizon_min })
-      let missing = horizons.filter { !bridgeHorizons.contains($0) }
-      missingHorizons[bridgeID] = missing
-    }
-
-    return missingHorizons
-  }
-
-  private func detectHorizonGaps(in horizons: [Int]) -> [Int: [Int]] {
-    var gaps: [Int: [Int]] = [:]
-
-    for i in 0 ..< (horizons.count - 1) {
-      let current = horizons[i]
-      let next = horizons[i + 1]
-      let expectedNext = current + 3  // Assuming 3-minute intervals
-
-      if next != expectedNext {
-        var missing: [Int] = []
-        for missingHorizon in stride(from: expectedNext,
-                                     to: next,
-                                     by: 3)
-        {
-          missing.append(missingHorizon)
+        for t in ticks {
+            guard let d = iso.date(from: t.ts_utc) else { continue }
+            let hour = calendar.component(.hour, from: d)
+            let minute = calendar.component(.minute, from: d)
+            let key = String(format: "%02d:%02d", hour, minute)
+            countsByMinute[key, default: 0] += 1
+            countsByHour[hour, default: 0] += 1
+            let dow = calendar.component(.weekday, from: d)
+            countsByDOW[dow, default: 0] += 1
         }
-        gaps[current] = missing
-      }
+
+        func topN(_ dict: [String: Int], n: Int) -> [String: Int] {
+            return Dictionary(
+                uniqueKeysWithValues:
+                    dict
+                    .sorted { $0.value > $1.value }
+                    .prefix(n)
+                    .map { ($0.key, $0.value) }
+            )
+        }
+        func bottomN(_ dict: [String: Int], n: Int) -> [String: Int] {
+            return Dictionary(
+                uniqueKeysWithValues:
+                    dict
+                    .sorted { $0.value < $1.value }
+                    .prefix(n)
+                    .map { ($0.key, $0.value) }
+            )
+        }
+
+        let peaks = topN(countsByMinute, n: 5)
+        let lows = bottomN(countsByMinute, n: 5)
+
+        return TimeStatistics(
+            countsByMinute: countsByMinute,
+            countsByHour: countsByHour,
+            countsByDayOfWeek: countsByDOW,
+            peakActivityTimes: peaks,
+            lowActivityTimes: lows
+        )
     }
 
-    return gaps
-  }
+    private func generateHorizonStatistics(from _: [ProbeTickRaw])
+        -> HorizonStatistics
+    {
+        // ProbeTickRaw does not encode horizons directly; use defaults with zero coverage
+        let available = defaultHorizons
+        let coverageByH: [Int: Double] = Dictionary(
+            uniqueKeysWithValues:
+                available.map { ($0, 0.0) }
+        )
+        let bridgeCoverage: [Int: [Int: Double]] = [:]
+        let missingByBridge: [Int: [Int]] = [:]
+        let gaps: [Int: [Int]] = [:]
+        let overall = 0.0
 
-  private func calculateOverallHorizonCompleteness(from _: [ProbeTickRaw],
-                                                   horizons _: [Int])
-    -> Double
-  {
-    // Placeholder implementation
-    return 0.85
-  }
-
-  private func calculateOverallHorizonCompleteness(from features: [FeatureVector],
-                                                   horizons: [Int])
-    -> Double
-  {
-    let totalExpected = features.count * horizons.count
-    let totalCovered = features.count
-
-    return totalExpected > 0
-      ? Double(totalCovered) / Double(totalExpected) : 0.0
-  }
-
-  private func calculateCompleteness(from ticks: [ProbeTickRaw]) -> Double {
-    let validTicks = ticks.filter { tick in
-      !tick.ts_utc.isEmpty && tick.bridge_id > 0
-        && ISO8601DateFormatter().date(from: tick.ts_utc) != nil
+        return HorizonStatistics(
+            availableHorizons: available,
+            coverageByHorizon: coverageByH,
+            bridgeCoverageByHorizon: bridgeCoverage,
+            missingHorizonsByBridge: missingByBridge,
+            horizonGaps: gaps,
+            overallCompleteness: overall
+        )
     }
 
-    return ticks.count > 0
-      ? Double(validTicks.count) / Double(ticks.count) : 0.0
-  }
+    private func generateQualityMetrics(from ticks: [ProbeTickRaw])
+        -> DataQualityMetrics
+    {
+        let total = ticks.count
+        let iso = ISO8601DateFormatter()
 
-  private func calculateCompleteness(from features: [FeatureVector]) -> Double {
-    let validFeatures = features.filter { feature in
-      feature.bridge_id > 0 && feature.horizon_min >= 0
+        // Timestamp validity
+        let validTS = ticks.filter { iso.date(from: $0.ts_utc) != nil }.count
+        let timestampValidity =
+            total > 0 ? Double(validTS) / Double(total) : 0.0
+
+        // Bridge ID validity (positive integers)
+        let validBridge = ticks.filter { $0.bridge_id > 0 }.count
+        let bridgeIDValidity =
+            total > 0 ? Double(validBridge) / Double(total) : 0.0
+
+        // Speed validity (if present, within [0, 120] mph)
+        var speedPresent = 0
+        var speedValid = 0
+        var rangeViolations: [String: Int] = [:]
+        for t in ticks {
+            if let s = t.current_traffic_speed {
+                speedPresent += 1
+                if s >= 0, s <= 120 { speedValid += 1 }
+                if s < 0 || s > 120 {
+                    rangeViolations["current_traffic_speed", default: 0] += 1
+                }
+            }
+            if let s = t.normal_traffic_speed {
+                speedPresent += 1
+                if s >= 0, s <= 120 { speedValid += 1 }
+                if s < 0 || s > 120 {
+                    rangeViolations["normal_traffic_speed", default: 0] += 1
+                }
+            }
+        }
+        let speedDataValidity =
+            speedPresent > 0 ? Double(speedValid) / Double(speedPresent) : 1.0
+
+        // Duplicates by (bridge_id, ts_utc)
+        var seen: Set<String> = []
+        var duplicateCount = 0
+        for t in ticks {
+            let key = "\(t.bridge_id)|\(t.ts_utc)"
+            if seen.contains(key) {
+                duplicateCount += 1
+            } else {
+                seen.insert(key)
+            }
+        }
+
+        // Missing fields (simple count of critical optionals that are nil)
+        var missingFieldsCount = 0
+        var nullCounts: [String: Int] = [:]
+        for t in ticks {
+            if t.gate_anom == nil {
+                missingFieldsCount += 1
+                nullCounts["gate_anom", default: 0] += 1
+            }
+            if t.detour_delta == nil {
+                missingFieldsCount += 1
+                nullCounts["detour_delta", default: 0] += 1
+            }
+            if t.cross_k == nil {
+                missingFieldsCount += 1
+                nullCounts["cross_k", default: 0] += 1
+            }
+            if t.cross_n == nil {
+                missingFieldsCount += 1
+                nullCounts["cross_n", default: 0] += 1
+            }
+            if t.via_routable == nil {
+                missingFieldsCount += 1
+                nullCounts["via_routable", default: 0] += 1
+            }
+            if t.via_penalty_sec == nil {
+                missingFieldsCount += 1
+                nullCounts["via_penalty_sec", default: 0] += 1
+            }
+            if t.alternates_total == nil {
+                missingFieldsCount += 1
+                nullCounts["alternates_total", default: 0] += 1
+            }
+            if t.alternates_avoid == nil {
+                missingFieldsCount += 1
+                nullCounts["alternates_avoid", default: 0] += 1
+            }
+            if t.detour_frac == nil {
+                missingFieldsCount += 1
+                nullCounts["detour_frac", default: 0] += 1
+            }
+            if t.current_traffic_speed == nil {
+                nullCounts["current_traffic_speed", default: 0] += 1
+            }
+            if t.normal_traffic_speed == nil {
+                nullCounts["normal_traffic_speed", default: 0] += 1
+            }
+        }
+
+        // NaN / Infinite / Outliers
+        var nanCounts: [String: Int] = [:]
+        var infCounts: [String: Int] = [:]
+        var outlierCounts: [String: Int] = [:]
+
+        func track(_ name: String, _ v: Double?) {
+            guard let v = v else { return }
+            if v.isNaN { nanCounts[name, default: 0] += 1 }
+            if v.isInfinite { infCounts[name, default: 0] += 1 }
+        }
+
+        for t in ticks {
+            track("cross_k", t.cross_k)
+            track("cross_n", t.cross_n)
+            track("via_routable", t.via_routable)
+            track("via_penalty_sec", t.via_penalty_sec)
+            track("gate_anom", t.gate_anom)
+            track("alternates_total", t.alternates_total)
+            track("alternates_avoid", t.alternates_avoid)
+            track("detour_delta", t.detour_delta)
+            track("detour_frac", t.detour_frac)
+            track("current_traffic_speed", t.current_traffic_speed)
+            track("normal_traffic_speed", t.normal_traffic_speed)
+
+            if let dd = t.detour_delta, abs(dd) > 1000 {
+                outlierCounts["detour_delta", default: 0] += 1
+            }
+        }
+
+        // Data completeness as share of non-missing critical fields among records
+        let dataCompleteness: Double = {
+            if total == 0 { return 0.0 }
+            // consider timestamp parse + non-nil gate_anom as simple proxy
+            let ok = ticks.filter {
+                iso.date(from: $0.ts_utc) != nil && $0.gate_anom != nil
+            }.count
+            return Double(ok) / Double(total)
+        }()
+
+        return DataQualityMetrics(
+            dataCompleteness: dataCompleteness,
+            timestampValidity: timestampValidity,
+            bridgeIDValidity: bridgeIDValidity,
+            speedDataValidity: speedDataValidity,
+            duplicateCount: duplicateCount,
+            missingFieldsCount: missingFieldsCount,
+            nanCounts: nanCounts,
+            infiniteCounts: infCounts,
+            outlierCounts: outlierCounts,
+            rangeViolations: rangeViolations,
+            nullCounts: nullCounts
+        )
     }
 
-    return features.count > 0
-      ? Double(validFeatures.count) / Double(features.count) : 0.0
-  }
+    // MARK: - Helpers for FeatureVector
 
-  private func calculateBridgeCompleteness(from ticks: [ProbeTickRaw])
-    -> Double
-  {
-    return calculateCompleteness(from: ticks)
-  }
+    private func generateSummary(from features: [FeatureVector]) -> DataSummary
+    {
+        let total = features.count
+        let uniqueBridges = Set(features.map { $0.bridge_id }).count
+        // FeatureVector has no timestamps; use a degenerate date range
+        let now = Date()
+        let dateRange = DateRange(firstTimestamp: now, lastTimestamp: now)
+        // Simple completeness: presence of all features (always true here)
+        let completeness = total > 0 ? 1.0 : 0.0
 
-  private func calculateBridgeCompleteness(from features: [FeatureVector])
-    -> Double
-  {
-    return calculateCompleteness(from: features)
-  }
-
-  private func calculateDataCompleteness(from ticks: [ProbeTickRaw]) -> Double {
-    let completeTicks = ticks.filter { tick in
-      !tick.ts_utc.isEmpty && tick.bridge_id > 0 && tick.open_label >= 0
+        return DataSummary(
+            totalRecords: total,
+            uniqueBridges: uniqueBridges,
+            dateRange: dateRange,
+            completenessPercentage: completeness
+        )
     }
 
-    return ticks.count > 0
-      ? Double(completeTicks.count) / Double(ticks.count) : 0.0
-  }
+    private func generateBridgeStatistics(from features: [FeatureVector])
+        -> [Int: BridgeStatistics]
+    {
+        // Without timestamps in FeatureVector, synthesize minimal stats
+        var result: [Int: BridgeStatistics] = [:]
+        let groups = Dictionary(grouping: features, by: { $0.bridge_id })
+        let now = Date()
 
-  private func calculateDataCompleteness(from features: [FeatureVector])
-    -> Double
-  {
-    let completeFeatures = features.filter { feature in
-      feature.bridge_id > 0 && feature.horizon_min >= 0
-        && feature.target >= 0
+        for (bridgeID, items) in groups {
+            let recordCount = items.count
+            let countsByMinute: [String: Int] = [:]
+            let countsByHour: [Int: Int] = [:]
+            let countsByDOW: [Int: Int] = [:]
+            let completeness = 1.0
+
+            result[bridgeID] = BridgeStatistics(
+                bridgeID: bridgeID,
+                recordCount: recordCount,
+                firstTimestamp: now,
+                lastTimestamp: now,
+                countsByMinute: countsByMinute,
+                countsByHour: countsByHour,
+                countsByDayOfWeek: countsByDOW,
+                completenessPercentage: completeness
+            )
+        }
+
+        return result
     }
 
-    return features.count > 0
-      ? Double(completeFeatures.count) / Double(features.count) : 0.0
-  }
-
-  private func calculateTimestampValidity(from ticks: [ProbeTickRaw])
-    -> Double
-  {
-    let validTimestamps = ticks.filter { tick in
-      ISO8601DateFormatter().date(from: tick.ts_utc) != nil
+    private func generateTimeStatistics(from _: [FeatureVector])
+        -> TimeStatistics
+    {
+        // No time information in FeatureVector; return empty distributions
+        return TimeStatistics(
+            countsByMinute: [:],
+            countsByHour: [:],
+            countsByDayOfWeek: [:],
+            peakActivityTimes: [:],
+            lowActivityTimes: [:]
+        )
     }
 
-    return ticks.count > 0
-      ? Double(validTimestamps.count) / Double(ticks.count) : 0.0
-  }
+    private func generateHorizonStatistics(from features: [FeatureVector])
+        -> HorizonStatistics
+    {
+        let available = Array(Set(features.map { $0.horizon_min })).sorted()
 
-  private func calculateBridgeIDValidity(from ticks: [ProbeTickRaw]) -> Double {
-    let validBridgeIDs = ticks.filter { tick in
-      tick.bridge_id > 0
+        // Coverage by horizon: fraction of bridges that have at least one feature for that horizon
+        let bridges = Set(features.map { $0.bridge_id })
+        let totalBridges = bridges.count
+
+        var coverageByH: [Int: Double] = [:]
+        var bridgeCoverage: [Int: [Int: Double]] = [:]
+        var missingByBridge: [Int: [Int]] = [:]
+        var gapsByBridge: [Int: [Int]] = [:]
+
+        let featuresByBridge = Dictionary(
+            grouping: features,
+            by: { $0.bridge_id }
+        )
+
+        for h in available {
+            let bridgesWithH = Set(
+                features.filter { $0.horizon_min == h }.map { $0.bridge_id }
+            )
+            let frac =
+                totalBridges > 0
+                ? Double(bridgesWithH.count) / Double(totalBridges) : 0.0
+            coverageByH[h] = frac
+        }
+
+        for bridge in bridges {
+            let hSet = Set(
+                featuresByBridge[bridge, default: []].map { $0.horizon_min }
+            )
+            var perBridge: [Int: Double] = [:]
+            for h in available {
+                perBridge[h] = hSet.contains(h) ? 1.0 : 0.0
+            }
+            bridgeCoverage[bridge] = perBridge
+
+            let missing = Set(available).subtracting(hSet).sorted()
+            missingByBridge[bridge] = missing
+
+            // Simple gap detection assuming step 3 between horizons
+            let sortedH = hSet.sorted()
+            var gaps: [Int] = []
+            if sortedH.count > 1 {
+                for i in 0..<(sortedH.count - 1) {
+                    let a = sortedH[i]
+                    let b = sortedH[i + 1]
+                    var expected = a + 3
+                    while expected < b {
+                        gaps.append(expected)
+                        expected += 3
+                    }
+                }
+            }
+            gapsByBridge[bridge] = gaps
+        }
+
+        // Overall completeness: average of per-bridge horizon coverage
+        let perBridgeCoverage: [Double] = bridgeCoverage.values.map { dict in
+            if dict.isEmpty { return 0.0 }
+            let covered = dict.values.filter { $0 > 0.0 }.count
+            return Double(covered) / Double(dict.count)
+        }
+        let overall =
+            perBridgeCoverage.isEmpty
+            ? 0.0
+            : perBridgeCoverage.reduce(0, +) / Double(perBridgeCoverage.count)
+
+        return HorizonStatistics(
+            availableHorizons: available,
+            coverageByHorizon: coverageByH,
+            bridgeCoverageByHorizon: bridgeCoverage,
+            missingHorizonsByBridge: missingByBridge,
+            horizonGaps: gapsByBridge,
+            overallCompleteness: overall
+        )
     }
 
-    return ticks.count > 0
-      ? Double(validBridgeIDs.count) / Double(ticks.count) : 0.0
-  }
+    private func generateQualityMetrics(from features: [FeatureVector])
+        -> DataQualityMetrics
+    {
+        let total = features.count
+        if total == 0 {
+            return DataQualityMetrics(
+                dataCompleteness: 0.0,
+                timestampValidity: 0.0,
+                bridgeIDValidity: 0.0,
+                speedDataValidity: 0.0,
+                duplicateCount: 0,
+                missingFieldsCount: 0
+            )
+        }
 
-  private func calculateBridgeIDValidity(from features: [FeatureVector])
-    -> Double
-  {
-    let validBridgeIDs = features.filter { feature in
-      feature.bridge_id > 0
+        // Bridge validity
+        let validBridge = features.filter { $0.bridge_id > 0 }.count
+        let bridgeIDValidity = Double(validBridge) / Double(total)
+
+        // Speed validity [0, 120] mph
+        var speedPresent = 0
+        var speedValid = 0
+        var rangeViolations: [String: Int] = [:]
+
+        for f in features {
+            speedPresent += 2
+            if f.current_speed >= 0, f.current_speed <= 120 {
+                speedValid += 1
+            } else {
+                rangeViolations["current_speed", default: 0] += 1
+            }
+            if f.normal_speed >= 0, f.normal_speed <= 120 {
+                speedValid += 1
+            } else {
+                rangeViolations["normal_speed", default: 0] += 1
+            }
+        }
+        let speedDataValidity =
+            speedPresent > 0 ? Double(speedValid) / Double(speedPresent) : 1.0
+
+        // Duplicates by (bridge_id, horizon_min, min_sin/min_cos bucket)
+        var seen: Set<String> = []
+        var duplicateCount = 0
+        for f in features {
+            // coarse bucket on time features to avoid floating noise
+            let key =
+                "\(f.bridge_id)|\(f.horizon_min)|\(String(format: "%.3f", f.min_sin))|\(String(format: "%.3f", f.min_cos))"
+            if seen.contains(key) {
+                duplicateCount += 1
+            } else {
+                seen.insert(key)
+            }
+        }
+
+        // Missing fields (FeatureVector is non-optional; treat NaN/Inf as missing)
+        var missingFieldsCount = 0
+        let nullCounts: [String: Int] = [:]
+        var nanCounts: [String: Int] = [:]
+        var infCounts: [String: Int] = [:]
+        var outlierCounts: [String: Int] = [:]
+
+        func check(_ name: String, _ v: Double) {
+            if v.isNaN {
+                nanCounts[name, default: 0] += 1
+                missingFieldsCount += 1
+            }
+            if v.isInfinite {
+                infCounts[name, default: 0] += 1
+                missingFieldsCount += 1
+            }
+        }
+
+        for f in features {
+            check("min_sin", f.min_sin)
+            check("min_cos", f.min_cos)
+            check("dow_sin", f.dow_sin)
+            check("dow_cos", f.dow_cos)
+            check("open_5m", f.open_5m)
+            check("open_30m", f.open_30m)
+            check("detour_delta", f.detour_delta)
+            check("cross_rate", f.cross_rate)
+            check("via_routable", f.via_routable)
+            check("via_penalty", f.via_penalty)
+            check("gate_anom", f.gate_anom)
+            check("detour_frac", f.detour_frac)
+            check("current_speed", f.current_speed)
+            check("normal_speed", f.normal_speed)
+
+            if abs(f.detour_delta) > 1000 {
+                outlierCounts["detour_delta", default: 0] += 1
+            }
+        }
+
+        // No timestamps in FeatureVector; set timestampValidity to 1 for compatibility
+        let timestampValidity = 1.0
+        // Data completeness: assume 1 unless NaN/Inf flagged
+        let dataCompleteness =
+            missingFieldsCount == 0
+            ? 1.0 : max(0.0, 1.0 - Double(missingFieldsCount) / Double(total))
+
+        return DataQualityMetrics(
+            dataCompleteness: dataCompleteness,
+            timestampValidity: timestampValidity,
+            bridgeIDValidity: bridgeIDValidity,
+            speedDataValidity: speedDataValidity,
+            duplicateCount: duplicateCount,
+            missingFieldsCount: missingFieldsCount,
+            nanCounts: nanCounts,
+            infiniteCounts: infCounts,
+            outlierCounts: outlierCounts,
+            rangeViolations: rangeViolations,
+            nullCounts: nullCounts
+        )
     }
-
-    return features.count > 0
-      ? Double(validBridgeIDs.count) / Double(features.count) : 0.0
-  }
-
-  private func calculateSpeedDataValidity(from ticks: [ProbeTickRaw])
-    -> Double
-  {
-    let validSpeedData = ticks.filter { tick in
-      tick.current_traffic_speed != nil
-        || tick.normal_traffic_speed != nil
-    }
-
-    return ticks.count > 0
-      ? Double(validSpeedData.count) / Double(ticks.count) : 0.0
-  }
-
-  private func calculateSpeedDataValidity(from features: [FeatureVector])
-    -> Double
-  {
-    let validSpeedData = features.filter { feature in
-      feature.current_speed > 0 && feature.normal_speed > 0
-    }
-
-    return features.count > 0
-      ? Double(validSpeedData.count) / Double(features.count) : 0.0
-  }
-
-  private func calculateDuplicateCount(from ticks: [ProbeTickRaw]) -> Int {
-    let uniqueTicks = Set(ticks.map { "\($0.bridge_id)_\($0.ts_utc)" })
-    return ticks.count - uniqueTicks.count
-  }
-
-  private func calculateDuplicateCount(from features: [FeatureVector]) -> Int {
-    let uniqueFeatures = Set(
-      features.map { "\($0.bridge_id)_\($0.horizon_min)" }
-    )
-    return features.count - uniqueFeatures.count
-  }
-
-  private func calculateMissingFieldsCount(from ticks: [ProbeTickRaw]) -> Int {
-    return ticks.filter { tick in
-      tick.ts_utc.isEmpty || tick.bridge_id <= 0
-    }.count
-  }
-
-  private func calculateMissingFieldsCount(from features: [FeatureVector])
-    -> Int
-  {
-    return features.filter { feature in
-      feature.bridge_id <= 0 || feature.horizon_min < 0
-    }.count
-  }
 }
 
-// MARK: - Statistics Export
+extension DataStatisticsService {
+    // existing export methods unchanged
+    /// Exports statistics to JSON format
+    public func exportToJSON(_ statistics: BridgeDataStatistics) throws
+        -> String
+    {
+        let encoder = JSONEncoder.bridgeEncoder(outputFormatting: [
+            .prettyPrinted, .sortedKeys,
+        ])
 
-public extension DataStatisticsService {
-  /// Exports statistics to JSON format
-  /// - Parameter statistics: The statistics to export
-  /// - Returns: JSON string representation
-  func exportToJSON(_ statistics: BridgeDataStatistics) throws
-    -> String
-  {
-    let encoder = JSONEncoder.bridgeEncoder(outputFormatting: [
-      .prettyPrinted, .sortedKeys,
-    ])
-
-    let data = try encoder.encode(statistics)
-    return String(data: data, encoding: .utf8) ?? ""
-  }
-
-  /// Exports statistics to CSV format
-  /// - Parameter statistics: The statistics to export
-  /// - Returns: CSV string representation
-  func exportToCSV(_ statistics: BridgeDataStatistics) -> String {
-    var csv =
-      "Bridge ID,Record Count,First Timestamp,Last Timestamp,Completeness %\n"
-
-    for (bridgeID, bridgeStat) in statistics.bridgeStats.sorted(by: {
-      $0.key < $1.key
-    }) {
-      let row =
-        "\(bridgeID),\(bridgeStat.recordCount),\(bridgeStat.firstTimestamp),\(bridgeStat.lastTimestamp),\(String(format: "%.2f", bridgeStat.completenessPercentage * 100))\n"
-      csv += row
+        let data = try encoder.encode(statistics)
+        return String(data: data, encoding: .utf8) ?? ""
     }
 
-    return csv
-  }
+    public func exportToCSV(_ statistics: BridgeDataStatistics) -> String {
+        var csv =
+            "Bridge ID,Record Count,First Timestamp,Last Timestamp,Completeness %\n"
 
-  /// Exports horizon coverage to CSV format
-  /// - Parameter statistics: The statistics to export
-  /// - Returns: CSV string representation of horizon coverage
-  func exportHorizonCoverageToCSV(_ statistics: BridgeDataStatistics)
-    -> String
-  {
-    var csv = "Bridge ID"
+        for (bridgeID, bridgeStat) in statistics.bridgeStats.sorted(by: {
+            $0.key < $1.key
+        }) {
+            let row =
+                "\(bridgeID),\(bridgeStat.recordCount),\(bridgeStat.firstTimestamp),\(bridgeStat.lastTimestamp),\(String(format: "%.2f", bridgeStat.completenessPercentage * 100))\n"
+            csv += row
+        }
 
-    // Add horizon headers
-    for horizon in statistics.horizonStats.availableHorizons {
-      csv += ",Horizon \(horizon)min"
-    }
-    csv += "\n"
-
-    // Add data rows
-    for (bridgeID, _) in statistics.bridgeStats.sorted(by: {
-      $0.key < $1.key
-    }) {
-      csv += "\(bridgeID)"
-
-      for horizon in statistics.horizonStats.availableHorizons {
-        let coverage =
-          statistics.horizonStats.bridgeCoverageByHorizon[bridgeID]?[
-            horizon
-          ] ?? 0.0
-        csv += ",\(String(format: "%.2f", coverage * 100))"
-      }
-      csv += "\n"
+        return csv
     }
 
-    return csv
-  }
+    public func exportHorizonCoverageToCSV(_ statistics: BridgeDataStatistics)
+        -> String
+    {
+        var csv = "Bridge ID"
+
+        for horizon in statistics.horizonStats.availableHorizons {
+            csv += ",Horizon \(horizon)min"
+        }
+        csv += "\n"
+
+        for (bridgeID, _) in statistics.bridgeStats.sorted(by: {
+            $0.key < $1.key
+        }) {
+            csv += "\(bridgeID)"
+
+            for horizon in statistics.horizonStats.availableHorizons {
+                let coverage =
+                    statistics.horizonStats.bridgeCoverageByHorizon[bridgeID]?[
+                        horizon
+                    ] ?? 0.0
+                csv += ",\(String(format: "%.2f", coverage * 100))"
+            }
+            csv += "\n"
+        }
+
+        return csv
+    }
 }

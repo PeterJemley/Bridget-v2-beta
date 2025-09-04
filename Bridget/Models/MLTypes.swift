@@ -47,960 +47,890 @@ public let defaultOutputShape: [Int] = [1, targetDimension]
 // MARK: - Data Models
 
 /// Raw probe tick data structure from NDJSON
-public struct ProbeTickRaw: Codable {
-  public let v: Int?
-  public let ts_utc: String
-  public let bridge_id: Int
-  public let cross_k: Double?
-  public let cross_n: Double?
-  public let via_routable: Double?
-  public let via_penalty_sec: Double?
-  public let gate_anom: Double?
-  public let alternates_total: Double?
-  public let alternates_avoid: Double?
-  public let open_label: Int
-  public let detour_delta: Double?
-  public let detour_frac: Double?
-  // Speed-related fields for traffic analysis
-  public let current_traffic_speed: Double?
-  public let normal_traffic_speed: Double?
+public struct ProbeTickRaw: Codable, Sendable {
+    public let v: Int?
+    public let ts_utc: String
+    public let bridge_id: Int
+    public let cross_k: Double?
+    public let cross_n: Double?
+    public let via_routable: Double?
+    public let via_penalty_sec: Double?
+    public let gate_anom: Double?
+    public let alternates_total: Double?
+    public let alternates_avoid: Double?
+    public let open_label: Int
+    public let detour_delta: Double?
+    public let detour_frac: Double?
+    // Speed-related fields for traffic analysis
+    public let current_traffic_speed: Double?
+    public let normal_traffic_speed: Double?
 
-  public init(v: Int?,
-              ts_utc: String,
-              bridge_id: Int,
-              cross_k: Double?,
-              cross_n: Double?,
-              via_routable: Double?,
-              via_penalty_sec: Double?,
-              gate_anom: Double?,
-              alternates_total: Double?,
-              alternates_avoid: Double?,
-              open_label: Int,
-              detour_delta: Double?,
-              detour_frac: Double?,
-              current_traffic_speed: Double? = nil,
-              normal_traffic_speed: Double? = nil)
-  {
-    self.v = v
-    self.ts_utc = ts_utc
-    self.bridge_id = bridge_id
-    self.cross_k = cross_k
-    self.cross_n = cross_n
-    self.via_routable = via_routable
-    self.via_penalty_sec = via_penalty_sec
-    self.gate_anom = gate_anom
-    self.alternates_total = alternates_total
-    self.alternates_avoid = alternates_avoid
-    self.open_label = open_label
-    self.detour_delta = detour_delta
-    self.detour_frac = detour_frac
-    self.current_traffic_speed = current_traffic_speed
-    self.normal_traffic_speed = normal_traffic_speed
-  }
+    public init(
+        v: Int?,
+        ts_utc: String,
+        bridge_id: Int,
+        cross_k: Double?,
+        cross_n: Double?,
+        via_routable: Double?,
+        via_penalty_sec: Double?,
+        gate_anom: Double?,
+        alternates_total: Double?,
+        alternates_avoid: Double?,
+        open_label: Int,
+        detour_delta: Double?,
+        detour_frac: Double?,
+        current_traffic_speed: Double? = nil,
+        normal_traffic_speed: Double? = nil
+    ) {
+        self.v = v
+        self.ts_utc = ts_utc
+        self.bridge_id = bridge_id
+        self.cross_k = cross_k
+        self.cross_n = cross_n
+        self.via_routable = via_routable
+        self.via_penalty_sec = via_penalty_sec
+        self.gate_anom = gate_anom
+        self.alternates_total = alternates_total
+        self.alternates_avoid = alternates_avoid
+        self.open_label = open_label
+        self.detour_delta = detour_delta
+        self.detour_frac = detour_frac
+        self.current_traffic_speed = current_traffic_speed
+        self.normal_traffic_speed = normal_traffic_speed
+    }
 }
 
 /// Feature vector for ML training and inference
-public struct FeatureVector {
-  public let bridge_id: Int
-  public let horizon_min: Int
-  public let min_sin: Double
-  public let min_cos: Double
-  public let dow_sin: Double
-  public let dow_cos: Double
-  public let open_5m: Double
-  public let open_30m: Double
-  public let detour_delta: Double
-  public let cross_rate: Double
-  public let via_routable: Double
-  public let via_penalty: Double
-  public let gate_anom: Double
-  public let detour_frac: Double
-  // Speed-related features
-  public let current_speed: Double
-  public let normal_speed: Double
-  public let target: Int
+public struct FeatureVector: Sendable {
+    public let bridge_id: Int
+    public let horizon_min: Int
+    public let min_sin: Double
+    public let min_cos: Double
+    public let dow_sin: Double
+    public let dow_cos: Double
+    public let open_5m: Double
+    public let open_30m: Double
+    public let detour_delta: Double
+    public let cross_rate: Double
+    public let via_routable: Double
+    public let via_penalty: Double
+    public let gate_anom: Double
+    public let detour_frac: Double
+    // Speed-related features
+    public let current_speed: Double
+    public let normal_speed: Double
+    public let target: Int
 
-  public init(bridge_id: Int,
-              horizon_min: Int,
-              min_sin: Double,
-              min_cos: Double,
-              dow_sin: Double,
-              dow_cos: Double,
-              open_5m: Double,
-              open_30m: Double,
-              detour_delta: Double,
-              cross_rate: Double,
-              via_routable: Double,
-              via_penalty: Double,
-              gate_anom: Double,
-              detour_frac: Double,
-              current_speed: Double,
-              normal_speed: Double,
-              target: Int)
-  {
-    self.bridge_id = bridge_id
-    self.horizon_min = horizon_min
-    self.min_sin = min_sin
-    self.min_cos = min_cos
-    self.dow_sin = dow_sin
-    self.dow_cos = dow_cos
-    self.open_5m = open_5m
-    self.open_30m = open_30m
-    self.detour_delta = detour_delta
-    self.cross_rate = cross_rate
-    self.via_routable = via_routable
-    self.via_penalty = via_penalty
-    self.gate_anom = gate_anom
-    self.detour_frac = detour_frac
-    self.current_speed = current_speed
-    self.normal_speed = normal_speed
-    self.target = target
-  }
-
-  /// Converts this feature vector to MLMultiArray format for Core ML training/inference.
-  ///
-  /// The shape is [1, featureCount] for single samples.
-  ///
-  /// - Returns: MLMultiArray containing the feature values
-  /// - Throws: Error if MLMultiArray creation fails
-  public func toMLMultiArray() throws -> MLMultiArray {
-    let features = [
-      min_sin, min_cos, dow_sin, dow_cos,
-      open_5m, open_30m, detour_delta, cross_rate,
-      via_routable, via_penalty, gate_anom, detour_frac,
-      current_speed, normal_speed,
-    ]
-
-    let array = try MLMultiArray(shape: [1, NSNumber(value: features.count)],
-                                 dataType: .double)
-
-    for (i, value) in features.enumerated() {
-      array[[0, i] as [NSNumber]] = NSNumber(value: value)
+    public init(
+        bridge_id: Int,
+        horizon_min: Int,
+        min_sin: Double,
+        min_cos: Double,
+        dow_sin: Double,
+        dow_cos: Double,
+        open_5m: Double,
+        open_30m: Double,
+        detour_delta: Double,
+        cross_rate: Double,
+        via_routable: Double,
+        via_penalty: Double,
+        gate_anom: Double,
+        detour_frac: Double,
+        current_speed: Double,
+        normal_speed: Double,
+        target: Int
+    ) {
+        self.bridge_id = bridge_id
+        self.horizon_min = horizon_min
+        self.min_sin = min_sin
+        self.min_cos = min_cos
+        self.dow_sin = dow_sin
+        self.dow_cos = dow_cos
+        self.open_5m = open_5m
+        self.open_30m = open_30m
+        self.detour_delta = detour_delta
+        self.cross_rate = cross_rate
+        self.via_routable = via_routable
+        self.via_penalty = via_penalty
+        self.gate_anom = gate_anom
+        self.detour_frac = detour_frac
+        self.current_speed = current_speed
+        self.normal_speed = normal_speed
+        self.target = target
     }
 
-    return array
-  }
+    /// Converts this feature vector to MLMultiArray format for Core ML training/inference.
+    ///
+    /// The shape is [1, featureCount] for single samples.
+    ///
+    /// - Returns: MLMultiArray containing the feature values
+    /// - Throws: Error if MLMultiArray creation fails
+    public func toMLMultiArray() throws -> MLMultiArray {
+        let features = [
+            min_sin, min_cos, dow_sin, dow_cos,
+            open_5m, open_30m, detour_delta, cross_rate,
+            via_routable, via_penalty, gate_anom, detour_frac,
+            current_speed, normal_speed,
+        ]
 
-  /// Creates a target MLMultiArray for training.
-  ///
-  /// - Returns: MLMultiArray containing the target value
-  /// - Throws: Error if MLMultiArray creation fails
-  public func toTargetMLMultiArray() throws -> MLMultiArray {
-    let array = try MLMultiArray(shape: [1, 1], dataType: .double)
-    array[[0, 0] as [NSNumber]] = NSNumber(value: target)
-    return array
-  }
+        let array = try MLMultiArray(
+            shape: [1, NSNumber(value: features.count)],
+            dataType: .double
+        )
 
-  /// Number of features in the vector
-  public static let featureCount = featureDimension
+        for (i, value) in features.enumerated() {
+            array[[0, i] as [NSNumber]] = NSNumber(value: value)
+        }
 
-  /// Names of features for debugging and analysis
-  public static let featureNames = [
-    "min_sin", "min_cos", "dow_sin", "dow_cos",
-    "open_5m", "open_30m", "detour_delta", "cross_rate",
-    "via_routable", "via_penalty", "gate_anom", "detour_frac",
-    "current_speed", "normal_speed",
-  ]
+        return array
+    }
+
+    /// Creates a target MLMultiArray for training.
+    ///
+    /// - Returns: MLMultiArray containing the target value
+    /// - Throws: Error if MLMultiArray creation fails
+    public func toTargetMLMultiArray() throws -> MLMultiArray {
+        let array = try MLMultiArray(shape: [1, 1], dataType: .double)
+        array[[0, 0] as [NSNumber]] = NSNumber(value: target)
+        return array
+    }
+
+    /// Number of features in the vector
+    public static let featureCount = featureDimension
+
+    /// Names of features for debugging and analysis
+    public static let featureNames = [
+        "min_sin", "min_cos", "dow_sin", "dow_cos",
+        "open_5m", "open_30m", "detour_delta", "cross_rate",
+        "via_routable", "via_penalty", "gate_anom", "detour_frac",
+        "current_speed", "normal_speed",
+    ]
 }
 
 // MARK: - Statistical Types
 
-/// Statistical summary for ETA or time prediction with rich statistical information.
-/// Provides mean, variance, standard deviation, min/max, and optional percentiles
-/// for comprehensive uncertainty quantification and risk assessment.
-///
-/// ## Usage Examples
-/// ```swift
-/// // From array of values
-/// let etas = [10.0, 12.0, 11.0, 13.0, 9.0]
-/// let summary = ETASummary.from(etas)
-///
-/// // Direct initialization
-/// let summary = ETASummary(mean: 11.0, variance: 2.0, min: 9.0, max: 13.0)
-///
-/// // Confidence intervals
-/// let ci95 = summary.confidenceInterval(level: 0.95)
-/// ```
-public struct ETASummary: Codable, Equatable {
-  public let mean: Double
-  public let variance: Double
-  public let stdDev: Double
-  public let min: Double
-  public let max: Double
-  // Optional percentiles for more detailed distribution information
-  public let p10: Double?
-  public let p90: Double?
+public struct ETASummary: Codable, Equatable, Sendable {
+    public let mean: Double
+    public let variance: Double
+    public let stdDev: Double
+    public let min: Double
+    public let max: Double
+    // Optional percentiles for more detailed distribution information
+    public let p10: Double?
+    public let p90: Double?
 
-  public init(mean: Double,
-              variance: Double,
-              min: Double,
-              max: Double,
-              p10: Double? = nil,
-              p90: Double? = nil)
-  {
-    self.mean = mean
-    self.variance = variance
-    self.stdDev = sqrt(variance)
-    self.min = min
-    self.max = max
-    self.p10 = p10
-    self.p90 = p90
-  }
-
-  /// Creates an ETASummary from an array of Double values
-  /// - Parameter values: Array of observed or predicted values
-  /// - Returns: ETASummary with computed statistics, or nil if array is empty
-  public static func from(_ values: [Double]) -> ETASummary? {
-    guard !values.isEmpty else { return nil }
-
-    // Handle single value case (variance = 0)
-    guard values.count > 1 else {
-      let singleValue = values[0]
-      return ETASummary(mean: singleValue,
-                        variance: 0.0,
-                        min: singleValue,
-                        max: singleValue,
-                        p10: singleValue,
-                        p90: singleValue)
+    public init(
+        mean: Double,
+        variance: Double,
+        min: Double,
+        max: Double,
+        p10: Double? = nil,
+        p90: Double? = nil
+    ) {
+        self.mean = mean
+        self.variance = variance
+        self.stdDev = sqrt(variance)
+        self.min = min
+        self.max = max
+        self.p10 = p10
+        self.p90 = p90
     }
 
-    let mean = values.reduce(0, +) / Double(values.count)
-    let variance =
-      values.reduce(0) { $0 + pow($1 - mean, 2) } / Double(values.count)
-    let sorted = values.sorted()
-    let min = sorted.first!
-    let max = sorted.last!
+    public static func from(_ values: [Double]) -> ETASummary? {
+        guard !values.isEmpty else { return nil }
 
-    // Calculate percentiles if we have enough data
-    let p10 =
-      values.count >= 10 ? sorted[Int(Double(values.count) * 0.10)] : nil
-    let p90 =
-      values.count >= 10 ? sorted[Int(Double(values.count) * 0.90)] : nil
+        guard values.count > 1 else {
+            let singleValue = values[0]
+            return ETASummary(
+                mean: singleValue,
+                variance: 0.0,
+                min: singleValue,
+                max: singleValue,
+                p10: singleValue,
+                p90: singleValue
+            )
+        }
 
-    return ETASummary(mean: mean,
-                      variance: variance,
-                      min: min,
-                      max: max,
-                      p10: p10,
-                      p90: p90)
-  }
+        let mean = values.reduce(0, +) / Double(values.count)
+        let variance =
+            values.reduce(0) { $0 + pow($1 - mean, 2) } / Double(values.count)
+        let sorted = values.sorted()
+        let min = sorted.first!
+        let max = sorted.last!
 
-  /// Returns a confidence interval for the specified confidence level
-  /// - Parameter confidenceLevel: Confidence level (e.g., 0.95 for 95% CI)
-  /// - Returns: Tuple of (lowerBound, upperBound) or nil if insufficient data
-  public func confidenceInterval(level: Double) -> (lower: Double, upper: Double)? {
-    // For zero variance, confidence interval is just the mean
-    guard stdDev > 0 else {
-      return (lower: mean, upper: mean)
+        let p10 =
+            values.count >= 10 ? sorted[Int(Double(values.count) * 0.10)] : nil
+        let p90 =
+            values.count >= 10 ? sorted[Int(Double(values.count) * 0.90)] : nil
+
+        return ETASummary(
+            mean: mean,
+            variance: variance,
+            min: min,
+            max: max,
+            p10: p10,
+            p90: p90
+        )
     }
 
-    // For normal distribution, use z-score
-    let zScore: Double
-    switch level {
-    case 0.90: zScore = 1.645
-    case 0.95: zScore = 1.96
-    case 0.99: zScore = 2.576
-    default: zScore = 1.96  // Default to 95% CI
+    public func confidenceInterval(level: Double) -> (
+        lower: Double, upper: Double
+    )? {
+        guard stdDev > 0 else {
+            return (lower: mean, upper: mean)
+        }
+
+        let zScore: Double
+        switch level {
+        case 0.90: zScore = 1.645
+        case 0.95: zScore = 1.96
+        case 0.99: zScore = 2.576
+        default: zScore = 1.96
+        }
+
+        let margin = zScore * stdDev
+        return (lower: mean - margin, upper: mean + margin)
     }
 
-    let margin = zScore * stdDev
-    return (lower: mean - margin, upper: mean + margin)
-  }
+    public var summary: String {
+        let ci95 = confidenceInterval(level: 0.95)
+        let ciString =
+            ci95.map {
+                "95% CI: \(String(format: "%.1f", $0.lower))-\(String(format: "%.1f", $0.upper))"
+            }
+            ?? "CI: N/A"
 
-  /// Returns a human-readable summary of the statistical information
-  public var summary: String {
-    let ci95 = confidenceInterval(level: 0.95)
-    let ciString =
-      ci95.map {
-        "95% CI: \(String(format: "%.1f", $0.lower))-\(String(format: "%.1f", $0.upper))"
-      }
-      ?? "CI: N/A"
-
-    return """
-    Mean: \(String(format: "%.1f", mean))
-    Std Dev: \(String(format: "%.1f", stdDev))
-    Range: \(String(format: "%.1f", min))-\(String(format: "%.1f", max))
-    \(ciString)
-    """
-  }
+        return """
+            Mean: \(String(format: "%.1f", mean))
+            Std Dev: \(String(format: "%.1f", stdDev))
+            Range: \(String(format: "%.1f", min))-\(String(format: "%.1f", max))
+            \(ciString)
+            """
+    }
 }
 
 // MARK: - Array Extensions for Statistical Calculations
 
-public extension Array where Element == Double {
-  /// Converts an array of Double values to an ETASummary
-  ///
-  /// ## Examples
-  /// ```swift
-  /// let etas = [10.0, 12.0, 11.0, 13.0, 9.0]
-  /// let summary = etas.toETASummary()
-  /// print(summary?.summary) // "Mean: 11.0, Std Dev: 1.4, Range: 9.0-13.0, 95% CI: 8.3-13.7"
-  /// ```
-  ///
-  /// - Returns: ETASummary with computed statistics, or nil if array is empty
-  func toETASummary() -> ETASummary? {
-    return ETASummary.from(self)
-  }
-
-  /// Computes basic statistics for the array
-  ///
-  /// ## Examples
-  /// ```swift
-  /// let values = [1.0, 2.0, 3.0, 4.0, 5.0]
-  /// if let stats = values.basicStatistics() {
-  ///     print("Mean: \(stats.mean), Variance: \(stats.variance)")
-  /// }
-  /// ```
-  ///
-  /// - Returns: Tuple of (mean, variance, stdDev, min, max) or nil if empty
-  func basicStatistics() -> (mean: Double, variance: Double, stdDev: Double, min: Double, max: Double)? {
-    guard !isEmpty else { return nil }
-
-    // Handle single value case
-    guard count > 1 else {
-      let singleValue = self[0]
-      return (mean: singleValue, variance: 0.0, stdDev: 0.0, min: singleValue,
-              max: singleValue)
+extension Array where Element == Double {
+    public func toETASummary() -> ETASummary? {
+        return ETASummary.from(self)
     }
 
-    let mean = reduce(0, +) / Double(count)
-    let variance = reduce(0) { $0 + pow($1 - mean, 2) } / Double(count)
-    let stdDev = sqrt(variance)
-    let min = self.min()!
-    let max = self.max()!
+    public func basicStatistics() -> (
+        mean: Double, variance: Double, stdDev: Double, min: Double, max: Double
+    )? {
+        guard !isEmpty else { return nil }
 
-    return (mean: mean, variance: variance, stdDev: stdDev, min: min, max: max)
-  }
+        guard count > 1 else {
+            let singleValue = self[0]
+            return (
+                mean: singleValue, variance: 0.0, stdDev: 0.0, min: singleValue,
+                max: singleValue
+            )
+        }
+
+        let mean = reduce(0, +) / Double(count)
+        let variance = reduce(0) { $0 + pow($1 - mean, 2) } / Double(count)
+        let stdDev = sqrt(variance)
+        let min = self.min()!
+        let max = self.max()!
+
+        return (
+            mean: mean, variance: variance, stdDev: stdDev, min: min, max: max
+        )
+    }
 }
 
 // MARK: - Error Types
 
-/// Core ML specific errors
-public enum CoreMLError: Error, LocalizedError {
-  case invalidModel
-  case trainingFailed(String)
-  case dataConversionFailed
-  case modelCreationFailed
+public enum CoreMLError: Error, LocalizedError, Sendable {
+    case invalidModel
+    case trainingFailed(String)
+    case dataConversionFailed
+    case modelCreationFailed
 
-  public var errorDescription: String? {
-    switch self {
-    case .invalidModel:
-      return "Invalid Core ML model"
-    case let .trainingFailed(reason):
-      return "Training failed: \(reason)"
-    case .dataConversionFailed:
-      return "Failed to convert data to MLMultiArray format"
-    case .modelCreationFailed:
-      return "Failed to create Core ML model"
+    public var errorDescription: String? {
+        switch self {
+        case .invalidModel:
+            return "Invalid Core ML model"
+        case .trainingFailed(let reason):
+            return "Training failed: \(reason)"
+        case .dataConversionFailed:
+            return "Failed to convert data to MLMultiArray format"
+        case .modelCreationFailed:
+            return "Failed to create Core ML model"
+        }
     }
-  }
 }
 
 /// Data validation result structure for pipeline validation.
-///
-/// Tracks counts of various validation metrics and provides a summary.
-public struct DataValidationResult {
-  public var totalRecords: Int = 0
-  public var bridgeCount: Int = 0
-  public var invalidBridgeIds: Int = 0
-  public var invalidOpenLabels: Int = 0
-  public var invalidCrossRatios: Int = 0
-  public var recordsPerBridge: [Int: Int] = [:]
-  public var isValid: Bool = false
+public struct DataValidationResult: Sendable {
+    public var totalRecords: Int = 0
+    public var bridgeCount: Int = 0
+    public var invalidBridgeIds: Int = 0
+    public var invalidOpenLabels: Int = 0
+    public var invalidCrossRatios: Int = 0
+    public var recordsPerBridge: [Int: Int] = [:]
+    public var isValid: Bool = false
 
-  // Enhanced validation tracking
-  public var errors: [String] = []
-  public var warnings: [String] = []
-  public var timestampRange: (first: Date?, last: Date?) = (nil, nil)
-  public var horizonCoverage: [Int: Int] = [:]
-  public var dataQualityMetrics: DataQualityMetrics = .init(dataCompleteness: 0.0,
-                                                            timestampValidity: 0.0,
-                                                            bridgeIDValidity: 0.0,
-                                                            speedDataValidity: 0.0,
-                                                            duplicateCount: 0,
-                                                            missingFieldsCount: 0,
-                                                            nanCounts: [:],
-                                                            infiniteCounts: [:],
-                                                            outlierCounts: [:],
-                                                            rangeViolations: [:],
-                                                            nullCounts: [:])
+    // Enhanced validation tracking
+    public var errors: [String] = []
+    public var warnings: [String] = []
+    public var timestampRange: (first: Date?, last: Date?) = (nil, nil)
+    public var horizonCoverage: [Int: Int] = [:]
+    public var dataQualityMetrics: DataQualityMetrics = .init(
+        dataCompleteness: 0.0,
+        timestampValidity: 0.0,
+        bridgeIDValidity: 0.0,
+        speedDataValidity: 0.0,
+        duplicateCount: 0,
+        missingFieldsCount: 0,
+        nanCounts: [:],
+        infiniteCounts: [:],
+        outlierCounts: [:],
+        rangeViolations: [:],
+        nullCounts: [:]
+    )
 
-  public init(totalRecords: Int = 0,
-              bridgeCount: Int = 0,
-              invalidBridgeIds: Int = 0,
-              invalidOpenLabels: Int = 0,
-              invalidCrossRatios: Int = 0,
-              recordsPerBridge: [Int: Int] = [:],
-              isValid: Bool = false,
-              errors: [String] = [],
-              warnings: [String] = [],
-              timestampRange: (first: Date?, last: Date?) = (nil, nil),
-              horizonCoverage: [Int: Int] = [:],
-              dataQualityMetrics: DataQualityMetrics = DataQualityMetrics(dataCompleteness: 0.0,
-                                                                          timestampValidity: 0.0,
-                                                                          bridgeIDValidity: 0.0,
-                                                                          speedDataValidity: 0.0,
-                                                                          duplicateCount: 0,
-                                                                          missingFieldsCount: 0,
-                                                                          nanCounts: [:],
-                                                                          infiniteCounts: [:],
-                                                                          outlierCounts: [:],
-                                                                          rangeViolations: [:],
-                                                                          nullCounts: [:]))
-  {
-    self.totalRecords = totalRecords
-    self.bridgeCount = bridgeCount
-    self.invalidBridgeIds = invalidBridgeIds
-    self.invalidOpenLabels = invalidOpenLabels
-    self.invalidCrossRatios = invalidCrossRatios
-    self.recordsPerBridge = recordsPerBridge
-    self.isValid = isValid
-    self.errors = errors
-    self.warnings = warnings
-    self.timestampRange = timestampRange
-    self.horizonCoverage = horizonCoverage
-    self.dataQualityMetrics = dataQualityMetrics
-  }
+    public init(
+        totalRecords: Int = 0,
+        bridgeCount: Int = 0,
+        invalidBridgeIds: Int = 0,
+        invalidOpenLabels: Int = 0,
+        invalidCrossRatios: Int = 0,
+        recordsPerBridge: [Int: Int] = [:],
+        isValid: Bool = false,
+        errors: [String] = [],
+        warnings: [String] = [],
+        timestampRange: (first: Date?, last: Date?) = (nil, nil),
+        horizonCoverage: [Int: Int] = [:],
+        dataQualityMetrics: DataQualityMetrics = DataQualityMetrics(
+            dataCompleteness: 0.0,
+            timestampValidity: 0.0,
+            bridgeIDValidity: 0.0,
+            speedDataValidity: 0.0,
+            duplicateCount: 0,
+            missingFieldsCount: 0,
+            nanCounts: [:],
+            infiniteCounts: [:],
+            outlierCounts: [:],
+            rangeViolations: [:],
+            nullCounts: [:]
+        )
+    ) {
+        self.totalRecords = totalRecords
+        self.bridgeCount = bridgeCount
+        self.invalidBridgeIds = invalidBridgeIds
+        self.invalidOpenLabels = invalidOpenLabels
+        self.invalidCrossRatios = invalidCrossRatios
+        self.recordsPerBridge = recordsPerBridge
+        self.isValid = isValid
+        self.errors = errors
+        self.warnings = warnings
+        self.timestampRange = timestampRange
+        self.horizonCoverage = horizonCoverage
+        self.dataQualityMetrics = dataQualityMetrics
+    }
 
-  public var validRecordCount: Int {
-    totalRecords - invalidBridgeIds - invalidOpenLabels - invalidCrossRatios
-  }
+    public var validRecordCount: Int {
+        totalRecords - invalidBridgeIds - invalidOpenLabels - invalidCrossRatios
+    }
 
-  public var validationRate: Double {
-    totalRecords > 0 ? Double(validRecordCount) / Double(totalRecords) : 0.0
-  }
+    public var validationRate: Double {
+        totalRecords > 0 ? Double(validRecordCount) / Double(totalRecords) : 0.0
+    }
 
-  public var summary: String {
-    """
-    Data Validation Summary:
-    - Total Records: \(totalRecords)
-    - Valid Records: \(validRecordCount)
-    - Validation Rate: \(String(format: "%.1f%%", validationRate * 100))
-    - Bridges: \(bridgeCount)
-    - Errors: \(errors.count)
-    - Warnings: \(warnings.count)
-    - Valid: \(isValid ? "Yes" : "No")
-    """
-  }
+    public var summary: String {
+        """
+        Data Validation Summary:
+        - Total Records: \(totalRecords)
+        - Valid Records: \(validRecordCount)
+        - Validation Rate: \(String(format: "%.1f%%", validationRate * 100))
+        - Bridges: \(bridgeCount)
+        - Errors: \(errors.count)
+        - Warnings: \(warnings.count)
+        - Valid: \(isValid ? "Yes" : "No")
+        """
+    }
 
-  public var detailedSummary: String {
-    """
-    Detailed Validation Summary:
-    - Total Records: \(totalRecords)
-    - Valid Records: \(validRecordCount)
-    - Validation Rate: \(String(format: "%.1f%%", validationRate * 100))
-    - Bridges: \(bridgeCount)
-    - Invalid Bridge IDs: \(invalidBridgeIds)
-    - Invalid Open Labels: \(invalidOpenLabels)
-    - Invalid Cross Ratios: \(invalidCrossRatios)
-    - Timestamp Range: \(timestampRange.first?.description ?? "None") to \(timestampRange.last?.description ?? "None")
-    - Horizon Coverage: \(horizonCoverage.map { "\($0.key)min: \($0.value)" }.joined(separator: ", "))
-    - Data Quality: Completeness: \(String(format: "%.1f%%", dataQualityMetrics.dataCompleteness * 100)), Speed: \(String(format: "%.1f%%", dataQualityMetrics.speedDataValidity * 100))
-    - Errors: \(errors.joined(separator: "; "))
-    - Warnings: \(warnings.joined(separator: "; "))
-    - Valid: \(isValid ? "Yes" : "No")
-    """
-  }
+    public var detailedSummary: String {
+        """
+        Detailed Validation Summary:
+        - Total Records: \(totalRecords)
+        - Valid Records: \(validRecordCount)
+        - Validation Rate: \(String(format: "%.1f%%", validationRate * 100))
+        - Bridges: \(bridgeCount)
+        - Invalid Bridge IDs: \(invalidBridgeIds)
+        - Invalid Open Labels: \(invalidOpenLabels)
+        - Invalid Cross Ratios: \(invalidCrossRatios)
+        - Timestamp Range: \(timestampRange.first?.description ?? "None") to \(timestampRange.last?.description ?? "None")
+        - Horizon Coverage: \(horizonCoverage.map { "\($0.key)min: \($0.value)" }.joined(separator: ", "))
+        - Data Quality: Completeness: \(String(format: "%.1f%%", dataQualityMetrics.dataCompleteness * 100)), Speed: \(String(format: "%.1f%%", dataQualityMetrics.speedDataValidity * 100))
+        - Errors: \(errors.joined(separator: "; "))
+        - Warnings: \(warnings.joined(separator: "; "))
+        - Valid: \(isValid ? "Yes" : "No")
+        """
+    }
 }
 
 // DataQualityMetrics is now defined in DataStatisticsService.swift
 
 /// Model validation result structure
 public struct ModelValidationResult {
-  public var modelPath: String = ""
-  public var modelDescription: MLModelDescription?
-  public var samplePrediction: MLFeatureProvider?
-  public var isValid: Bool = false
+    public var modelPath: String = ""
+    public var modelDescription: MLModelDescription?
+    public var samplePrediction: MLFeatureProvider?
+    public var isValid: Bool = false
 
-  public init(modelPath: String = "",
-              modelDescription: MLModelDescription? = nil,
-              samplePrediction: MLFeatureProvider? = nil,
-              isValid: Bool = false)
-  {
-    self.modelPath = modelPath
-    self.modelDescription = modelDescription
-    self.samplePrediction = samplePrediction
-    self.isValid = isValid
-  }
+    public init(
+        modelPath: String = "",
+        modelDescription: MLModelDescription? = nil,
+        samplePrediction: MLFeatureProvider? = nil,
+        isValid: Bool = false
+    ) {
+        self.modelPath = modelPath
+        self.modelDescription = modelDescription
+        self.samplePrediction = samplePrediction
+        self.isValid = isValid
+    }
 
-  public var summary: String {
-    """
-    Model Validation Summary:
-    - Model Path: \(modelPath)
-    - Valid: \(isValid ? "Yes" : "No")
-    - Description: \(modelDescription?.inputDescriptionsByName.keys.joined(separator: ", ") ?? "Unknown")
-    """
-  }
+    public var summary: String {
+        """
+        Model Validation Summary:
+        - Model Path: \(modelPath)
+        - Valid: \(isValid ? "Yes" : "No")
+        - Description: \(modelDescription?.inputDescriptionsByName.keys.joined(separator: ", ") ?? "Unknown")
+        """
+    }
 }
 
 // MARK: - Pipeline Types
 
-/// Pipeline operation types for notifications and monitoring.
-public enum PipelineOperation: String, CaseIterable {
-  /// Data population operation
-  case dataPopulation = "Data Population"
-  /// Data export operation
-  case dataExport = "Data Export"
-  /// Maintenance operation
-  case maintenance = "Maintenance"
-  /// Health check operation
-  case healthCheck = "Health Check"
+public enum PipelineOperation: String, CaseIterable, Sendable {
+    case dataPopulation = "Data Population"
+    case dataExport = "Data Export"
+    case maintenance = "Maintenance"
+    case healthCheck = "Health Check"
 }
 
-/// Pipeline health issue types for monitoring and alerts.
-public enum PipelineHealthIssue: String, CaseIterable {
-  /// Data is stale
-  case dataStale = "Data Stale"
-  /// Export operation failed
-  case exportFailed = "Export Failed"
-  /// Low disk space warning
-  case lowDiskSpace = "Low Disk Space"
-  /// Background task expired
-  case backgroundTaskExpired = "Background Task Expired"
+public enum PipelineHealthIssue: String, CaseIterable, Sendable {
+    case dataStale = "Data Stale"
+    case exportFailed = "Export Failed"
+    case lowDiskSpace = "Low Disk Space"
+    case backgroundTaskExpired = "Background Task Expired"
 }
 
-/// Notification type categories for ML pipeline events.
-public enum NotificationType: String, CaseIterable {
-  /// Success notification
-  case success = "Success"
-  /// Failure notification
-  case failure = "Failure"
-  /// Progress notification
-  case progress = "Progress"
-  /// Health notification
-  case health = "Health"
+public enum NotificationType: String, CaseIterable, Sendable {
+    case success = "Success"
+    case failure = "Failure"
+    case progress = "Progress"
+    case health = "Health"
 }
 
 // MARK: - Configuration Types
 
-/// Feature engineering configuration
-public struct FeatureEngineeringConfiguration {
-  public let horizons: [Int]
-  public let deterministicSeed: UInt64
-  public let enableProgressReporting: Bool
+public struct FeatureEngineeringConfiguration: Sendable {
+    public let horizons: [Int]
+    public let deterministicSeed: UInt64
+    public let enableProgressReporting: Bool
 
-  public init(horizons: [Int] = defaultHorizons,
-              deterministicSeed: UInt64 = 42,
-              enableProgressReporting: Bool = true)
-  {
-    self.horizons = horizons
-    self.deterministicSeed = deterministicSeed
-    self.enableProgressReporting = enableProgressReporting
-  }
+    public init(
+        horizons: [Int] = defaultHorizons,
+        deterministicSeed: UInt64 = 42,
+        enableProgressReporting: Bool = true
+    ) {
+        self.horizons = horizons
+        self.deterministicSeed = deterministicSeed
+        self.enableProgressReporting = enableProgressReporting
+    }
 }
 
 // MARK: - Enhanced Configuration
 
-/// Enhanced pipeline configuration with all refinement options
-public struct EnhancedPipelineConfig: Codable {
-  // Core settings
-  public let inputPath: String
-  public let outputDirectory: String
-  public let trainingConfig: TrainingConfig
+public struct EnhancedPipelineConfig: Codable, Sendable {
+    public let inputPath: String
+    public let outputDirectory: String
+    public let trainingConfig: TrainingConfig
 
-  // Parallelization settings
-  public let enableParallelization: Bool
-  public let maxConcurrentHorizons: Int
-  public let batchSize: Int
+    public let enableParallelization: Bool
+    public let maxConcurrentHorizons: Int
+    public let batchSize: Int
 
-  // Retry and recovery settings
-  public let maxRetryAttempts: Int
-  public let retryBackoffMultiplier: Double
-  public let enableCheckpointing: Bool
-  public let checkpointDirectory: String?
+    public let maxRetryAttempts: Int
+    public let retryBackoffMultiplier: Double
+    public let enableCheckpointing: Bool
+    public let checkpointDirectory: String?
 
-  // Validation gates
-  public let dataQualityThresholds: DataQualityThresholds
-  public let modelPerformanceThresholds: ModelPerformanceThresholds
+    public let dataQualityThresholds: DataQualityThresholds
+    public let modelPerformanceThresholds: ModelPerformanceThresholds
 
-  // Monitoring and logging
-  public let enableDetailedLogging: Bool
-  public let enableMetricsExport: Bool
-  public let metricsExportPath: String?
+    public let enableDetailedLogging: Bool
+    public let enableMetricsExport: Bool
+    public let metricsExportPath: String?
 
-  // Performance tuning
-  public let enableProgressReporting: Bool
-  public let memoryOptimizationLevel: MemoryOptimizationLevel
+    public let enableProgressReporting: Bool
+    public let memoryOptimizationLevel: MemoryOptimizationLevel
 
-  public init(inputPath: String = "minutes_2025-01-27.ndjson",
-              outputDirectory: String = FileManagerUtils.temporaryDirectory().path,
-              trainingConfig: TrainingConfig = .production,
-              enableParallelization: Bool = true,
-              maxConcurrentHorizons: Int = 4,
-              batchSize: Int = 1000,
-              maxRetryAttempts: Int = 3,
-              retryBackoffMultiplier: Double = 2.0,
-              enableCheckpointing: Bool = true,
-              checkpointDirectory: String? = nil,
-              dataQualityThresholds: DataQualityThresholds = .default,
-              modelPerformanceThresholds: ModelPerformanceThresholds = .default,
-              enableDetailedLogging: Bool = true,
-              enableMetricsExport: Bool = false,
-              metricsExportPath: String? = nil,
-              enableProgressReporting: Bool = true,
-              memoryOptimizationLevel: MemoryOptimizationLevel = .balanced)
-  {
-    self.inputPath = inputPath
-    self.outputDirectory = outputDirectory
-    self.trainingConfig = trainingConfig
-    self.enableParallelization = enableParallelization
-    self.maxConcurrentHorizons = maxConcurrentHorizons
-    self.batchSize = batchSize
-    self.maxRetryAttempts = maxRetryAttempts
-    self.retryBackoffMultiplier = retryBackoffMultiplier
-    self.enableCheckpointing = enableCheckpointing
-    self.checkpointDirectory = checkpointDirectory
-    self.dataQualityThresholds = dataQualityThresholds
-    self.modelPerformanceThresholds = modelPerformanceThresholds
-    self.enableDetailedLogging = enableDetailedLogging
-    self.enableMetricsExport = enableMetricsExport
-    self.metricsExportPath = metricsExportPath
-    self.enableProgressReporting = enableProgressReporting
-    self.memoryOptimizationLevel = memoryOptimizationLevel
-  }
-
-  /// Load configuration from JSON file
-  public static func load(from path: String) throws -> EnhancedPipelineConfig {
-    let data = try Data(contentsOf: URL(fileURLWithPath: path))
-    return try JSONDecoder.bridgeDecoder().decode(EnhancedPipelineConfig.self,
-                                                  from: data)
-  }
-
-  /// Save configuration to JSON file
-  public func save(to path: String) throws {
-    let data = try JSONEncoder.bridgeEncoder().encode(self)
-    try data.write(to: URL(fileURLWithPath: path))
-  }
-}
-
-/// Data quality thresholds for pipeline gates
-public struct DataQualityThresholds: Codable {
-  public let maxNaNRate: Double
-  public let minValidationRate: Double
-  public let maxInvalidRecordRate: Double
-  public let minDataVolume: Int
-
-  public static let `default` = DataQualityThresholds(maxNaNRate: 0.05,
-                                                      minValidationRate: 0.95,
-                                                      maxInvalidRecordRate: 0.02,
-                                                      minDataVolume: 1000)
-
-  public init(maxNaNRate: Double = 0.05,
-              minValidationRate: Double = 0.95,
-              maxInvalidRecordRate: Double = 0.02,
-              minDataVolume: Int = 1000)
-  {
-    self.maxNaNRate = maxNaNRate
-    self.minValidationRate = minValidationRate
-    self.maxInvalidRecordRate = maxInvalidRecordRate
-    self.minDataVolume = minDataVolume
-  }
-}
-
-/// Model performance thresholds for pipeline gates
-public struct ModelPerformanceThresholds: Codable {
-  public let minAccuracy: Double
-  public let maxLoss: Double
-  public let minF1Score: Double
-
-  public static let `default` = ModelPerformanceThresholds(minAccuracy: 0.75,
-                                                           maxLoss: 0.5,
-                                                           minF1Score: 0.70)
-
-  public init(minAccuracy: Double = 0.75,
-              maxLoss: Double = 0.5,
-              minF1Score: Double = 0.70)
-  {
-    self.minAccuracy = minAccuracy
-    self.maxLoss = maxLoss
-    self.minF1Score = minF1Score
-  }
-}
-
-/// Memory optimization levels
-public enum MemoryOptimizationLevel: String, Codable, CaseIterable {
-  case minimal  // Fastest, highest memory usage
-  case balanced  // Balanced performance/memory
-  case aggressive  // Slowest, lowest memory usage
-
-  public var batchSizeMultiplier: Double {
-    switch self {
-    case .minimal: return 2.0
-    case .balanced: return 1.0
-    case .aggressive: return 0.5
+    public init(
+        inputPath: String = "minutes_2025-01-27.ndjson",
+        outputDirectory: String = FileManagerUtils.temporaryDirectory().path,
+        trainingConfig: TrainingConfig = .production,
+        enableParallelization: Bool = true,
+        maxConcurrentHorizons: Int = 4,
+        batchSize: Int = 1000,
+        maxRetryAttempts: Int = 3,
+        retryBackoffMultiplier: Double = 2.0,
+        enableCheckpointing: Bool = true,
+        checkpointDirectory: String? = nil,
+        dataQualityThresholds: DataQualityThresholds = .default,
+        modelPerformanceThresholds: ModelPerformanceThresholds = .default,
+        enableDetailedLogging: Bool = true,
+        enableMetricsExport: Bool = false,
+        metricsExportPath: String? = nil,
+        enableProgressReporting: Bool = true,
+        memoryOptimizationLevel: MemoryOptimizationLevel = .balanced
+    ) {
+        self.inputPath = inputPath
+        self.outputDirectory = outputDirectory
+        self.trainingConfig = trainingConfig
+        self.enableParallelization = enableParallelization
+        self.maxConcurrentHorizons = maxConcurrentHorizons
+        self.batchSize = batchSize
+        self.maxRetryAttempts = maxRetryAttempts
+        self.retryBackoffMultiplier = retryBackoffMultiplier
+        self.enableCheckpointing = enableCheckpointing
+        self.checkpointDirectory = checkpointDirectory
+        self.dataQualityThresholds = dataQualityThresholds
+        self.modelPerformanceThresholds = modelPerformanceThresholds
+        self.enableDetailedLogging = enableDetailedLogging
+        self.enableMetricsExport = enableMetricsExport
+        self.metricsExportPath = metricsExportPath
+        self.enableProgressReporting = enableProgressReporting
+        self.memoryOptimizationLevel = memoryOptimizationLevel
     }
-  }
-}
 
-/// Pipeline execution state for resumable pipelines
-public struct PipelineExecutionState: Codable {
-  public let pipelineId: String
-  public let startTime: Date
-  public var lastCheckpoint: Date?
-  public var completedStages: Set<PipelineStage>
-  public var currentStage: PipelineStage?
-  public var stageProgress: Double
-  public var error: String?
-  public var metadata: [String: String]
-
-  public init(pipelineId: String,
-              startTime: Date = Date(),
-              lastCheckpoint: Date? = nil,
-              completedStages: Set<PipelineStage> = [],
-              currentStage: PipelineStage? = nil,
-              stageProgress: Double = 0.0,
-              error: String? = nil,
-              metadata: [String: String] = [:])
-  {
-    self.pipelineId = pipelineId
-    self.startTime = startTime
-    self.lastCheckpoint = lastCheckpoint
-    self.completedStages = completedStages
-    self.currentStage = currentStage
-    self.stageProgress = stageProgress
-    self.error = error
-    self.metadata = metadata
-  }
-}
-
-/// Pipeline stages for checkpointing and progress tracking
-public enum PipelineStage: String, Codable, CaseIterable {
-  case dataLoading = "data_loading"
-  case dataValidation = "data_validation"
-  case featureEngineering = "feature_engineering"
-  case mlMultiArrayConversion = "ml_multi_array_conversion"
-  case modelTraining = "model_training"
-  case modelValidation = "model_validation"
-  case artifactExport = "artifact_export"
-
-  public var displayName: String {
-    switch self {
-    case .dataLoading: return "Data Loading"
-    case .dataValidation: return "Data Validation"
-    case .featureEngineering: return "Feature Engineering"
-    case .mlMultiArrayConversion: return "MLMultiArray Conversion"
-    case .modelTraining: return "Model Training"
-    case .modelValidation: return "Model Validation"
-    case .artifactExport: return "Artifact Export"
+    public static func load(from path: String) throws -> EnhancedPipelineConfig
+    {
+        let data = try Data(contentsOf: URL(fileURLWithPath: path))
+        return try JSONDecoder.bridgeDecoder().decode(
+            EnhancedPipelineConfig.self,
+            from: data
+        )
     }
-  }
+
+    public func save(to path: String) throws {
+        let data = try JSONEncoder.bridgeEncoder().encode(self)
+        try data.write(to: URL(fileURLWithPath: path))
+    }
+}
+
+public struct DataQualityThresholds: Codable, Sendable {
+    public let maxNaNRate: Double
+    public let minValidationRate: Double
+    public let maxInvalidRecordRate: Double
+    public let minDataVolume: Int
+
+    public static let `default` = DataQualityThresholds(
+        maxNaNRate: 0.05,
+        minValidationRate: 0.95,
+        maxInvalidRecordRate: 0.02,
+        minDataVolume: 1000
+    )
+
+    public init(
+        maxNaNRate: Double = 0.05,
+        minValidationRate: Double = 0.95,
+        maxInvalidRecordRate: Double = 0.02,
+        minDataVolume: Int = 1000
+    ) {
+        self.maxNaNRate = maxNaNRate
+        self.minValidationRate = minValidationRate
+        self.maxInvalidRecordRate = maxInvalidRecordRate
+        self.minDataVolume = minDataVolume
+    }
+}
+
+public struct ModelPerformanceThresholds: Codable, Sendable {
+    public let minAccuracy: Double
+    public let maxLoss: Double
+    public let minF1Score: Double
+
+    public static let `default` = ModelPerformanceThresholds(
+        minAccuracy: 0.75,
+        maxLoss: 0.5,
+        minF1Score: 0.70
+    )
+
+    public init(
+        minAccuracy: Double = 0.75,
+        maxLoss: Double = 0.5,
+        minF1Score: Double = 0.70
+    ) {
+        self.minAccuracy = minAccuracy
+        self.maxLoss = maxLoss
+        self.minF1Score = minF1Score
+    }
+}
+
+public enum MemoryOptimizationLevel: String, Codable, CaseIterable, Sendable {
+    case minimal
+    case balanced
+    case aggressive
+
+    public var batchSizeMultiplier: Double {
+        switch self {
+        case .minimal: return 2.0
+        case .balanced: return 1.0
+        case .aggressive: return 0.5
+        }
+    }
+}
+
+public struct PipelineExecutionState: Codable, Sendable {
+    public let pipelineId: String
+    public let startTime: Date
+    public var lastCheckpoint: Date?
+    public var completedStages: Set<PipelineStage>
+    public var currentStage: PipelineStage?
+    public var stageProgress: Double
+    public var error: String?
+    public var metadata: [String: String]
+
+    public init(
+        pipelineId: String,
+        startTime: Date = Date(),
+        lastCheckpoint: Date? = nil,
+        completedStages: Set<PipelineStage> = [],
+        currentStage: PipelineStage? = nil,
+        stageProgress: Double = 0.0,
+        error: String? = nil,
+        metadata: [String: String] = [:]
+    ) {
+        self.pipelineId = pipelineId
+        self.startTime = startTime
+        self.lastCheckpoint = lastCheckpoint
+        self.completedStages = completedStages
+        self.currentStage = currentStage
+        self.stageProgress = stageProgress
+        self.error = error
+        self.metadata = metadata
+    }
+}
+
+public enum PipelineStage: String, Codable, CaseIterable, Sendable {
+    case dataLoading = "data_loading"
+    case dataValidation = "data_validation"
+    case featureEngineering = "feature_engineering"
+    case mlMultiArrayConversion = "ml_multi_array_conversion"
+    case modelTraining = "model_training"
+    case modelValidation = "model_validation"
+    case artifactExport = "artifact_export"
+
+    public var displayName: String {
+        switch self {
+        case .dataLoading: return "Data Loading"
+        case .dataValidation: return "Data Validation"
+        case .featureEngineering: return "Feature Engineering"
+        case .mlMultiArrayConversion: return "MLMultiArray Conversion"
+        case .modelTraining: return "Model Training"
+        case .modelValidation: return "Model Validation"
+        case .artifactExport: return "Artifact Export"
+        }
+    }
 }
 
 // MARK: - Training Report
 
-/// Comprehensive training report with timings, metrics, validation summaries, seeds, and shapes
-public struct TrainingReport: Codable {
-  /// Pipeline execution timings in seconds
-  public let timings: PipelineTimings
-  /// Data quality metrics and validation results
-  public let dataQuality: DataQualityMetrics
-  /// Model performance metrics
-  public let modelPerformance: CoreMLModelValidationResult
-  /// Configuration used for training
-  public let configuration: CoreMLTrainingConfig
-  /// Random seeds used for reproducibility
-  public let seeds: TrainingSeeds
-  /// Input/output shapes for model validation
-  public let shapes: ModelShapes
-  /// Pipeline execution metadata
-  public let metadata: TrainingMetadata
-  /// Statistical uncertainty metrics for model predictions (Phase 3 enhancement)
-  public let statisticalMetrics: StatisticalTrainingMetrics?
+public struct TrainingReport: Codable, Sendable {
+    public let timings: PipelineTimings
+    public let dataQuality: DataQualityMetrics
+    public let modelPerformance: CoreMLModelValidationResult
+    public let configuration: CoreMLTrainingConfig
+    public let seeds: TrainingSeeds
+    public let shapes: ModelShapes
+    public let metadata: TrainingMetadata
+    public let statisticalMetrics: StatisticalTrainingMetrics?
 
-  public init(timings: PipelineTimings,
-              dataQuality: DataQualityMetrics,
-              modelPerformance: CoreMLModelValidationResult,
-              configuration: CoreMLTrainingConfig,
-              seeds: TrainingSeeds,
-              shapes: ModelShapes,
-              metadata: TrainingMetadata,
-              statisticalMetrics: StatisticalTrainingMetrics? = nil)
-  {
-    self.timings = timings
-    self.dataQuality = dataQuality
-    self.modelPerformance = modelPerformance
-    self.configuration = configuration
-    self.seeds = seeds
-    self.shapes = shapes
-    self.metadata = metadata
-    self.statisticalMetrics = statisticalMetrics
-  }
+    public init(
+        timings: PipelineTimings,
+        dataQuality: DataQualityMetrics,
+        modelPerformance: CoreMLModelValidationResult,
+        configuration: CoreMLTrainingConfig,
+        seeds: TrainingSeeds,
+        shapes: ModelShapes,
+        metadata: TrainingMetadata,
+        statisticalMetrics: StatisticalTrainingMetrics? = nil
+    ) {
+        self.timings = timings
+        self.dataQuality = dataQuality
+        self.modelPerformance = modelPerformance
+        self.configuration = configuration
+        self.seeds = seeds
+        self.shapes = shapes
+        self.metadata = metadata
+        self.statisticalMetrics = statisticalMetrics
+    }
 }
 
-/// Pipeline execution timings
-public struct PipelineTimings: Codable {
-  public var totalDuration: TimeInterval
-  public var dataLoadingTime: TimeInterval
-  public var dataValidationTime: TimeInterval
-  public var featureEngineeringTime: TimeInterval
-  public var trainingTime: TimeInterval
-  public var validationTime: TimeInterval
+public struct PipelineTimings: Codable, Sendable {
+    public var totalDuration: TimeInterval
+    public var dataLoadingTime: TimeInterval
+    public var dataValidationTime: TimeInterval
+    public var featureEngineeringTime: TimeInterval
+    public var trainingTime: TimeInterval
+    public var validationTime: TimeInterval
 
-  public init(totalDuration: TimeInterval,
-              dataLoadingTime: TimeInterval,
-              dataValidationTime: TimeInterval,
-              featureEngineeringTime: TimeInterval,
-              trainingTime: TimeInterval,
-              validationTime: TimeInterval)
-  {
-    self.totalDuration = totalDuration
-    self.dataLoadingTime = dataLoadingTime
-    self.dataValidationTime = dataValidationTime
-    self.featureEngineeringTime = featureEngineeringTime
-    self.trainingTime = trainingTime
-    self.validationTime = validationTime
-  }
+    public init(
+        totalDuration: TimeInterval,
+        dataLoadingTime: TimeInterval,
+        dataValidationTime: TimeInterval,
+        featureEngineeringTime: TimeInterval,
+        trainingTime: TimeInterval,
+        validationTime: TimeInterval
+    ) {
+        self.totalDuration = totalDuration
+        self.dataLoadingTime = dataLoadingTime
+        self.dataValidationTime = dataValidationTime
+        self.featureEngineeringTime = featureEngineeringTime
+        self.trainingTime = trainingTime
+        self.validationTime = validationTime
+    }
 }
 
-/// Training seeds for reproducibility
-public struct TrainingSeeds: Codable {
-  public let featureEngineeringSeed: Int
-  public let trainingSeed: Int
-  public let validationSeed: Int
+public struct TrainingSeeds: Codable, Sendable {
+    public let featureEngineeringSeed: Int
+    public let trainingSeed: Int
+    public let validationSeed: Int
 
-  public init(featureEngineeringSeed: Int,
-              trainingSeed: Int,
-              validationSeed: Int)
-  {
-    self.featureEngineeringSeed = featureEngineeringSeed
-    self.trainingSeed = trainingSeed
-    self.validationSeed = validationSeed
-  }
+    public init(
+        featureEngineeringSeed: Int,
+        trainingSeed: Int,
+        validationSeed: Int
+    ) {
+        self.featureEngineeringSeed = featureEngineeringSeed
+        self.trainingSeed = trainingSeed
+        self.validationSeed = validationSeed
+    }
 }
 
-/// Model input/output shapes
-public struct ModelShapes: Codable {
-  public let inputShape: [Int]
-  public let outputShape: [Int]
-  public let featureCount: Int
-  public let targetCount: Int
+public struct ModelShapes: Codable, Sendable {
+    public let inputShape: [Int]
+    public let outputShape: [Int]
+    public let featureCount: Int
+    public let targetCount: Int
 
-  public init(inputShape: [Int],
-              outputShape: [Int],
-              featureCount: Int,
-              targetCount: Int)
-  {
-    self.inputShape = inputShape
-    self.outputShape = outputShape
-    self.featureCount = featureCount
-    self.targetCount = targetCount
-  }
+    public init(
+        inputShape: [Int],
+        outputShape: [Int],
+        featureCount: Int,
+        targetCount: Int
+    ) {
+        self.inputShape = inputShape
+        self.outputShape = outputShape
+        self.featureCount = featureCount
+        self.targetCount = targetCount
+    }
 }
 
-/// Training metadata
-public struct TrainingMetadata: Codable {
-  public let startTime: Date
-  public let endTime: Date
-  public let deviceInfo: String
-  public let osVersion: String
-  public let appVersion: String
-  public let recordCount: Int
-  public let bridgeCount: Int
-  public let horizons: [Int]
+public struct TrainingMetadata: Codable, Sendable {
+    public let startTime: Date
+    public let endTime: Date
+    public let deviceInfo: String
+    public let osVersion: String
+    public let appVersion: String
+    public let recordCount: Int
+    public let bridgeCount: Int
+    public let horizons: [Int]
 
-  public init(startTime: Date,
-              endTime: Date,
-              deviceInfo: String,
-              osVersion: String,
-              appVersion: String,
-              recordCount: Int,
-              bridgeCount: Int,
-              horizons: [Int])
-  {
-    self.startTime = startTime
-    self.endTime = endTime
-    self.deviceInfo = deviceInfo
-    self.osVersion = osVersion
-    self.appVersion = appVersion
-    self.recordCount = recordCount
-    self.bridgeCount = bridgeCount
-    self.horizons = horizons
-  }
+    public init(
+        startTime: Date,
+        endTime: Date,
+        deviceInfo: String,
+        osVersion: String,
+        appVersion: String,
+        recordCount: Int,
+        bridgeCount: Int,
+        horizons: [Int]
+    ) {
+        self.startTime = startTime
+        self.endTime = endTime
+        self.deviceInfo = deviceInfo
+        self.osVersion = osVersion
+        self.appVersion = appVersion
+        self.recordCount = recordCount
+        self.bridgeCount = bridgeCount
+        self.horizons = horizons
+    }
 }
 
 // MARK: - Phase 3: Statistical Training Metrics
 
-/// Statistical metrics for model training and validation (Phase 3 enhancement)
-/// Provides uncertainty quantification and distributional analysis of model predictions
-public struct StatisticalTrainingMetrics: Codable, Equatable {
-  /// Statistical summary of training loss across epochs
-  public let trainingLossStats: ETASummary
-  /// Statistical summary of validation loss across epochs
-  public let validationLossStats: ETASummary
-  /// Statistical summary of prediction accuracy across validation samples
-  public let predictionAccuracyStats: ETASummary
-  /// Statistical summary of ETA prediction variance across different time horizons
-  public let etaPredictionVariance: ETASummary
-  /// Confidence intervals for model performance metrics
-  public let performanceConfidenceIntervals: PerformanceConfidenceIntervals
-  /// Distribution analysis of prediction errors
-  public let errorDistribution: ErrorDistributionMetrics
+public struct StatisticalTrainingMetrics: Codable, Equatable, Sendable {
+    public let trainingLossStats: ETASummary
+    public let validationLossStats: ETASummary
+    public let predictionAccuracyStats: ETASummary
+    public let etaPredictionVariance: ETASummary
+    public let performanceConfidenceIntervals: PerformanceConfidenceIntervals
+    public let errorDistribution: ErrorDistributionMetrics
 
-  public init(trainingLossStats: ETASummary,
-              validationLossStats: ETASummary,
-              predictionAccuracyStats: ETASummary,
-              etaPredictionVariance: ETASummary,
-              performanceConfidenceIntervals: PerformanceConfidenceIntervals,
-              errorDistribution: ErrorDistributionMetrics)
-  {
-    self.trainingLossStats = trainingLossStats
-    self.validationLossStats = validationLossStats
-    self.predictionAccuracyStats = predictionAccuracyStats
-    self.etaPredictionVariance = etaPredictionVariance
-    self.performanceConfidenceIntervals = performanceConfidenceIntervals
-    self.errorDistribution = errorDistribution
-  }
+    public init(
+        trainingLossStats: ETASummary,
+        validationLossStats: ETASummary,
+        predictionAccuracyStats: ETASummary,
+        etaPredictionVariance: ETASummary,
+        performanceConfidenceIntervals: PerformanceConfidenceIntervals,
+        errorDistribution: ErrorDistributionMetrics
+    ) {
+        self.trainingLossStats = trainingLossStats
+        self.validationLossStats = validationLossStats
+        self.predictionAccuracyStats = predictionAccuracyStats
+        self.etaPredictionVariance = etaPredictionVariance
+        self.performanceConfidenceIntervals = performanceConfidenceIntervals
+        self.errorDistribution = errorDistribution
+    }
 }
 
-/// Confidence intervals for key performance metrics
-public struct PerformanceConfidenceIntervals: Codable, Equatable {
-  /// 95% confidence interval for accuracy
-  public let accuracy95CI: ConfidenceInterval
-  /// 95% confidence interval for F1 score
-  public let f1Score95CI: ConfidenceInterval
-  /// 95% confidence interval for mean prediction error
-  public let meanError95CI: ConfidenceInterval
+public struct PerformanceConfidenceIntervals: Codable, Equatable, Sendable {
+    public let accuracy95CI: ConfidenceInterval
+    public let f1Score95CI: ConfidenceInterval
+    public let meanError95CI: ConfidenceInterval
 
-  public init(accuracy95CI: ConfidenceInterval,
-              f1Score95CI: ConfidenceInterval,
-              meanError95CI: ConfidenceInterval)
-  {
-    self.accuracy95CI = accuracy95CI
-    self.f1Score95CI = f1Score95CI
-    self.meanError95CI = meanError95CI
-  }
+    public init(
+        accuracy95CI: ConfidenceInterval,
+        f1Score95CI: ConfidenceInterval,
+        meanError95CI: ConfidenceInterval
+    ) {
+        self.accuracy95CI = accuracy95CI
+        self.f1Score95CI = f1Score95CI
+        self.meanError95CI = meanError95CI
+    }
 }
 
-/// Represents a confidence interval with lower and upper bounds
-public struct ConfidenceInterval: Codable, Equatable {
-  public let lower: Double
-  public let upper: Double
+public struct ConfidenceInterval: Codable, Equatable, Sendable {
+    public let lower: Double
+    public let upper: Double
 
-  public init(lower: Double, upper: Double) {
-    self.lower = lower
-    self.upper = upper
-  }
+    public init(lower: Double, upper: Double) {
+        self.lower = lower
+        self.upper = upper
+    }
 }
 
-/// Distribution analysis of prediction errors
-public struct ErrorDistributionMetrics: Codable, Equatable {
-  /// Statistical summary of absolute prediction errors
-  public let absoluteErrorStats: ETASummary
-  /// Statistical summary of relative prediction errors (percentage)
-  public let relativeErrorStats: ETASummary
-  /// Percentage of predictions within 1 standard deviation of actual
-  public let withinOneStdDev: Double
-  /// Percentage of predictions within 2 standard deviations of actual
-  public let withinTwoStdDev: Double
+public struct ErrorDistributionMetrics: Codable, Equatable, Sendable {
+    public let absoluteErrorStats: ETASummary
+    public let relativeErrorStats: ETASummary
+    public let withinOneStdDev: Double
+    public let withinTwoStdDev: Double
 
-  public init(absoluteErrorStats: ETASummary,
-              relativeErrorStats: ETASummary,
-              withinOneStdDev: Double,
-              withinTwoStdDev: Double)
-  {
-    self.absoluteErrorStats = absoluteErrorStats
-    self.relativeErrorStats = relativeErrorStats
-    self.withinOneStdDev = withinOneStdDev
-    self.withinTwoStdDev = withinTwoStdDev
-  }
+    public init(
+        absoluteErrorStats: ETASummary,
+        relativeErrorStats: ETASummary,
+        withinOneStdDev: Double,
+        withinTwoStdDev: Double
+    ) {
+        self.absoluteErrorStats = absoluteErrorStats
+        self.relativeErrorStats = relativeErrorStats
+        self.withinOneStdDev = withinOneStdDev
+        self.withinTwoStdDev = withinTwoStdDev
+    }
 }

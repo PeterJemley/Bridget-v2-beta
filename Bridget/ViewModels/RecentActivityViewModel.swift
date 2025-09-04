@@ -1,14 +1,21 @@
 import Foundation
 
+@MainActor
 @Observable
 final class RecentActivityViewModel {
   private let backgroundManager: MLPipelineBackgroundManager
 
   var recentActivities = [PipelineActivity]()
 
-  init(backgroundManager: MLPipelineBackgroundManager = .shared) {
+  // Designated initializer
+  init(backgroundManager: MLPipelineBackgroundManager) {
     self.backgroundManager = backgroundManager
     refreshActivities()
+  }
+
+  // Convenience initializer that safely references the @MainActor-isolated shared instance
+  convenience init() {
+    self.init(backgroundManager: MLPipelineBackgroundManager.shared)
   }
 
   func refreshActivities() {

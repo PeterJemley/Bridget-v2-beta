@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct MemoryUsageChart: View {
     let metrics: [PipelineStageMetric]
@@ -26,5 +26,6 @@ struct MemoryUsageChart: View {
             .frame(height: 220)
             .chartYAxis { AxisMarks(position: .leading) }
         }
+        .accessibilityIdentifier("MemoryUsageChart")
     }
 }

@@ -11,13 +11,14 @@ final class QuickActionsViewModel {
   var errorMessage: String?
   var lastOperationResult: String?
 
+  @MainActor
   init(modelContext: ModelContext,
-       backgroundManager: MLPipelineBackgroundManager = .shared,
-       notificationManager: MLPipelineNotificationManager = .shared)
+       backgroundManager: MLPipelineBackgroundManager? = nil,
+       notificationManager: MLPipelineNotificationManager? = nil)
   {
     self.modelContext = modelContext
-    self.backgroundManager = backgroundManager
-    self.notificationManager = notificationManager
+    self.backgroundManager = backgroundManager ?? .shared
+    self.notificationManager = notificationManager ?? .shared
   }
 
   // MARK: - Actions

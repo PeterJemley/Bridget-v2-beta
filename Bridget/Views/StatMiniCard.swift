@@ -10,13 +10,17 @@ struct StatMiniCard: View {
             Text(title)
                 .font(.caption)
                 .foregroundColor(.secondary)
+                .accessibilityIdentifier("StatMiniCardLabel")
             Text(value)
                 .font(.headline)
                 .foregroundStyle(color)
+                .accessibilityIdentifier("StatMiniCardValue")
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.secondarySystemBackground))
         .cornerRadius(10)
+        .accessibilityIdentifier("StatMiniCard")
     }
 }
+

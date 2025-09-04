@@ -42,7 +42,7 @@ import Foundation
 /// - Cache Expiration: Automatic validation based on file modification time
 /// - Size Management: Cache size calculation and cleanup utilities
 /// - Error Handling: Silent failure with console logging
-/// - Thread Safety: Singleton pattern ensures consistent cache state
+/// - Thread Safety: Internal concurrent queue with barrier writes for file I/O; singleton is Sendable
 ///
 /// ## Usage
 /// ```swift
@@ -58,11 +58,17 @@ import Foundation
 /// ## Topics
 /// - Caching: `saveToCache(_:for:)`, `loadFromCache(_:for:)`, `isCacheValid(for:)`
 /// - Utilities: `clearCache()`, `getCacheSize()`
-class CacheService {
+final class CacheService {
   /// Shared singleton instance of `CacheService`.
   ///
   /// Use this instance to access caching functionality throughout the app.
   static let shared = CacheService()
+
+  // MARK: - Thread-safety
+
+  // Guard all file I/O through a concurrent queue.
+  // Reads: queue.sync; Mutations (write/delete): queue.sync with .barrier
+  private let ioQueue = DispatchQueue(label: "com.bridget.cacheservice.io", attributes: .concurrent)
 
   // MARK: - Properties
 
@@ -161,32 +167,34 @@ class CacheService {
   /// CacheService.shared.saveToCache(bridges, for: "historical_bridges")
   /// ```
   func saveToCache<T: Codable>(_ data: T, for key: String) {
-    print("💾 Attempting to save cache for key: \(key)")
+    ioQueue.sync(flags: .barrier) {
+      print("💾 Attempting to save cache for key: \(key)")
 
-    guard let cacheURL = getCacheFileURL(for: key) else {
-      print("❌ Failed to get cache file URL for key: \(key)")
-      return
-    }
+      guard let cacheURL = getCacheFileURL(for: key) else {
+        print("❌ Failed to get cache file URL for key: \(key)")
+        return
+      }
 
-    print("📍 Cache file URL: \(cacheURL.path)")
+      print("📍 Cache file URL: \(cacheURL.path)")
 
-    do {
-      // Ensure cache directory exists
-      _ = getCacheDirectory()
+      do {
+        // Ensure cache directory exists
+        _ = getCacheDirectory()
 
-      let encoder = JSONEncoder.bridgeEncoder(
-        dateEncodingStrategy: .iso8601
-      )
-      let data = try encoder.encode(data)
-      print("✅ Data encoded successfully, size: \(data.count) bytes")
+        let encoder = JSONEncoder.bridgeEncoder(
+          dateEncodingStrategy: .iso8601
+        )
+        let encoded = try encoder.encode(data)
+        print("✅ Data encoded successfully, size: \(encoded.count) bytes")
 
-      try data.write(to: cacheURL)
-      print("✅ Cache file written successfully to: \(cacheURL.path)")
-    } catch {
-      print("❌ Failed to save cache for key \(key): \(error)")
-      if let nsError = error as NSError? {
-        print("   Domain: \(nsError.domain), Code: \(nsError.code)")
-        print("   UserInfo: \(nsError.userInfo)")
+        try encoded.write(to: cacheURL)
+        print("✅ Cache file written successfully to: \(cacheURL.path)")
+      } catch {
+        print("❌ Failed to save cache for key \(key): \(error)")
+        if let nsError = error as NSError? {
+          print("   Domain: \(nsError.domain), Code: \(nsError.code)")
+          print("   UserInfo: \(nsError.userInfo)")
+        }
       }
     }
   }
@@ -212,30 +220,32 @@ class CacheService {
   /// }
   /// ```
   func loadFromCache<T: Codable>(_ type: T.Type, for key: String) -> T? {
-    print("📖 Attempting to load cache for key: \(key)")
+    return ioQueue.sync {
+      print("📖 Attempting to load cache for key: \(key)")
 
-    guard let cacheURL = getCacheFileURL(for: key) else {
-      print("❌ Failed to get cache file URL for key: \(key)")
-      return nil
-    }
-
-    print("📍 Cache file URL: \(cacheURL.path)")
-
-    do {
-      let data = try Data(contentsOf: cacheURL)
-      print("✅ Cache file read successfully, size: \(data.count) bytes")
-
-      let decoder = JSONDecoder.bridgeDecoder()
-      let result = try decoder.decode(type, from: data)
-      print("✅ Cache data decoded successfully")
-      return result
-    } catch {
-      print("❌ Failed to load cache for key \(key): \(error)")
-      if let nsError = error as NSError? {
-        print("   Domain: \(nsError.domain), Code: \(nsError.code)")
-        print("   UserInfo: \(nsError.userInfo)")
+      guard let cacheURL = getCacheFileURL(for: key) else {
+        print("❌ Failed to get cache file URL for key: \(key)")
+        return nil
       }
-      return nil
+
+      print("📍 Cache file URL: \(cacheURL.path)")
+
+      do {
+        let data = try Data(contentsOf: cacheURL)
+        print("✅ Cache file read successfully, size: \(data.count) bytes")
+
+        let decoder = JSONDecoder.bridgeDecoder()
+        let result = try decoder.decode(type, from: data)
+        print("✅ Cache data decoded successfully")
+        return result
+      } catch {
+        print("❌ Failed to load cache for key \(key): \(error)")
+        if let nsError = error as NSError? {
+          print("   Domain: \(nsError.domain), Code: \(nsError.code)")
+          print("   UserInfo: \(nsError.userInfo)")
+        }
+        return nil
+      }
     }
   }
 
@@ -256,17 +266,19 @@ class CacheService {
   /// }
   /// ```
   func isCacheValid(for key: String) -> Bool {
-    guard let cacheURL = getCacheFileURL(for: key) else { return false }
+    return ioQueue.sync {
+      guard let cacheURL = getCacheFileURL(for: key) else { return false }
 
-    do {
-      let attributes = try FileManagerUtils.attributesOfItem(at: cacheURL)
-      guard let modificationDate = attributes[.modificationDate] as? Date
-      else { return false }
+      do {
+        let attributes = try FileManagerUtils.attributesOfItem(at: cacheURL)
+        guard let modificationDate = attributes[.modificationDate] as? Date
+        else { return false }
 
-      let cacheAge = Date().timeIntervalSince(modificationDate)
-      return cacheAge < cacheExpirationTime
-    } catch {
-      return false
+        let cacheAge = Date().timeIntervalSince(modificationDate)
+        return cacheAge < cacheExpirationTime
+      } catch {
+        return false
+      }
     }
   }
 
@@ -284,15 +296,17 @@ class CacheService {
   /// CacheService.shared.clearCache()
   /// ```
   func clearCache() {
-    guard let cacheDir = getCacheDirectory() else { return }
+    ioQueue.sync(flags: .barrier) {
+      guard let cacheDir = getCacheDirectory() else { return }
 
-    do {
-      let fileURLs = try FileManagerUtils.enumerateFiles(in: cacheDir)
-      for fileURL in fileURLs {
-        try FileManagerUtils.removeFile(at: fileURL)
+      do {
+        let fileURLs = try FileManagerUtils.enumerateFiles(in: cacheDir)
+        for fileURL in fileURLs {
+          try FileManagerUtils.removeFile(at: fileURL)
+        }
+      } catch {
+        print("Failed to clear cache: \(error)")
       }
-    } catch {
-      print("Failed to clear cache: \(error)")
     }
   }
 
@@ -309,12 +323,21 @@ class CacheService {
   /// print("Cache size: \(cacheSize) bytes")
   /// ```
   func getCacheSize() -> Int64 {
-    guard let cacheDir = getCacheDirectory() else { return 0 }
+    return ioQueue.sync {
+      guard let cacheDir = getCacheDirectory() else { return 0 }
 
-    do {
-      return try FileManagerUtils.calculateDirectorySize(in: cacheDir)
-    } catch {
-      return 0
+      do {
+        return try FileManagerUtils.calculateDirectorySize(in: cacheDir)
+      } catch {
+        return 0
+      }
     }
   }
 }
+
+// MARK: - Concurrency
+
+// CacheService performs all file I/O through a concurrent queue with barrier writes,
+// and holds no mutable shared state beyond initialization constants.
+// It is safe to pass across concurrency domains in this app context.
+extension CacheService: @unchecked Sendable {}

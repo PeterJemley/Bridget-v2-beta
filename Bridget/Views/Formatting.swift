@@ -44,12 +44,14 @@ enum Formatting {
     // MARK: - Public helpers
 
     static func percent(_ value: Double) -> String {
-        percentFormatter.string(from: NSNumber(value: value)) ?? "\(Int(value * 100))%"
+        percentFormatter.string(from: NSNumber(value: value))
+            ?? "\(Int(value * 100))%"
     }
 
     static func percentFromUnit(_ unitValue: Double) -> String {
         // 0.87 -> "87.0%"
-        percentFormatter.string(from: NSNumber(value: unitValue)) ?? "\(Int(unitValue * 100))%"
+        percentFormatter.string(from: NSNumber(value: unitValue))
+            ?? "\(Int(unitValue * 100))%"
     }
 
     static func seconds(_ seconds: Double, fractionDigits: Int = 1) -> String {
@@ -64,7 +66,8 @@ enum Formatting {
     static func memoryMB(_ megabytes: Int) -> String {
         // If you want localized info units, convert to bytes and format as InformationStorage.
         // For now, keep “MB” label consistent with existing UI.
-        return "\(numberFormatter.string(from: NSNumber(value: megabytes)) ?? "\(megabytes)") MB"
+        return
+            "\(numberFormatter.string(from: NSNumber(value: megabytes)) ?? "\(megabytes)") MB"
     }
 
     static func integer(_ value: Int) -> String {
@@ -72,10 +75,12 @@ enum Formatting {
     }
 
     static func decimal1(_ value: Double) -> String {
-        decimal1Formatter.string(from: NSNumber(value: value)) ?? String(format: "%.1f", value)
+        decimal1Formatter.string(from: NSNumber(value: value))
+            ?? String(format: "%.1f", value)
     }
 
     static func decimal3(_ value: Double) -> String {
-        decimal3Formatter.string(from: NSNumber(value: value)) ?? String(format: "%.3f", value)
+        decimal3Formatter.string(from: NSNumber(value: value))
+            ?? String(format: "%.3f", value)
     }
 }
