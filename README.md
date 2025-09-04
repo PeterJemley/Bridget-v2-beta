@@ -86,6 +86,27 @@ A sophisticated pathfinding and route optimization engine for Seattle bridge tra
 - **Modular Architecture**: Clean separation of concerns with comprehensive testing
 - **Production-Ready Training**: Robust on-device training with OS cues and session management
 
+## 📚 Documentation Hub
+
+### Quick Start
+- **[Build & Run](BridgetDocumentation.docc/Index.md#quick-start)** - Get started with development
+- **[Testing Workflow](BridgetDocumentation.docc/TestingWorkflow.md)** - How to run tests
+
+### Technical Documentation
+- **[Architecture Overview](BridgetDocumentation.docc/ArchitectureOverview.md)** - System design and architecture
+- **[Concurrency Fixes](BridgetDocumentation.docc/ConcurrencyFixes.md)** - Comprehensive concurrency implementation
+- **[ML Training Data Pipeline](BridgetDocumentation.docc/MLTrainingDataPipeline.md)** - ML data generation pipeline
+- **[Validation Failures](BridgetDocumentation.docc/ValidationFailures.md)** - Data validation strategies
+
+### Project Documentation
+- **[Project Index](Documentation/PROJECT_INDEX.md)** - Complete project documentation index
+- **[MultiPath Implementation Status](Documentation/MultiPath_Implementation_Status.md)** - Implementation progress
+- **[MultiPath Roadmap](Documentation/MULTIPATH_ROADMAP.md)** - Development roadmap
+
+### Contributing & Tooling
+- **[Git Hooks](Documentation/GIT_HOOKS_README.md)** - Development tooling setup
+- **[Thread Sanitizer Setup](BridgetDocumentation.docc/Articles/ThreadSanitizer_Setup.md)** - Race detection setup
+
 ## Core Engineering Requirements Synopsis
 
 - [x] Use Apple's Observation framework exclusively (`@Observable`, `withObservationTracking`)

@@ -216,6 +216,12 @@ final class MLPipelineBackgroundManager {
 - **Memory usage**: Monitor shared state memory patterns
 - **Error rates**: Track any remaining concurrency-related errors
 
+## Related Documentation
+
+- **[Thread Sanitizer Setup](Articles/ThreadSanitizer_Setup.md)** - Setup and usage guide for race detection
+- **[Architecture Overview](ArchitectureOverview.md)** - System architecture and thread safety patterns
+- **[Testing Workflow](TestingWorkflow.md)** - How to test concurrency fixes
+
 ## Conclusion
 
 The comprehensive concurrency fixes have transformed the Bridget codebase into a modern, thread-safe Swift application that fully leverages Swift Concurrency features. All shared instances are properly isolated, data models are Sendable-compliant, and the codebase is ready for production deployment with confidence in its thread safety.
