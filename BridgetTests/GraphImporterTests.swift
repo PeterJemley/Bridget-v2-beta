@@ -3,12 +3,15 @@
 //  BridgetTests
 //
 
-import XCTest
+import Foundation
+import Testing
 
 @testable import Bridget
 
-final class GraphImporterTests: XCTestCase {
-  func testBasicGraphImport() throws {
+@Suite("Graph Importer Tests")
+struct GraphImporterTests {
+  @Test("Basic graph import builds and validates a tiny graph")
+  func basicGraphImport() throws {
     // Create a simple test graph
     let nodes = [
       Node(id: "A",
@@ -32,15 +35,16 @@ final class GraphImporterTests: XCTestCase {
     let graph = try Graph(nodes: nodes, edges: edges)
 
     // Basic validation
-    XCTAssertEqual(graph.nodes.count, 2)
-    XCTAssertEqual(graph.allEdges.count, 1)
+    #expect(graph.nodes.count == 2)
+    #expect(graph.allEdges.count == 1)
 
     // Test graph validation
     let validationResult = graph.validate()
-    XCTAssertTrue(validationResult.isValid, "Graph should be valid")
+    #expect(validationResult.isValid, "Graph should be valid")
   }
 
-  func testJSONDecoding() throws {
+  @Test("JSON decoding for import structs works independently")
+  func jSONDecoding() throws {
     // Test JSON decoding directly to isolate the issue
     let nodesJSON = """
     [
@@ -66,17 +70,18 @@ final class GraphImporterTests: XCTestCase {
                                            from: bridgesJSON)
 
     // Verify decoding worked
-    XCTAssertEqual(nodes.count, 2)
-    XCTAssertEqual(edges.count, 1)
-    XCTAssertEqual(bridges.count, 0)
+    #expect(nodes.count == 2)
+    #expect(edges.count == 1)
+    #expect(bridges.count == 0)
 
     // Verify specific values
-    XCTAssertEqual(nodes[0].id, "A")
-    XCTAssertEqual(edges[0].from, "A")
-    XCTAssertEqual(edges[0].to, "B")
+    #expect(nodes[0].id == "A")
+    #expect(edges[0].from == "A")
+    #expect(edges[0].to == "B")
   }
 
-  func testSimpleGraphImporter() throws {
+  @Test("Importing from a directory with JSON files yields a valid Graph")
+  func simpleGraphImporter() throws {
     // Test GraphImporter with simple data
     let tempDir = FileManager.default.temporaryDirectory
     let testDir = tempDir.appendingPathComponent(
@@ -122,7 +127,7 @@ final class GraphImporterTests: XCTestCase {
     let graph = try GraphImporter.importGraph(from: testDir)
 
     // Verify
-    XCTAssertEqual(graph.nodes.count, 2)
-    XCTAssertEqual(graph.allEdges.count, 1)
+    #expect(graph.nodes.count == 2)
+    #expect(graph.allEdges.count == 1)
   }
 }

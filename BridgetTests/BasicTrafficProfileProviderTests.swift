@@ -1,61 +1,86 @@
+import Foundation
 import SwiftData
-import XCTest
+import Testing
 
 @testable import Bridget
 
-final class BasicTrafficProfileProviderTests: XCTestCase {
-  var modelContainer: ModelContainer!
-  var modelContext: ModelContext!
-  var provider: BasicTrafficProfileProvider!
+@Suite("BasicTrafficProfileProvider Tests", .serialized)
+struct BasicTrafficProfileProviderTests {
+  // MARK: - Helpers
 
-  override func setUpWithError() throws {
-    try super.setUpWithError()
-
-    // Create in-memory model container for testing
+  private func makeProvider() throws -> (ModelContainer, ModelContext, BasicTrafficProfileProvider) {
     let schema = Schema([TrafficProfile.self])
     let modelConfiguration = ModelConfiguration(schema: schema,
                                                 isStoredInMemoryOnly: true)
-    modelContainer = try ModelContainer(for: schema,
-                                        configurations: [modelConfiguration])
-    modelContext = ModelContext(modelContainer)
-    provider = BasicTrafficProfileProvider(modelContext: modelContext)
+    let modelContainer = try ModelContainer(for: schema,
+                                            configurations: [modelConfiguration])
+    let modelContext = ModelContext(modelContainer)
+    let provider = BasicTrafficProfileProvider(modelContext: modelContext)
+    return (modelContainer, modelContext, provider)
   }
 
-  override func tearDownWithError() throws {
-    modelContainer = nil
-    modelContext = nil
-    provider = nil
-    try super.tearDownWithError()
+  private func createDate(year: Int = 2024,
+                          month: Int = 1,
+                          day: Int = 15,
+                          hour: Int,
+                          minute: Int) -> Date
+  {
+    let calendar = Calendar.current
+    let components = DateComponents(year: year,
+                                    month: month,
+                                    day: day,
+                                    hour: hour,
+                                    minute: minute)
+    return calendar.date(from: components) ?? Date()
+  }
+
+  private func createWeekendDate(hour: Int, minute: Int) -> Date {
+    // January 13, 2024 is a Saturday
+    return createDate(year: 2024,
+                      month: 1,
+                      day: 13,
+                      hour: hour,
+                      minute: minute)
   }
 
   // MARK: - Profile Management Tests
 
-  func testCreateDefaultProfile() throws {
-    // Test that default profile is created on initialization
-    let profiles = provider.getAllProfiles()
-    XCTAssertEqual(profiles.count, 1, "Should create one default profile")
+  @Test("Default profile is created on initialization")
+  func createDefaultProfile() throws {
+    let (_, _, provider) = try makeProvider()
 
-    let defaultProfile = profiles.first!
-    XCTAssertEqual(defaultProfile.name, "Seattle Default")
-    XCTAssertTrue(defaultProfile.isActive)
-    XCTAssertEqual(defaultProfile.morningRushMultiplier, 1.5)
-    XCTAssertEqual(defaultProfile.eveningRushMultiplier, 1.8)
-    XCTAssertEqual(defaultProfile.nightMultiplier, 0.8)
+    let profiles = provider.getAllProfiles()
+    #expect(profiles.count == 1, "Should create one default profile")
+
+    let defaultProfile = try #require(profiles.first)
+    #expect(defaultProfile.name == "Seattle Default")
+    #expect(defaultProfile.isActive)
+    #expect(defaultProfile.morningRushMultiplier == 1.5)
+    #expect(defaultProfile.eveningRushMultiplier == 1.8)
+    #expect(defaultProfile.nightMultiplier == 0.8)
   }
 
-  func testCreateCustomProfile() throws {
+  @Test("Create custom profile activates it and persists fields")
+  func createCustomProfile() throws {
+    let (_, _, provider) = try makeProvider()
+
     let customProfile = provider.createProfile(name: "Test Profile",
                                                profileDescription: "Test description")
 
-    XCTAssertEqual(customProfile.name, "Test Profile")
-    XCTAssertEqual(customProfile.profileDescription, "Test description")
-    XCTAssertTrue(customProfile.isActive)
+    #expect(customProfile.name == "Test Profile")
+    #expect(customProfile.profileDescription == "Test description")
+    #expect(customProfile.isActive)
 
     let profiles = provider.getAllProfiles()
-    XCTAssertEqual(profiles.count, 2)  // Default + custom
+    #expect(profiles.count == 2)  // Default + custom
   }
 
+  @Test(
+    "Setting active profile deactivates others and getActiveProfile matches"
+  )
   func testSetActiveProfile() throws {
+    let (_, _, provider) = try makeProvider()
+
     let profile1 = provider.createProfile(name: "Profile 1")
     let profile2 = provider.createProfile(name: "Profile 2")
 
@@ -63,63 +88,81 @@ final class BasicTrafficProfileProviderTests: XCTestCase {
     provider.setActiveProfile(profile2)
 
     // Verify profile2 is active and profile1 is not
-    XCTAssertTrue(profile2.isActive)
-    XCTAssertFalse(profile1.isActive)
+    #expect(profile2.isActive)
+    #expect(!profile1.isActive)
 
     // Verify getActiveProfile returns profile2
     let activeProfile = provider.getActiveProfile()
-    XCTAssertEqual(activeProfile?.id, profile2.id)
+    #expect(activeProfile?.id == profile2.id)
   }
 
+  @Test("Deleting a profile reduces count")
   func testDeleteProfile() throws {
+    let (_, _, provider) = try makeProvider()
+
     let customProfile = provider.createProfile(name: "To Delete")
     let initialCount = provider.getAllProfiles().count
 
     provider.deleteProfile(customProfile)
 
     let finalCount = provider.getAllProfiles().count
-    XCTAssertEqual(finalCount, initialCount - 1)
+    #expect(finalCount == initialCount - 1)
   }
 
   // MARK: - Traffic Multiplier Tests
 
-  func testGetTrafficMultiplierMorningRush() throws {
+  @Test("Traffic multiplier - morning rush on arterial")
+  func getTrafficMultiplierMorningRush() throws {
+    let (_, _, provider) = try makeProvider()
+
     let morningDate = createDate(hour: 8, minute: 0)  // 8 AM
     let multiplier = provider.getTrafficMultiplier(for: morningDate,
                                                    segmentType: .arterial)
 
     // Should be: morningRush (1.5) * weekday (1.0) * arterial (1.2) = 1.8
-    XCTAssertEqual(multiplier, 1.5 * 1.0 * 1.2, accuracy: 0.01)
+    #expect(abs(multiplier - (1.5 * 1.0 * 1.2)) <= 0.01)
   }
 
-  func testGetTrafficMultiplierEveningRush() throws {
+  @Test("Traffic multiplier - evening rush on highway")
+  func getTrafficMultiplierEveningRush() throws {
+    let (_, _, provider) = try makeProvider()
+
     let eveningDate = createDate(hour: 17, minute: 30)  // 5:30 PM
     let multiplier = provider.getTrafficMultiplier(for: eveningDate,
                                                    segmentType: .highway)
 
     // Should be: eveningRush (1.8) * weekday (1.0) * highway (1.0) = 1.8
-    XCTAssertEqual(multiplier, 1.8 * 1.0 * 1.0, accuracy: 0.01)
+    #expect(abs(multiplier - (1.8 * 1.0 * 1.0)) <= 0.01)
   }
 
-  func testGetTrafficMultiplierNight() throws {
+  @Test("Traffic multiplier - night on local")
+  func getTrafficMultiplierNight() throws {
+    let (_, _, provider) = try makeProvider()
+
     let nightDate = createDate(hour: 23, minute: 0)  // 11 PM
     let multiplier = provider.getTrafficMultiplier(for: nightDate,
                                                    segmentType: .local)
 
     // Should be: night (0.8) * weekday (1.0) * local (1.0) = 0.8
-    XCTAssertEqual(multiplier, 0.8 * 1.0 * 1.0, accuracy: 0.01)
+    #expect(abs(multiplier - (0.8 * 1.0 * 1.0)) <= 0.01)
   }
 
-  func testGetTrafficMultiplierWeekend() throws {
+  @Test("Traffic multiplier - weekend midday on arterial")
+  func getTrafficMultiplierWeekend() throws {
+    let (_, _, provider) = try makeProvider()
+
     let weekendDate = createWeekendDate(hour: 14, minute: 0)  // 2 PM Saturday
     let multiplier = provider.getTrafficMultiplier(for: weekendDate,
                                                    segmentType: .arterial)
 
     // Should be: midday (1.0) * weekend (0.9) * arterial (1.2) = 1.08
-    XCTAssertEqual(multiplier, 1.0 * 0.9 * 1.2, accuracy: 0.01)
+    #expect(abs(multiplier - (1.0 * 0.9 * 1.2)) <= 0.01)
   }
 
-  func testGetTrafficMultiplierNoActiveProfile() throws {
+  @Test("Traffic multiplier defaults to 1.0 when no active profile")
+  func getTrafficMultiplierNoActiveProfile() throws {
+    let (_, _, provider) = try makeProvider()
+
     // Delete all profiles to test no active profile scenario
     let profiles = provider.getAllProfiles()
     for profile in profiles {
@@ -131,42 +174,50 @@ final class BasicTrafficProfileProviderTests: XCTestCase {
                                                    segmentType: .highway)
 
     // Should return default multiplier (1.0) when no active profile
-    XCTAssertEqual(multiplier, 1.0)
+    #expect(multiplier == 1.0)
   }
 
   // MARK: - Time Period Tests
 
-  func testTimePeriodFromDate() throws {
-    XCTAssertEqual(TimePeriod.fromDate(createDate(hour: 7, minute: 30)),
-                   .morningRush)
-    XCTAssertEqual(TimePeriod.fromDate(createDate(hour: 8, minute: 59)),
-                   .morningRush)
-    XCTAssertEqual(TimePeriod.fromDate(createDate(hour: 9, minute: 0)),
-                   .midday)
-    XCTAssertEqual(TimePeriod.fromDate(createDate(hour: 15, minute: 59)),
-                   .midday)
-    XCTAssertEqual(TimePeriod.fromDate(createDate(hour: 16, minute: 0)),
-                   .eveningRush)
-    XCTAssertEqual(TimePeriod.fromDate(createDate(hour: 18, minute: 59)),
-                   .eveningRush)
-    XCTAssertEqual(TimePeriod.fromDate(createDate(hour: 19, minute: 0)),
-                   .night)
-    XCTAssertEqual(TimePeriod.fromDate(createDate(hour: 6, minute: 59)),
-                   .night)
+  @Test("TimePeriod.fromDate returns correct periods for boundary hours")
+  func timePeriodFromDate() {
+    #expect(
+      TimePeriod.fromDate(createDate(hour: 7, minute: 30)) == .morningRush
+    )
+    #expect(
+      TimePeriod.fromDate(createDate(hour: 8, minute: 59)) == .morningRush
+    )
+    #expect(TimePeriod.fromDate(createDate(hour: 9, minute: 0)) == .midday)
+    #expect(
+      TimePeriod.fromDate(createDate(hour: 15, minute: 59)) == .midday
+    )
+    #expect(
+      TimePeriod.fromDate(createDate(hour: 16, minute: 0)) == .eveningRush
+    )
+    #expect(
+      TimePeriod.fromDate(createDate(hour: 18, minute: 59))
+        == .eveningRush
+    )
+    #expect(TimePeriod.fromDate(createDate(hour: 19, minute: 0)) == .night)
+    #expect(TimePeriod.fromDate(createDate(hour: 6, minute: 59)) == .night)
   }
 
   // MARK: - Road Segment Type Tests
 
-  func testRoadSegmentTypeDisplayNames() throws {
-    XCTAssertEqual(RoadSegmentType.arterial.displayName, "Arterial")
-    XCTAssertEqual(RoadSegmentType.highway.displayName, "Highway")
-    XCTAssertEqual(RoadSegmentType.local.displayName, "Local")
-    XCTAssertEqual(RoadSegmentType.bridge.displayName, "Bridge")
+  @Test("RoadSegmentType display names are correct")
+  func roadSegmentTypeDisplayNames() {
+    #expect(RoadSegmentType.arterial.displayName == "Arterial")
+    #expect(RoadSegmentType.highway.displayName == "Highway")
+    #expect(RoadSegmentType.local.displayName == "Local")
+    #expect(RoadSegmentType.bridge.displayName == "Bridge")
   }
 
   // MARK: - Profile Update Tests
 
+  @Test("Updating a profile persists changes")
   func testUpdateProfile() throws {
+    let (_, _, provider) = try makeProvider()
+
     let profile = provider.createProfile(name: "Test Update")
     let originalMultiplier = profile.morningRushMultiplier
 
@@ -176,33 +227,38 @@ final class BasicTrafficProfileProviderTests: XCTestCase {
 
     // Verify the update
     let updatedProfile = provider.getActiveProfile()
-    XCTAssertEqual(updatedProfile?.morningRushMultiplier, 2.0)
-    XCTAssertNotEqual(updatedProfile?.morningRushMultiplier,
-                      originalMultiplier)
+    #expect(updatedProfile?.morningRushMultiplier == 2.0)
+    #expect(updatedProfile?.morningRushMultiplier != originalMultiplier)
   }
 
   // MARK: - Edge Cases
 
-  func testMultipleProfilesOnlyOneActive() throws {
+  @Test("Only one profile is active at a time")
+  func multipleProfilesOnlyOneActive() throws {
+    let (_, _, provider) = try makeProvider()
+
     let profile1 = provider.createProfile(name: "Profile 1")
     let profile2 = provider.createProfile(name: "Profile 2")
     let profile3 = provider.createProfile(name: "Profile 3")
 
-    // All should be active initially (last created)
-    XCTAssertTrue(profile3.isActive)
-    XCTAssertFalse(profile1.isActive)
-    XCTAssertFalse(profile2.isActive)
+    // Last created should be active
+    #expect(profile3.isActive)
+    #expect(!profile1.isActive)
+    #expect(!profile2.isActive)
 
     // Set profile1 as active
     provider.setActiveProfile(profile1)
 
     // Only profile1 should be active
-    XCTAssertTrue(profile1.isActive)
-    XCTAssertFalse(profile2.isActive)
-    XCTAssertFalse(profile3.isActive)
+    #expect(profile1.isActive)
+    #expect(!profile2.isActive)
+    #expect(!profile3.isActive)
   }
 
-  func testProfileTotalMultiplier() throws {
+  @Test("TrafficProfile.getTotalMultiplier calculates combined multiplier")
+  func profileTotalMultiplier() throws {
+    let (_, _, provider) = try makeProvider()
+
     let profile = provider.createProfile(name: "Test Total")
     let date = createDate(hour: 8, minute: 0)  // Morning rush
 
@@ -212,29 +268,6 @@ final class BasicTrafficProfileProviderTests: XCTestCase {
       profile.morningRushMultiplier * profile.weekdayMultiplier
         * profile.arterialMultiplier
 
-    XCTAssertEqual(totalMultiplier, expectedMultiplier, accuracy: 0.01)
-  }
-
-  // MARK: - Helper Methods
-
-  private func createDate(hour: Int, minute: Int) -> Date {
-    let calendar = Calendar.current
-    let components = DateComponents(year: 2024,
-                                    month: 1,
-                                    day: 15,
-                                    hour: hour,
-                                    minute: minute)
-    return calendar.date(from: components) ?? Date()
-  }
-
-  private func createWeekendDate(hour: Int, minute: Int) -> Date {
-    let calendar = Calendar.current
-    // January 13, 2024 is a Saturday
-    let components = DateComponents(year: 2024,
-                                    month: 1,
-                                    day: 13,
-                                    hour: hour,
-                                    minute: minute)
-    return calendar.date(from: components) ?? Date()
+    #expect(abs(totalMultiplier - expectedMultiplier) <= 0.01)
   }
 }

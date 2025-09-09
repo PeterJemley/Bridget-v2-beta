@@ -49,6 +49,7 @@ import Foundation
 /// - Validation Rules: `ValidationFailureReason`
 /// - Error Reporting: `BridgeDataError`
 /// - Validation Delegation: Utilizes `BridgeRecordValidator` and `ValidationUtils`
+@MainActor
 final class BridgeDataProcessor {
   static let shared = BridgeDataProcessor()
 
@@ -72,11 +73,11 @@ final class BridgeDataProcessor {
     let calendar = Calendar.current
     let minDate = calendar.date(byAdding: .year, value: -10, to: now) ?? now
     let maxDate = calendar.date(byAdding: .year, value: 1, to: now) ?? now
-    validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
-                                      bridgeLocations: bridgeLocations,
-                                      validEntityTypes: validEntityTypes,
-                                      minDate: minDate,
-                                      maxDate: maxDate)
+    self.validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
+                                           bridgeLocations: bridgeLocations,
+                                           validEntityTypes: validEntityTypes,
+                                           minDate: minDate,
+                                           maxDate: maxDate)
   }
 
   // MARK: - Data Processing
@@ -86,13 +87,30 @@ final class BridgeDataProcessor {
   /// - Parameter data: Raw JSON data from the Seattle Open Data API.
   /// - Returns: A tuple containing two elements: an array of validated `BridgeStatusModel` instances and an array of `ValidationFailure` detailing the reasons why specific records were rejected.
   /// - Throws: `BridgeDataError` in case of JSON decoding failures or fatal processing errors.
-  func processHistoricalData(_ data: Data) throws -> ([BridgeStatusModel], [ValidationFailure]) {
+  func processHistoricalData(_ data: Data) async throws -> ([BridgeStatusModel], [ValidationFailure]) {
     var failures: [ValidationFailure] = []
     var validRecords: [BridgeOpeningRecord] = []
     let decoder = JSONDecoder.bridgeDecoder()
     do {
       let records = try decoder.decode([BridgeOpeningRecord].self,
                                        from: data)
+
+      // Create date bounds for validation here to avoid main-actor work outside this method
+      let now = Date()
+      let calendar = Calendar.current
+      let minDate =
+        calendar.date(byAdding: .year, value: -10, to: now) ?? now
+      let maxDate =
+        calendar.date(byAdding: .year, value: 1, to: now) ?? now
+
+      // Construct the @MainActor-isolated validator on the main actor
+      let validator = BridgeRecordValidator(knownBridgeIDs: knownBridgeIDs,
+                                            bridgeLocations: bridgeLocations,
+                                            validEntityTypes: validEntityTypes,
+                                            minDate: minDate,
+                                            maxDate: maxDate)
+
+      // Validate records using the main actor for the validator calls
       for record in records {
         if let reason = validator.validationFailure(for: record) {
           failures.append(

@@ -168,23 +168,18 @@ struct FeatureEngineeringHelperTests {
 struct FeatureEngineeringValidationHelperTests {
   @Test("isValidValue correctly identifies valid and invalid values")
   func testIsValidValue() async throws {
-    // Given: Various Double values including edge cases
-    let validValues: [Double] = [
-      0.0, 1.0, -1.0, 100.0, -100.0, Double.pi, Double.infinity * 0.0,
-    ]
-    let invalidValues: [Double] = [
-      Double.nan, Double.infinity, -Double.infinity,
-    ]
+    // Explicit positive cases
+    #expect(isValidValue(0.0), "0.0 should be valid")
+    #expect(isValidValue(1.0), "1.0 should be valid")
+    #expect(isValidValue(-1.0), "-1.0 should be valid")
+    #expect(isValidValue(100.0), "100.0 should be valid")
+    #expect(isValidValue(-100.0), "-100.0 should be valid")
+    #expect(isValidValue(Double.pi), "pi should be valid")
 
-    // When/Then: Valid values should pass validation
-    for value in validValues {
-      #expect(isValidValue(value), "Value \(value) should be valid")
-    }
-
-    // When/Then: Invalid values should fail validation
-    for value in invalidValues {
-      #expect(!isValidValue(value), "Value \(value) should be invalid")
-    }
+    // Explicit negative cases
+    #expect(!isValidValue(Double.nan), "NaN should be invalid")
+    #expect(!isValidValue(Double.infinity), "Infinity should be invalid")
+    #expect(!isValidValue(-Double.infinity), "-Infinity should be invalid")
   }
 
   @Test("validateFeatureVector correctly validates complete feature vectors")

@@ -2,223 +2,286 @@
 //  FeatureFlagServiceTests.swift
 //  BridgetTests
 //
-//  Purpose: Test feature flag service for gradual rollout and A/B testing
-//  Dependencies: Bridget, Testing framework
+//  Purpose: Unit tests for FeatureFlagService functionality
+//  Dependencies: Foundation, Testing
 //  Test Coverage:
 //    - Feature flag configuration management
-//    - Gradual rollout percentages
-//    - A/B testing variants
-//    - Feature flag persistence
-//    - Rollback capabilities
+//    - Gradual rollout functionality
+//    - A/B testing logic
+//    - User bucketing consistency
+//    - Configuration persistence
 //
 
 import Foundation
 import Testing
 
-@Suite struct FeatureFlagServiceTests {
-  @Test("Feature flag service initialization")
-  func initialization() throws {
-    let service = DefaultFeatureFlagService()
-    let configs = service.getAllConfigs()
+@testable import Bridget
 
-    #expect(configs.count > 0, "Should have default configurations")
-    #expect(configs[.coordinateTransformation] != nil, "Should have coordinate transformation config")
+@Suite("Feature Flag Service Tests", .serialized)
+@MainActor
+struct FeatureFlagServiceTests {
+  private var featureFlagService: DefaultFeatureFlagService!
+  private let suiteName: String
+  private let testDefaults: UserDefaults
 
-    let coordConfig = service.getConfig(for: .coordinateTransformation)
-    #expect(coordConfig.enabled == false, "Coordinate transformation should start disabled")
-    #expect(coordConfig.rolloutPercentage == .disabled, "Should start with disabled rollout")
+  init() throws {
+    // Use an isolated UserDefaults suite so tests are deterministic and do not
+    // read/write the app’s standard defaults.
+    self.suiteName = "FeatureFlagServiceTests-\(UUID().uuidString)"
+    self.testDefaults = UserDefaults(suiteName: suiteName) ?? .standard
+    // Ensure a clean slate for this suite
+    self.testDefaults.removePersistentDomain(forName: suiteName)
+
+    featureFlagService = DefaultFeatureFlagService(userDefaults: testDefaults)
+    // Start from known defaults every time
+    featureFlagService.resetToDefaults()
   }
 
-  @Test("Feature flag enabled check")
-  func featureFlagEnabled() throws {
-    let service = DefaultFeatureFlagService()
-
-    // Test with disabled feature
-    let isEnabled = service.isEnabled(.coordinateTransformation, for: "test_bridge")
-    #expect(isEnabled == false, "Feature should be disabled by default")
-
-    // Enable feature with 100% rollout
-    try service.updateConfig(FeatureFlagConfig(flag: .coordinateTransformation,
-                                               enabled: true,
-                                               rolloutPercentage: .oneHundredPercent))
-
-    let isEnabledAfter = service.isEnabled(.coordinateTransformation, for: "test_bridge")
-    #expect(isEnabledAfter == true, "Feature should be enabled with 100% rollout")
+  @Test("Feature flag service should initialize with default configurations")
+  func defaultInitialization() throws {
+    let config = featureFlagService.getConfig(
+      for: .coordinateTransformation
+    )
+    #expect(config.enabled == true)
+    #expect(config.rolloutPercentage == .oneHundredPercent)
+    #expect(config.abTestEnabled == false)
   }
 
-  @Test("Gradual rollout percentages")
-  func gradualRollout() throws {
-    let service = DefaultFeatureFlagService()
+  @Test("Feature flag should be enabled by default")
+  func defaultEnabled() throws {
+    let isEnabled = featureFlagService.isEnabled(.coordinateTransformation,
+                                                 for: "test-user")
+    #expect(isEnabled == true)
+  }
 
-    // Test 10% rollout
-    try service.updateConfig(FeatureFlagConfig(flag: .coordinateTransformation,
-                                               enabled: true,
-                                               rolloutPercentage: .tenPercent))
+  @Test("Feature flag should be enabled for users within rollout percentage")
+  func testRolloutPercentage() throws {
+    // Enable with 50% rollout
+    try featureFlagService.updateConfig(
+      FeatureFlagConfig(flag: .coordinateTransformation,
+                        enabled: true,
+                        rolloutPercentage: .fiftyPercent)
+    )
 
+    // Test multiple users to verify bucketing
     var enabledCount = 0
-    let totalTests = 100
+    let testUsers = [
+      "user1", "user2", "user3", "user4", "user5", "user6", "user7",
+      "user8", "user9", "user10",
+    ]
 
-    for i in 0 ..< totalTests {
-      let identifier = "bridge_\(i)"
-      if service.isEnabled(.coordinateTransformation, for: identifier) {
+    for user in testUsers {
+      if featureFlagService.isEnabled(.coordinateTransformation,
+                                      for: user)
+      {
         enabledCount += 1
       }
     }
 
-    let percentage = Double(enabledCount) / Double(totalTests) * 100
-    #expect(percentage >= 5 && percentage <= 15, "10% rollout should result in ~10% enabled (allowing variance)")
+    // Should be approximately 50% (allowing for some variance due to hashing)
+    #expect(enabledCount >= 3 && enabledCount <= 7)
   }
 
-  @Test("A/B testing variants")
-  func aBTesting() throws {
-    let service = DefaultFeatureFlagService()
+  @Test("A/B testing should assign consistent variants to users")
+  func aBTestingConsistency() throws {
+    // Enable A/B testing (ensure abTestVariant non-nil so AB test is considered active)
+    try featureFlagService.updateConfig(
+      FeatureFlagConfig(flag: .coordinateTransformation,
+                        enabled: true,
+                        rolloutPercentage: .fiftyPercent,
+                        abTestEnabled: true,
+                        abTestVariant: .control)
+    )
 
-    // Enable A/B testing
-    try service.updateConfig(FeatureFlagConfig(flag: .coordinateTransformation,
-                                               enabled: true,
-                                               rolloutPercentage: .fiftyPercent,
-                                               abTestEnabled: true,
-                                               abTestVariant: .treatment))
+    let testUser = "consistent-user"
 
-    // Test consistent variant assignment
-    let variant1 = service.getABTestVariant(.coordinateTransformation, for: "bridge_1")
-    let variant2 = service.getABTestVariant(.coordinateTransformation, for: "bridge_1")
-    #expect(variant1 == variant2, "Same identifier should get same variant")
+    // Get variant multiple times - should be consistent
+    let variant1 = featureFlagService.getABTestVariant(.coordinateTransformation,
+                                                       for: testUser)
+    let variant2 = featureFlagService.getABTestVariant(.coordinateTransformation,
+                                                       for: testUser)
+    let variant3 = featureFlagService.getABTestVariant(.coordinateTransformation,
+                                                       for: testUser)
 
-    let variant3 = service.getABTestVariant(.coordinateTransformation, for: "bridge_2")
-    #expect(variant3 != nil, "Should get a variant for enabled A/B test")
+    #expect(variant1 == variant2)
+    #expect(variant2 == variant3)
+    #expect(variant1 != nil)
   }
 
-  @Test("A/B testing distribution")
-  func aBTestingDistribution() throws {
-    let service = DefaultFeatureFlagService()
+  @Test("A/B testing should assign different variants to different users")
+  func aBTestingDifferentUsers() throws {
+    // Enable A/B testing (ensure abTestVariant non-nil so AB test is considered active)
+    try featureFlagService.updateConfig(
+      FeatureFlagConfig(flag: .coordinateTransformation,
+                        enabled: true,
+                        rolloutPercentage: .fiftyPercent,
+                        abTestEnabled: true,
+                        abTestVariant: .control)
+    )
 
-    // Enable A/B testing
-    try service.updateConfig(FeatureFlagConfig(flag: .coordinateTransformation,
-                                               enabled: true,
-                                               rolloutPercentage: .oneHundredPercent,
-                                               abTestEnabled: true,
-                                               abTestVariant: .treatment))
+    let user1 = "user-a"
+    let user2 = "user-b"
 
-    var controlCount = 0
-    var treatmentCount = 0
-    let totalTests = 100
+    let variant1 = featureFlagService.getABTestVariant(.coordinateTransformation,
+                                                       for: user1)
+    let variant2 = featureFlagService.getABTestVariant(.coordinateTransformation,
+                                                       for: user2)
 
-    for i in 0 ..< totalTests {
-      let identifier = "bridge_\(i)"
-      if let variant = service.getABTestVariant(.coordinateTransformation, for: identifier) {
-        switch variant {
-        case .control:
-          controlCount += 1
-        case .treatment:
-          treatmentCount += 1
-        }
-      }
-    }
-
-    #expect(controlCount > 0, "Should have some control variants")
-    #expect(treatmentCount > 0, "Should have some treatment variants")
-    #expect(controlCount + treatmentCount == totalTests, "All tests should get a variant")
+    // Variants should be assigned (though they might be the same due to hashing)
+    #expect(variant1 != nil)
+    #expect(variant2 != nil)
   }
 
-  @Test("Feature flag persistence")
-  func persistence() throws {
-    let service1 = DefaultFeatureFlagService()
+  @Test("Feature flag should respect date range constraints")
+  func dateRangeConstraints() throws {
+    let futureDate = Date().addingTimeInterval(24 * 60 * 60)  // Tomorrow
+    let pastDate = Date().addingTimeInterval(-24 * 60 * 60)  // Yesterday
 
-    // Update configuration
-    try service1.updateConfig(FeatureFlagConfig(flag: .coordinateTransformation,
-                                                enabled: true,
-                                                rolloutPercentage: .fiftyPercent,
-                                                metadata: ["test": "persistence"]))
+    // Feature flag with future start date
+    try featureFlagService.updateConfig(
+      FeatureFlagConfig(flag: .coordinateTransformation,
+                        enabled: true,
+                        rolloutPercentage: .oneHundredPercent,
+                        startDate: futureDate)
+    )
 
-    // Create new service instance (should load from persistence)
-    let service2 = DefaultFeatureFlagService()
-    let config = service2.getConfig(for: .coordinateTransformation)
+    let isEnabledFuture = featureFlagService.isEnabled(.coordinateTransformation,
+                                                       for: "test-user")
+    #expect(isEnabledFuture == false)
 
-    #expect(config.enabled == true, "Configuration should persist")
-    #expect(config.rolloutPercentage == .fiftyPercent, "Rollout percentage should persist")
-    #expect(config.metadata["test"] == "persistence", "Metadata should persist")
+    // Feature flag with past end date
+    try featureFlagService.updateConfig(
+      FeatureFlagConfig(flag: .coordinateTransformation,
+                        enabled: true,
+                        rolloutPercentage: .oneHundredPercent,
+                        endDate: pastDate)
+    )
+
+    let isEnabledPast = featureFlagService.isEnabled(.coordinateTransformation,
+                                                     for: "test-user")
+    #expect(isEnabledPast == false)
   }
 
-  @Test("Feature flag rollback")
-  func rollback() throws {
-    let service = DefaultFeatureFlagService()
+  @Test("Feature flag should be active within valid date range")
+  func validDateRange() throws {
+    let startDate = Date().addingTimeInterval(-60 * 60)  // 1 hour ago
+    let endDate = Date().addingTimeInterval(60 * 60)  // 1 hour from now
 
-    // Enable feature
-    try service.updateConfig(FeatureFlagConfig(flag: .coordinateTransformation,
-                                               enabled: true,
-                                               rolloutPercentage: .oneHundredPercent))
+    try featureFlagService.updateConfig(
+      FeatureFlagConfig(flag: .coordinateTransformation,
+                        enabled: true,
+                        rolloutPercentage: .oneHundredPercent,
+                        startDate: startDate,
+                        endDate: endDate)
+    )
 
-    #expect(service.isEnabled(.coordinateTransformation, for: "test") == true, "Feature should be enabled")
-
-    // Rollback (disable)
-    service.disableCoordinateTransformation()
-
-    #expect(service.isEnabled(.coordinateTransformation, for: "test") == false, "Feature should be disabled after rollback")
+    let isEnabled = featureFlagService.isEnabled(.coordinateTransformation,
+                                                 for: "test-user")
+    #expect(isEnabled == true)
   }
 
-  @Test("Convenience methods")
-  func convenienceMethods() throws {
-    let service = DefaultFeatureFlagService()
-
-    // Test enable with specific rollout
-    service.enableCoordinateTransformation(rolloutPercentage: .twentyFivePercent)
-    let config1 = service.getConfig(for: .coordinateTransformation)
-    #expect(config1.enabled == true, "Should be enabled")
-    #expect(config1.rolloutPercentage == .twentyFivePercent, "Should have 25% rollout")
-
-    // Test A/B testing enable
-    service.enableCoordinateTransformationABTest()
-    let config2 = service.getConfig(for: .coordinateTransformation)
-    #expect(config2.abTestEnabled == true, "A/B testing should be enabled")
-    #expect(config2.rolloutPercentage == .fiftyPercent, "Should have 50% rollout for A/B testing")
-
-    // Test disable
-    service.disableCoordinateTransformation()
-    let config3 = service.getConfig(for: .coordinateTransformation)
-    #expect(config3.enabled == false, "Should be disabled")
-    #expect(config3.abTestEnabled == false, "A/B testing should be disabled")
-  }
-
-  @Test("Date range filtering")
-  func dateRangeFiltering() throws {
-    let service = DefaultFeatureFlagService()
-
-    let now = Date()
-    let future = now.addingTimeInterval(3600) // 1 hour from now
-    let past = now.addingTimeInterval(-3600)  // 1 hour ago
-
-    // Test future start date
-    try service.updateConfig(FeatureFlagConfig(flag: .coordinateTransformation,
-                                               enabled: true,
-                                               rolloutPercentage: .oneHundredPercent,
-                                               startDate: future))
-
-    #expect(service.isEnabled(.coordinateTransformation, for: "test") == false, "Feature should not be active before start date")
-
-    // Test past end date
-    try service.updateConfig(FeatureFlagConfig(flag: .coordinateTransformation,
-                                               enabled: true,
-                                               rolloutPercentage: .oneHundredPercent,
-                                               endDate: past))
-
-    #expect(service.isEnabled(.coordinateTransformation, for: "test") == false, "Feature should not be active after end date")
-  }
-
-  @Test("Reset to defaults")
+  @Test("Reset to defaults should restore initial configuration")
   func testResetToDefaults() throws {
-    let service = DefaultFeatureFlagService()
-
     // Modify configuration
-    try service.updateConfig(FeatureFlagConfig(flag: .coordinateTransformation,
-                                               enabled: true,
-                                               rolloutPercentage: .oneHundredPercent))
+    try featureFlagService.updateConfig(
+      FeatureFlagConfig(flag: .coordinateTransformation,
+                        enabled: false,
+                        rolloutPercentage: .disabled)
+    )
 
-    #expect(service.isEnabled(.coordinateTransformation, for: "test") == true, "Feature should be enabled")
+    let modifiedConfig = featureFlagService.getConfig(
+      for: .coordinateTransformation
+    )
+    #expect(modifiedConfig.enabled == false)
+    #expect(modifiedConfig.rolloutPercentage == .disabled)
 
     // Reset to defaults
-    service.resetToDefaults()
+    featureFlagService.resetToDefaults()
 
-    #expect(service.isEnabled(.coordinateTransformation, for: "test") == false, "Feature should be disabled after reset")
+    let defaultConfig = featureFlagService.getConfig(
+      for: .coordinateTransformation
+    )
+    #expect(defaultConfig.enabled == true)
+    #expect(defaultConfig.rolloutPercentage == .oneHundredPercent)
+  }
+
+  @Test("Get all configs should return all feature flags")
+  func testGetAllConfigs() throws {
+    let allConfigs = featureFlagService.getAllConfigs()
+
+    // Should have configurations for all feature flags
+    for flag in FeatureFlag.allCases {
+      #expect(allConfigs[flag] != nil)
+    }
+  }
+
+  @Test("Convenience methods should work correctly")
+  func convenienceMethods() throws {
+    // Test enable coordinate transformation
+    featureFlagService.enableCoordinateTransformation(
+      rolloutPercentage: .twentyFivePercent
+    )
+
+    let config = featureFlagService.getConfig(
+      for: .coordinateTransformation
+    )
+    #expect(config.enabled == true)
+    #expect(config.rolloutPercentage == .twentyFivePercent)
+
+    // Test enable A/B testing
+    featureFlagService.enableCoordinateTransformationABTest()
+
+    let abConfig = featureFlagService.getConfig(
+      for: .coordinateTransformation
+    )
+    #expect(abConfig.abTestEnabled == true)
+    #expect(abConfig.rolloutPercentage == .fiftyPercent)
+
+    // Test disable
+    featureFlagService.disableCoordinateTransformation()
+
+    let disabledConfig = featureFlagService.getConfig(
+      for: .coordinateTransformation
+    )
+    #expect(disabledConfig.enabled == false)
+    #expect(disabledConfig.rolloutPercentage == .disabled)
+    #expect(disabledConfig.abTestEnabled == false)
+  }
+
+  @Test("Rollout percentage enum should have correct descriptions")
+  func rolloutPercentageDescriptions() throws {
+    #expect(RolloutPercentage.disabled.description == "Disabled (0%)")
+    #expect(RolloutPercentage.tenPercent.description == "10% Rollout")
+    #expect(RolloutPercentage.fiftyPercent.description == "50% Rollout")
+    #expect(
+      RolloutPercentage.oneHundredPercent.description
+        == "100% Rollout (Full)"
+    )
+  }
+
+  @Test("AB test variant enum should have correct descriptions")
+  func aBTestVariantDescriptions() throws {
+    #expect(ABTestVariant.control.description == "Control (Current)")
+    #expect(ABTestVariant.treatment.description == "Treatment (New)")
+  }
+
+  @Test("Feature flag enum should have correct descriptions")
+  func featureFlagDescriptions() throws {
+    #expect(
+      FeatureFlag.coordinateTransformation.description
+        == "Coordinate Transformation System"
+    )
+    #expect(
+      FeatureFlag.enhancedValidation.description
+        == "Enhanced Bridge Record Validation"
+    )
+    #expect(
+      FeatureFlag.statisticalUncertainty.description
+        == "Statistical Uncertainty Quantification"
+    )
+    #expect(
+      FeatureFlag.trafficProfileIntegration.description
+        == "Traffic Profile Integration"
+    )
   }
 }

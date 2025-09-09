@@ -195,34 +195,36 @@ public enum TransformationError: LocalizedError, Sendable {
 // MARK: - Coordinate Transform Service
 
 /// Service for transforming coordinates between different coordinate systems
+@preconcurrency
 public protocol CoordinateTransformService {
   /// Transforms coordinates from source system to target system
-  func transform(latitude: Double,
-                 longitude: Double,
-                 from sourceSystem: CoordinateSystem,
-                 to targetSystem: CoordinateSystem,
-                 bridgeId: String?) -> TransformationResult
+  @MainActor func transform(latitude: Double,
+                            longitude: Double,
+                            from sourceSystem: CoordinateSystem,
+                            to targetSystem: CoordinateSystem,
+                            bridgeId: String?) -> TransformationResult
 
   /// Transforms coordinates to our reference system (SeattleReference)
-  func transformToReferenceSystem(latitude: Double,
-                                  longitude: Double,
-                                  from sourceSystem: CoordinateSystem,
-                                  bridgeId: String?) -> TransformationResult
+  @MainActor func transformToReferenceSystem(latitude: Double,
+                                             longitude: Double,
+                                             from sourceSystem: CoordinateSystem,
+                                             bridgeId: String?) -> TransformationResult
 
   /// Calculates transformation matrix between two coordinate systems
-  func calculateTransformationMatrix(from sourceSystem: CoordinateSystem,
-                                     to targetSystem: CoordinateSystem,
-                                     bridgeId: String?) -> TransformationMatrix?
+  @MainActor func calculateTransformationMatrix(from sourceSystem: CoordinateSystem,
+                                                to targetSystem: CoordinateSystem,
+                                                bridgeId: String?) -> TransformationMatrix?
 
   /// Validates if a transformation is available for the given parameters
-  func canTransform(from sourceSystem: CoordinateSystem,
-                    to targetSystem: CoordinateSystem,
-                    bridgeId: String?) -> Bool
+  @MainActor func canTransform(from sourceSystem: CoordinateSystem,
+                               to targetSystem: CoordinateSystem,
+                               bridgeId: String?) -> Bool
 }
 
 // MARK: - Default Implementation
 
 /// Default implementation of the coordinate transformation service
+@MainActor
 public final class DefaultCoordinateTransformService: CoordinateTransformService {
   // MARK: - Properties
 
@@ -243,8 +245,7 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
   public init(bridgeTransformations: [String: BridgeTransformation] = [:],
               defaultTransformationMatrix: TransformationMatrix = .identity,
               enableLogging: Bool = false,
-              featureFlagService: FeatureFlagService = DefaultFeatureFlagService
-                .shared)
+              featureFlagService: FeatureFlagService? = nil)
   {
     // Initialize with Phase 1 findings if no transformations provided
     let finalTransformations =
@@ -254,7 +255,7 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
     self.bridgeTransformations = finalTransformations
     self.defaultTransformationMatrix = defaultTransformationMatrix
     self.enableLogging = enableLogging
-    self.featureFlagService = featureFlagService
+    self.featureFlagService = featureFlagService ?? DefaultFeatureFlagService.shared
   }
 
   // MARK: - Public Methods

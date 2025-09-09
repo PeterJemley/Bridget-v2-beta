@@ -158,6 +158,7 @@ import Testing
 
   // MARK: - Bridge Data Service Tests
 
+  @MainActor
   @Test
   func bridgeDataServiceSampleData() {
     let service = BridgeDataService.shared
@@ -171,6 +172,7 @@ import Testing
     }
   }
 
+  @MainActor
   @Test
   func bridgeDataServiceRouteGeneration() {
     let service = BridgeDataService.shared
@@ -450,8 +452,9 @@ import Testing
     #expect(largeData.count > 5 * 1024 * 1024)
   }
 
+  @MainActor
   @Test
-  func bridgeDataProcessorRejectsOutOfRangeValues() throws {
+  func bridgeDataProcessorRejectsOutOfRangeValues() async throws {
     let processor = BridgeDataProcessor.shared
     let validDate = "2025-01-03T10:12:00.000"
     let validCloseDate = "2025-01-03T10:20:00.000"
@@ -468,7 +471,9 @@ import Testing
         "longitude": "-122.334465"
     }]
     """.data(using: .utf8)!
-    #expect(try processor.processHistoricalData(invalidLatJSON).0.isEmpty)
+    #expect(
+      try await processor.processHistoricalData(invalidLatJSON).0.isEmpty
+    )
 
     let invalidLonJSON = """
     [{
@@ -482,7 +487,9 @@ import Testing
         "longitude": "-190.0"
     }]
     """.data(using: .utf8)!
-    #expect(try processor.processHistoricalData(invalidLonJSON).0.isEmpty)
+    #expect(
+      try await processor.processHistoricalData(invalidLonJSON).0.isEmpty
+    )
 
     let invalidMinutesJSON = """
     [{
@@ -497,7 +504,8 @@ import Testing
     }]
     """.data(using: .utf8)!
     #expect(
-      try processor.processHistoricalData(invalidMinutesJSON).0.isEmpty
+      try await processor.processHistoricalData(invalidMinutesJSON).0
+        .isEmpty
     )
 
     let oldDateJSON = """
@@ -512,6 +520,8 @@ import Testing
         "longitude": "-122.334465"
     }]
     """.data(using: .utf8)!
-    #expect(try processor.processHistoricalData(oldDateJSON).0.isEmpty)
+    #expect(
+      try await processor.processHistoricalData(oldDateJSON).0.isEmpty
+    )
   }
 }

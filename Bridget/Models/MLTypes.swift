@@ -419,7 +419,9 @@ public struct DataValidationResult: Sendable {
   }
 
   public var summary: String {
-    """
+    let friendlyLine =
+      "\(totalRecords) records, \(bridgeCount) \(bridgeCount == 1 ? "bridge" : "bridges")"
+    return """
     Data Validation Summary:
     - Total Records: \(totalRecords)
     - Valid Records: \(validRecordCount)
@@ -428,6 +430,7 @@ public struct DataValidationResult: Sendable {
     - Errors: \(errors.count)
     - Warnings: \(warnings.count)
     - Valid: \(isValid ? "Yes" : "No")
+    \(friendlyLine)
     """
   }
 

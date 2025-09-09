@@ -48,8 +48,11 @@ public enum FeatureEngineeringError: Error, LocalizedError {
   public var errorDescription: String? {
     switch self {
     case let .invalidFeatureVector(bridgeId,
+
                                    timestamp,
+
                                    horizon,
+
                                    description):
       return
         "Invalid feature vector for bridge \(bridgeId) at \(timestamp) horizon \(horizon): "
@@ -122,43 +125,27 @@ public func rollingAverage(_ input: [Double?], window: Int) -> [Double] {
 
 /// Returns the ISO8601 weekday component for a given Date.
 ///
-/// Extracts the day of the week from a date using ISO8601 calendar, which is consistent
-/// with the timezone policy defined in the contracts (America/Los_Angeles).
+/// Extracts the day of the week from a date using a UTC, ISO8601-compatible calendar
+/// to ensure deterministic behavior independent of device locale/timezone.
 ///
 /// - Parameter date: The date to extract the weekday from.
 /// - Returns: An integer representing the day of the week (Sunday=1, Monday=2, ..., Saturday=7).
-///
-/// - Note: Uses ISO8601 calendar for consistency with the project's timezone handling.
-///         The returned value is used for cyclical encoding in feature generation.
-///
-/// - Example:
-///   ```swift
-///   let date = ISO8601DateFormatter().date(from: "2025-01-27T08:00:00Z")!
-///   let dow = dayOfWeek(from: date) // Returns 2 for Monday
-///   ```
 public func dayOfWeek(from date: Date) -> Int {
-  let calendar = Calendar(identifier: .iso8601)
+  var calendar = Calendar(identifier: .iso8601)
+  calendar.timeZone = TimeZone(secondsFromGMT: 0)!  // Force UTC
   return calendar.component(.weekday, from: date)  // Sunday=1 ... Saturday=7
 }
 
 /// Returns the minute of the day (0-1439) for a given Date.
 ///
-/// Extracts the minute of the day from a date, which is used for cyclical encoding
-/// in feature generation. The result represents minutes since midnight.
+/// Extracts the minute of the day from a date using a UTC calendar to avoid
+/// environment-dependent offsets (locale/timezone, DST).
 ///
 /// - Parameter date: The date to extract the minute of the day from.
 /// - Returns: An integer representing the minute of the day (0-1439).
-///
-/// - Note: The returned value is used for cyclical encoding with a period of 1440 minutes.
-///         This ensures that 23:59 and 00:00 have similar representations.
-///
-/// - Example:
-///   ```swift
-///   let date = ISO8601DateFormatter().date(from: "2025-01-27T12:34:00Z")!
-///   let minute = minuteOfDay(from: date) // Returns 754 (12*60 + 34)
-///   ```
 public func minuteOfDay(from date: Date) -> Int {
-  let calendar = Calendar(identifier: .iso8601)
+  var calendar = Calendar(identifier: .iso8601)
+  calendar.timeZone = TimeZone(secondsFromGMT: 0)!  // Force UTC
   let hour = calendar.component(.hour, from: date)
   let minute = calendar.component(.minute, from: date)
   return hour * 60 + minute
@@ -242,16 +229,23 @@ public func makeFeatures(from ticks: [ProbeTickRaw],
   // but no random number generation is used in this pure function
 
   let grouped = Dictionary(grouping: ticks) { $0.bridge_id }
+
+  // Pin ISO8601 parsing to UTC for determinism
   let isoFormatter = ISO8601DateFormatter()
+  isoFormatter.timeZone = TimeZone(secondsFromGMT: 0)
 
   var allFeatures = Array(repeating: [FeatureVector](), count: horizons.count)
 
-  for (_, bridgeTicks) in grouped {
+  // Iterate bridge groups in sorted key order to ensure deterministic output ordering
+  for bridgeId in grouped.keys.sorted() {
+    guard let bridgeTicks = grouped[bridgeId] else { continue }
+
     let sortedTicks = bridgeTicks.sorted {
       guard let d1 = isoFormatter.date(from: $0.ts_utc),
             let d2 = isoFormatter.date(from: $1.ts_utc)
       else {
-        return false
+        // If either date fails to parse, keep stable order by string compare as fallback
+        return $0.ts_utc < $1.ts_utc
       }
       return d1 < d2
     }

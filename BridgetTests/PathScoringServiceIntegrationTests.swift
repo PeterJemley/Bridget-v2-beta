@@ -65,10 +65,10 @@ struct PathScoringServiceIntegrationTests {
   }
 
   @Test(
-    "Non-accepted IDs fallback to defaultProbability and do not populate feature cache"
+    "Non-accepted IDs are skipped by policy and do not populate feature cache"
   )
-  func nonAcceptedIDsFallbackAndNoCache() async throws {
-    let (service, predictor, _, _) = try makeHarness()
+  func nonAcceptedIDsAreSkippedAndNoCache() async throws {
+    let (service, _, _, _) = try makeHarness()
 
     // Non-accepted ID (neither canonical nor synthetic)
     let path = makePath(withBridgeID: "999")
@@ -79,11 +79,9 @@ struct PathScoringServiceIntegrationTests {
 
     let score = try await service.scorePath(path, departureTime: departure)
 
-    // Probability should equal predictor.defaultProbability due to policy rejection
-    let defaultP = predictor.defaultProbability
-    let p = score.bridgeProbabilities["999"]
-    #expect(p != nil)
-    #expect(abs((p ?? 0.0) - defaultP) < 1e-12)
+    // Since the ID is not accepted, ETAEstimator skips it and the path has no bridges
+    #expect(score.bridgeProbabilities["999"] == nil)
+    #expect(abs(score.linearProbability - 1.0) < 1e-12)
 
     // Cache stats after: should not increase hits or misses due to no feature generation for rejected ID
     let after = service.getCacheStatistics()
@@ -92,10 +90,10 @@ struct PathScoringServiceIntegrationTests {
   }
 
   @Test(
-    "Mixed canonical + non-accepted: accepted predicted, non-accepted defaulted; cache only for accepted"
+    "Mixed canonical + non-accepted: accepted predicted; non-accepted skipped; cache only for accepted"
   )
   func mixedIDsBehavior() async throws {
-    let (service, predictor, _, _) = try makeHarness()
+    let (service, _, _, _) = try makeHarness()
 
     // Build a path with two edges: one canonical Seattle ID "2" and one non-accepted "xyz"
     let nodes: [NodeID] = ["A", "B", "C"]
@@ -110,7 +108,7 @@ struct PathScoringServiceIntegrationTests {
                      travelTime: 60,
                      distance: 100.0,
                      isBridge: true,
-                     bridgeID: "xyz")  // non-accepted
+                     bridgeID: "xyz")  // non-accepted ID
     let path = RoutePath(nodes: nodes, edges: [edge1, edge2])
 
     let departure = Date()
@@ -120,15 +118,9 @@ struct PathScoringServiceIntegrationTests {
 
     let score = try await service.scorePath(path, departureTime: departure)
 
-    // Expect both IDs present in the map
+    // Expect canonical ID present and non-accepted ID absent
     #expect(score.bridgeProbabilities.keys.contains("2"))
-    #expect(score.bridgeProbabilities.keys.contains("xyz"))
-
-    // Non-accepted "xyz" should use defaultProbability
-    let defaultP = predictor.defaultProbability
-    #expect(
-      abs((score.bridgeProbabilities["xyz"] ?? 0.0) - defaultP) < 1e-12
-    )
+    #expect(!score.bridgeProbabilities.keys.contains("xyz"))
 
     // Cache should have been touched only for the accepted ID bridge "2"
     let after = service.getCacheStatistics()

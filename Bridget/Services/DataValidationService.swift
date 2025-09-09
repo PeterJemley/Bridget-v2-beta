@@ -674,6 +674,14 @@ public class DataValidationService {
     return result
   }
 
+  /// Helper to pull an Optional<Double> from a reflected field on ProbeTickRaw
+  private func optionalDouble(from tick: ProbeTickRaw, field: String)
+    -> Double??
+  {
+    return Mirror(reflecting: tick).children.first { $0.label == field }?
+      .value as? Double?
+  }
+
   /// Checks for missing data and null values
   private func checkMissingData(ticks: [ProbeTickRaw]) -> DataValidationResult {
     var result = DataValidationResult()
@@ -699,25 +707,26 @@ public class DataValidationService {
       var infiniteCount = 0
 
       for tick in ticks {
-        let value = Mirror(reflecting: tick).children.first {
-          $0.label == field
-        }?.value
-
-        if value == nil {
-          nullCount += 1
-        } else if let doubleValue = value as? Double {
-          if doubleValue.isNaN {
-            nanCount += 1
-          } else if doubleValue.isInfinite {
-            infiniteCount += 1
+        if let opt = optionalDouble(from: tick, field: field) {
+          if opt == nil {
+            nullCount += 1
+          } else if let dv = opt {
+            if dv.isNaN {
+              nanCount += 1
+            } else if dv.isInfinite {
+              infiniteCount += 1
+            }
           }
+        } else {
+          // Field not found via reflection; treat as null for safety
+          nullCount += 1
         }
       }
 
       if nullCount > 0 {
         nullCounts[field] = nullCount
         let percentage = Double(nullCount) / Double(ticks.count) * 100
-        if percentage > 50 {
+        if percentage >= 50 {  // inclusive to catch exactly-half missing
           result.warnings.append(
             "High null rate for \(field): \(String(format: "%.1f", percentage))%"
           )
@@ -779,10 +788,9 @@ public class DataValidationService {
     for field in fields {
       var nullCount = 0
       for tick in ticks {
-        let value = Mirror(reflecting: tick).children.first {
-          $0.label == field
-        }?.value
-        if value == nil {
+        if let opt = optionalDouble(from: tick, field: field) {
+          if opt == nil { nullCount += 1 }
+        } else {
           nullCount += 1
         }
       }
@@ -790,19 +798,19 @@ public class DataValidationService {
       let missingRatio = Double(nullCount) / Double(ticks.count)
       missingRatios[field] = missingRatio
 
-      // Flag high missing ratios
-      if missingRatio > 0.5 {
+      // Flag high/mid missing ratios (inclusive thresholds)
+      if missingRatio >= 0.5 {
         result.warnings.append(
           "High missing ratio for \(field): \(String(format: "%.1f%%", missingRatio * 100))"
         )
-      } else if missingRatio > 0.1 {
+      } else if missingRatio >= 0.1 {
         result.warnings.append(
           "Moderate missing ratio for \(field): \(String(format: "%.1f%%", missingRatio * 100))"
         )
       }
     }
 
-    // Update data quality metrics with missing ratios
+    // Update data quality metrics with missing ratios (kept in warnings; not stored directly)
     let currentMetrics = result.dataQualityMetrics
     result.dataQualityMetrics = DataQualityMetrics(dataCompleteness: currentMetrics.dataCompleteness,
                                                    timestampValidity: currentMetrics.timestampValidity,
@@ -892,13 +900,10 @@ public class DataValidationService {
 
       // Collect non-nil, non-NaN, non-infinite values
       for tick in ticks {
-        let value = Mirror(reflecting: tick).children.first {
-          $0.label == field
-        }?.value
-        if let doubleValue = value as? Double,
-           !doubleValue.isNaN && !doubleValue.isInfinite
+        if let opt = optionalDouble(from: tick, field: field),
+           let dv = opt, !dv.isNaN, !dv.isInfinite
         {
-          values.append(doubleValue)
+          values.append(dv)
         }
       }
 

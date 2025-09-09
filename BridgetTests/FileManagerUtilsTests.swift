@@ -28,8 +28,8 @@ struct FileManagerUtilsTests {
   /// Creates a unique test directory for each test to avoid interference
   private func createUniqueTestDirectory() throws -> URL {
     let testDir = FileManager.default.temporaryDirectory
-      .appendingPathComponent("FileManagerUtilsTests")
-      .appendingPathComponent(UUID().uuidString)
+      .appendingPathComponent("FileManagerUtilsTests", isDirectory: true)
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
 
     // Ensure the directory is clean
     try? FileManagerUtils.removeFile(at: testDir)
@@ -55,6 +55,36 @@ struct FileManagerUtilsTests {
     static func unexpectedSuccess(_ message: String) -> TestError {
       return TestError(description: "Unexpected success: \(message)")
     }
+  }
+
+  // MARK: - Preflight Tests
+
+  @Test("Environment preflight check - verify writable directories")
+  func environmentPreflightCheck() throws {
+    // Check temporary directory
+    let tempDir = FileManager.default.temporaryDirectory
+    print("📁 Temporary directory: \(tempDir.path)")
+    #expect(FileManager.default.fileExists(atPath: tempDir.path))
+    #expect(FileManager.default.isWritableFile(atPath: tempDir.path))
+
+    // Check documents directory
+    let documentsDir = try FileManagerUtils.documentsDirectory()
+    print("📁 Documents directory: \(documentsDir.path)")
+    #expect(FileManager.default.fileExists(atPath: documentsDir.path))
+    #expect(FileManager.default.isWritableFile(atPath: documentsDir.path))
+
+    // Test creating a unique test directory
+    let testDir = tempDir
+      .appendingPathComponent("FileManagerUtilsTests", isDirectory: true)
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+
+    print("📁 Test directory: \(testDir.path)")
+    try FileManagerUtils.ensureDirectoryExists(testDir)
+    #expect(FileManager.default.fileExists(atPath: testDir.path))
+
+    // Clean up
+    try? FileManagerUtils.removeFile(at: testDir)
+    print("✅ Environment preflight check passed")
   }
 
   // MARK: - Directory Tests
@@ -95,7 +125,8 @@ struct FileManagerUtilsTests {
 
     // Create directory first
     try FileManager.default.createDirectory(at: testDir,
-                                            withIntermediateDirectories: true)
+                                            withIntermediateDirectories: true,
+                                            attributes: nil)
 
     // Should not throw when directory already exists
     try FileManagerUtils.ensureDirectoryExists(testDir)
@@ -125,6 +156,7 @@ struct FileManagerUtilsTests {
   func fileExistsReturnsCorrectValues() throws {
     let testDir = try createUniqueTestDirectory()
     defer { cleanupTestDirectory(testDir) }
+    try FileManagerUtils.ensureDirectoryExists(testDir)
 
     let testFile = testDir.appendingPathComponent("test.txt")
 
@@ -144,6 +176,7 @@ struct FileManagerUtilsTests {
   func createMarkerFileCreatesZeroByteFile() throws {
     let testDir = try createUniqueTestDirectory()
     defer { cleanupTestDirectory(testDir) }
+    try FileManagerUtils.ensureDirectoryExists(testDir)
 
     let markerFile = testDir.appendingPathComponent(".marker")
     try FileManagerUtils.createMarkerFile(at: markerFile)
@@ -161,6 +194,7 @@ struct FileManagerUtilsTests {
   func removeFileRemovesExistingFile() throws {
     let testDir = try createUniqueTestDirectory()
     defer { cleanupTestDirectory(testDir) }
+    try FileManagerUtils.ensureDirectoryExists(testDir)
 
     let testFile = testDir.appendingPathComponent("test.txt")
     try "test content".write(to: testFile,
@@ -194,6 +228,7 @@ struct FileManagerUtilsTests {
   func atomicReplaceItemReplacesFile() throws {
     let testDir = try createUniqueTestDirectory()
     defer { cleanupTestDirectory(testDir) }
+    try FileManagerUtils.ensureDirectoryExists(testDir)
 
     let originalFile = testDir.appendingPathComponent("original.txt")
     let newFile = testDir.appendingPathComponent("new.txt")
@@ -216,6 +251,7 @@ struct FileManagerUtilsTests {
   func createTemporaryFileWithExtension() throws {
     let testDir = try createUniqueTestDirectory()
     defer { cleanupTestDirectory(testDir) }
+    try FileManagerUtils.ensureDirectoryExists(testDir)
 
     let tempFile = try FileManagerUtils.createTemporaryFile(in: testDir,
                                                             prefix: "test",
@@ -232,17 +268,25 @@ struct FileManagerUtilsTests {
   func enumerateFilesReturnsAllFiles() throws {
     let testDir = try createUniqueTestDirectory()
     defer { cleanupTestDirectory(testDir) }
+    try FileManagerUtils.ensureDirectoryExists(testDir)
 
     let file1 = testDir.appendingPathComponent("file1.txt")
     let file2 = testDir.appendingPathComponent("file2.txt")
-    let subdir = testDir.appendingPathComponent("subdir")
+    let subdir = testDir.appendingPathComponent("subdir", isDirectory: true)
 
     try "content1".write(to: file1, atomically: true, encoding: .utf8)
     try "content2".write(to: file2, atomically: true, encoding: .utf8)
     try FileManager.default.createDirectory(at: subdir,
-                                            withIntermediateDirectories: true)
+                                            withIntermediateDirectories: true,
+                                            attributes: nil)
 
-    let files = try FileManagerUtils.enumerateFiles(in: testDir)
+    // Only count files, not directories
+    let files = try FileManagerUtils.enumerateFiles(in: testDir) { url in
+      var isDirectory: ObjCBool = false
+      FileManager.default.fileExists(atPath: url.path,
+                                     isDirectory: &isDirectory)
+      return !isDirectory.boolValue
+    }
     #expect(files.count == 2)
     #expect(files.contains(file1))
     #expect(files.contains(file2))
@@ -252,6 +296,7 @@ struct FileManagerUtilsTests {
   func enumerateFilesWithFilter() throws {
     let testDir = try createUniqueTestDirectory()
     defer { cleanupTestDirectory(testDir) }
+    try FileManagerUtils.ensureDirectoryExists(testDir)
 
     let file1 = testDir.appendingPathComponent("file1.txt")
     let file2 = testDir.appendingPathComponent("file2.dat")
@@ -273,6 +318,7 @@ struct FileManagerUtilsTests {
   func attributesOfItemReturnsAttributes() throws {
     let testDir = try createUniqueTestDirectory()
     defer { cleanupTestDirectory(testDir) }
+    try FileManagerUtils.ensureDirectoryExists(testDir)
 
     let testFile = testDir.appendingPathComponent("test.txt")
     try "test content".write(to: testFile,
@@ -289,6 +335,7 @@ struct FileManagerUtilsTests {
   func calculateDirectorySizeReturnsCorrectSize() throws {
     let testDir = try createUniqueTestDirectory()
     defer { cleanupTestDirectory(testDir) }
+    try FileManagerUtils.ensureDirectoryExists(testDir)
 
     let file1 = testDir.appendingPathComponent("file1.txt")
     let file2 = testDir.appendingPathComponent("file2.txt")
@@ -304,6 +351,7 @@ struct FileManagerUtilsTests {
   func removeOldFilesRemovesOldFiles() throws {
     let testDir = try createUniqueTestDirectory()
     defer { cleanupTestDirectory(testDir) }
+    try FileManagerUtils.ensureDirectoryExists(testDir)
 
     let oldFile = testDir.appendingPathComponent("old.txt")
     let newFile = testDir.appendingPathComponent("new.txt")

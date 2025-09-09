@@ -1,3 +1,4 @@
+@testable import Bridget
 import Foundation
 import Testing
 
@@ -9,7 +10,8 @@ struct ExtensionsTests {
   func dateFlooredToMinute() {
     let date = Date(timeIntervalSince1970: 1_701_000_356)  // 2023-12-12 12:32:36 UTC
     let floored = date.flooredToMinute
-    let expected = Date(timeIntervalSince1970: 1_701_000_320)  // 12:32:00 UTC
+    // Compute expected by flooring to the minute boundary to avoid hardcoded mistakes
+    let expected = Date(timeIntervalSince1970: floor(date.timeIntervalSince1970 / 60) * 60)
     #expect(floored == expected)
   }
 

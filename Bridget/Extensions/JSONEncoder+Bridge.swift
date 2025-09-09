@@ -34,7 +34,7 @@ extension JSONEncoder {
   ///
   /// - Parameters:
   ///   - dateEncodingStrategy: How dates are encoded. Defaults to `.iso8601`.
-  ///   - keyEncodingStrategy: How keys are encoded. Defaults to `.useDefaultKeys`.
+  ///   - keyEncodingStrategy: How keys are encoded. Defaults to `.convertToSnakeCase` (project standard).
   ///   - outputFormatting: Output formatting (pretty printing, sorting, etc). Defaults to `[]`.
   ///
   /// - Returns: A fully configured JSONEncoder instance. Use project-wide for all JSON encoding unless a documented exception applies.
@@ -46,9 +46,9 @@ extension JSONEncoder {
   /// ```
   ///
   /// ## Extending Defaults
-  /// To change default encoding strategies, update this factory and audit usage project-wide for unintended consequences. See the `Bridge` project policy for more information.
+  /// To change default encoding strategies, update this factory and audit usage project-wide for unintended consequences.
   static func bridgeEncoder(dateEncodingStrategy: DateEncodingStrategy = .iso8601,
-                            keyEncodingStrategy: KeyEncodingStrategy = .useDefaultKeys,
+                            keyEncodingStrategy: KeyEncodingStrategy = .convertToSnakeCase,
                             outputFormatting: OutputFormatting = []) -> JSONEncoder
   {
     let encoder = JSONEncoder()
@@ -56,5 +56,24 @@ extension JSONEncoder {
     encoder.keyEncodingStrategy = keyEncodingStrategy
     encoder.outputFormatting = outputFormatting
     return encoder
+  }
+}
+
+extension JSONDecoder {
+  /// Returns a JSONDecoder configured for the Bridget data pipeline.
+  ///
+  /// - Parameters:
+  ///   - dateDecodingStrategy: How dates are decoded. Defaults to `.iso8601`.
+  ///   - keyDecodingStrategy: How keys are decoded. Defaults to `.convertFromSnakeCase` (project standard).
+  ///
+  /// - Returns: A fully configured JSONDecoder instance. Use project-wide for all JSON decoding unless a documented exception applies.
+  static func bridgeDecoder(dateDecodingStrategy: JSONDecoder.DateDecodingStrategy = .iso8601,
+                            keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy =
+                              .convertFromSnakeCase) -> JSONDecoder
+  {
+    let decoder = JSONDecoder()
+    decoder.dateDecodingStrategy = dateDecodingStrategy
+    decoder.keyDecodingStrategy = keyDecodingStrategy
+    return decoder
   }
 }

@@ -9,6 +9,21 @@
 			<key>orderHint</key>
 			<integer>4</integer>
 		</dict>
+		<key>BridgetCoreMLTests.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
+		<key>BridgetTests-TSan.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+		<key>BridgetTests.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>0</integer>
+		</dict>
 		<key>VerifyAPIandSchema (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>

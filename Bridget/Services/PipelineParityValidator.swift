@@ -484,6 +484,23 @@ public class PipelineParityValidator {
       {
         // Check for NaN/Inf values (automatic critical)
         if baselineRange.hasNaNOrInf || currentRange.hasNaNOrInf {
+          var meta: [String: String] = [
+            "baseline_has_nan_inf": "\(baselineRange.hasNaNOrInf)",
+            "current_has_nan_inf": "\(currentRange.hasNaNOrInf)",
+            "baseline_values":
+              "min:\(baselineRange.min), max:\(baselineRange.max), mean:\(baselineRange.mean)",
+            "current_values":
+              "min:\(currentRange.min), max:\(currentRange.max), mean:\(currentRange.mean)",
+          ]
+          if let bStd = baselineRange.stdDev { meta["baseline_stddev"] = "\(bStd)" }
+          if let cStd = currentRange.stdDev { meta["current_stddev"] = "\(cStd)" }
+          if let bMed = baselineRange.median { meta["baseline_median"] = "\(bMed)" }
+          if let cMed = currentRange.median { meta["current_median"] = "\(cMed)" }
+          if let bP10 = baselineRange.p10 { meta["baseline_p10"] = "\(bP10)" }
+          if let cP10 = currentRange.p10 { meta["current_p10"] = "\(cP10)" }
+          if let bP90 = baselineRange.p90 { meta["baseline_p90"] = "\(bP90)" }
+          if let cP90 = currentRange.p90 { meta["current_p90"] = "\(cP90)" }
+
           changes.append(
             OutputChange(changeType: .range,
                          affectedField: field,
@@ -492,24 +509,32 @@ public class PipelineParityValidator {
                          severity: .critical,
                          likelyCause:
                          "Data corruption or calculation errors",
-                         metadata: [
-                           "baseline_has_nan_inf":
-                             "\(baselineRange.hasNaNOrInf)",
-                           "current_has_nan_inf":
-                             "\(currentRange.hasNaNOrInf)",
-                           "baseline_values":
-                             "min:\(baselineRange.min), max:\(baselineRange.max), mean:\(baselineRange.mean)",
-                           "current_values":
-                             "min:\(currentRange.min), max:\(currentRange.max), mean:\(currentRange.mean)",
-                         ])
+                         metadata: meta)
           )
           continue
         }
 
-        // Compare ranges with tolerance
+        // Compare ranges with tolerance (now distribution-aware when data is present)
         if !baselineRange.isSimilar(to: currentRange,
                                     tolerance: config.rangeTolerancePct)
         {
+          var meta: [String: String] = [
+            "baseline_range":
+              "min:\(baselineRange.min), max:\(baselineRange.max), mean:\(baselineRange.mean)",
+            "current_range":
+              "min:\(currentRange.min), max:\(currentRange.max), mean:\(currentRange.mean)",
+            "tolerance": String(format: "%.4f",
+                                config.rangeTolerancePct),
+          ]
+          if let bStd = baselineRange.stdDev { meta["baseline_stddev"] = "\(bStd)" }
+          if let cStd = currentRange.stdDev { meta["current_stddev"] = "\(cStd)" }
+          if let bMed = baselineRange.median { meta["baseline_median"] = "\(bMed)" }
+          if let cMed = currentRange.median { meta["current_median"] = "\(cMed)" }
+          if let bP10 = baselineRange.p10 { meta["baseline_p10"] = "\(bP10)" }
+          if let cP10 = currentRange.p10 { meta["current_p10"] = "\(cP10)" }
+          if let bP90 = baselineRange.p90 { meta["baseline_p90"] = "\(bP90)" }
+          if let cP90 = currentRange.p90 { meta["current_p90"] = "\(cP90)" }
+
           changes.append(
             OutputChange(changeType: .range,
                          affectedField: field,
@@ -518,14 +543,7 @@ public class PipelineParityValidator {
                          severity: .minor,
                          likelyCause:
                          "Data transformation or calculation changes",
-                         metadata: [
-                           "baseline_range":
-                             "min:\(baselineRange.min), max:\(baselineRange.max), mean:\(baselineRange.mean)",
-                           "current_range":
-                             "min:\(currentRange.min), max:\(currentRange.max), mean:\(currentRange.mean)",
-                           "tolerance": String(format: "%.4f",
-                                               config.rangeTolerancePct),
-                         ])
+                         metadata: meta)
           )
         }
       }
@@ -581,15 +599,10 @@ public class PipelineParityValidator {
   {
     var changes: [OutputChange] = []
 
-    // Check pipeline timing with tolerance
+    // Check pipeline timing with tolerance (baseline-relative)
     let timingTolerance = config.perfTolerancePct
-    let baselineTime = baseline.pipelineTime
-    let currentTime = current.pipelineTime
-    let difference = abs(currentTime - baselineTime)
-    _ = difference / baselineTime  // Calculate relative change for potential future use
-
-    if !baseline.pipelineTime.isWithin(tolerance: timingTolerance,
-                                       of: current.pipelineTime)
+    if !current.pipelineTime.isWithin(tolerance: timingTolerance,
+                                      of: baseline.pipelineTime)
     {
       changes.append(
         OutputChange(changeType: .performance,
@@ -609,10 +622,10 @@ public class PipelineParityValidator {
       )
     }
 
-    // Check memory usage with tolerance
+    // Check memory usage with tolerance (baseline-relative)
     let memoryTolerance = config.perfTolerancePct
-    if !baseline.peakMemory.isWithin(tolerance: memoryTolerance,
-                                     of: current.peakMemory)
+    if !current.peakMemory.isWithin(tolerance: memoryTolerance,
+                                    of: baseline.peakMemory)
     {
       changes.append(
         OutputChange(changeType: .performance,
@@ -632,11 +645,11 @@ public class PipelineParityValidator {
       )
     }
 
-    // Check stage timings
+    // Check stage timings (baseline-relative)
     for (stage, baselineTime) in baseline.stageTimings {
       if let currentTime = current.stageTimings[stage] {
-        if !baselineTime.isWithin(tolerance: timingTolerance,
-                                  of: currentTime)
+        if !currentTime.isWithin(tolerance: timingTolerance,
+                                 of: baselineTime)
         {
           changes.append(
             OutputChange(changeType: .performance,
@@ -1145,18 +1158,72 @@ public struct ValueRange: Codable {
   public let mean: Double
   public let description: String
 
+  // Optional, backward-compatible robust/distribution stats
+  public let stdDev: Double?
+  public let median: Double?
+  public let p10: Double?
+  public let p90: Double?
+
+  public init(min: Double,
+              max: Double,
+              mean: Double,
+              description: String,
+              stdDev: Double? = nil,
+              median: Double? = nil,
+              p10: Double? = nil,
+              p90: Double? = nil)
+  {
+    self.min = min
+    self.max = max
+    self.mean = mean
+    self.description = description
+    self.stdDev = stdDev
+    self.median = median
+    self.p10 = p10
+    self.p90 = p90
+  }
+
   public var hasNaNOrInf: Bool {
-    min.isNaN || max.isNaN || mean.isNaN || min.isInfinite || max.isInfinite
-      || mean.isInfinite
+    if min.isNaN || max.isNaN || mean.isNaN || min.isInfinite || max.isInfinite || mean.isInfinite {
+      return true
+    }
+    if let stdDev, stdDev.isNaN || stdDev.isInfinite { return true }
+    if let median, median.isNaN || median.isInfinite { return true }
+    if let p10, p10.isNaN || p10.isInfinite { return true }
+    if let p90, p90.isNaN || p90.isInfinite { return true }
+    return false
   }
 
   public func isSimilar(to other: ValueRange, tolerance: Double) -> Bool {
-    let minDiff = abs(min - other.min) / Swift.max(abs(min), 1.0)
-    let maxDiff = abs(max - other.max) / Swift.max(abs(max), 1.0)
-    let meanDiff = abs(mean - other.mean) / Swift.max(abs(mean), 1.0)
+    func relDiff(_ a: Double, _ b: Double) -> Double {
+      let denom = Swift.max(abs(a), 1.0)
+      return abs(a - b) / denom
+    }
 
-    return minDiff <= tolerance && maxDiff <= tolerance
-      && meanDiff <= tolerance
+    let minDiff = relDiff(min, other.min)
+    let maxDiff = relDiff(max, other.max)
+    let meanDiff = relDiff(mean, other.mean)
+
+    // Base checks
+    if !(minDiff <= tolerance && maxDiff <= tolerance && meanDiff <= tolerance) {
+      return false
+    }
+
+    // Optional dispersion/location/quantile checks (only if both present)
+    if let s1 = stdDev, let s2 = other.stdDev {
+      if relDiff(s1, s2) > tolerance { return false }
+    }
+    if let m1 = median, let m2 = other.median {
+      if relDiff(m1, m2) > tolerance { return false }
+    }
+    if let q1a = p10, let q1b = other.p10 {
+      if relDiff(q1a, q1b) > tolerance { return false }
+    }
+    if let q9a = p90, let q9b = other.p90 {
+      if relDiff(q9a, q9b) > tolerance { return false }
+    }
+
+    return true
   }
 }
 

@@ -80,8 +80,6 @@ struct SwiftTestingExamples {
 
   @Test("Performance testing example")
   func performanceTesting() throws {
-    let bridgeIDs = Array(repeating: "1", count: 1000)
-
     let startTime = Date()
     for _ in 0 ..< 1000 {
       _ = SeattleDrawbridges.isCanonicalBridgeID("1")

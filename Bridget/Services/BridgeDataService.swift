@@ -38,6 +38,7 @@ import Foundation
 /// - Route Generation: `generateRoutes(from:)`
 /// - Cache Management: `clearCache()`, `getCacheSize()`
 /// - Coordinate Transformation: `TransformationConfig`, metrics getters/reset
+@MainActor
 final class BridgeDataService {
   static let shared = BridgeDataService()
 
@@ -118,7 +119,7 @@ final class BridgeDataService {
 
   private let networkClient = NetworkClient.shared
   private let cacheService = CacheService.shared
-  private let dataProcessor = BridgeDataProcessor.shared
+  // Note: BridgeDataProcessor.shared is @MainActor-isolated; avoid capturing it here.
   private let sampleProvider = SampleDataProvider.shared
 
   // MARK: - Initialization
@@ -176,8 +177,11 @@ final class BridgeDataService {
     // Fetch from network using NetworkClient
     do {
       let data = try await fetchFromNetwork()
+
+      // Obtain the @MainActor-isolated processor on the main actor just-in-time.
+      let processor = await MainActor.run { BridgeDataProcessor.shared }
       let (bridges, validationFailures) =
-        try dataProcessor.processHistoricalData(data)
+        try await processor.processHistoricalData(data)
 
       // Log and report validation failures for debugging/monitoring
       if !validationFailures.isEmpty {

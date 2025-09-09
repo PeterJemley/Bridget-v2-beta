@@ -38,12 +38,17 @@ public class TrainPrepService {
   ///   - ndjsonURL: URL to NDJSON data file
   ///   - config: Core ML training configuration
   ///   - progress: Optional progress delegate for real-time updates
+  ///   - enhancedProgress: Optional advanced progress delegate
+  ///   - modelConfiguration: Optional override for MLModelConfiguration (e.g., CPU-only in tests)
+  ///   - tempDirectory: Optional override for temporary directory used during training/model creation
   /// - Returns: Tuple of trained MLModel and comprehensive TrainingReport
   /// - Throws: Various errors from Steps 2-4 modules
   public func runPipeline(from ndjsonURL: URL,
                           config: CoreMLTrainingConfig,
                           progress: TrainPrepProgressDelegate? = nil,
-                          enhancedProgress: EnhancedPipelineProgressDelegate? = nil) async throws -> (model: MLModel, report: TrainingReport)
+                          enhancedProgress: EnhancedPipelineProgressDelegate? = nil,
+                          modelConfiguration: MLModelConfiguration? = nil,
+                          tempDirectory: URL? = nil) async throws -> (model: MLModel, report: TrainingReport)
   {
     let startTime = Date()
     logger.info(
@@ -208,7 +213,10 @@ public class TrainPrepService {
         "🎯 Training model with \(features.count) features, config: \(String(describing: config))"
       )
 
-      let model = try await trainer.trainModel(with: features)
+      let model = try await trainer.trainModel(with: features,
+                                               progress: nil,
+                                               modelConfiguration: modelConfiguration,
+                                               tempDirectory: tempDirectory)
 
       timings.trainingTime = Date().timeIntervalSince(trainingStart)
 
@@ -496,3 +504,4 @@ public class TestProgressDelegate: TrainPrepProgressDelegate {
   public func trainPrepDidComplete() {}
   public func trainPrepDidFail(_: Error) {}
 }
+

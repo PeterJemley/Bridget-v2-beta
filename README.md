@@ -79,9 +79,10 @@ A sophisticated pathfinding and route optimization engine for Seattle bridge tra
 
 ## Features
 
-- **Real-time Bridge Monitoring**: Live updates of Seattle bridge opening status
+- **Real-time Bridge Status Inference**: Live interpolation of bridge openings/closings from Apple Maps traffic data
+- **Historical Bridge Data Analysis**: Processing and analysis of Seattle bridge opening patterns from Open Data API
 - **On-Device Machine Learning**: Core ML training and inference using Apple Neural Engine
-- **Route Optimization**: ML-powered route scoring based on historical and real-time data
+- **Route Optimization**: ML-powered route scoring based on historical patterns and real-time traffic data
 - **Reactive UI**: SwiftUI with Observation framework for instant updates
 - **Modular Architecture**: Clean separation of concerns with comprehensive testing
 - **Production-Ready Training**: Robust on-device training with OS cues and session management

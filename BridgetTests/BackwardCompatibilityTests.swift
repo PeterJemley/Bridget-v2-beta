@@ -36,7 +36,7 @@ struct BackwardCompatibilityTests {
     #expect(oldData.statisticalMetrics == nil)
 
     // computed properties
-    #expect(oldData.stageMetrics.count == 1)
+    #expect(oldData.stageMetrics.count == 2)
     #expect(oldData.stageMetrics.first?.stage == "DataProcessing")
   }
 
@@ -102,7 +102,7 @@ struct BackwardCompatibilityTests {
       ) < 0.001
     )
 
-    #expect(newData.stageMetrics.count == 1)
+    #expect(newData.stageMetrics.count == 2)
     #expect(newData.stageMetrics.first?.stage == "DataProcessing")
   }
 
@@ -145,7 +145,7 @@ struct BackwardCompatibilityTests {
                                       statisticalMetrics: nil)
 
     #expect(oldData.statisticalMetrics == nil)
-    #expect(oldData.stageMetrics.count == 1)
+    #expect(oldData.stageMetrics.count == 2)
   }
 
   // MARK: - Serialization Backward Compatibility
@@ -279,7 +279,7 @@ struct BackwardCompatibilityTests {
     }
 
     // Core functionality still works without statistical metrics
-    #expect(oldData.stageMetrics.count == 1)
+    #expect(oldData.stageMetrics.count == 2)
   }
 
   @Test("Graceful degradation in processing function")

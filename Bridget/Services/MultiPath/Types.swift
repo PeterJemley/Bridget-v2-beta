@@ -113,23 +113,8 @@ public struct Edge: Hashable, Codable, Sendable {
 
     if isBridge {
       if let bridgeID = bridgeID {
-        #if DEBUG
-          if !SeattleDrawbridges.isAcceptedBridgeID(bridgeID,
-                                                    allowSynthetic: true)
-          {
-            assertionFailure(
-              "Edge: Non-canonical, non-synthetic bridge ID '\(bridgeID)' detected. Must be canonical Seattle bridge or synthetic test ID (bridge1, bridge2, etc.)"
-            )
-          }
-        #else
-          if !SeattleDrawbridges.isAcceptedBridgeID(bridgeID,
-                                                    allowSynthetic: true)
-          {
-            print(
-              "⚠️ Edge: Non-canonical, non-synthetic bridge ID '\(bridgeID)' detected. Must be canonical Seattle bridge or synthetic test ID (bridge1, bridge2, etc.)"
-            )
-          }
-        #endif
+        // Only enforce basic shape constraints, not policy constraints
+        // Policy validation (accepted bridge IDs) is handled by the service layer
         self.bridgeID = bridgeID
       } else {
         #if DEBUG

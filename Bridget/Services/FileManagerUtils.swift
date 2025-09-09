@@ -117,11 +117,7 @@ public enum FileManagerUtils {
   public static func ensureDirectoryExists(_ url: URL) throws {
     let fileManager = FileManager.default
 
-    guard url.hasDirectoryPath else {
-      logger.error("Invalid directory path: \(url.path)")
-      throw FileManagerError.invalidDirectory(url)
-    }
-
+    // Be tolerant of URLs that don't have hasDirectoryPath set; treat them as directories.
     do {
       if !fileManager.fileExists(atPath: url.path) {
         logger.info("Creating directory at: \(url.path)")
@@ -329,7 +325,7 @@ public enum FileManagerUtils {
     try removeFile(at: url)
   }
 
-  /// Removes old files based on creation date
+  /// Removes old files based on modification date
   /// - Parameters:
   ///   - directory: The directory to search for old files
   ///   - olderThan: The cutoff date - files older than this will be removed
@@ -342,7 +338,7 @@ public enum FileManagerUtils {
     let fileManager = FileManager.default
     let files = try enumerateFiles(in: directory,
                                    filter: filter,
-                                   properties: [.creationDateKey])
+                                   properties: [.contentModificationDateKey])
 
     var removedCount = 0
     for file in files {
@@ -350,8 +346,9 @@ public enum FileManagerUtils {
         let attributes = try fileManager.attributesOfItem(
           atPath: file.path
         )
-        if let creationDate = attributes[.creationDate] as? Date,
-           creationDate < cutoffDate
+        if let modificationDate = attributes[.modificationDate]
+          as? Date,
+          modificationDate < cutoffDate
         {
           try removeFile(at: file)
           removedCount += 1

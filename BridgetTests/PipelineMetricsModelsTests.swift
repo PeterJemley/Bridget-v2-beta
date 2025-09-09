@@ -48,7 +48,7 @@ struct PipelineMetricsModelsTests {
       ("modelTraining", "Model Training"),
       ("modelValidation", "Model Validation"),
       ("artifactExport", "Artifact Export"),
-      ("unknownStage", "Unknownstage"), // Should capitalize
+      ("unknownStage", "Unknownstage"),  // Should capitalize
     ]
 
     for (stage, expectedDisplay) in testCases {
@@ -79,7 +79,7 @@ struct PipelineMetricsModelsTests {
                                             memory: 100,
                                             errorCount: 0,
                                             recordCount: 1000,
-                                            validationRate: 0.94 // Below 0.95 threshold
+                                            validationRate: 0.94  // Below 0.95 threshold
     )
     #expect(warningMetric.statusColor == .orange)
 
@@ -89,7 +89,7 @@ struct PipelineMetricsModelsTests {
                                             memory: 100,
                                             errorCount: 0,
                                             recordCount: 1000,
-                                            validationRate: 0.95 // At threshold
+                                            validationRate: 0.95  // At threshold
     )
     #expect(successMetric.statusColor == .green)
   }
@@ -206,7 +206,7 @@ struct PipelineMetricsModelsTests {
 
     #expect(data.totalDuration == 30.0)
     #expect(data.totalMemory == 600)
-    #expect(abs(data.averageValidationRate - 0.95) < 0.001) // ~0.95
+    #expect(abs(data.averageValidationRate - 0.95) < 0.001)  // ~0.95
   }
 
   @Test("PipelineMetricsData averageValidationRate edge cases")
@@ -277,9 +277,9 @@ struct PipelineMetricsModelsTests {
 
     let top3 = data.topStagesByDuration(limit: 3)
     #expect(top3.count == 3)
-    #expect(top3[0].stage == "stage3") // 15.0
-    #expect(top3[1].stage == "stage1") // 10.0
-    #expect(top3[2].stage == "stage5") // 8.0
+    #expect(top3[0].stage == "stage3")  // 15.0
+    #expect(top3[1].stage == "stage1")  // 10.0
+    #expect(top3[2].stage == "stage5")  // 8.0
 
     let top1 = data.topStagesByDuration(limit: 1)
     #expect(top1.count == 1)
@@ -319,8 +319,8 @@ struct PipelineMetricsModelsTests {
 
     let top2 = data.topStagesByMemory(limit: 2)
     #expect(top2.count == 2)
-    #expect(top2[0].stage == "stage2") // 500
-    #expect(top2[1].stage == "stage3") // 200
+    #expect(top2[0].stage == "stage2")  // 500
+    #expect(top2[1].stage == "stage3")  // 200
   }
 
   @Test("PipelineMetricsData Codable conformance")
@@ -334,17 +334,21 @@ struct PipelineMetricsModelsTests {
                                            customValidationResults: ["test": true],
                                            statisticalMetrics: nil)
 
-    let encoder = JSONEncoder()
+    let encoder = JSONEncoder.bridgeEncoder()
     let decoder = JSONDecoder.bridgeDecoder()
 
     let jsonData = try encoder.encode(originalData)
-    let decodedData = try decoder.decode(PipelineMetricsData.self, from: jsonData)
+    let decodedData = try decoder.decode(PipelineMetricsData.self,
+                                         from: jsonData)
 
     #expect(decodedData.stageDurations == originalData.stageDurations)
     #expect(decodedData.memoryUsage == originalData.memoryUsage)
     #expect(decodedData.validationRates == originalData.validationRates)
     #expect(decodedData.errorCounts == originalData.errorCounts)
     #expect(decodedData.recordCounts == originalData.recordCounts)
-    #expect(decodedData.customValidationResults == originalData.customValidationResults)
+    #expect(
+      decodedData.customValidationResults
+        == originalData.customValidationResults
+    )
   }
 }

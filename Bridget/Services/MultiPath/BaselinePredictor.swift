@@ -57,13 +57,16 @@ public class BaselinePredictor: BridgeOpenPredictor {
   private let historicalProvider: HistoricalBridgeDataProvider
   private let config: BaselinePredictorConfig
   private let supportedBridgeIDs: Set<String>
+  private let clock: ClockProtocol
 
   public init(historicalProvider: HistoricalBridgeDataProvider,
               config: BaselinePredictorConfig = BaselinePredictorConfig(),
-              supportedBridgeIDs: Set<String>? = nil)
+              supportedBridgeIDs: Set<String>? = nil,
+              clock: ClockProtocol = SystemClock.shared)
   {
     self.historicalProvider = historicalProvider
     self.config = config
+    self.clock = clock
 
     // If no supported bridge IDs provided, use SeattleDrawbridges as the single source of truth
     if let supported = supportedBridgeIDs {
@@ -116,7 +119,7 @@ public class BaselinePredictor: BridgeOpenPredictor {
   public func predictBatch(_ inputs: [BridgePredictionInput]) async throws
     -> BatchPredictionResult
   {
-    let startTime = Date()
+    let startTime = clock.now
     var predictions: [BridgePredictionResult] = []
 
     for input in inputs {
@@ -142,7 +145,7 @@ public class BaselinePredictor: BridgeOpenPredictor {
       predictions.append(result)
     }
 
-    let processingTime = Date().timeIntervalSince(startTime)
+    let processingTime = clock.now.timeIntervalSince(startTime)
     return BatchPredictionResult(predictions: predictions,
                                  processingTime: processingTime,
                                  batchSize: inputs.count)
@@ -326,7 +329,7 @@ public class BaselinePredictor: BridgeOpenPredictor {
     }
 
     let daysSinceUpdate =
-      Date().timeIntervalSince(lastSeen) / (24 * 60 * 60)
+      clock.now.timeIntervalSince(lastSeen) / (24 * 60 * 60)
 
     // Exponential decay: 1.0 for same day, 0.5 for 7 days, 0.1 for 30 days
     let decayRate = 0.1
@@ -338,7 +341,7 @@ public class BaselinePredictor: BridgeOpenPredictor {
   /// - Returns: Date representing the bucket
   private func createDateFromBucket(_ bucket: DateBucket) -> Date {
     let calendar = Calendar.current
-    let now = Date()
+    let now = clock.now
 
     var components = calendar.dateComponents([.year, .month, .day],
                                              from: now)

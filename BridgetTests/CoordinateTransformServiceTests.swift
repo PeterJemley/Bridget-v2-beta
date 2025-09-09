@@ -1,20 +1,25 @@
+import Foundation
+import Testing
+
 @testable import Bridget
-import XCTest
 
-final class CoordinateTransformServiceTests: XCTestCase {
-  var transformService: DefaultCoordinateTransformService!
+@MainActor
+@Suite("Coordinate Transform Service Tests")
+struct CoordinateTransformServiceTests {
+  var transformService: DefaultCoordinateTransformService
 
-  override func setUpWithError() throws {
-    transformService = DefaultCoordinateTransformService(enableLogging: true)
-  }
-
-  override func tearDownWithError() throws {
-    transformService = nil
+  init() {
+    self.transformService = DefaultCoordinateTransformService(
+      enableLogging: true
+    )
   }
 
   // MARK: - Basic Transformation Tests
 
-  func testIdentityTransformation() throws {
+  @Test(
+    "Identity transformation returns same coordinates with full confidence"
+  )
+  func identityTransformation() throws {
     let lat = 47.598
     let lon = -122.332
 
@@ -24,20 +29,18 @@ final class CoordinateTransformServiceTests: XCTestCase {
                                             to: .seattleReference,
                                             bridgeId: "1")
 
-    XCTAssertTrue(result.success)
-    XCTAssertNotNil(result.transformedLatitude)
-    XCTAssertNotNil(result.transformedLongitude)
-    XCTAssertEqual(result.transformedLatitude!, lat, accuracy: 0.000001)
-    XCTAssertEqual(result.transformedLongitude!, lon, accuracy: 0.000001)
-    XCTAssertEqual(result.confidence, 1.0)
+    #expect(result.success)
+    let tLat = try #require(result.transformedLatitude)
+    let tLon = try #require(result.transformedLongitude)
+    #expect(abs(tLat - lat) <= 0.000001)
+    #expect(abs(tLon - lon) <= 0.000001)
+    #expect(result.confidence == 1.0)
   }
 
-  func testBridge1Transformation() throws {
-    // Test Bridge 1 (First Avenue South) transformation
+  @Test("Bridge 1 transformation improves proximity to expected location")
+  func bridge1Transformation() throws {
     // API coordinates: (47.542213439941406, -122.33446502685547)
     // Expected reference: (47.598, -122.332)
-    // Offset: ~6205m south, ~200m west
-
     let apiLat = 47.542213439941406
     let apiLon = -122.33446502685547
     let expectedLat = 47.598
@@ -49,22 +52,21 @@ final class CoordinateTransformServiceTests: XCTestCase {
                                             to: .seattleReference,
                                             bridgeId: "1")
 
-    XCTAssertTrue(result.success)
-    XCTAssertNotNil(result.transformedLatitude)
-    XCTAssertNotNil(result.transformedLongitude)
+    #expect(result.success)
+    let transformedLat = try #require(result.transformedLatitude)
+    let transformedLon = try #require(result.transformedLongitude)
 
-    // Check that transformation brings coordinates closer to expected
-    let transformedLat = result.transformedLatitude!
-    let transformedLon = result.transformedLongitude!
+    let originalDistance = haversineDistance(lat1: apiLat,
+                                             lon1: apiLon,
+                                             lat2: expectedLat,
+                                             lon2: expectedLon)
+    let transformedDistance = haversineDistance(lat1: transformedLat,
+                                                lon1: transformedLon,
+                                                lat2: expectedLat,
+                                                lon2: expectedLon)
 
-    let originalDistance = haversineDistance(lat1: apiLat, lon1: apiLon,
-                                             lat2: expectedLat, lon2: expectedLon)
-    let transformedDistance = haversineDistance(lat1: transformedLat, lon1: transformedLon,
-                                                lat2: expectedLat, lon2: expectedLon)
-
-    // Transformed coordinates should be much closer to expected
-    XCTAssertLessThan(transformedDistance, originalDistance)
-    XCTAssertLessThan(transformedDistance, 1000) // Within 1km after transformation
+    #expect(transformedDistance < originalDistance)
+    #expect(transformedDistance < 1000)  // Within 1km after transformation
 
     print("📍 Bridge 1 Transformation:")
     print("   API: (\(apiLat), \(apiLon))")
@@ -74,12 +76,10 @@ final class CoordinateTransformServiceTests: XCTestCase {
     print("   Transformed Distance: \(Int(transformedDistance))m")
   }
 
-  func testBridge6Transformation() throws {
-    // Test Bridge 6 (Lower Spokane Street) transformation
+  @Test("Bridge 6 transformation improves proximity to expected location")
+  func bridge6Transformation() throws {
     // API coordinates: (47.57137680053711, -122.35354614257812)
     // Expected reference: (47.58, -122.35)
-    // Offset: ~995m south, ~400m west
-
     let apiLat = 47.57137680053711
     let apiLon = -122.35354614257812
     let expectedLat = 47.58
@@ -91,21 +91,21 @@ final class CoordinateTransformServiceTests: XCTestCase {
                                             to: .seattleReference,
                                             bridgeId: "6")
 
-    XCTAssertTrue(result.success)
-    XCTAssertNotNil(result.transformedLatitude)
-    XCTAssertNotNil(result.transformedLongitude)
+    #expect(result.success)
+    let transformedLat = try #require(result.transformedLatitude)
+    let transformedLon = try #require(result.transformedLongitude)
 
-    let transformedLat = result.transformedLatitude!
-    let transformedLon = result.transformedLongitude!
+    let originalDistance = haversineDistance(lat1: apiLat,
+                                             lon1: apiLon,
+                                             lat2: expectedLat,
+                                             lon2: expectedLon)
+    let transformedDistance = haversineDistance(lat1: transformedLat,
+                                                lon1: transformedLon,
+                                                lat2: expectedLat,
+                                                lon2: expectedLon)
 
-    let originalDistance = haversineDistance(lat1: apiLat, lon1: apiLon,
-                                             lat2: expectedLat, lon2: expectedLon)
-    let transformedDistance = haversineDistance(lat1: transformedLat, lon1: transformedLon,
-                                                lat2: expectedLat, lon2: expectedLon)
-
-    // Transformed coordinates should be much closer to expected
-    XCTAssertLessThan(transformedDistance, originalDistance)
-    XCTAssertLessThan(transformedDistance, 500) // Within 500m after transformation
+    #expect(transformedDistance < originalDistance)
+    #expect(transformedDistance < 500)  // Within 500m after transformation
 
     print("📍 Bridge 6 Transformation:")
     print("   API: (\(apiLat), \(apiLon))")
@@ -115,8 +115,10 @@ final class CoordinateTransformServiceTests: XCTestCase {
     print("   Transformed Distance: \(Int(transformedDistance))m")
   }
 
-  func testUnknownBridgeTransformation() throws {
-    // Test transformation for unknown bridge (should use default matrix)
+  @Test(
+    "Unknown bridge uses default matrix and returns reasonable confidence"
+  )
+  func unknownBridgeTransformation() throws {
     let apiLat = 47.5
     let apiLon = -122.3
 
@@ -124,89 +126,95 @@ final class CoordinateTransformServiceTests: XCTestCase {
                                             longitude: apiLon,
                                             from: .seattleAPI,
                                             to: .seattleReference,
-                                            bridgeId: "999" // Unknown bridge
-    )
+                                            bridgeId: "999")
 
-    XCTAssertTrue(result.success)
-    XCTAssertNotNil(result.transformedLatitude)
-    XCTAssertNotNil(result.transformedLongitude)
+    #expect(result.success)
+    _ = try #require(result.transformedLatitude)
+    _ = try #require(result.transformedLongitude)
 
-    // Should have lower confidence for unknown bridge (but identity transformations get 1.0)
-    XCTAssertLessThanOrEqual(result.confidence, 1.0)
-    XCTAssertGreaterThan(result.confidence, 0.0)
+    #expect(result.confidence <= 1.0)
+    #expect(result.confidence > 0.0)
   }
 
   // MARK: - Error Handling Tests
 
-  func testInvalidCoordinates() throws {
-    let result = transformService.transform(latitude: 100.0, // Invalid latitude
+  @Test("Invalid coordinates produce invalidInputCoordinates error")
+  func invalidCoordinates() throws {
+    let result = transformService.transform(latitude: 100.0,  // Invalid latitude
                                             longitude: -122.3,
                                             from: .seattleAPI,
                                             to: .seattleReference,
                                             bridgeId: "1")
 
-    XCTAssertFalse(result.success)
-    XCTAssertNotNil(result.error)
-
-    if case .invalidInputCoordinates = result.error {
-      // Expected error
-    } else {
-      XCTFail("Expected invalidInputCoordinates error")
+    #expect(!result.success)
+    let error = try #require(result.error, "Expected an error result")
+    switch error {
+    case .invalidInputCoordinates:
+      #expect(true)
+    default:
+      Issue.record("Expected invalidInputCoordinates error, got \(error)")
+      #expect(Bool(false))
     }
   }
 
+  @Test("Unsupported coordinate system produces appropriate error")
   func testUnsupportedCoordinateSystem() throws {
     let result = transformService.transform(latitude: 47.5,
                                             longitude: -122.3,
-                                            from: .nad27, // Not supported in current implementation
+                                            from: .nad27,  // Not supported in current implementation
                                             to: .wgs84,
                                             bridgeId: "1")
 
-    XCTAssertFalse(result.success)
-    XCTAssertNotNil(result.error)
-
-    if case .unsupportedCoordinateSystem = result.error {
-      // Expected error
-    } else {
-      XCTFail("Expected unsupportedCoordinateSystem error")
+    #expect(!result.success)
+    let error = try #require(result.error, "Expected an error result")
+    switch error {
+    case .unsupportedCoordinateSystem:
+      #expect(true)
+    default:
+      Issue.record(
+        "Expected unsupportedCoordinateSystem error, got \(error)"
+      )
+      #expect(Bool(false))
     }
   }
 
   // MARK: - Matrix Calculation Tests
 
-  func testTransformationMatrixCalculation() throws {
+  @Test(
+    "Matrix calculation returns non-identity for SeattleAPI -> Reference (Bridge 1)"
+  )
+  func transformationMatrixCalculation() throws {
     let matrix = transformService.calculateTransformationMatrix(from: .seattleAPI,
                                                                 to: .seattleReference,
                                                                 bridgeId: "1")
 
-    XCTAssertNotNil(matrix)
-    XCTAssertNotEqual(matrix, .identity)
-
+    let m = try #require(matrix)
+    #expect(!(m == .identity))
     // Bridge 1 should have specific offsets (now using inverse transformation)
-    XCTAssertEqual(matrix!.latOffset, 0.056, accuracy: 0.001)
-    XCTAssertEqual(matrix!.lonOffset, 0.002, accuracy: 0.001)
+    #expect(abs(m.latOffset - 0.056) <= 0.001)
+    #expect(abs(m.lonOffset - 0.002) <= 0.001)
   }
 
-  func testInverseTransformationMatrix() throws {
+  @Test("Inverse matrix is the opposite of forward matrix")
+  func inverseTransformationMatrix() throws {
     let forwardMatrix = transformService.calculateTransformationMatrix(from: .seattleAPI,
                                                                        to: .seattleReference,
                                                                        bridgeId: "1")
-
     let inverseMatrix = transformService.calculateTransformationMatrix(from: .seattleReference,
                                                                        to: .seattleAPI,
                                                                        bridgeId: "1")
 
-    XCTAssertNotNil(forwardMatrix)
-    XCTAssertNotNil(inverseMatrix)
+    let fwd = try #require(forwardMatrix)
+    let inv = try #require(inverseMatrix)
 
-    // Inverse should be the opposite of forward
-    XCTAssertEqual(forwardMatrix!.latOffset, -inverseMatrix!.latOffset, accuracy: 0.000001)
-    XCTAssertEqual(forwardMatrix!.lonOffset, -inverseMatrix!.lonOffset, accuracy: 0.000001)
+    #expect(abs(fwd.latOffset + inv.latOffset) <= 0.000001)
+    #expect(abs(fwd.lonOffset + inv.lonOffset) <= 0.000001)
   }
 
   // MARK: - Confidence Tests
 
-  func testTransformationConfidence() throws {
+  @Test("Known bridge has high confidence; unknown bridge has lower (<= 1.0)")
+  func transformationConfidence() throws {
     // Known bridge should have high confidence
     let knownResult = transformService.transform(latitude: 47.5,
                                                  longitude: -122.3,
@@ -214,23 +222,24 @@ final class CoordinateTransformServiceTests: XCTestCase {
                                                  to: .seattleReference,
                                                  bridgeId: "1")
 
-    XCTAssertTrue(knownResult.success)
-    XCTAssertGreaterThan(knownResult.confidence, 0.9)
+    #expect(knownResult.success)
+    #expect(knownResult.confidence > 0.9)
 
-    // Unknown bridge should have lower confidence
+    // Unknown bridge should have lower confidence (but <= 1.0)
     let unknownResult = transformService.transform(latitude: 47.5,
                                                    longitude: -122.3,
                                                    from: .seattleAPI,
                                                    to: .seattleReference,
                                                    bridgeId: "999")
 
-    XCTAssertTrue(unknownResult.success)
-    XCTAssertLessThanOrEqual(unknownResult.confidence, 1.0)
+    #expect(unknownResult.success)
+    #expect(unknownResult.confidence <= 1.0)
   }
 
   // MARK: - Integration Tests
 
-  func testRoundTripTransformation() throws {
+  @Test("Round-trip transformation returns to original coordinates")
+  func roundTripTransformation() throws {
     let originalLat = 47.598
     let originalLon = -122.332
 
@@ -241,37 +250,33 @@ final class CoordinateTransformServiceTests: XCTestCase {
                                                  to: .seattleAPI,
                                                  bridgeId: "1")
 
-    XCTAssertTrue(toApiResult.success)
-    XCTAssertNotNil(toApiResult.transformedLatitude)
-    XCTAssertNotNil(toApiResult.transformedLongitude)
+    #expect(toApiResult.success)
+    let toApiLat = try #require(toApiResult.transformedLatitude)
+    let toApiLon = try #require(toApiResult.transformedLongitude)
 
     // Transform back to reference coordinates
-    let backToRefResult = transformService.transform(latitude: toApiResult.transformedLatitude!,
-                                                     longitude: toApiResult.transformedLongitude!,
+    let backToRefResult = transformService.transform(latitude: toApiLat,
+                                                     longitude: toApiLon,
                                                      from: .seattleAPI,
                                                      to: .seattleReference,
                                                      bridgeId: "1")
 
-    XCTAssertTrue(backToRefResult.success)
-    XCTAssertNotNil(backToRefResult.transformedLatitude)
-    XCTAssertNotNil(backToRefResult.transformedLongitude)
+    #expect(backToRefResult.success)
+    let finalLat = try #require(backToRefResult.transformedLatitude)
+    let finalLon = try #require(backToRefResult.transformedLongitude)
 
-    // Should be very close to original
-    XCTAssertNotNil(backToRefResult.transformedLatitude)
-    XCTAssertNotNil(backToRefResult.transformedLongitude)
-    let finalLat = backToRefResult.transformedLatitude!
-    let finalLon = backToRefResult.transformedLongitude!
-
-    XCTAssertEqual(finalLat, originalLat, accuracy: 0.000001)
-    XCTAssertEqual(finalLon, originalLon, accuracy: 0.000001)
+    #expect(abs(finalLat - originalLat) <= 0.000001)
+    #expect(abs(finalLon - originalLon) <= 0.000001)
   }
 
   // MARK: - Helper Methods
 
-  private func haversineDistance(lat1: Double, lon1: Double,
-                                 lat2: Double, lon2: Double) -> Double
+  private func haversineDistance(lat1: Double,
+                                 lon1: Double,
+                                 lat2: Double,
+                                 lon2: Double) -> Double
   {
-    let earthRadius = 6_371_000.0 // Earth's radius in meters
+    let earthRadius = 6_371_000.0  // Earth's radius in meters
 
     let lat1Rad = lat1 * .pi / 180.0
     let lon1Rad = lon1 * .pi / 180.0
@@ -281,9 +286,9 @@ final class CoordinateTransformServiceTests: XCTestCase {
     let dLat = lat2Rad - lat1Rad
     let dLon = lon2Rad - lon1Rad
 
-    let a = sin(dLat / 2) * sin(dLat / 2) +
-      cos(lat1Rad) * cos(lat2Rad) *
-      sin(dLon / 2) * sin(dLon / 2)
+    let a =
+      sin(dLat / 2) * sin(dLat / 2) + cos(lat1Rad) * cos(lat2Rad)
+        * sin(dLon / 2) * sin(dLon / 2)
 
     let c = 2 * atan2(sqrt(a), sqrt(1 - a))
 

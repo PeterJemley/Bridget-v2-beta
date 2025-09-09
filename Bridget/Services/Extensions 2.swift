@@ -71,25 +71,51 @@ public extension Array {
 // MARK: - String Extensions
 
 /// Extensions related to `String` for trimming and date validation.
-public extension String {
+extension String {
   /// Returns a copy of the string with whitespace and newline characters trimmed from both ends.
   ///
   /// Leading and trailing whitespace and newline characters are removed.
   ///
   /// - Returns: A new string without leading or trailing whitespace and newlines.
-  var trimmed: String {
+  public var trimmed: String {
     trimmingCharacters(in: .whitespacesAndNewlines)
   }
 
   /// Returns `true` if the string is a valid ISO8601 date format.
   ///
-  /// This property attempts to parse the string using `ISO8601DateFormatter`.
+  /// This property attempts to parse the string using `ISO8601DateFormatter`,
+  /// accepting both standard internet date-time and fractional seconds variants.
   ///
   /// - Returns: `true` if the string can be converted to a `Date` using ISO8601 format, otherwise `false`.
   ///
   /// - Note: This does not guarantee the string is a complete ISO8601 date, but that it can be parsed by the formatter.
-  var isISO8601Date: Bool {
-    let formatter = ISO8601DateFormatter()
-    return formatter.date(from: self) != nil
+  public var isISO8601Date: Bool {
+    if String.iso8601WithFractionalSeconds.date(from: self) != nil {
+      return true
+    }
+    if String.iso8601InternetDateTime.date(from: self) != nil {
+      return true
+    }
+    return false
   }
+
+  // Cached formatters for performance and to cover both formats
+  private static let iso8601InternetDateTime: ISO8601DateFormatter = {
+    let f = ISO8601DateFormatter()
+    f.formatOptions = [
+      .withInternetDateTime, .withColonSeparatorInTimeZone,
+    ]
+    f.timeZone = TimeZone(secondsFromGMT: 0)
+    return f
+  }()
+
+  private static let iso8601WithFractionalSeconds: ISO8601DateFormatter = {
+    let f = ISO8601DateFormatter()
+    f.formatOptions = [
+      .withInternetDateTime, .withFractionalSeconds,
+      .withColonSeparatorInTimeZone,
+    ]
+    f.timeZone = TimeZone(secondsFromGMT: 0)
+    return f
+  }()
 }

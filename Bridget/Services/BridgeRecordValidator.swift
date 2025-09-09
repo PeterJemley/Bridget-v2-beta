@@ -5,6 +5,7 @@
 
 import Foundation
 
+@MainActor
 struct BridgeRecordValidator {
   let knownBridgeIDs: Set<String>
   let bridgeLocations: [String: (lat: Double, lon: Double)]
@@ -14,26 +15,40 @@ struct BridgeRecordValidator {
   let validEntityTypes: Set<String>
 
   private let coordinateTransformService: DefaultCoordinateTransformService
+  private let featureFlagService: DefaultFeatureFlagService
+  private let metricsService: DefaultFeatureFlagMetricsService
+  private let monitoringService:
+    DefaultCoordinateTransformationMonitoringService
 
   // Phase 3.1: Configuration for transformation-based validation
   private let tightThresholdMeters: Double = 500.0  // 500m tight threshold
   private let fallbackThresholdMeters: Double = 8000.0  // 8km fallback threshold
-  private let enableTransformationBasedValidation: Bool = true
 
   init(knownBridgeIDs: Set<String>,
        bridgeLocations: [String: (lat: Double, lon: Double)],
        validEntityTypes: Set<String>,
        minDate: Date,
        maxDate: Date,
-       coordinateTransformService: DefaultCoordinateTransformService =
-         DefaultCoordinateTransformService())
+       coordinateTransformService: DefaultCoordinateTransformService? = nil,
+       featureFlagService: DefaultFeatureFlagService? = nil,
+       metricsService: DefaultFeatureFlagMetricsService? = nil,
+       monitoringService: DefaultCoordinateTransformationMonitoringService? =
+         nil)
   {
     self.knownBridgeIDs = knownBridgeIDs
     self.bridgeLocations = bridgeLocations
     self.validEntityTypes = validEntityTypes
     self.minDate = minDate
     self.maxDate = maxDate
-    self.coordinateTransformService = coordinateTransformService
+    self.coordinateTransformService = coordinateTransformService ?? DefaultCoordinateTransformService()
+    // Resolve singletons inside the @MainActor-isolated initializer body
+    self.featureFlagService =
+      featureFlagService ?? DefaultFeatureFlagService.shared
+    self.metricsService =
+      metricsService ?? DefaultFeatureFlagMetricsService.shared
+    self.monitoringService =
+      monitoringService
+        ?? DefaultCoordinateTransformationMonitoringService.shared
   }
 
   /// Returns first validation failure reason, or nil if valid, using ValidationUtils
@@ -111,28 +126,54 @@ struct BridgeRecordValidator {
     return R * c
   }
 
-  /// Phase 3.1: Enhanced geospatial validation using transformation-based approach
+  /// Phase 4.1: Enhanced geospatial validation with feature flags and monitoring
   private func validateGeospatialWithTransformation(record: BridgeOpeningRecord,
                                                     inputLat: Double,
                                                     inputLon: Double,
                                                     expectedLat: Double,
                                                     expectedLon: Double) -> ValidationFailureReason?
   {
-    guard enableTransformationBasedValidation else {
+    // Phase 4.1: Check feature flag for coordinate transformation
+    let isTransformationEnabled = featureFlagService.isEnabled(.coordinateTransformation,
+                                                               for: record.entityid)
+    let abTestVariant = featureFlagService.getABTestVariant(.coordinateTransformation,
+                                                            for: record.entityid)
+
+    // Record feature flag decision
+    metricsService.recordFeatureFlagDecision(flag: FeatureFlag.coordinateTransformation.rawValue,
+                                             userId: record.entityid,
+                                             enabled: isTransformationEnabled,
+                                             variant: abTestVariant?.rawValue)
+
+    guard isTransformationEnabled else {
       // Fallback to original threshold-based validation
-      return validateGeospatialWithThreshold(record: record,
-                                             inputLat: inputLat,
-                                             inputLon: inputLon,
-                                             expectedLat: expectedLat,
-                                             expectedLon: expectedLon)
+      let startTime = CFAbsoluteTimeGetCurrent()
+      let result = validateGeospatialWithThreshold(record: record,
+                                                   inputLat: inputLat,
+                                                   inputLon: inputLon,
+                                                   expectedLat: expectedLat,
+                                                   expectedLon: expectedLon)
+      let processingTimeMs =
+        (CFAbsoluteTimeGetCurrent() - startTime) * 1000
+
+      // Record metrics for threshold-based validation
+      metricsService.recordValidationResult(bridgeId: record.entityid,
+                                            method: .threshold,
+                                            success: result == nil,
+                                            processingTimeMs: processingTimeMs,
+                                            variant: abTestVariant?.rawValue)
+
+      return result
     }
 
-    // Step 1: Apply coordinate transformation
+    // Step 1: Apply coordinate transformation with performance monitoring
+    let startTime = CFAbsoluteTimeGetCurrent()
     let transformationResult =
       coordinateTransformService.transformToReferenceSystem(latitude: inputLat,
                                                             longitude: inputLon,
                                                             from: .seattleAPI,
                                                             bridgeId: record.entityid)
+    let processingTimeMs = (CFAbsoluteTimeGetCurrent() - startTime) * 1000  // Performance metric
 
     let transformedLat: Double
     let transformedLon: Double
@@ -144,6 +185,25 @@ struct BridgeRecordValidator {
       transformedLon =
         transformationResult.transformedLongitude ?? inputLon
       transformationSuccessful = true
+
+      // Record successful transformation monitoring event
+      let distanceImprovement =
+        haversineDistanceMeters(lat1: expectedLat,
+                                lon1: expectedLon,
+                                lat2: inputLat,
+                                lon2: inputLon)
+        - haversineDistanceMeters(lat1: expectedLat,
+                                  lon1: expectedLon,
+                                  lat2: transformedLat,
+                                  lon2: transformedLon)
+
+      monitoringService.recordSuccessfulTransformation(bridgeId: record.entityid,
+                                                       sourceSystem: "SeattleAPI",
+                                                       targetSystem: "SeattleReference",
+                                                       confidence: transformationResult.confidence,
+                                                       processingTimeMs: processingTimeMs,
+                                                       distanceImprovementMeters: distanceImprovement,
+                                                       userId: record.entityid)
     } else {
       // Log transformation failure for monitoring
       let errorMessage =
@@ -155,6 +215,14 @@ struct BridgeRecordValidator {
       transformedLat = inputLat
       transformedLon = inputLon
       transformationSuccessful = false
+
+      // Record failed transformation monitoring event
+      monitoringService.recordFailedTransformation(bridgeId: record.entityid,
+                                                   sourceSystem: "SeattleAPI",
+                                                   targetSystem: "SeattleReference",
+                                                   errorMessage: errorMessage,
+                                                   processingTimeMs: processingTimeMs,
+                                                   userId: record.entityid)
     }
 
     // Step 2: Calculate distance using Haversine formula
@@ -175,6 +243,15 @@ struct BridgeRecordValidator {
           "⚠️ Bridge \(record.entityid) validated with fallback: \(String(format: "%.1f", distanceMeters))m"
         )
       }
+
+      // Record successful transformation validation
+      metricsService.recordValidationResult(bridgeId: record.entityid,
+                                            method: .transformation,
+                                            success: true,
+                                            processingTimeMs: processingTimeMs,
+                                            distanceMeters: distanceMeters,
+                                            variant: abTestVariant?.rawValue)
+
       return nil
     }
 
@@ -183,19 +260,45 @@ struct BridgeRecordValidator {
       print(
         "⚠️ Bridge \(record.entityid) passed fallback threshold: \(String(format: "%.1f", distanceMeters))m (tight threshold: \(tightThresholdMeters)m)"
       )
+
+      // Record fallback validation success
+      metricsService.recordValidationResult(bridgeId: record.entityid,
+                                            method: .fallback,
+                                            success: true,
+                                            processingTimeMs: processingTimeMs,
+                                            distanceMeters: distanceMeters,
+                                            variant: abTestVariant?.rawValue)
+
       return nil
     }
 
     // Step 5: If transformation failed, try original threshold-based validation as final fallback
     if !transformationSuccessful {
-      return validateGeospatialWithThreshold(record: record,
-                                             inputLat: inputLat,
-                                             inputLon: inputLon,
-                                             expectedLat: expectedLat,
-                                             expectedLon: expectedLon)
+      let result = validateGeospatialWithThreshold(record: record,
+                                                   inputLat: inputLat,
+                                                   inputLon: inputLon,
+                                                   expectedLat: expectedLat,
+                                                   expectedLon: expectedLon)
+
+      // Record fallback validation result
+      metricsService.recordValidationResult(bridgeId: record.entityid,
+                                            method: .fallback,
+                                            success: result == nil,
+                                            processingTimeMs: processingTimeMs,
+                                            variant: abTestVariant?.rawValue)
+
+      return result
     }
 
     // Step 6: All validation methods failed
+    // Record transformation validation failure
+    metricsService.recordValidationResult(bridgeId: record.entityid,
+                                          method: .transformation,
+                                          success: false,
+                                          processingTimeMs: processingTimeMs,
+                                          distanceMeters: distanceMeters,
+                                          variant: abTestVariant?.rawValue)
+
     return .geospatialMismatch(expectedLat: expectedLat,
                                expectedLon: expectedLon,
                                actualLat: transformedLat,

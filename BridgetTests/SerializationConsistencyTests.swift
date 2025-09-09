@@ -11,13 +11,6 @@ struct SerializationConsistencyTests {
     let name: String
     let date: Date
     let snakeCaseField: String
-
-    enum CodingKeys: String, CodingKey {
-      case id
-      case name
-      case date
-      case snakeCaseField = "snake_case_field"
-    }
   }
 
   let sampleDate = ISO8601DateFormatter().date(from: "2025-08-18T09:30:00Z")!
@@ -29,7 +22,8 @@ struct SerializationConsistencyTests {
                             date: sampleDate,
                             snakeCaseField: "value")
     let encoder = JSONEncoder.bridgeEncoder()
-    let decoder = JSONDecoder.bridgeDecoder()
+    // Disambiguate decoder overload by specifying dateParser explicitly
+    let decoder = JSONDecoder.bridgeDecoder(dateParser: DefaultDateParser())
     let data = try encoder.encode(model)
     let decoded = try decoder.decode(SampleModel.self, from: data)
     #expect(model == decoded)
@@ -44,7 +38,7 @@ struct SerializationConsistencyTests {
     let encoder = JSONEncoder.bridgeEncoder(outputFormatting: [
       .prettyPrinted, .sortedKeys,
     ])
-    let decoder = JSONDecoder.bridgeDecoder()
+    let decoder = JSONDecoder.bridgeDecoder(dateParser: DefaultDateParser())
     let data = try encoder.encode(model)
     let decoded = try decoder.decode(SampleModel.self, from: data)
     #expect(model == decoded)
@@ -60,7 +54,7 @@ struct SerializationConsistencyTests {
         "snake_case_field": "snake"
     }
     """.data(using: .utf8)!
-    let decoder = JSONDecoder.bridgeDecoder()
+    let decoder = JSONDecoder.bridgeDecoder(dateParser: DefaultDateParser())
     let model = try decoder.decode(SampleModel.self, from: json)
     #expect(model.snakeCaseField == "snake")
   }
@@ -73,8 +67,8 @@ struct SerializationConsistencyTests {
                             snakeCaseField: "custom")
     let encoder = JSONEncoder.bridgeEncoder(dateEncodingStrategy: .iso8601)
     let data = try encoder.encode(model)
-    // decode with bridge decoder (which handles ISO8601)
-    let decoder = JSONDecoder.bridgeDecoder()
+    // decode with bridge decoder (supports primary format + ISO8601)
+    let decoder = JSONDecoder.bridgeDecoder(dateParser: DefaultDateParser())
     let decoded = try decoder.decode(SampleModel.self, from: data)
     #expect(model == decoded)
   }
@@ -89,9 +83,9 @@ struct SerializationConsistencyTests {
       dateEncodingStrategy: .secondsSince1970
     )
     let data = try encoder.encode(model)
-    let decoder = JSONDecoder.bridgeDecoder()
+    let decoder = JSONDecoder.bridgeDecoder(dateParser: DefaultDateParser())
 
-    // Expect this to fail due to mismatched date strategies
+    // Expect this to fail due to mismatched date strategies (number vs string)
     #expect(throws: DecodingError.self) {
       try decoder.decode(SampleModel.self, from: data)
     }

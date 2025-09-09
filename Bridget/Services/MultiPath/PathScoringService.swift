@@ -11,6 +11,10 @@
 
 import Foundation
 
+#if canImport(Mach)
+  import Mach
+#endif
+
 // MARK: - Feature Structures
 
 /// Bridge-specific features for ML prediction
@@ -49,6 +53,8 @@ public class PathScoringService {
   private let predictor: BridgeOpenPredictor
   private let etaEstimator: ETAEstimator
   private let config: MultiPathConfig
+  private let metricsAggregator: ScoringMetricsAggregator
+  private let clock: ClockProtocol
 
   // MARK: - Caching Infrastructure
 
@@ -86,11 +92,15 @@ public class PathScoringService {
 
   public init(predictor: BridgeOpenPredictor,
               etaEstimator: ETAEstimator,
-              config: MultiPathConfig) throws
+              config: MultiPathConfig,
+              aggregator: ScoringMetricsAggregator = globalScoringMetrics,
+              clock: ClockProtocol = SystemClock.shared) throws
   {
     self.predictor = predictor
     self.etaEstimator = etaEstimator
     self.config = config
+    self.metricsAggregator = aggregator
+    self.clock = clock
 
     // Validate configuration
     try validateConfiguration()
@@ -145,7 +155,7 @@ public class PathScoringService {
   /// Generate cache key for bridge features
   /// Uses 5-minute time buckets for efficient caching
   private func featureCacheKey(bridgeID: String, eta: Date) -> String {
-    let calendar = Calendar.current
+    let calendar = clock.calendar
     let minuteOfDay =
       calendar.component(.minute, from: eta) + calendar.component(.hour,
                                                                   from: eta) * 60
@@ -198,24 +208,30 @@ public class PathScoringService {
   /// Get current memory usage for performance monitoring
   /// - Returns: Current memory usage in bytes
   private func getCurrentMemoryUsage() -> Int64 {
-    var info = mach_task_basic_info()
-    var count =
-      mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+    #if canImport(Mach)
+      var info = mach_task_basic_info()
+      var count =
+        mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)
+          / 4
 
-    let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
-      $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-        task_info(mach_task_self_,
-                  task_flavor_t(MACH_TASK_BASIC_INFO),
-                  $0,
-                  &count)
+      let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
+        $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+          task_info(mach_task_self_,
+                    task_flavor_t(MACH_TASK_BASIC_INFO),
+                    $0,
+                    &count)
+        }
       }
-    }
 
-    if kerr == KERN_SUCCESS {
-      return Int64(info.resident_size)
-    } else {
+      if kerr == KERN_SUCCESS {
+        return Int64(info.resident_size)
+      } else {
+        return 0
+      }
+    #else
+      // Mach module not available on this platform; return 0 as a safe fallback.
       return 0
-    }
+    #endif
   }
 
   /// Calculate standard deviation for statistical analysis
@@ -258,9 +274,10 @@ public class PathScoringService {
 
   /// Score a single route path by aggregating bridge opening probabilities.
   public func scorePath(_ path: RoutePath,
-                        departureTime: Date) async throws -> PathScore
+                        departureTime: Date,
+                        recordMetrics: Bool = true) async throws -> PathScore
   {
-    let startTime = Date()
+    let startTime = clock.now
     var etaEstimationTime: TimeInterval = 0.0
     var bridgePredictionTime: TimeInterval = 0.0
     var aggregationTime: TimeInterval = 0.0
@@ -283,10 +300,10 @@ public class PathScoringService {
     }
 
     // Get bridge ETAs with IDs for prediction
-    let etaStartTime = Date()
+    let etaStartTime = clock.now
     let bridgeETAs = etaEstimator.estimateBridgeETAsWithIDs(for: path,
                                                             departureTime: departureTime)
-    etaEstimationTime = Date().timeIntervalSince(etaStartTime)
+    etaEstimationTime = clock.now.timeIntervalSince(etaStartTime)
 
     guard !bridgeETAs.isEmpty else {
       // Path has no bridges, so probability is 1.0 (always passable)
@@ -338,7 +355,7 @@ public class PathScoringService {
     }
 
     // Build prediction inputs for accepted bridges
-    let featureStartTime = Date()
+    let featureStartTime = clock.now
     let predictionInputs: [BridgePredictionInput]
     do {
       predictionInputs = try await buildPredictionInputs(bridgeETAs: acceptedBridgeETAs,
@@ -349,7 +366,7 @@ public class PathScoringService {
         "Failed to build prediction inputs: \(error.localizedDescription)"
       )
     }
-    featureGenerationTime = Date().timeIntervalSince(featureStartTime)
+    featureGenerationTime = clock.now.timeIntervalSince(featureStartTime)
 
     // Validate prediction inputs
     guard !predictionInputs.isEmpty else {
@@ -359,7 +376,7 @@ public class PathScoringService {
     }
 
     // Batch predict bridge opening probabilities for accepted bridges
-    let predictionStartTime = Date()
+    let predictionStartTime = clock.now
     let predictionResult: BatchPredictionResult
     do {
       predictionResult = try await predictor.predictBatch(
@@ -370,7 +387,7 @@ public class PathScoringService {
         "Batch prediction failed: \(error.localizedDescription)"
       )
     }
-    bridgePredictionTime = Date().timeIntervalSince(predictionStartTime)
+    bridgePredictionTime = clock.now.timeIntervalSince(predictionStartTime)
 
     // Validate prediction results count
     guard predictionResult.predictions.count == acceptedBridgeETAs.count
@@ -407,11 +424,11 @@ public class PathScoringService {
     }
 
     // Aggregate probabilities using log-domain math for numerical stability
-    let aggregationStartTime = Date()
+    let aggregationStartTime = clock.now
     let (logProbability, linearProbability) = aggregateProbabilities(
       probabilities
     )
-    aggregationTime = Date().timeIntervalSince(aggregationStartTime)
+    aggregationTime = clock.now.timeIntervalSince(aggregationStartTime)
 
     // Validate final probabilities
     guard
@@ -436,8 +453,8 @@ public class PathScoringService {
     }
 
     // Record performance metrics if enabled
-    if config.performance.enablePerformanceLogging {
-      let totalScoringTime = Date().timeIntervalSince(startTime)
+    if config.performance.enablePerformanceLogging && recordMetrics {
+      let totalScoringTime = clock.now.timeIntervalSince(startTime)
       let bridgesProcessed = bridgeETAs.count
       let defaultProbabilityBridges =
         policyRejected.count + unsupportedBridges.count
@@ -464,7 +481,7 @@ public class PathScoringService {
                                    peakMemoryUsage: getCurrentMemoryUsage(),
                                    memoryPerPath: Double(getCurrentMemoryUsage()))
 
-      globalScoringMetrics.recordMetrics(metrics)
+      metricsAggregator.recordMetrics(metrics)
     }
 
     return PathScore(path: path,
@@ -477,7 +494,7 @@ public class PathScoringService {
   public func scorePaths(_ paths: [RoutePath],
                          departureTime: Date) async throws -> [PathScore]
   {
-    let startTime = Date()
+    let startTime = clock.now
 
     // Validate input
     guard !paths.isEmpty else {
@@ -501,7 +518,9 @@ public class PathScoringService {
     for (index, path) in paths.enumerated() {
       do {
         let score = try await scorePath(path,
-                                        departureTime: departureTime)
+                                        departureTime: departureTime,
+                                        recordMetrics: false  // Disable individual metrics recording for batch
+        )
         pathScores.append(score)
 
         // Collect metrics for batch analysis
@@ -541,7 +560,7 @@ public class PathScoringService {
 
     // Record batch performance metrics if enabled
     if config.performance.enablePerformanceLogging {
-      let totalScoringTime = Date().timeIntervalSince(startTime)
+      let totalScoringTime = clock.now.timeIntervalSince(startTime)
       let averagePathProbability =
         pathProbabilities.isEmpty
           ? 0.0
@@ -574,7 +593,7 @@ public class PathScoringService {
                                      ? Double(getCurrentMemoryUsage()) / Double(paths.count)
                                      : 0.0)
 
-      globalScoringMetrics.recordMetrics(metrics)
+      metricsAggregator.recordMetrics(metrics)
     }
 
     return pathScores
@@ -732,7 +751,7 @@ public class PathScoringService {
                                 departureTime: Date) async throws -> [Double]
   {
     // Extract time-based features using the same patterns as FeatureEngineeringService
-    let calendar = Calendar.current
+    let calendar = clock.calendar
     let minuteOfDay =
       calendar.component(.minute, from: eta) + calendar.component(.hour,
                                                                   from: eta) * 60
@@ -767,7 +786,7 @@ public class PathScoringService {
     // TODO: In production, integrate real data sources
 
     // Generate realistic features based on time of day and bridge context
-    let calendar = Calendar.current
+    let calendar = clock.calendar
     let hour = calendar.component(.hour, from: eta)
     let isRushHour = (hour >= 7 && hour <= 9) || (hour >= 16 && hour <= 18)
     let isWeekend =
@@ -778,12 +797,8 @@ public class PathScoringService {
     let baseOpenRate = isWeekend ? 0.8 : 0.7
     let rushHourAdjustment = isRushHour ? -0.1 : 0.0
 
-    // Add some deterministic variation based on bridge ID and time
-    let bridgeHash = bridgeID.hashValue
-    let timeHash =
-      calendar.component(.minute, from: eta) + calendar.component(.hour,
-                                                                  from: eta) * 60
-    let seed = UInt64(abs(bridgeHash + timeHash))
+    // Deterministic variation based on bridge ID and time bucket
+    let seed = stableDeterministicSeed(bridgeID: bridgeID, eta: eta)
     let random = SimpleDeterministicRandom(seed: seed)
 
     let open5m = max(0.1,
@@ -887,5 +902,54 @@ public enum PathScoringError: Error, LocalizedError {
     case let .configurationError(reason):
       return "Configuration error: \(reason)"
     }
+  }
+}
+
+// MARK: - Deterministic Seeding Utilities
+
+private extension PathScoringService {
+  /// Compute a stable deterministic seed for feature generation that is consistent across runs/devices.
+  /// Combines:
+  /// - bridgeID UTF-8 bytes
+  /// - 5-minute time bucket derived from ETA
+  /// - global config.pathEnumeration.randomSeed as salt
+  func stableDeterministicSeed(bridgeID: String, eta: Date)
+    -> UInt64
+  {
+    // Derive a stable 5-minute bucket from ETA (00:00..23:59 -> 0..287)
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? calendar.timeZone
+    let minuteOfDay =
+      calendar.component(.hour, from: eta) * 60
+        + calendar.component(.minute, from: eta)
+    let timeBucket = UInt32(minuteOfDay / 5)
+
+    // Build byte buffer: bridgeID UTF-8 + timeBucket (LE) + global seed (LE)
+    var bytes: [UInt8] = Array(bridgeID.utf8)
+
+    var tb = timeBucket
+    for _ in 0 ..< 4 {
+      bytes.append(UInt8(tb & 0xFF))
+      tb >>= 8
+    }
+
+    var salt = config.pathEnumeration.randomSeed
+    for _ in 0 ..< 8 {
+      bytes.append(UInt8(salt & 0xFF))
+      salt >>= 8
+    }
+
+    return fnv1a64(bytes)
+  }
+
+  /// FNV-1a 64-bit hash for stable, fast hashing of small inputs
+  func fnv1a64(_ data: [UInt8]) -> UInt64 {
+    var hash: UInt64 = 0xCBF2_9CE4_8422_2325  // 1469598103934665603
+    let prime: UInt64 = 0x0000_0100_0000_01B3  // 1099511628211
+    for byte in data {
+      hash ^= UInt64(byte)
+      hash &*= prime
+    }
+    return hash
   }
 }

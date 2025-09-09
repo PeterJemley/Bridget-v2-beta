@@ -1,11 +1,13 @@
 import SwiftData
-import XCTest
+import Testing
 
 @testable import Bridget
 
-final class ValidationFailureDiagnosticTest: XCTestCase {
+@Suite("Validation failure diagnostics")
+struct ValidationFailureDiagnosticTest {
+  @Test
   @MainActor
-  func testValidationFailureDiagnostic() async throws {
+  func validationFailureDiagnostic() async throws {
     // Create a model container with all required models
     let schema = Schema([
       BridgeEvent.self,
@@ -22,11 +24,11 @@ final class ValidationFailureDiagnosticTest: XCTestCase {
     let modelContext = ModelContext(modelContainer)
 
     // Create AppStateModel to trigger validation failure logging
-    let appState = AppStateModel(modelContext: modelContext)
+    _ = AppStateModel(modelContext: modelContext)
 
     // Trigger data loading which will run validation and log failures
     // This should trigger the validation failure logging in AppStateModel.swift
-    let (apiBridges, apiValidationFailures) =
+    let (_, apiValidationFailures) =
       try await BridgeDataService.shared.loadHistoricalData()
 
     // The validation failures should be logged to console with the grouped output
@@ -49,6 +51,6 @@ final class ValidationFailureDiagnosticTest: XCTestCase {
     // We can see the counts and sample records for the top reasons
 
     // Just verify the test runs without crashing
-    XCTAssertTrue(true)
+    #expect(true)
   }
 }
