@@ -1,3 +1,4 @@
+#if os(iOS)
 //
 //  BridgetApp.swift
 //  Bridget
@@ -182,3 +183,6 @@ struct BridgetApp: App {
                                                 operation: .maintenance)
   }
 }
+
+// This @main App is iOS-specific to avoid duplicate entry points in multi-target workspaces
+#endif

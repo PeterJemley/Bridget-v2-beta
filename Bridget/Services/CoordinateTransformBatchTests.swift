@@ -1,3 +1,4 @@
+#if canImport(Testing)
 import Foundation
 import Testing
 @testable import Bridget
@@ -11,16 +12,25 @@ struct CoordinateTransformBatchTests {
     }
 
     private func applyScalar(lat: Double, lon: Double, matrix: TransformationMatrix) -> (Double, Double) {
-        // Duplicate of file-private applyScalar for testing purposes
-        let x = lat
-        let y = lon
-        let a = matrix.a
-        let b = matrix.b
-        let c = matrix.c
-        let d = matrix.d
-        let e = matrix.e
-        let f = matrix.f
-        return (a * x + b * y + e, c * x + d * y + f)
+        // Apply translation
+        var tLat = lat + matrix.latOffset
+        var tLon = lon + matrix.lonOffset
+        // Apply scaling
+        tLat *= matrix.latScale
+        tLon *= matrix.lonScale
+        // Apply rotation (simplified - assumes small angles)
+        if matrix.rotation != 0.0 {
+            let rotationRad = matrix.rotation * .pi / 180.0
+            let cosRot = cos(rotationRad)
+            let sinRot = sin(rotationRad)
+            let latRad = tLat * .pi / 180.0
+            let lonRad = tLon * .pi / 180.0
+            let newLatRad = latRad * cosRot - lonRad * sinRot
+            let newLonRad = latRad * sinRot + lonRad * cosRot
+            tLat = newLatRad * 180.0 / .pi
+            tLon = newLonRad * 180.0 / .pi
+        }
+        return (tLat, tLon)
     }
 
     @Test("Small input uses scalar path and preserves order")
@@ -86,3 +96,4 @@ struct CoordinateTransformBatchTests {
         }
     }
 }
+#endif

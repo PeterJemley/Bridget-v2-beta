@@ -192,6 +192,52 @@ public enum TransformationError: LocalizedError, Sendable {
   }
 }
 
+// MARK: - Internal Matrix Cache (Synchronous)
+
+/// Private key for matrix cache entries
+private struct MatrixKey: Hashable {
+  let source: CoordinateSystem
+  let target: CoordinateSystem
+  let bridgeId: String?
+  let version: Int
+}
+
+/// Simple synchronous LRU cache suitable for use on @MainActor
+private final class SimpleLRU<Key: Hashable, Value> {
+  private let capacity: Int
+  private var store: [Key: (value: Value, timestamp: Date)] = [:]
+  private var order: [Key] = []
+
+  init(capacity: Int) { self.capacity = max(1, capacity) }
+
+  func get(_ key: Key) -> Value? {
+    guard let entry = store[key] else { return nil }
+    // refresh order
+    order.removeAll { $0 == key }
+    order.append(key)
+    return entry.value
+  }
+
+  func set(_ key: Key, value: Value) {
+    if store[key] != nil {
+      // refresh existing
+      order.removeAll { $0 == key }
+    }
+    store[key] = (value, Date())
+    order.append(key)
+    // evict if needed
+    while store.count > capacity, let oldest = order.first {
+      store.removeValue(forKey: oldest)
+      order.removeFirst()
+    }
+  }
+
+  func clear() {
+    store.removeAll()
+    order.removeAll()
+  }
+}
+
 // MARK: - Coordinate Transform Service
 
 /// Service for transforming coordinates between different coordinate systems
@@ -228,6 +274,22 @@ public protocol CoordinateTransformService {
 public final class DefaultCoordinateTransformService: CoordinateTransformService {
   // MARK: - Properties
 
+  /// Enable/disable matrix caching via feature flag
+  private let enableMatrixCaching: Bool
+
+  /// Capacity for the internal matrix cache
+  private let matrixCacheCapacity: Int
+
+  /// Version for cache invalidation (bumped on config/registry changes)
+  private var matrixVersion: Int = 1
+
+  /// Synchronous LRU cache for transformation matrices
+  private let matrixCache: SimpleLRU<MatrixKey, TransformationMatrix>
+
+  /// Lightweight internal metrics counters
+  private var matrixHitCount: Int = 0
+  private var matrixMissCount: Int = 0
+
   /// Bridge-specific transformations based on Phase 1 analysis
   private let bridgeTransformations: [String: BridgeTransformation]
 
@@ -242,10 +304,14 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
 
   // MARK: - Initialization
 
-  public init(bridgeTransformations: [String: BridgeTransformation] = [:],
-              defaultTransformationMatrix: TransformationMatrix = .identity,
-              enableLogging: Bool = false,
-              featureFlagService: FeatureFlagService? = nil)
+  public init(
+    bridgeTransformations: [String: BridgeTransformation] = [:],
+    defaultTransformationMatrix: TransformationMatrix = .identity,
+    enableLogging: Bool = false,
+    featureFlagService: FeatureFlagService? = nil,
+    enableMatrixCaching: Bool = true,
+    matrixCacheCapacity: Int = 512
+  )
   {
     // Initialize with Phase 1 findings if no transformations provided
     let finalTransformations =
@@ -256,6 +322,27 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
     self.defaultTransformationMatrix = defaultTransformationMatrix
     self.enableLogging = enableLogging
     self.featureFlagService = featureFlagService ?? DefaultFeatureFlagService.shared
+
+    // Resolve caching enablement from feature flag metadata override if present
+    let cachingOverride = Self.resolveCachingEnabled(from: self.featureFlagService)
+    let effectiveEnableMatrixCaching = cachingOverride ?? enableMatrixCaching
+    self.enableMatrixCaching = effectiveEnableMatrixCaching
+
+    self.matrixCacheCapacity = matrixCacheCapacity
+    self.matrixCache = SimpleLRU<MatrixKey, TransformationMatrix>(capacity: matrixCacheCapacity)
+  }
+
+  /// Resolve a metadata override for matrix caching from the coordinate transformation feature flag
+  private static func resolveCachingEnabled(from service: FeatureFlagService) -> Bool? {
+    let cfg = service.getConfig(for: .coordinateTransformation)
+    if let raw = cfg.metadata["transform.caching.enabled"]?.lowercased() {
+      switch raw {
+      case "1", "true", "yes", "on": return true
+      case "0", "false", "no", "off": return false
+      default: break
+      }
+    }
+    return nil
   }
 
   // MARK: - Public Methods
@@ -385,18 +472,33 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
       return .identity
     }
 
-    // Handle Seattle API to Reference transformation
+    // Attempt cache lookup if enabled
+    if enableMatrixCaching {
+      let key = makeMatrixKey(from: sourceSystem, to: targetSystem, bridgeId: bridgeId)
+      if let cached = matrixCache.get(key) {
+        metricsIncr("matrix_hits"); matrixHitCount &+= 1
+        return cached
+      }
+    }
+
+    // Compute matrix per existing rules
+    let computed: TransformationMatrix?
     if sourceSystem == .seattleAPI, targetSystem == .seattleReference {
-      return getBridgeSpecificMatrix(bridgeId: bridgeId)?.inverse()
+      computed = getBridgeSpecificMatrix(bridgeId: bridgeId)?.inverse()
+    } else if sourceSystem == .seattleReference, targetSystem == .seattleAPI {
+      computed = getBridgeSpecificMatrix(bridgeId: bridgeId)
+    } else {
+      computed = defaultTransformationMatrix
     }
 
-    // Handle Reference to Seattle API transformation
-    if sourceSystem == .seattleReference, targetSystem == .seattleAPI {
-      return getBridgeSpecificMatrix(bridgeId: bridgeId)
+    // Populate cache on miss
+    if let m = computed, enableMatrixCaching {
+      let key = makeMatrixKey(from: sourceSystem, to: targetSystem, bridgeId: bridgeId)
+      metricsIncr("matrix_misses"); matrixMissCount &+= 1
+      matrixCache.set(key, value: m)
     }
 
-    // For other transformations, return default matrix
-    return defaultTransformationMatrix
+    return computed
   }
 
   public func canTransform(from sourceSystem: CoordinateSystem,
@@ -420,7 +522,32 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
     return defaultTransformationMatrix != .identity
   }
 
+  // MARK: - Cache Control
+
+  /// Invalidate matrix cache by bumping version and clearing entries
+  public func invalidateMatrixCache() {
+    matrixVersion &+= 1
+    matrixCache.clear()
+    matrixHitCount = 0
+    matrixMissCount = 0
+  }
+
+  // MARK: - Metrics & Introspection
+
+  /// Read-only view of matrix cache counters for tuning
+  public func matrixCacheCounters() -> (hits: Int, misses: Int, hitRate: Double, version: Int, capacity: Int) {
+    let total = matrixHitCount + matrixMissCount
+    let rate = total > 0 ? Double(matrixHitCount) / Double(total) : 0.0
+    return (matrixHitCount, matrixMissCount, rate, matrixVersion, matrixCacheCapacity)
+  }
+
   // MARK: - Private Methods
+
+  private func makeMatrixKey(from sourceSystem: CoordinateSystem,
+                             to targetSystem: CoordinateSystem,
+                             bridgeId: String?) -> MatrixKey {
+    MatrixKey(source: sourceSystem, target: targetSystem, bridgeId: bridgeId, version: matrixVersion)
+  }
 
   private func getBridgeSpecificMatrix(bridgeId: String?)
     -> TransformationMatrix?
@@ -501,6 +628,14 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
       && !latitude.isInfinite && !longitude.isInfinite
   }
 
+  @inline(__always)
+  private func metricsIncr(_ name: String) {
+    TransformMetrics.incr(name)
+    if enableLogging {
+      print("[TransformMetrics] incr: \(name)")
+    }
+  }
+
   // MARK: - Default Transformations
 
   /// Creates default bridge transformations based on Phase 1 analysis
@@ -569,3 +704,4 @@ public extension DefaultCoordinateTransformService {
 // - No methods mutate shared state
 // Therefore, it is safe to treat as Sendable for cross-actor use.
 extension DefaultCoordinateTransformService: @unchecked Sendable {}
+

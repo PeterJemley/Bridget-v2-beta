@@ -1,4 +1,5 @@
 import Foundation
+#if canImport(Testing)
 import Testing
 @testable import Bridget
 
@@ -41,3 +42,5 @@ fileprivate func writeBenchmarksJSON<T: Encodable>(_ benchmarks: T, to path: Str
         print("Failed to write benchmarks JSON to \(path): \(error)")
     }
 }
+
+#endif
