@@ -46,20 +46,22 @@ struct CoordinateTransformServiceCachingTests {
     @MainActor
     func testEndToEndParityAcrossSamples() async throws {
         let base = makeBaseService()
-        let cached = makeCachedService(config: TransformCachingConfig(
-            enableMatrixCache: true,
-            enablePointCache: true,
-            matrixCacheCapacity: 128,
-            pointCacheCapacity: 256,
-            pointTTLSeconds: 60,
-            quantizePrecision: 4
-        ))
+        let cached = makeCachedService(
+            config: TransformCachingConfig(
+                enableMatrixCache: true,
+                enablePointCache: true,
+                matrixCacheCapacity: 128,
+                pointCacheCapacity: 256,
+                pointTTLSeconds: 60,
+                quantizePrecision: 4
+            )
+        )
 
         // Generate representative samples
         let systems: [(CoordinateSystem, CoordinateSystem)] = [
             (.seattleAPI, .seattleReference),
             (.seattleReference, .seattleAPI),
-            (.wgs84, .seattleReference)
+            (.wgs84, .seattleReference),
         ]
 
         for (fromSys, toSys) in systems {
@@ -69,18 +71,30 @@ struct CoordinateTransformServiceCachingTests {
                 let bridgeId = i % 2 == 0 ? "1" : "6"
 
                 let baseResult = base.transform(
-                    latitude: lat, longitude: lon,
-                    from: fromSys, to: toSys, bridgeId: bridgeId
+                    latitude: lat,
+                    longitude: lon,
+                    from: fromSys,
+                    to: toSys,
+                    bridgeId: bridgeId
                 )
                 let cachedResult = cached.transform(
-                    latitude: lat, longitude: lon,
-                    from: fromSys, to: toSys, bridgeId: bridgeId
+                    latitude: lat,
+                    longitude: lon,
+                    from: fromSys,
+                    to: toSys,
+                    bridgeId: bridgeId
                 )
 
                 #expect(baseResult.success == cachedResult.success)
                 if baseResult.success && cachedResult.success {
-                    #expect(baseResult.transformedLatitude == cachedResult.transformedLatitude)
-                    #expect(baseResult.transformedLongitude == cachedResult.transformedLongitude)
+                    #expect(
+                        baseResult.transformedLatitude
+                            == cachedResult.transformedLatitude
+                    )
+                    #expect(
+                        baseResult.transformedLongitude
+                            == cachedResult.transformedLongitude
+                    )
                 }
             }
         }
@@ -116,8 +130,14 @@ struct CoordinateTransformServiceCachingTests {
             // Results should be identical
             #expect(baseResult.success == cachedResult.success)
             if baseResult.success && cachedResult.success {
-                #expect(baseResult.transformedLatitude == cachedResult.transformedLatitude)
-                #expect(baseResult.transformedLongitude == cachedResult.transformedLongitude)
+                #expect(
+                    baseResult.transformedLatitude
+                        == cachedResult.transformedLatitude
+                )
+                #expect(
+                    baseResult.transformedLongitude
+                        == cachedResult.transformedLongitude
+                )
             }
         }
     }
@@ -151,8 +171,14 @@ struct CoordinateTransformServiceCachingTests {
 
         #expect(baseResult1.success == cachedResult1.success)
         if baseResult1.success && cachedResult1.success {
-            #expect(baseResult1.transformedLatitude == cachedResult1.transformedLatitude)
-            #expect(baseResult1.transformedLongitude == cachedResult1.transformedLongitude)
+            #expect(
+                baseResult1.transformedLatitude
+                    == cachedResult1.transformedLatitude
+            )
+            #expect(
+                baseResult1.transformedLongitude
+                    == cachedResult1.transformedLongitude
+            )
         }
 
         // Invalidate cache
@@ -176,8 +202,14 @@ struct CoordinateTransformServiceCachingTests {
 
         #expect(baseResult2.success == cachedResult2.success)
         if baseResult2.success && cachedResult2.success {
-            #expect(baseResult2.transformedLatitude == cachedResult2.transformedLatitude)
-            #expect(baseResult2.transformedLongitude == cachedResult2.transformedLongitude)
+            #expect(
+                baseResult2.transformedLatitude
+                    == cachedResult2.transformedLatitude
+            )
+            #expect(
+                baseResult2.transformedLongitude
+                    == cachedResult2.transformedLongitude
+            )
         }
     }
 
@@ -210,8 +242,14 @@ struct CoordinateTransformServiceCachingTests {
 
         #expect(baseResult1.success == cachedResult1.success)
         if baseResult1.success && cachedResult1.success {
-            #expect(baseResult1.transformedLatitude == cachedResult1.transformedLatitude)
-            #expect(baseResult1.transformedLongitude == cachedResult1.transformedLongitude)
+            #expect(
+                baseResult1.transformedLatitude
+                    == cachedResult1.transformedLatitude
+            )
+            #expect(
+                baseResult1.transformedLongitude
+                    == cachedResult1.transformedLongitude
+            )
         }
 
         // Clear cache
@@ -235,8 +273,14 @@ struct CoordinateTransformServiceCachingTests {
 
         #expect(baseResult2.success == cachedResult2.success)
         if baseResult2.success && cachedResult2.success {
-            #expect(baseResult2.transformedLatitude == cachedResult2.transformedLatitude)
-            #expect(baseResult2.transformedLongitude == cachedResult2.transformedLongitude)
+            #expect(
+                baseResult2.transformedLatitude
+                    == cachedResult2.transformedLatitude
+            )
+            #expect(
+                baseResult2.transformedLongitude
+                    == cachedResult2.transformedLongitude
+            )
         }
     }
 
@@ -244,8 +288,12 @@ struct CoordinateTransformServiceCachingTests {
     @MainActor
     func testEndToEndParityMatrixCacheDisabledVsEnabled() async throws {
         let base = makeBaseService()
-        let cachedDisabled = makeCachedService(config: TransformCachingConfig(enableMatrixCache: false))
-        let cachedEnabled = makeCachedService(config: TransformCachingConfig(enableMatrixCache: true))
+        let cachedDisabled = makeCachedService(
+            config: TransformCachingConfig(enableMatrixCache: false)
+        )
+        let cachedEnabled = makeCachedService(
+            config: TransformCachingConfig(enableMatrixCache: true)
+        )
 
         let testPoint = (lat: 47.6062, lon: -122.3321)
         let sourceSystem = CoordinateSystem.seattleAPI
@@ -281,14 +329,34 @@ struct CoordinateTransformServiceCachingTests {
         #expect(baseResult.success == cachedEnabledResult.success)
         #expect(cachedDisabledResult.success == cachedEnabledResult.success)
 
-        if baseResult.success && cachedDisabledResult.success && cachedEnabledResult.success {
-            #expect(baseResult.transformedLatitude == cachedDisabledResult.transformedLatitude)
-            #expect(baseResult.transformedLatitude == cachedEnabledResult.transformedLatitude)
-            #expect(cachedDisabledResult.transformedLatitude == cachedEnabledResult.transformedLatitude)
+        if baseResult.success && cachedDisabledResult.success
+            && cachedEnabledResult.success
+        {
+            #expect(
+                baseResult.transformedLatitude
+                    == cachedDisabledResult.transformedLatitude
+            )
+            #expect(
+                baseResult.transformedLatitude
+                    == cachedEnabledResult.transformedLatitude
+            )
+            #expect(
+                cachedDisabledResult.transformedLatitude
+                    == cachedEnabledResult.transformedLatitude
+            )
 
-            #expect(baseResult.transformedLongitude == cachedDisabledResult.transformedLongitude)
-            #expect(baseResult.transformedLongitude == cachedEnabledResult.transformedLongitude)
-            #expect(cachedDisabledResult.transformedLongitude == cachedEnabledResult.transformedLongitude)
+            #expect(
+                baseResult.transformedLongitude
+                    == cachedDisabledResult.transformedLongitude
+            )
+            #expect(
+                baseResult.transformedLongitude
+                    == cachedEnabledResult.transformedLongitude
+            )
+            #expect(
+                cachedDisabledResult.transformedLongitude
+                    == cachedEnabledResult.transformedLongitude
+            )
         }
     }
 
@@ -296,8 +364,12 @@ struct CoordinateTransformServiceCachingTests {
     @MainActor
     func testEndToEndParityPointCacheDisabledVsEnabled() async throws {
         let base = makeBaseService()
-        let cachedDisabled = makeCachedService(config: TransformCachingConfig(enablePointCache: false))
-        let cachedEnabled = makeCachedService(config: TransformCachingConfig(enablePointCache: true))
+        let cachedDisabled = makeCachedService(
+            config: TransformCachingConfig(enablePointCache: false)
+        )
+        let cachedEnabled = makeCachedService(
+            config: TransformCachingConfig(enablePointCache: true)
+        )
 
         let testPoint = (lat: 47.6062, lon: -122.3321)
         let sourceSystem = CoordinateSystem.seattleAPI
@@ -333,14 +405,34 @@ struct CoordinateTransformServiceCachingTests {
         #expect(baseResult.success == cachedEnabledResult.success)
         #expect(cachedDisabledResult.success == cachedEnabledResult.success)
 
-        if baseResult.success && cachedDisabledResult.success && cachedEnabledResult.success {
-            #expect(baseResult.transformedLatitude == cachedDisabledResult.transformedLatitude)
-            #expect(baseResult.transformedLatitude == cachedEnabledResult.transformedLatitude)
-            #expect(cachedDisabledResult.transformedLatitude == cachedEnabledResult.transformedLatitude)
+        if baseResult.success && cachedDisabledResult.success
+            && cachedEnabledResult.success
+        {
+            #expect(
+                baseResult.transformedLatitude
+                    == cachedDisabledResult.transformedLatitude
+            )
+            #expect(
+                baseResult.transformedLatitude
+                    == cachedEnabledResult.transformedLatitude
+            )
+            #expect(
+                cachedDisabledResult.transformedLatitude
+                    == cachedEnabledResult.transformedLatitude
+            )
 
-            #expect(baseResult.transformedLongitude == cachedDisabledResult.transformedLongitude)
-            #expect(baseResult.transformedLongitude == cachedEnabledResult.transformedLongitude)
-            #expect(cachedDisabledResult.transformedLongitude == cachedEnabledResult.transformedLongitude)
+            #expect(
+                baseResult.transformedLongitude
+                    == cachedDisabledResult.transformedLongitude
+            )
+            #expect(
+                baseResult.transformedLongitude
+                    == cachedEnabledResult.transformedLongitude
+            )
+            #expect(
+                cachedDisabledResult.transformedLongitude
+                    == cachedEnabledResult.transformedLongitude
+            )
         }
     }
 
@@ -352,10 +444,19 @@ struct CoordinateTransformServiceCachingTests {
 
         let errorTestCases = [
             // Invalid coordinates
-            (999.0, -122.3321, CoordinateSystem.seattleAPI, CoordinateSystem.seattleReference, "test-bridge"),
-            (47.6062, 999.0, CoordinateSystem.seattleAPI, CoordinateSystem.seattleReference, "test-bridge"),
+            (
+                999.0, -122.3321, CoordinateSystem.seattleAPI,
+                CoordinateSystem.seattleReference, "test-bridge"
+            ),
+            (
+                47.6062, 999.0, CoordinateSystem.seattleAPI,
+                CoordinateSystem.seattleReference, "test-bridge"
+            ),
             // Unsupported coordinate system
-            (47.6062, -122.3321, CoordinateSystem.seattleAPI, CoordinateSystem.nad27, "test-bridge"),
+            (
+                47.6062, -122.3321, CoordinateSystem.seattleAPI,
+                CoordinateSystem.nad27, "test-bridge"
+            ),
         ]
 
         for (lat, lon, sourceSystem, targetSystem, bridgeId) in errorTestCases {
@@ -377,7 +478,10 @@ struct CoordinateTransformServiceCachingTests {
 
             // Error handling should be identical
             #expect(baseResult.success == cachedResult.success)
-            #expect(baseResult.error?.localizedDescription == cachedResult.error?.localizedDescription)
+            #expect(
+                baseResult.error?.localizedDescription
+                    == cachedResult.error?.localizedDescription
+            )
         }
     }
 }

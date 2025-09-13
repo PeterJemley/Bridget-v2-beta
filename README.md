@@ -99,6 +99,11 @@ A sophisticated pathfinding and route optimization engine for Seattle bridge tra
 - **[ML Training Data Pipeline](BridgetDocumentation.docc/MLTrainingDataPipeline.md)** - ML data generation pipeline
 - **[Validation Failures](BridgetDocumentation.docc/ValidationFailures.md)** - Data validation strategies
 
+### Public-Facing Documentation
+- **[Data Reliability Guide](BridgetDocumentation.docc/DataReliabilityGuide.md)** - User guide for data reliability and continuity
+- **[Business Continuity Plan](BridgetDocumentation.docc/BusinessContinuityPlan.md)** - Stakeholder documentation for business continuity
+- **[Support Team Guide](BridgetDocumentation.docc/SupportTeamGuide.md)** - Support team guide for explaining issues to users
+
 ### Project Documentation
 - **[Project Index](Documentation/PROJECT_INDEX.md)** - Complete project documentation index
 - **[MultiPath Implementation Status](Documentation/MultiPath_Implementation_Status.md)** - Implementation progress

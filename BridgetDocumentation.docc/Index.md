@@ -36,6 +36,12 @@ Welcome to the Bridget technical documentation. This documentation covers the ar
 - **[Caching Strategy](CachingStrategy.md)** - Caching implementation and strategies
 - **[Statistics Utilities](StatisticsUtilitiesSummary.md)** - Statistical analysis utilities
 
+## 👥 Public-Facing Documentation
+
+- **[Data Reliability Guide](DataReliabilityGuide.md)** - User guide for data reliability and continuity
+- **[Business Continuity Plan](BusinessContinuityPlan.md)** - Stakeholder documentation for business continuity
+- **[Support Team Guide](SupportTeamGuide.md)** - Support team guide for explaining issues to users
+
 ## 📊 Project Management
 
 For project management, roadmaps, and operational documentation, see the [Documentation/](../Documentation/) directory:

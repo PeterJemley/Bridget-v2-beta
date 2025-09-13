@@ -27,19 +27,7 @@ struct BenchResult: Codable {
 
 @MainActor
 final class TransformBench {
-    private let service: DefaultCoordinateTransformService
-    private let cache: TransformCache
-
-    init() {
-        self.service = DefaultCoordinateTransformService(enableLogging: false)
-        self.cache = TransformCache(config: .init(
-            matrixCapacity: 512, 
-            pointCapacity: 2048, 
-            pointTTLSeconds: 60, 
-            enablePointCache: true, 
-            quantizePrecision: 6
-        ))
-    }
+    init() {}
 
     func runAll() async throws -> [BenchResult] {
         let sizes = [1, 64, 1_000, 10_000]
@@ -91,34 +79,74 @@ final class TransformBench {
             ) 
         }
 
+        // Conditionally create a point cache only where available
+
         // Configure service instance according to matrix cache flag
         let svc = DefaultCoordinateTransformService(enableLogging: false)
 
         // Warmup
-        _ = try await svc.transformBatch(
-            points: points, 
-            from: .seattleReference, 
-            to: .seattleReference, 
-            bridgeId: nil, 
-            pointCache: usePointCache ? cache : nil, 
-            chunkSize: 1024, 
-            concurrencyCap: 4
-        )
+        if #available(iOS 26.0, *), usePointCache {
+            let pointCache = TransformCache(config: .init(
+                matrixCapacity: 512,
+                pointCapacity: 2048,
+                pointTTLSeconds: 60,
+                enablePointCache: true,
+                quantizePrecision: 6
+            ))
+            _ = try await svc.transformBatch(
+                points: points,
+                from: .seattleReference,
+                to: .seattleReference,
+                bridgeId: nil,
+                pointCache: pointCache,
+                chunkSize: 1024,
+                concurrencyCap: 4
+            )
+        } else {
+            _ = try await svc.transformBatch(
+                points: points,
+                from: .seattleReference,
+                to: .seattleReference,
+                bridgeId: nil,
+                pointCache: nil,
+                chunkSize: 1024,
+                concurrencyCap: 4
+            )
+        }
 
         // Timed runs
         let runs = 5
         var samples: [Double] = []
         for _ in 0..<runs {
             let t0 = CFAbsoluteTimeGetCurrent()
-            _ = try await svc.transformBatch(
-                points: points, 
-                from: .seattleReference, 
-                to: .seattleReference, 
-                bridgeId: nil, 
-                pointCache: usePointCache ? cache : nil, 
-                chunkSize: 1024, 
-                concurrencyCap: 4
-            )
+            if #available(iOS 26.0, *), usePointCache {
+                let pointCache = TransformCache(config: .init(
+                    matrixCapacity: 512,
+                    pointCapacity: 2048,
+                    pointTTLSeconds: 60,
+                    enablePointCache: true,
+                    quantizePrecision: 6
+                ))
+                _ = try await svc.transformBatch(
+                    points: points,
+                    from: .seattleReference,
+                    to: .seattleReference,
+                    bridgeId: nil,
+                    pointCache: pointCache,
+                    chunkSize: 1024,
+                    concurrencyCap: 4
+                )
+            } else {
+                _ = try await svc.transformBatch(
+                    points: points,
+                    from: .seattleReference,
+                    to: .seattleReference,
+                    bridgeId: nil,
+                    pointCache: nil,
+                    chunkSize: 1024,
+                    concurrencyCap: 4
+                )
+            }
             let dt = CFAbsoluteTimeGetCurrent() - t0
             samples.append(dt)
         }
@@ -181,3 +209,4 @@ do {
     print("❌ Benchmark run failed: \(error)")
     exit(1)
 }
+

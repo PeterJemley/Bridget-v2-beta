@@ -172,7 +172,7 @@ private final class LRUCache<Key: Hashable, Value>: @unchecked Sendable {
 
 // MARK: - Transform Cache Actor
 
-/// High-performance actor for caching transformation matrices and point results
+@available(iOS 26.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
 public actor TransformCache {
 
     // MARK: - Properties
@@ -409,6 +409,7 @@ public actor TransformCache {
 
 // MARK: - Cache Extensions
 
+@available(iOS 26.0, macOS 10.15, tvOS 13.0, watchOS 6.0, *)
 extension TransformCache {
 
     /// Preload matrices for common transformations
@@ -439,3 +440,4 @@ extension TransformCache {
         }
     }
 }
+

@@ -5,6 +5,7 @@ import OSLog
 
 public protocol CoreMLBaseModelFactoryProtocol {
   func createOrLoadBaseModel(configuration: MLModelConfiguration,
+                             baseModelURL: URL?,
                              tempDirectory: URL?) async throws -> URL
   func createBaseModel(configuration: MLModelConfiguration,
                        in tempDirectory: URL?) async throws -> URL
@@ -17,23 +18,16 @@ public final class CoreMLBaseModelFactory: CoreMLBaseModelFactoryProtocol {
   public init() {}
 
   public func createOrLoadBaseModel(configuration: MLModelConfiguration,
+                                    baseModelURL: URL?,
                                     tempDirectory: URL?) async throws -> URL
   {
-    // TODO: Avoid relying on KVC for "modelURL". Prefer a typed wrapper or explicit parameter
-    //       to pass a base model URL into the training pipeline.
-    // If caller provided a model URL in config, verify it can load
-    if let existingURL = (configuration as AnyObject).value(
-      forKey: "modelURL"
-    ) as? URL {
+    if let existingURL = baseModelURL {
       do {
-        _ = try MLModel(contentsOf: existingURL,
-                        configuration: configuration)
+        _ = try MLModel(contentsOf: existingURL, configuration: configuration)
         logger.info("Using existing model from \(existingURL)")
         return existingURL
       } catch {
-        logger.warning(
-          "Failed to load existing model, creating new one: \(error.localizedDescription)"
-        )
+        logger.warning("Failed to load existing model, creating new one: \(error.localizedDescription)")
       }
     }
 

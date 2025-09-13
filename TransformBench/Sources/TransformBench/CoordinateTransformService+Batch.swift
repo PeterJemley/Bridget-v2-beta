@@ -94,7 +94,7 @@ public extension DefaultCoordinateTransformService {
         from source: CoordinateSystem,
         to target: CoordinateSystem,
         bridgeId: String?,
-        pointCache: TransformCache? = nil,
+        pointCache: Any? = nil,
         chunkSize: Int = 1024,
         concurrencyCap: Int = 4
     ) async throws -> BatchResult {
@@ -102,9 +102,15 @@ public extension DefaultCoordinateTransformService {
 
         guard !points.isEmpty else { return BatchResult(points: []) }
 
-        // Obtain matrix once on main actor
-        let matrixOpt = await MainActor.run {
-            calculateTransformationMatrix(from: source, to: target, bridgeId: bridgeId)
+        // Obtain matrix once on main actor when available; fall back for pre–iOS 13
+        let matrixOpt: TransformationMatrix?
+        if #available(iOS 13.0, *) {
+            matrixOpt = await MainActor.run {
+                calculateTransformationMatrix(from: source, to: target, bridgeId: bridgeId)
+            }
+        } else {
+            // On older OS versions where MainActor.run isn't available, call directly.
+            matrixOpt = calculateTransformationMatrix(from: source, to: target, bridgeId: bridgeId)
         }
         guard let matrix = matrixOpt else {
             throw TransformationError.transformationCalculationFailed
@@ -116,8 +122,8 @@ public extension DefaultCoordinateTransformService {
             results.reserveCapacity(points.count)
 
             for p in points {
-                // Try cache first (if provided)
-                if let cache = pointCache {
+                // Try cache first (if provided and available on this OS)
+                if #available(iOS 26.0, *), let cache = pointCache as? TransformCache {
                     let key = await cache.createPointKey(
                         source: source,
                         target: target,
@@ -154,7 +160,7 @@ public extension DefaultCoordinateTransformService {
         var results = Array<(Double, Double)?>(repeating: nil, count: points.count)
 
         // Attempt to fill from cache first (if provided)
-        if let cache = pointCache {
+        if #available(iOS 26.0, *), let cache = pointCache as? TransformCache {
             await withTaskGroup(of: Void.self) { group in
                 for (i, p) in points.enumerated() {
                     group.addTask {
@@ -201,67 +207,115 @@ public extension DefaultCoordinateTransformService {
         }
 
         // Process chunks with concurrency limit
-        try await withThrowingTaskGroup(of: Void.self) { group in
-            var next = 0
-            var running = 0
+        if #available(iOS 13.0, *) {
+            try await withThrowingTaskGroup(of: Void.self) { group in
+                var next = 0
+                var running = 0
 
-            func schedule() {
-                while running < concurrencyLimit && next < chunks.count {
-                    let (s, e) = chunks[next]
-                    next += 1
-                    running += 1
-                    group.addTask {
-                        defer { running -= 1 }
+                func schedule() {
+                    while running < concurrencyLimit && next < chunks.count {
+                        let (s, e) = chunks[next]
+                        next += 1
+                        running += 1
+                        group.addTask {
+                            defer { running -= 1 }
 
-                        let length = e - s
-                        var lats = [Double](repeating: 0, count: length)
-                        var lons = [Double](repeating: 0, count: length)
-                        for i in 0..<length {
-                            lats[i] = points[s + i].lat
-                            lons[i] = points[s + i].lon
-                        }
+                            let length = e - s
+                            var lats = [Double](repeating: 0, count: length)
+                            var lons = [Double](repeating: 0, count: length)
+                            for i in 0..<length {
+                                lats[i] = points[s + i].lat
+                                lons[i] = points[s + i].lon
+                            }
 
-                        var outLats = [Double](repeating: 0, count: length)
-                        var outLons = [Double](repeating: 0, count: length)
+                            var outLats = [Double](repeating: 0, count: length)
+                            var outLons = [Double](repeating: 0, count: length)
 
-                        lats.withUnsafeBufferPointer { latPtr in
-                            lons.withUnsafeBufferPointer { lonPtr in
-                                outLats.withUnsafeMutableBufferPointer { oLat in
-                                    outLons.withUnsafeMutableBufferPointer { oLon in
-                                        transformChunkVectorized(
-                                            lats: latPtr,
-                                            lons: lonPtr,
-                                            matrix: matrix,
-                                            outLats: oLat,
-                                            outLons: oLon
-                                        )
+                            lats.withUnsafeBufferPointer { latPtr in
+                                lons.withUnsafeBufferPointer { lonPtr in
+                                    outLats.withUnsafeMutableBufferPointer { oLat in
+                                        outLons.withUnsafeMutableBufferPointer { oLon in
+                                            transformChunkVectorized(
+                                                lats: latPtr,
+                                                lons: lonPtr,
+                                                matrix: matrix,
+                                                outLats: oLat,
+                                                outLons: oLon
+                                            )
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        // Write back and populate cache if provided
-                        for i in 0..<length {
-                            let idx = s + i
-                            let pair = (outLats[i], outLons[i])
-                            results[idx] = pair
-                            if let cache = pointCache {
-                                let key = await cache.createPointKey(
-                                    source: source,
-                                    target: target,
-                                    bridgeId: bridgeId,
-                                    lat: points[idx].lat,
-                                    lon: points[idx].lon
-                                )
-                                await cache.setPoint(pair, for: key)
+                            // Write back and populate cache if provided
+                            for i in 0..<length {
+                                let idx = s + i
+                                let pair = (outLats[i], outLons[i])
+                                results[idx] = pair
+                                if #available(iOS 26.0, *), let cache = pointCache as? TransformCache {
+                                    let key = await cache.createPointKey(
+                                        source: source,
+                                        target: target,
+                                        bridgeId: bridgeId,
+                                        lat: points[idx].lat,
+                                        lon: points[idx].lon
+                                    )
+                                    await cache.setPoint(pair, for: key)
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            schedule()
-            while let _ = try await group.next() { schedule() }
+                schedule()
+                while let _ = try await group.next() { schedule() }
+            }
+        } else {
+            // Pre–iOS 13: sequential processing of chunks
+            for (s, e) in chunks {
+                let length = e - s
+                var lats = [Double](repeating: 0, count: length)
+                var lons = [Double](repeating: 0, count: length)
+                for i in 0..<length {
+                    lats[i] = points[s + i].lat
+                    lons[i] = points[s + i].lon
+                }
+
+                var outLats = [Double](repeating: 0, count: length)
+                var outLons = [Double](repeating: 0, count: length)
+
+                lats.withUnsafeBufferPointer { latPtr in
+                    lons.withUnsafeBufferPointer { lonPtr in
+                        outLats.withUnsafeMutableBufferPointer { oLat in
+                            outLons.withUnsafeMutableBufferPointer { oLon in
+                                transformChunkVectorized(
+                                    lats: latPtr,
+                                    lons: lonPtr,
+                                    matrix: matrix,
+                                    outLats: oLat,
+                                    outLons: oLon
+                                )
+                            }
+                        }
+                    }
+                }
+
+                for i in 0..<length {
+                    let idx = s + i
+                    let pair = (outLats[i], outLons[i])
+                    results[idx] = pair
+                    if #available(iOS 26.0, *), let cache = pointCache as? TransformCache {
+                        let key = await cache.createPointKey(
+                            source: source,
+                            target: target,
+                            bridgeId: bridgeId,
+                            lat: points[idx].lat,
+                            lon: points[idx].lon
+                        )
+                        await cache.setPoint(pair, for: key)
+                    }
+                }
+            }
         }
 
         let dt = CFAbsoluteTimeGetCurrent() - t0

@@ -48,7 +48,6 @@ public struct TransformCachingConfig: Sendable {
 // MARK: - Cached Coordinate Transform Service
 
 /// Cached version of the coordinate transformation service
-@MainActor
 public final class CachedCoordinateTransformService: CoordinateTransformService
 {
 
@@ -277,3 +276,4 @@ extension DefaultCoordinateTransformService {
         )
     }
 }
+

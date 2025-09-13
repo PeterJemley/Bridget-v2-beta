@@ -4,6 +4,8 @@ import Observation
 @MainActor
 @Observable
 final class PipelineMetricsViewModel {
+  private let logger = LightweightLogger(subsystem: "PipelineMetrics")
+
   enum TimeRange: String, CaseIterable, Hashable {
     case lastHour = "Last Hour"
     case last24Hours = "Last 24 Hours"
@@ -39,6 +41,7 @@ final class PipelineMetricsViewModel {
   private var autoRefreshTask: Task<Void, Never>?
 
   init() {
+    logger.debug("Initializing PipelineMetricsViewModel")
     Task { await loadMetrics() }
     if autoRefresh { startAutoRefresh() }
   }
@@ -74,26 +77,47 @@ final class PipelineMetricsViewModel {
 
   func loadMetrics() async {
     isLoading = true
-    let possiblePaths = [
-      "metrics/enhanced_pipeline_metrics.json",
-      "Documents/metrics/enhanced_pipeline_metrics.json",
-      "/tmp/bridget_metrics.json",
-    ]
+    logger.debug("Starting metrics load")
 
-    for path in possiblePaths {
-      let url = URL(fileURLWithPath: path)
-      if let data = try? Data(contentsOf: url),
-         let decoded = try? JSONDecoder.bridgeDecoder().decode(PipelineMetricsData.self,
-                                                               from: data)
-      {
-        self.metricsData = decoded
-        self.lastUpdateTime = Date()
-        self.isLoading = false
-        return
+    // Define possible locations for metrics files. These should be plain JSON files,
+    // and we should not attempt any recovery that touches Core ML resources in this context.
+    let possiblePaths: [URL] = [
+      URL(fileURLWithPath: "metrics/enhanced_pipeline_metrics.json"),
+      // Prefer sandbox-safe Documents directory if present
+      FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("metrics/enhanced_pipeline_metrics.json"),
+      URL(fileURLWithPath: "/tmp/bridget_metrics.json"),
+    ].compactMap { $0 }
+
+    logger.debug("Candidate paths: \(possiblePaths.map { $0.path }.joined(separator: ", "))")
+
+    let fm = FileManager.default
+    var loadedData: PipelineMetricsData?
+
+    // Only attempt to read files that actually exist to avoid spurious fopen/Core ML logs
+    for url in possiblePaths where fm.fileExists(atPath: url.path) {
+      logger.debug("Attempting to read metrics from: \(url.path)")
+      do {
+        let data = try Data(contentsOf: url, options: [.mappedIfSafe])
+        let decoded = try JSONDecoder.bridgeDecoder().decode(PipelineMetricsData.self, from: data)
+        loadedData = decoded
+        break
+      } catch {
+        logger.warning("Failed to decode metrics at \(url.lastPathComponent): \(error)")
+        continue
       }
     }
 
-    self.metricsData = createSampleData()
+    // Fallback to sample data only if we couldn't load anything valid.
+    if let loadedData {
+      logger.info("Loaded metrics successfully")
+      self.metricsData = loadedData
+    } else {
+      logger.warning("No metrics files found/decoded. Falling back to sample data.")
+      self.metricsData = createSampleData()
+    }
+
+    self.lastUpdateTime = Date()
+    logger.debug("Finished metrics load")
     self.isLoading = false
   }
 

@@ -1,5 +1,5 @@
-import Foundation
 import Accelerate
+import Foundation
 
 public struct BatchPoint: Sendable {
     public let lat: Double
@@ -20,7 +20,9 @@ public struct BatchResult: Sendable {
 // MARK: - File-private helpers (non-actor isolated)
 
 @inline(__always)
-fileprivate func applyScalar(lat: Double, lon: Double, matrix: TransformationMatrix) -> (Double, Double) {
+private func applyScalar(lat: Double, lon: Double, matrix: TransformationMatrix)
+    -> (Double, Double)
+{
     // Apply translation
     var tLat = lat + matrix.latOffset
     var tLon = lon + matrix.lonOffset
@@ -48,48 +50,26 @@ fileprivate func applyScalar(lat: Double, lon: Double, matrix: TransformationMat
     return (tLat, tLon)
 }
 
-fileprivate func transformChunkVectorized(
+private func transformChunkVectorized(
     lats: UnsafeBufferPointer<Double>,
     lons: UnsafeBufferPointer<Double>,
     matrix: TransformationMatrix,
     outLats: UnsafeMutableBufferPointer<Double>,
     outLons: UnsafeMutableBufferPointer<Double>
 ) {
-    precondition(lats.count == lons.count)
-    precondition(outLats.count >= lats.count)
-    precondition(outLons.count >= lons.count)
-
-    let count = lats.count
-
-    // If rotation is zero, we can apply translation+scale independently per axis with vDSP
-    if matrix.rotation == 0.0 {
-        // newLat = (lat + latOffset) * latScale
-        // newLon = (lon + lonOffset) * lonScale
-        var tmpLat = [Double](repeating: 0, count: count)
-        var tmpLon = [Double](repeating: 0, count: count)
-
-        // tmpLat = lat + latOffset
-        vDSP_vsaddD(lats.baseAddress!, 1, [matrix.latOffset], &tmpLat, 1, vDSP_Length(count))
-        // outLat = tmpLat * latScale
-        vDSP_vsmulD(tmpLat, 1, [matrix.latScale], outLats.baseAddress!, 1, vDSP_Length(count))
-
-        // tmpLon = lon + lonOffset
-        vDSP_vsaddD(lons.baseAddress!, 1, [matrix.lonOffset], &tmpLon, 1, vDSP_Length(count))
-        // outLon = tmpLon * lonScale
-        vDSP_vsmulD(tmpLon, 1, [matrix.lonScale], outLons.baseAddress!, 1, vDSP_Length(count))
-    } else {
-        // Fallback to scalar per element when rotation present
-        for i in 0..<count {
-            let (tLat, tLon) = applyScalar(lat: lats[i], lon: lons[i], matrix: matrix)
-            outLats[i] = tLat
-            outLons[i] = tLon
-        }
-    }
+    // Use the enhanced vDSP batch transformation function
+    transformBatchVDSP(
+        lats: lats,
+        lons: lons,
+        matrix: matrix,
+        outLats: outLats,
+        outLons: outLons
+    )
 }
 
-public extension DefaultCoordinateTransformService {
+extension DefaultCoordinateTransformService {
     /// Batch transform points from source to target coordinate system using optional TransformCache and concurrency.
-    func transformBatch(
+    public func transformBatch(
         points: [BatchPoint],
         from source: CoordinateSystem,
         to target: CoordinateSystem,
@@ -104,7 +84,11 @@ public extension DefaultCoordinateTransformService {
 
         // Obtain matrix once on main actor
         let matrixOpt = await MainActor.run {
-            calculateTransformationMatrix(from: source, to: target, bridgeId: bridgeId)
+            calculateTransformationMatrix(
+                from: source,
+                to: target,
+                bridgeId: bridgeId
+            )
         }
         guard let matrix = matrixOpt else {
             throw TransformationError.transformationCalculationFailed
@@ -129,18 +113,34 @@ public extension DefaultCoordinateTransformService {
                         results.append(cached)
                         continue
                     }
-                    let transformed = applyScalar(lat: p.lat, lon: p.lon, matrix: matrix)
-                    await cache.setPoint(transformed, for: key)
+                    let transformed = applyTransformationSIMD(
+                        latitude: p.lat,
+                        longitude: p.lon,
+                        matrix: matrix
+                    )
+                    await cache.setPoint(
+                        (lat: transformed.0, lon: transformed.1),
+                        for: key
+                    )
                     results.append(transformed)
                 } else {
-                    results.append(applyScalar(lat: p.lat, lon: p.lon, matrix: matrix))
+                    results.append(
+                        applyTransformationSIMD(
+                            latitude: p.lat,
+                            longitude: p.lon,
+                            matrix: matrix
+                        )
+                    )
                 }
             }
 
             let dt = CFAbsoluteTimeGetCurrent() - t0
             TransformMetrics.observe("batch_small_latency_seconds", dt)
             if dt > 0 {
-                TransformMetrics.observe("batch_small_throughput_pts_per_s", Double(points.count) / dt)
+                TransformMetrics.observe(
+                    "batch_small_throughput_pts_per_s",
+                    Double(points.count) / dt
+                )
             }
 
             return BatchResult(points: results)
@@ -151,7 +151,7 @@ public extension DefaultCoordinateTransformService {
         let concurrencyLimit = max(1, min(concurrencyCap, cpuCount))
 
         // Pre-allocate result array preserving order
-        var results = Array<(Double, Double)?>(repeating: nil, count: points.count)
+        var results = [(Double, Double)?](repeating: nil, count: points.count)
 
         // Attempt to fill from cache first (if provided)
         if let cache = pointCache {
@@ -227,7 +227,8 @@ public extension DefaultCoordinateTransformService {
                         lats.withUnsafeBufferPointer { latPtr in
                             lons.withUnsafeBufferPointer { lonPtr in
                                 outLats.withUnsafeMutableBufferPointer { oLat in
-                                    outLons.withUnsafeMutableBufferPointer { oLon in
+                                    outLons.withUnsafeMutableBufferPointer {
+                                        oLon in
                                         transformChunkVectorized(
                                             lats: latPtr,
                                             lons: lonPtr,
@@ -261,13 +262,16 @@ public extension DefaultCoordinateTransformService {
             }
 
             schedule()
-            while let _ = try await group.next() { schedule() }
+            while (try await group.next()) != nil { schedule() }
         }
 
         let dt = CFAbsoluteTimeGetCurrent() - t0
         TransformMetrics.observe("batch_latency_seconds", dt)
         if dt > 0 {
-            TransformMetrics.observe("batch_throughput_pts_per_s", Double(points.count) / dt)
+            TransformMetrics.observe(
+                "batch_throughput_pts_per_s",
+                Double(points.count) / dt
+            )
         }
 
         return BatchResult(points: results.compactMap { $0 })

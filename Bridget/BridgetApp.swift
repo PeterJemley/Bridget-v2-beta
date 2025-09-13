@@ -92,7 +92,7 @@ struct BridgetApp: App {
                                onWillEnterForeground: handleAppWillEnterForeground)
             .allowsHitTesting(false)
         )
-        .task { initializeMLPipeline() }
+        .onAppear { initializeMLPipeline() }
     }
     .modelContainer(sharedModelContainer)
   }
