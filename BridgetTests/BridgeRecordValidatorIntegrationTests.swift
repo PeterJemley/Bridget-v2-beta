@@ -47,7 +47,7 @@ struct BridgeRecordValidatorIntegrationTests {
             longitude: "-122.33446502685547"
         )
 
-        let failure = validator.validationFailure(for: record)
+        let failure = await validator.validationFailure(for: record)
         #expect(
             failure == nil,
             "Bridge 1 should pass validation with coordinate transformation"
@@ -68,7 +68,7 @@ struct BridgeRecordValidatorIntegrationTests {
             longitude: "-122.35354614257812"
         )
 
-        let failure = validator.validationFailure(for: record)
+        let failure = await validator.validationFailure(for: record)
         #expect(
             failure == nil,
             "Bridge 6 should pass validation with coordinate transformation"
@@ -91,7 +91,7 @@ struct BridgeRecordValidatorIntegrationTests {
             longitude: "-122.0"
         )
 
-        let failure = validator.validationFailure(for: record)
+        let failure = await validator.validationFailure(for: record)
         #expect(
             failure != nil,
             "Bridge 1 should fail validation with very far coordinates"
@@ -126,7 +126,7 @@ struct BridgeRecordValidatorIntegrationTests {
             longitude: "-122.332"
         )
 
-        let failure = validator.validationFailure(for: record)
+        let failure = await validator.validationFailure(for: record)
         #expect(
             failure == nil,
             "Should pass validation with coordinates already in reference system"
@@ -147,7 +147,7 @@ struct BridgeRecordValidatorIntegrationTests {
             longitude: "-122.332001"
         )
 
-        let failure = validator.validationFailure(for: record)
+        let failure = await validator.validationFailure(for: record)
         #expect(
             failure == nil,
             "Should pass validation with very close coordinates"
@@ -167,7 +167,7 @@ struct BridgeRecordValidatorIntegrationTests {
             longitude: "-122.3"
         )
 
-        let failure = validator.validationFailure(for: record)
+        let failure = await validator.validationFailure(for: record)
         #expect(failure != nil, "Unknown bridge should fail validation")
 
         if let reason = failure {
@@ -194,7 +194,7 @@ struct BridgeRecordValidatorIntegrationTests {
             longitude: "-122.332"
         )
 
-        let failure = validator.validationFailure(for: record)
+        let failure = await validator.validationFailure(for: record)
         #expect(failure != nil, "Should fail validation with out of range date")
 
         if let reason = failure {

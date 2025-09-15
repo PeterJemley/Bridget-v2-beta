@@ -50,7 +50,7 @@ struct BridgeRecordValidatorIntegrationTests2 {
             longitude: "-122.33446502685547"
         )
 
-        let failure = validator.validationFailure(for: testRecord)
+        let failure = await validator.validationFailure(for: testRecord)
         #expect(
             failure == nil,
             "Bridge record should pass validation after transformation"
@@ -98,7 +98,7 @@ struct BridgeRecordValidatorIntegrationTests2 {
                 longitude: "\(c.api.lon)"
             )
 
-            let failure = validator.validationFailure(for: rec)
+            let failure = await validator.validationFailure(for: rec)
             #expect(
                 failure == nil,
                 "Record for bridge \(c.bridgeId) should pass after transformation"
@@ -170,7 +170,7 @@ struct BridgeRecordValidatorIntegrationTests2 {
         let iterations = 100
         let start = CFAbsoluteTimeGetCurrent()
         for _ in 0..<iterations {
-            _ = validator.validationFailure(for: rec)
+            _ = await validator.validationFailure(for: rec)
         }
         let total = CFAbsoluteTimeGetCurrent() - start
         let avg = total / Double(iterations)

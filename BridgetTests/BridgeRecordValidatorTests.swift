@@ -46,7 +46,7 @@ struct BridgeRecordValidatorTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(result == nil, "Valid record should pass validation")
     }
 
@@ -77,7 +77,7 @@ struct BridgeRecordValidatorTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(result == .emptyEntityID, "Empty entity ID should be rejected")
     }
 
@@ -108,7 +108,7 @@ struct BridgeRecordValidatorTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(
             result == .unknownBridgeID("100"),
             "Unknown bridge ID should be rejected"
@@ -142,7 +142,7 @@ struct BridgeRecordValidatorTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(
             result == .malformedOpenDate("not-a-date"),
             "Malformed open date should be rejected"
@@ -176,7 +176,7 @@ struct BridgeRecordValidatorTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         // Use the same date formatter as BridgeOpeningRecord to ensure consistent timezone
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
@@ -217,7 +217,7 @@ struct BridgeRecordValidatorTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(
             result == .malformedCloseDate("not-a-date"),
             "Malformed close date should be rejected"
@@ -251,7 +251,7 @@ struct BridgeRecordValidatorTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         // Use the same date formatter as BridgeOpeningRecord to ensure consistent timezone
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS"
@@ -294,7 +294,7 @@ struct BridgeRecordValidatorTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(
             result == .invalidLatitude(100.0),
             "Invalid latitude should be rejected"
@@ -328,7 +328,7 @@ struct BridgeRecordValidatorTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(
             result == .invalidLongitude(-190.0),
             "Invalid longitude should be rejected"
@@ -362,7 +362,7 @@ struct BridgeRecordValidatorTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(
             result == .negativeMinutesOpen(-5),
             "Negative minutes open should be rejected"
@@ -396,7 +396,7 @@ struct BridgeRecordValidatorTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(
             result == .minutesOpenMismatch(reported: 10, actual: 5),
             "Minutes open mismatch should be rejected"
@@ -430,7 +430,7 @@ struct BridgeRecordValidatorTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
 
         // Instead of asserting exact equality on all associated values (which can change
         // due to coordinate transformation), assert that the error case is correct and

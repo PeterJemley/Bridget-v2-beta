@@ -57,7 +57,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(
             result == nil,
             "Should accept matching coordinates for 1st Ave South"
@@ -85,7 +85,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(result == nil, "Should accept matching coordinates for Ballard")
     }
 
@@ -110,7 +110,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(result == nil, "Should accept matching coordinates for Fremont")
     }
 
@@ -135,7 +135,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(
             result == nil,
             "Should accept matching coordinates for Montlake"
@@ -163,7 +163,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(
             result == nil,
             "Should accept matching coordinates for Lower Spokane St"
@@ -191,7 +191,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(
             result == nil,
             "Should accept matching coordinates for University"
@@ -219,7 +219,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         #expect(
             result == nil,
             "Should accept matching coordinates for South Park"
@@ -244,7 +244,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
                 to: Date()
             ) ?? Date()
         )
-        let result = validator.validationFailure(for: record)
+        let result = await validator.validationFailure(for: record)
         switch result {
         case .geospatialMismatch(
             let expectedLat,

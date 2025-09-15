@@ -12,6 +12,7 @@
 
 import Foundation
 import Testing
+import Bridget
 
 @testable import Bridget
 
@@ -31,15 +32,15 @@ struct CoordinateTransformServiceCachingTests {
 
     @MainActor
     private func makeCachedService(
-        config: TransformCachingConfig = TransformCachingConfig()
+        config: TransformCache.CacheConfig = TransformCache.CacheConfig()
     ) -> DefaultCoordinateTransformService {
         // The base service now has unified caching built-in
         return DefaultCoordinateTransformService(
             bridgeTransformations: [:],
             defaultTransformationMatrix: .identity,
             enableLogging: false,
-            enableMatrixCaching: config.enableMatrixCache,
-            matrixCacheCapacity: config.matrixCacheCapacity
+            enableMatrixCaching: config.matrixCapacity > 0,
+            matrixCacheCapacity: config.matrixCapacity
         )
     }
 
@@ -50,12 +51,11 @@ struct CoordinateTransformServiceCachingTests {
     func testEndToEndParityAcrossSamples() async throws {
         let base = makeBaseService()
         let cached = makeCachedService(
-            config: TransformCachingConfig(
-                enableMatrixCache: true,
-                enablePointCache: true,
-                matrixCacheCapacity: 128,
-                pointCacheCapacity: 256,
+            config: TransformCache.CacheConfig(
+                matrixCapacity: 128,
+                pointCapacity: 256,
                 pointTTLSeconds: 60,
+                enablePointCache: true,
                 quantizePrecision: 4
             )
         )
@@ -73,14 +73,14 @@ struct CoordinateTransformServiceCachingTests {
                 let lon = -122.4 + Double(i) * 0.001
                 let bridgeId = i % 2 == 0 ? "1" : "6"
 
-                let baseResult = base.transform(
+                let baseResult = await base.transform(
                     latitude: lat,
                     longitude: lon,
                     from: fromSys,
                     to: toSys,
                     bridgeId: bridgeId
                 )
-                let cachedResult = cached.transform(
+                let cachedResult = await cached.transform(
                     latitude: lat,
                     longitude: lon,
                     from: fromSys,
@@ -116,14 +116,14 @@ struct CoordinateTransformServiceCachingTests {
         ]
 
         for (lat, lon, sourceSystem) in testCases {
-            let baseResult = base.transformToReferenceSystem(
+            let baseResult = await base.transformToReferenceSystem(
                 latitude: lat,
                 longitude: lon,
                 from: sourceSystem,
                 bridgeId: "test-bridge"
             )
 
-            let cachedResult = cached.transformToReferenceSystem(
+            let cachedResult = await cached.transformToReferenceSystem(
                 latitude: lat,
                 longitude: lon,
                 from: sourceSystem,
@@ -157,14 +157,14 @@ struct CoordinateTransformServiceCachingTests {
         let bridgeId = "test-bridge"
 
         // Test before invalidation
-        let baseResult1 = base.transform(
+        let baseResult1 = await base.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
             to: targetSystem,
             bridgeId: bridgeId
         )
-        let cachedResult1 = cached.transform(
+        let cachedResult1 = await cached.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
@@ -188,14 +188,14 @@ struct CoordinateTransformServiceCachingTests {
         cached.invalidateMatrixCache()
 
         // Test after invalidation - results should still be identical
-        let baseResult2 = base.transform(
+        let baseResult2 = await base.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
             to: targetSystem,
             bridgeId: bridgeId
         )
-        let cachedResult2 = cached.transform(
+        let cachedResult2 = await cached.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
@@ -228,14 +228,14 @@ struct CoordinateTransformServiceCachingTests {
         let bridgeId = "test-bridge"
 
         // Test before clear
-        let baseResult1 = base.transform(
+        let baseResult1 = await base.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
             to: targetSystem,
             bridgeId: bridgeId
         )
-        let cachedResult1 = cached.transform(
+        let cachedResult1 = await cached.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
@@ -259,14 +259,14 @@ struct CoordinateTransformServiceCachingTests {
         cached.invalidateMatrixCache()
 
         // Test after clear - results should still be identical
-        let baseResult2 = base.transform(
+        let baseResult2 = await base.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
             to: targetSystem,
             bridgeId: bridgeId
         )
-        let cachedResult2 = cached.transform(
+        let cachedResult2 = await cached.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
@@ -292,10 +292,10 @@ struct CoordinateTransformServiceCachingTests {
     func testEndToEndParityMatrixCacheDisabledVsEnabled() async throws {
         let base = makeBaseService()
         let cachedDisabled = makeCachedService(
-            config: TransformCachingConfig(enableMatrixCache: false)
+            config: TransformCache.CacheConfig(matrixCapacity: 0)
         )
         let cachedEnabled = makeCachedService(
-            config: TransformCachingConfig(enableMatrixCache: true)
+            config: TransformCache.CacheConfig(matrixCapacity: 64)
         )
 
         let testPoint = (lat: 47.6062, lon: -122.3321)
@@ -303,7 +303,7 @@ struct CoordinateTransformServiceCachingTests {
         let targetSystem = CoordinateSystem.seattleReference
         let bridgeId = "test-bridge"
 
-        let baseResult = base.transform(
+        let baseResult = await base.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
@@ -311,7 +311,7 @@ struct CoordinateTransformServiceCachingTests {
             bridgeId: bridgeId
         )
 
-        let cachedDisabledResult = cachedDisabled.transform(
+        let cachedDisabledResult = await cachedDisabled.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
@@ -319,7 +319,7 @@ struct CoordinateTransformServiceCachingTests {
             bridgeId: bridgeId
         )
 
-        let cachedEnabledResult = cachedEnabled.transform(
+        let cachedEnabledResult = await cachedEnabled.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
@@ -368,10 +368,10 @@ struct CoordinateTransformServiceCachingTests {
     func testEndToEndParityPointCacheDisabledVsEnabled() async throws {
         let base = makeBaseService()
         let cachedDisabled = makeCachedService(
-            config: TransformCachingConfig(enablePointCache: false)
+            config: TransformCache.CacheConfig(enablePointCache: false)
         )
         let cachedEnabled = makeCachedService(
-            config: TransformCachingConfig(enablePointCache: true)
+            config: TransformCache.CacheConfig(enablePointCache: true)
         )
 
         let testPoint = (lat: 47.6062, lon: -122.3321)
@@ -379,7 +379,7 @@ struct CoordinateTransformServiceCachingTests {
         let targetSystem = CoordinateSystem.seattleReference
         let bridgeId = "test-bridge"
 
-        let baseResult = base.transform(
+        let baseResult = await base.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
@@ -387,7 +387,7 @@ struct CoordinateTransformServiceCachingTests {
             bridgeId: bridgeId
         )
 
-        let cachedDisabledResult = cachedDisabled.transform(
+        let cachedDisabledResult = await cachedDisabled.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
@@ -395,7 +395,7 @@ struct CoordinateTransformServiceCachingTests {
             bridgeId: bridgeId
         )
 
-        let cachedEnabledResult = cachedEnabled.transform(
+        let cachedEnabledResult = await cachedEnabled.transform(
             latitude: testPoint.lat,
             longitude: testPoint.lon,
             from: sourceSystem,
@@ -463,7 +463,7 @@ struct CoordinateTransformServiceCachingTests {
         ]
 
         for (lat, lon, sourceSystem, targetSystem, bridgeId) in errorTestCases {
-            let baseResult = base.transform(
+            let baseResult = await base.transform(
                 latitude: lat,
                 longitude: lon,
                 from: sourceSystem,
@@ -471,7 +471,7 @@ struct CoordinateTransformServiceCachingTests {
                 bridgeId: bridgeId
             )
 
-            let cachedResult = cached.transform(
+            let cachedResult = await cached.transform(
                 latitude: lat,
                 longitude: lon,
                 from: sourceSystem,
@@ -493,12 +493,11 @@ struct CoordinateTransformServiceCachingTests {
     func testGateGMetricsVisibilityAndCounters() async throws {
         // Use cached service as outermost entry to exercise SLO timer and throughput
         let cached = makeCachedService(
-            config: TransformCachingConfig(
-                enableMatrixCache: true,
-                enablePointCache: false,
-                matrixCacheCapacity: 8,
-                pointCacheCapacity: 0,
+            config: TransformCache.CacheConfig(
+                matrixCapacity: 8,
+                pointCapacity: 0,
                 pointTTLSeconds: 0,
+                enablePointCache: false,
                 quantizePrecision: 4
             )
         )
@@ -512,7 +511,7 @@ struct CoordinateTransformServiceCachingTests {
             for i in 0..<10 {
                 let lat = 47.6 + Double(i) * 0.0001
                 let lon = -122.33 + Double(i) * 0.0001
-                _ = cached.transform(
+                _ = await cached.transform(
                     latitude: lat,
                     longitude: lon,
                     from: fromSys,
@@ -523,7 +522,7 @@ struct CoordinateTransformServiceCachingTests {
         }
 
         // Capture snapshot and assert basic properties
-        let snap = TransformMetrics.snapshot()
+        let snap = await TransformMetrics.snapshot()
 
         // Throughput should be >= number of calls above (20)
         let throughput = snap.counters[TransformMetricKey.transformThroughputCount] ?? 0
