@@ -208,41 +208,7 @@ internal struct MatrixKey: Hashable {
     let version: Int
 }
 
-/// Simple synchronous LRU cache suitable for use on @MainActor
-private final class SimpleLRU<Key: Hashable, Value> {
-    private let capacity: Int
-    private var store: [Key: (value: Value, timestamp: Date)] = [:]
-    private var order: [Key] = []
-
-    init(capacity: Int) { self.capacity = max(1, capacity) }
-
-    func get(_ key: Key) -> Value? {
-        guard let entry = store[key] else { return nil }
-        // refresh order
-        order.removeAll { $0 == key }
-        order.append(key)
-        return entry.value
-    }
-
-    func set(_ key: Key, value: Value) {
-        if store[key] != nil {
-            // refresh existing
-            order.removeAll { $0 == key }
-        }
-        store[key] = (value, Date())
-        order.append(key)
-        // evict if needed
-        while store.count > capacity, let oldest = order.first {
-            store.removeValue(forKey: oldest)
-            order.removeFirst()
-        }
-    }
-
-    func clear() {
-        store.removeAll()
-        order.removeAll()
-    }
-}
+// SimpleLRU removed - now using TransformCache actor for unified caching
 
 // MARK: - Coordinate Transform Service
 
@@ -256,7 +222,7 @@ public protocol CoordinateTransformService {
         from sourceSystem: CoordinateSystem,
         to targetSystem: CoordinateSystem,
         bridgeId: String?
-    ) -> TransformationResult
+    ) async -> TransformationResult
 
     /// Transforms coordinates to our reference system (SeattleReference)
     @MainActor func transformToReferenceSystem(
@@ -264,14 +230,14 @@ public protocol CoordinateTransformService {
         longitude: Double,
         from sourceSystem: CoordinateSystem,
         bridgeId: String?
-    ) -> TransformationResult
+    ) async -> TransformationResult
 
     /// Calculates transformation matrix between two coordinate systems
     @MainActor func calculateTransformationMatrix(
         from sourceSystem: CoordinateSystem,
         to targetSystem: CoordinateSystem,
         bridgeId: String?
-    ) -> TransformationMatrix?
+    ) async -> TransformationMatrix?
 
     /// Validates if a transformation is available for the given parameters
     @MainActor func canTransform(
@@ -298,8 +264,8 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
     /// Version for cache invalidation (bumped on config/registry changes)
     private var matrixVersion: Int = 1
 
-    /// Synchronous LRU cache for transformation matrices
-    private let matrixCache: SimpleLRU<MatrixKey, TransformationMatrix>
+    /// Unified cache for transformation matrices and point results
+    private let cache: TransformCache
 
     /// Lightweight internal metrics counters
     private var matrixHitCount: Int = 0
@@ -352,9 +318,16 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
         self.enableMatrixCaching = effectiveEnableMatrixCaching
 
         self.matrixCacheCapacity = matrixCacheCapacity
-        self.matrixCache = SimpleLRU<MatrixKey, TransformationMatrix>(
-            capacity: matrixCacheCapacity
+        
+        // Create unified TransformCache with configuration
+        let cacheConfig = TransformCache.CacheConfig(
+            matrixCapacity: matrixCacheCapacity,
+            pointCapacity: 2048, // Default point cache capacity
+            pointTTLSeconds: 0,   // No TTL for now
+            enablePointCache: false, // Disable point cache for now
+            quantizePrecision: 4
         )
+        self.cache = TransformCache(config: cacheConfig)
         
         // Initialize matrix store if disk persistence is enabled
         if enableDiskPersistence, let path = matrixStorePath {
@@ -394,7 +367,7 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
         from sourceSystem: CoordinateSystem,
         to targetSystem: CoordinateSystem,
         bridgeId: String?
-    ) -> TransformationResult {
+    ) async -> TransformationResult {
         // Check feature flag for gradual rollout
         let identifier = bridgeId ?? "default"
         let isFeatureEnabled = featureFlagService.isEnabled(
@@ -467,7 +440,7 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
 
         // Get transformation matrix
         guard
-            let matrix = calculateTransformationMatrix(
+            let matrix = await calculateTransformationMatrix(
                 from: sourceSystem,
                 to: targetSystem,
                 bridgeId: bridgeId
@@ -476,37 +449,41 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
             return .failure(.transformationCalculationFailed)
         }
 
-        // Apply transformation
-        do {
-            let (transformedLat, transformedLon) = try applyTransformation(
-                latitude: latitude,
-                longitude: longitude,
-                matrix: matrix
-            )
-
-            // Determine confidence based on transformation type
-            let confidence: Double
-            if matrix == .identity {
-                confidence = 1.0
-            } else {
-                confidence = getTransformationConfidence(bridgeId: bridgeId)
-            }
-
-            if enableLogging {
-                print(
-                    "📍 CoordinateTransformService: Transformed (\(latitude), \(longitude)) to (\(transformedLat), \(transformedLon))"
+        // Apply transformation with timing
+        return await TransformMetrics.timeInner {
+            do {
+                let (transformedLat, transformedLon) = try applyTransformation(
+                    latitude: latitude,
+                    longitude: longitude,
+                    matrix: matrix
                 )
+
+                // Determine confidence based on transformation type
+                let confidence: Double
+                if matrix == .identity {
+                    confidence = 1.0
+                } else {
+                    // Note: This is a synchronous call since we can't await inside timeInner
+                    // We'll use the cached confidence from the matrix lookup
+                    confidence = bridgeTransformations[bridgeId ?? ""]?.confidence ?? 0.5
+                }
+
+                if enableLogging {
+                    print(
+                        "📍 CoordinateTransformService: Transformed (\(latitude), \(longitude)) to (\(transformedLat), \(transformedLon))"
+                    )
+                }
+
+                return .success(
+                    latitude: transformedLat,
+                    longitude: transformedLon,
+                    confidence: confidence,
+                    matrix: matrix
+                )
+
+            } catch {
+                return .failure(.transformationCalculationFailed)
             }
-
-            return .success(
-                latitude: transformedLat,
-                longitude: transformedLon,
-                confidence: confidence,
-                matrix: matrix
-            )
-
-        } catch {
-            return .failure(.transformationCalculationFailed)
         }
     }
 
@@ -515,8 +492,8 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
         longitude: Double,
         from sourceSystem: CoordinateSystem,
         bridgeId: String?
-    ) -> TransformationResult {
-        return transform(
+    ) async -> TransformationResult {
+        return await transform(
             latitude: latitude,
             longitude: longitude,
             from: sourceSystem,
@@ -529,7 +506,7 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
         from sourceSystem: CoordinateSystem,
         to targetSystem: CoordinateSystem,
         bridgeId: String?
-    ) -> TransformationMatrix? {
+    ) async -> TransformationMatrix? {
         // If source and target are the same, return identity
         if sourceSystem == targetSystem {
             return .identity
@@ -542,8 +519,16 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
                 to: targetSystem,
                 bridgeId: bridgeId
             )
-            if let cached = matrixCache.get(key) {
-                metricsIncr("matrix_hits")
+            // Convert MatrixKey to MatrixCacheKey for TransformCache
+            let cacheKey = MatrixCacheKey(
+                source: key.source,
+                target: key.target,
+                bridgeId: key.bridgeId,
+                version: key.version
+            )
+            
+            if let cached = await cache.getMatrix(for: cacheKey) {
+                await TransformMetrics.hit()
                 matrixHitCount &+= 1
                 
                 // Persist to disk if store is available
@@ -579,9 +564,17 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
                 to: targetSystem,
                 bridgeId: bridgeId
             )
-            metricsIncr("matrix_misses")
+            // Convert MatrixKey to MatrixCacheKey for TransformCache
+            let cacheKey = MatrixCacheKey(
+                source: key.source,
+                target: key.target,
+                bridgeId: key.bridgeId,
+                version: key.version
+            )
+            
+            await TransformMetrics.miss()
             matrixMissCount &+= 1
-            matrixCache.set(key, value: m)
+            await cache.setMatrix(m, for: cacheKey)
             
             // Persist to disk if store is available
             if let store = matrixStore {
@@ -601,7 +594,18 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
     /// Prewarm a matrix into the cache (for startup optimization)
     nonisolated internal func prewarmMatrix(key: MatrixKey, matrix: TransformationMatrix) {
         guard enableMatrixCaching else { return }
-        matrixCache.set(key, value: matrix)
+        // Convert MatrixKey to MatrixCacheKey for TransformCache
+        let cacheKey = MatrixCacheKey(
+            source: key.source,
+            target: key.target,
+            bridgeId: key.bridgeId,
+            version: key.version
+        )
+        // Note: This is nonisolated, so we can't await here
+        // The prewarming will be handled by the CoordinateTransformServiceManager
+        Task {
+            await cache.setMatrix(matrix, for: cacheKey)
+        }
     }
 
     public func canTransform(
@@ -631,7 +635,9 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
     /// Invalidate matrix cache by bumping version and clearing entries
     public func invalidateMatrixCache() {
         matrixVersion &+= 1
-        matrixCache.clear()
+        Task {
+            await cache.invalidateAll()
+        }
         matrixHitCount = 0
         matrixMissCount = 0
     }
@@ -676,7 +682,7 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
             ?? defaultTransformationMatrix
     }
 
-    private func getTransformationConfidence(bridgeId: String?) -> Double {
+    private func getTransformationConfidence(bridgeId: String?) async -> Double {
         guard let bridgeId = bridgeId else {
             return 0.5  // Lower confidence for unknown bridges
         }
@@ -689,7 +695,7 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
         }
 
         // For same-system transformations (identity), return 1.0 confidence
-        if let matrix = calculateTransformationMatrix(
+        if let matrix = await calculateTransformationMatrix(
             from: .seattleReference,
             to: .seattleReference,
             bridgeId: bridgeId
@@ -730,14 +736,6 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
         return latitude >= -90.0 && latitude <= 90.0 && longitude >= -180.0
             && longitude <= 180.0 && !latitude.isNaN && !longitude.isNaN
             && !latitude.isInfinite && !longitude.isInfinite
-    }
-
-    @inline(__always)
-    private func metricsIncr(_ name: String) {
-        TransformMetrics.incr(name)
-        if enableLogging {
-            print("[TransformMetrics] incr: \(name)")
-        }
     }
 
     // MARK: - Default Transformations
@@ -806,3 +804,5 @@ extension DefaultCoordinateTransformService {
 }
 
 extension DefaultCoordinateTransformService: @unchecked Sendable {}
+
+

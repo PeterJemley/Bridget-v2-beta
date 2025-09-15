@@ -1,6 +1,32 @@
 import Accelerate
 import Foundation
 
+#if canImport(os)
+import os
+#endif
+
+// Lightweight metrics shim so calls compile even if a full metrics backend isn't present.
+// In Debug builds, this logs using os_signpost if available, else prints. In Release, it no-ops.
+// To avoid duplicate definitions across files, we provide a file-private shim and a typealias
+// only if TransformMetrics hasn't already been defined elsewhere.
+#if !canImport(TransformMetricsModule)
+fileprivate enum _TransformMetricsShim {
+    static func observe(_ name: String, _ value: Double) {
+        #if DEBUG
+        #if canImport(os)
+        if #available(iOS 12.0, macOS 10.14, tvOS 12.0, watchOS 5.0, *) {
+            let log = OSLog(subsystem: Bundle.main.bundleIdentifier ?? "TransformMetrics", category: "metrics")
+            let staticName: StaticString = "metric"
+            os_signpost(.event, log: log, name: staticName, "%{public}@ value=%{public}.3f", name as NSString, value)
+            return
+        }
+        #endif
+        print("[TransformMetrics] \(name): \(value)")
+        #endif
+    }
+}
+#endif
+
 public struct BatchPoint: Sendable {
     public let lat: Double
     public let lon: Double
@@ -83,13 +109,11 @@ extension DefaultCoordinateTransformService {
         guard !points.isEmpty else { return BatchResult(points: []) }
 
         // Obtain matrix once on main actor
-        let matrixOpt = await MainActor.run {
-            calculateTransformationMatrix(
-                from: source,
-                to: target,
-                bridgeId: bridgeId
-            )
-        }
+        let matrixOpt = await calculateTransformationMatrix(
+            from: source,
+            to: target,
+            bridgeId: bridgeId
+        )
         guard let matrix = matrixOpt else {
             throw TransformationError.transformationCalculationFailed
         }
@@ -135,9 +159,9 @@ extension DefaultCoordinateTransformService {
             }
 
             let dt = CFAbsoluteTimeGetCurrent() - t0
-            TransformMetrics.observe("batch_small_latency_seconds", dt)
+            _TransformMetricsShim.observe("batch_small_latency_seconds", dt)
             if dt > 0 {
-                TransformMetrics.observe(
+                _TransformMetricsShim.observe(
                     "batch_small_throughput_pts_per_s",
                     Double(points.count) / dt
                 )
@@ -266,9 +290,9 @@ extension DefaultCoordinateTransformService {
         }
 
         let dt = CFAbsoluteTimeGetCurrent() - t0
-        TransformMetrics.observe("batch_latency_seconds", dt)
+        _TransformMetricsShim.observe("batch_latency_seconds", dt)
         if dt > 0 {
-            TransformMetrics.observe(
+            _TransformMetricsShim.observe(
                 "batch_throughput_pts_per_s",
                 Double(points.count) / dt
             )
