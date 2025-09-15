@@ -200,8 +200,8 @@ public enum TransformationError: LocalizedError, Sendable {
 
 // MARK: - Internal Matrix Cache (Synchronous)
 
-/// Private key for matrix cache entries
-private struct MatrixKey: Hashable {
+/// Key for matrix cache entries
+internal struct MatrixKey: Hashable {
     let source: CoordinateSystem
     let target: CoordinateSystem
     let bridgeId: String?
@@ -316,6 +316,9 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
 
     /// Feature flag service for gradual rollout and A/B testing
     private let featureFlagService: FeatureFlagService
+    
+    /// SQLite store for matrix persistence (optional)
+    private let matrixStore: MatrixStoreSQLite?
 
     // MARK: - Initialization
 
@@ -325,7 +328,9 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
         enableLogging: Bool = false,
         featureFlagService: FeatureFlagService? = nil,
         enableMatrixCaching: Bool = true,
-        matrixCacheCapacity: Int = 512
+        matrixCacheCapacity: Int = 512,
+        enableDiskPersistence: Bool = false,
+        matrixStorePath: String? = nil
     ) {
         // Initialize with Phase 1 findings if no transformations provided
         let finalTransformations =
@@ -350,6 +355,20 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
         self.matrixCache = SimpleLRU<MatrixKey, TransformationMatrix>(
             capacity: matrixCacheCapacity
         )
+        
+        // Initialize matrix store if disk persistence is enabled
+        if enableDiskPersistence, let path = matrixStorePath {
+            do {
+                self.matrixStore = try MatrixStoreSQLite(path: path)
+            } catch {
+                if enableLogging {
+                    print("⚠️ Failed to initialize matrix store: \(error)")
+                }
+                self.matrixStore = nil
+            }
+        } else {
+            self.matrixStore = nil
+        }
     }
 
     /// Resolve a metadata override for matrix caching from the coordinate transformation feature flag
@@ -526,6 +545,18 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
             if let cached = matrixCache.get(key) {
                 metricsIncr("matrix_hits")
                 matrixHitCount &+= 1
+                
+                // Persist to disk if store is available
+                if let store = matrixStore {
+                    do {
+                        try store.upsert(key: key, matrix: cached)
+                    } catch {
+                        if enableLogging {
+                            print("⚠️ Failed to persist matrix to disk: \(error)")
+                        }
+                    }
+                }
+                
                 return cached
             }
         }
@@ -551,9 +582,26 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
             metricsIncr("matrix_misses")
             matrixMissCount &+= 1
             matrixCache.set(key, value: m)
+            
+            // Persist to disk if store is available
+            if let store = matrixStore {
+                do {
+                    try store.upsert(key: key, matrix: m)
+                } catch {
+                    if enableLogging {
+                        print("⚠️ Failed to persist computed matrix to disk: \(error)")
+                    }
+                }
+            }
         }
 
         return computed
+    }
+
+    /// Prewarm a matrix into the cache (for startup optimization)
+    nonisolated internal func prewarmMatrix(key: MatrixKey, matrix: TransformationMatrix) {
+        guard enableMatrixCaching else { return }
+        matrixCache.set(key, value: matrix)
     }
 
     public func canTransform(

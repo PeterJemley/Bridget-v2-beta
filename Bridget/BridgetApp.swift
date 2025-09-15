@@ -112,7 +112,21 @@ struct BridgetApp: App {
       UserDefaults.standard.set(Date(), forKey: "MLPipelineFirstLaunch")
     }
 
+    // Initialize coordinate transformation prewarming
+    Task {
+      await initializeCoordinateTransformation()
+    }
+
     logger.info("ML Training Data Pipeline initialized successfully")
+  }
+
+  private func initializeCoordinateTransformation() async {
+    logger.info("Initializing Coordinate Transformation System")
+    
+    // Perform prewarming in background
+    await CoordinateTransformServiceManager.shared.prewarm()
+    
+    logger.info("Coordinate Transformation System initialized successfully")
   }
 
   private func handleAppDidBecomeActive() {
