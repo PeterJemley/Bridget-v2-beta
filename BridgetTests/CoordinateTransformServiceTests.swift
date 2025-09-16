@@ -19,11 +19,11 @@ struct CoordinateTransformServiceTests {
     @Test(
         "Identity transformation returns same coordinates with full confidence"
     )
-    func identityTransformation() throws {
+    func identityTransformation() async throws {
         let lat = 47.598
         let lon = -122.332
 
-        let result = transformService.transform(
+        let result = await transformService.transform(
             latitude: lat,
             longitude: lon,
             from: .seattleReference,
@@ -40,7 +40,7 @@ struct CoordinateTransformServiceTests {
     }
 
     @Test("Bridge 1 transformation improves proximity to expected location")
-    func bridge1Transformation() throws {
+    func bridge1Transformation() async throws {
         // API coordinates: (47.542213439941406, -122.33446502685547)
         // Expected reference: (47.598, -122.332)
         let apiLat = 47.542213439941406
@@ -48,7 +48,7 @@ struct CoordinateTransformServiceTests {
         let expectedLat = 47.598
         let expectedLon = -122.332
 
-        let result = transformService.transform(
+        let result = await transformService.transform(
             latitude: apiLat,
             longitude: apiLon,
             from: .seattleAPI,
@@ -85,7 +85,7 @@ struct CoordinateTransformServiceTests {
     }
 
     @Test("Bridge 6 transformation improves proximity to expected location")
-    func bridge6Transformation() throws {
+    func bridge6Transformation() async throws {
         // API coordinates: (47.57137680053711, -122.35354614257812)
         // Expected reference: (47.58, -122.35)
         let apiLat = 47.57137680053711
@@ -93,7 +93,7 @@ struct CoordinateTransformServiceTests {
         let expectedLat = 47.58
         let expectedLon = -122.35
 
-        let result = transformService.transform(
+        let result = await transformService.transform(
             latitude: apiLat,
             longitude: apiLon,
             from: .seattleAPI,
@@ -132,11 +132,11 @@ struct CoordinateTransformServiceTests {
     @Test(
         "Unknown bridge uses default matrix and returns reasonable confidence"
     )
-    func unknownBridgeTransformation() throws {
+    func unknownBridgeTransformation() async throws {
         let apiLat = 47.5
         let apiLon = -122.3
 
-        let result = transformService.transform(
+        let result = await transformService.transform(
             latitude: apiLat,
             longitude: apiLon,
             from: .seattleAPI,
@@ -155,8 +155,8 @@ struct CoordinateTransformServiceTests {
     // MARK: - Error Handling Tests
 
     @Test("Invalid coordinates produce invalidInputCoordinates error")
-    func invalidCoordinates() throws {
-        let result = transformService.transform(
+    func invalidCoordinates() async throws {
+        let result = await transformService.transform(
             latitude: 100.0,  // Invalid latitude
             longitude: -122.3,
             from: .seattleAPI,
@@ -176,8 +176,8 @@ struct CoordinateTransformServiceTests {
     }
 
     @Test("Unsupported coordinate system produces appropriate error")
-    func testUnsupportedCoordinateSystem() throws {
-        let result = transformService.transform(
+    func testUnsupportedCoordinateSystem() async throws {
+        let result = await transformService.transform(
             latitude: 47.5,
             longitude: -122.3,
             from: .nad27,  // Not supported in current implementation
@@ -203,8 +203,8 @@ struct CoordinateTransformServiceTests {
     @Test(
         "Matrix calculation returns non-identity for SeattleAPI -> Reference (Bridge 1)"
     )
-    func transformationMatrixCalculation() throws {
-        let matrix = transformService.calculateTransformationMatrix(
+    func transformationMatrixCalculation() async throws {
+        let matrix = await transformService.calculateTransformationMatrix(
             from: .seattleAPI,
             to: .seattleReference,
             bridgeId: "1"
@@ -218,13 +218,13 @@ struct CoordinateTransformServiceTests {
     }
 
     @Test("Inverse matrix is the opposite of forward matrix")
-    func inverseTransformationMatrix() throws {
-        let forwardMatrix = transformService.calculateTransformationMatrix(
+    func inverseTransformationMatrix() async throws {
+        let forwardMatrix = await transformService.calculateTransformationMatrix(
             from: .seattleAPI,
             to: .seattleReference,
             bridgeId: "1"
         )
-        let inverseMatrix = transformService.calculateTransformationMatrix(
+        let inverseMatrix = await transformService.calculateTransformationMatrix(
             from: .seattleReference,
             to: .seattleAPI,
             bridgeId: "1"
@@ -240,9 +240,9 @@ struct CoordinateTransformServiceTests {
     // MARK: - Confidence Tests
 
     @Test("Known bridge has high confidence; unknown bridge has lower (<= 1.0)")
-    func transformationConfidence() throws {
+    func transformationConfidence() async throws {
         // Known bridge should have high confidence
-        let knownResult = transformService.transform(
+        let knownResult = await transformService.transform(
             latitude: 47.5,
             longitude: -122.3,
             from: .seattleAPI,
@@ -254,7 +254,7 @@ struct CoordinateTransformServiceTests {
         #expect(knownResult.confidence > 0.9)
 
         // Unknown bridge should have lower confidence (but <= 1.0)
-        let unknownResult = transformService.transform(
+        let unknownResult = await transformService.transform(
             latitude: 47.5,
             longitude: -122.3,
             from: .seattleAPI,
@@ -269,12 +269,12 @@ struct CoordinateTransformServiceTests {
     // MARK: - Integration Tests
 
     @Test("Round-trip transformation returns to original coordinates")
-    func roundTripTransformation() throws {
+    func roundTripTransformation() async throws {
         let originalLat = 47.598
         let originalLon = -122.332
 
         // Transform to API coordinates
-        let toApiResult = transformService.transform(
+        let toApiResult = await transformService.transform(
             latitude: originalLat,
             longitude: originalLon,
             from: .seattleReference,
@@ -287,7 +287,7 @@ struct CoordinateTransformServiceTests {
         let toApiLon = try #require(toApiResult.transformedLongitude)
 
         // Transform back to reference coordinates
-        let backToRefResult = transformService.transform(
+        let backToRefResult = await transformService.transform(
             latitude: toApiLat,
             longitude: toApiLon,
             from: .seattleAPI,

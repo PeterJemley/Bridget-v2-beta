@@ -450,7 +450,7 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
         }
 
         // Apply transformation with timing
-        return await TransformMetrics.timeInner {
+        return await TransformMetrics.timeOuter {
             do {
                 let (transformedLat, transformedLon) = try applyTransformation(
                     latitude: latitude,

@@ -548,5 +548,162 @@ struct CoordinateTransformServiceCachingTests {
             Issue.record("Expected transform latency stats to be present")
         }
     }
+
+
+    // MARK: - Step 6 Accuracy Guard Test
+
+    @Test("Step 6 Accuracy Guard: metrics+caching introduce no drift")
+    @MainActor
+    func testAccuracyGuard_NoDriftWithMetricsAndCaching() async throws {
+        // Baseline (no caching/metrics) vs Instrumented (caching+metrics)
+        let baseline = makeBaseService()
+        let instrumented = makeCachedService(
+            config: TransformCache.CacheConfig(
+                matrixCapacity: 256,
+                pointCapacity: 512,
+                pointTTLSeconds: 300,
+                enablePointCache: true,
+                quantizePrecision: 4
+            )
+        )
+
+        // Dataset ~300 points across Seattle area, both bridge IDs
+        let systemPairs: [(from: CoordinateSystem, to: CoordinateSystem)] = [
+            (.seattleAPI, .seattleReference),
+            (.wgs84, .seattleReference),
+        ]
+        let points = TestAccuracyDatasetFactoryCS.generateGrid(
+            countPerPair: TestAccuracyDatasetConfig.countPerPair,
+            centerLat: 47.60,
+            centerLon: -122.33,
+            halfSpanLat: 0.05,
+            halfSpanLon: 0.05,
+            bridgeIds: ["1", "6"],
+            systemPairs: systemPairs
+        )
+
+        var latResiduals: [Double] = []
+        var lonResiduals: [Double] = []
+        var exactMatches = 0
+
+        for p in points {
+            let from = p.fromSystem as! CoordinateSystem
+            let to = p.toSystem as! CoordinateSystem
+
+            let baseRes = await baseline.transform(
+                latitude: p.lat, longitude: p.lon,
+                from: from, to: to,
+                bridgeId: p.bridgeId
+            )
+            let instRes = await instrumented.transform(
+                latitude: p.lat, longitude: p.lon,
+                from: from, to: to,
+                bridgeId: p.bridgeId
+            )
+
+            // Both should succeed or fail identically; if failure, skip stats
+            #expect(baseRes.success == instRes.success)
+            guard baseRes.success, instRes.success,
+                  let bLat = baseRes.transformedLatitude,
+                  let bLon = baseRes.transformedLongitude,
+                  let iLat = instRes.transformedLatitude,
+                  let iLon = instRes.transformedLongitude else {
+                continue
+            }
+
+            let latDiff = abs(bLat - iLat)
+            let lonDiff = abs(bLon - iLon)
+            latResiduals.append(latDiff)
+            lonResiduals.append(lonDiff)
+            if latDiff == 0 && lonDiff == 0 { exactMatches += 1 }
+        }
+
+        try #require(!latResiduals.isEmpty && !lonResiduals.isEmpty, "No successful comparable results for residual analysis")
+
+        let exactMatchRate = Double(exactMatches) / Double(latResiduals.count)
+
+        // Uncomment for local diagnostics
+        // TestAccuracyDiagnostics.logResidualStats(latResiduals: latResiduals, lonResiduals: lonResiduals, label: "Step 6 Residuals")
+
+        TestAccuracyAsserts.assertStep6Bundle(latResiduals: latResiduals, lonResiduals: lonResiduals, exactMatchRate: exactMatchRate)
+    }
+
+    @Test("Gate G: Accuracy guard — median/p95 residual unchanged")
+    @MainActor
+    func testGateGAccuracyGuardResiduals() async throws {
+        let base = makeBaseService()
+        let cached = makeCachedService(
+            config: TransformCache.CacheConfig(
+                matrixCapacity: 128,
+                pointCapacity: 512,
+                pointTTLSeconds: 60,
+                enablePointCache: true,
+                quantizePrecision: 4
+            )
+        )
+
+        var samples: [(Double, Double, CoordinateSystem, CoordinateSystem, String)] = []
+        let systems: [(CoordinateSystem, CoordinateSystem)] = [
+            (.seattleAPI, .seattleReference),
+            (.seattleReference, .seattleAPI),
+            (.wgs84, .seattleReference),
+        ]
+        let bridges = ["1", "6"]
+
+        // 12x12 grid per system pair with slight decorrelation
+        for (fromSys, toSys) in systems {
+            for i in 0..<TestAccuracyDatasetConfig.gridSize {
+                for j in 0..<TestAccuracyDatasetConfig.gridSize {
+                    let lat = 47.55 + Double(i) * 0.005 + Double(j) * 1e-6
+                    let lon = -122.40 + Double(j) * 0.005 + Double(i) * 1e-6
+                    let bridgeId = bridges[(i + j) % bridges.count]
+                    samples.append((lat, lon, fromSys, toSys, bridgeId))
+                }
+            }
+        }
+
+        var latResiduals: [Double] = []
+        var lonResiduals: [Double] = []
+
+        for (lat, lon, fromSys, toSys, bridgeId) in samples {
+            let baseResult = await base.transform(
+                latitude: lat,
+                longitude: lon,
+                from: fromSys,
+                to: toSys,
+                bridgeId: bridgeId
+            )
+            let cachedResult = await cached.transform(
+                latitude: lat,
+                longitude: lon,
+                from: fromSys,
+                to: toSys,
+                bridgeId: bridgeId
+            )
+
+            #expect(baseResult.success == cachedResult.success)
+            if !baseResult.success || !cachedResult.success {
+                #expect(baseResult.error?.localizedDescription == cachedResult.error?.localizedDescription)
+                continue
+            }
+
+            let dLat = abs((baseResult.transformedLatitude ?? 0) - (cachedResult.transformedLatitude ?? 0))
+            let dLon = abs((baseResult.transformedLongitude ?? 0) - (cachedResult.transformedLongitude ?? 0))
+            latResiduals.append(dLat)
+            lonResiduals.append(dLon)
+        }
+
+        #expect(!latResiduals.isEmpty && !lonResiduals.isEmpty, "No successful samples to evaluate accuracy residuals")
+
+        let latMedian = TestAccuracyStats.median(latResiduals)
+        let lonMedian = TestAccuracyStats.median(lonResiduals)
+        let latP95 = TestAccuracyStats.percentile(latResiduals, 95)
+        let lonP95 = TestAccuracyStats.percentile(lonResiduals, 95)
+
+        #expect(latMedian <= TestAccuracyThresholds.medianEps, "lat median residual too high: \(latMedian)")
+        #expect(lonMedian <= TestAccuracyThresholds.medianEps, "lon median residual too high: \(lonMedian)")
+        #expect(latP95 <= TestAccuracyThresholds.p95Eps, "lat p95 residual too high: \(latP95)")
+        #expect(lonP95 <= TestAccuracyThresholds.p95Eps, "lon p95 residual too high: \(lonP95)")
+    }
 }
 

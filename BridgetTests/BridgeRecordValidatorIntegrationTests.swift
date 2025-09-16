@@ -35,7 +35,7 @@ struct BridgeRecordValidatorIntegrationTests {
 
     @MainActor
     @Test("Bridge 1 should pass validation with coordinate transformation")
-    func bridge1WithTransformation() throws {
+    func bridge1WithTransformation() async throws {
         let record = BridgeOpeningRecord(
             entitytype: "bridge",
             entityname: "First Avenue South Bridge",
@@ -56,7 +56,7 @@ struct BridgeRecordValidatorIntegrationTests {
 
     @MainActor
     @Test("Bridge 6 should pass validation with coordinate transformation")
-    func bridge6WithTransformation() throws {
+    func bridge6WithTransformation() async throws {
         let record = BridgeOpeningRecord(
             entitytype: "bridge",
             entityname: "Lower Spokane Street Bridge",
@@ -79,7 +79,7 @@ struct BridgeRecordValidatorIntegrationTests {
     @Test(
         "Bridge 1 should fail for very far coordinates (no transformation can help)"
     )
-    func bridge1WithoutTransformation() throws {
+    func bridge1WithoutTransformation() async throws {
         let record = BridgeOpeningRecord(
             entitytype: "bridge",
             entityname: "First Avenue South Bridge",
@@ -114,7 +114,7 @@ struct BridgeRecordValidatorIntegrationTests {
     @Test(
         "Valid reference-system coordinates should pass without transformation"
     )
-    func validCoordinatesWithoutTransformation() throws {
+    func validCoordinatesWithoutTransformation() async throws {
         let record = BridgeOpeningRecord(
             entitytype: "bridge",
             entityname: "First Avenue South Bridge",
@@ -135,7 +135,7 @@ struct BridgeRecordValidatorIntegrationTests {
 
     @MainActor
     @Test("Identity transformation path should accept very close coordinates")
-    func identityTransformation() throws {
+    func identityTransformation() async throws {
         let record = BridgeOpeningRecord(
             entitytype: "bridge",
             entityname: "First Avenue South Bridge",
@@ -155,7 +155,7 @@ struct BridgeRecordValidatorIntegrationTests {
     }
 
     @MainActor @Test("Unknown bridge should fail validation")
-    func unknownBridgeWithTransformation() throws {
+    func unknownBridgeWithTransformation() async throws {
         let record = BridgeOpeningRecord(
             entitytype: "bridge",
             entityname: "Unknown Bridge",
@@ -182,7 +182,7 @@ struct BridgeRecordValidatorIntegrationTests {
     }
 
     @MainActor @Test("Out-of-range dates should fail validation")
-    func invalidDateRange() throws {
+    func invalidDateRange() async throws {
         let record = BridgeOpeningRecord(
             entitytype: "bridge",
             entityname: "First Avenue South Bridge",

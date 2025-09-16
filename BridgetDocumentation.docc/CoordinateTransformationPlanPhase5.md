@@ -653,7 +653,55 @@ struct TransformConfig: Codable {
 
 ---
 
-## 5.6 SUCCESS CRITERIA — Stepwise Runbook
+## 5.6 OBSERVABILITY & METRICS — Stepwise Runbook
+
+**Goal:** Comprehensive observability and accuracy tracking for coordinate transformation operations.
+
+### Step 6. Observability & metrics (Day 4) ✅ **COMPLETED**
+- [x] Add `Sources/Metrics/TransformMetrics.swift`.
+- [x] Emit timers for latency, throughput, cache lookups.
+- [x] Emit counters: hits, misses, evictions.
+- [x] Emit gauges: cache items, memory footprint.
+- [x] **Enhanced Accuracy Tracking**: Added `AccuracyMetricKey` enum for residual bucketing.
+- [x] **Diagnostics Toggle**: Added `accuracyDiagnosticsEnabled` and `setAccuracyDiagnosticsEnabled(_:)`.
+- [x] **Residual Storage**: Added residual storage and exact-match counters.
+- [x] **Recording Methods**: Added `recordResidual(...)` and `recordExactMatch(latExact:lonExact:)`.
+- [x] **Analytics**: Added `accuracySnapshot()` returning per-bucket median, p95, and max via `AccuracyStats`.
+- [x] **Statistical Helpers**: Added percentile helper for computing statistics.
+- [x] **Exact Match Rates**: Added `exactMatchFractions()` to report exact-match rates.
+- [x] **Test Isolation**: Reset storage when disabling diagnostics to avoid cross-test bleed.
+- [x] **Accuracy Guard**: Implemented comprehensive accuracy validation tests with stratified assertions.
+
+**Gate G:** ✅ **PASSED** - Metrics visible locally; counters validated; accuracy guard implemented.
+
+### **Enhanced Features Implemented:**
+
+#### **Accuracy Tracking System**
+- **Multi-dimensional Bucketing**: Global, by system pair, by bridge
+- **Statistical Analysis**: Median, p95, maximum residuals per bucket
+- **Exact Match Tracking**: Percentage of perfect transformations
+- **Test Isolation**: Clean state management for reliable testing
+- **Stratified Assertions**: Validates accuracy by system pair (`.residualLatByPair(from:to:)`) and bridge (`.residualLatByBridge(bridgeId)`)
+- **Localized Regression Detection**: Catches accuracy issues in specific coordinate systems
+- **Cross-Validation**: Compares local calculations with TransformMetrics for consistency
+
+#### **Performance Metrics**
+- **Latency Tracking**: P50, p95, mean with ring buffer storage
+- **Throughput Monitoring**: Real-time transformation rate tracking
+- **Cache Analytics**: Hit/miss rates, eviction counts, memory usage
+- **Gauge Metrics**: Cache items and memory footprint monitoring
+
+#### **Production Readiness**
+- **Configurable Backend**: In-memory for development, extensible for production
+- **Diagnostics Toggle**: Enable/disable accuracy tracking as needed
+- **Comprehensive Testing**: Accuracy guard tests with tight tolerances
+- **Documentation**: Complete API reference and best practices guide
+
+**Documentation:** See [TransformMetricsGuide.md](TransformMetricsGuide.md) for complete API reference and usage examples.
+
+---
+
+## 5.7 SUCCESS CRITERIA — Stepwise Runbook
 
 **Goal:** Define objective thresholds for sign‑off.
 
@@ -700,7 +748,8 @@ struct BenchResult: Codable {
 ---
 
 ## Deliverables
-- `Sources/Metrics/TransformMetrics.swift`
+- `Sources/Metrics/TransformMetrics.swift` ✅ **COMPLETED**
+- `TransformMetricsGuide.md` ✅ **COMPLETED** - Complete API reference and usage guide
 - `Config/FeatureFlags.swift`
 - `Config/transform.json` (schema & example)
 - `Sources/Config/TransformConfigLoader.swift`

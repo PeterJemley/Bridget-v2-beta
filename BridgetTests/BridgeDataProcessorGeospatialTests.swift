@@ -36,7 +36,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
     }
 
     // Test for each bridge with valid coordinates
-    @MainActor @Test func test1stAveSouth() {
+    @MainActor @Test func test1stAveSouth() async {
         let record = testRecord(
             entityid: "1",
             lat: "47.542213439941406",
@@ -64,7 +64,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
         )
     }
 
-    @MainActor @Test func ballard() {
+    @MainActor @Test func ballard() async {
         let record = testRecord(
             entityid: "2",
             lat: "47.65981674194336",
@@ -89,7 +89,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
         #expect(result == nil, "Should accept matching coordinates for Ballard")
     }
 
-    @MainActor @Test func fremont() {
+    @MainActor @Test func fremont() async {
         let record = testRecord(
             entityid: "3",
             lat: "47.64760208129883",
@@ -114,7 +114,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
         #expect(result == nil, "Should accept matching coordinates for Fremont")
     }
 
-    @MainActor @Test func montlake() {
+    @MainActor @Test func montlake() async {
         let record = testRecord(
             entityid: "4",
             lat: "47.64728546142578",
@@ -142,7 +142,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
         )
     }
 
-    @MainActor @Test func lowerSpokaneSt() {
+    @MainActor @Test func lowerSpokaneSt() async {
         let record = testRecord(
             entityid: "6",
             lat: "47.57137680053711",
@@ -170,7 +170,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
         )
     }
 
-    @MainActor @Test func university() {
+    @MainActor @Test func university() async {
         let record = testRecord(
             entityid: "21",
             lat: "47.652652740478516",
@@ -198,7 +198,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
         )
     }
 
-    @MainActor @Test func southPark() {
+    @MainActor @Test func southPark() async {
         let record = testRecord(
             entityid: "29",
             lat: "47.52923583984375",
@@ -227,7 +227,7 @@ final class AllSeattleBridgesGeospatialValidationTests {
     }
 
     // Test geospatial mismatch detection
-    @MainActor @Test func test1stAveSouthGeospatialMismatch() {
+    @MainActor @Test func test1stAveSouthGeospatialMismatch() async {
         let record = testRecord(entityid: "1", lat: "48.0", lon: "-123.0")  // Far away
         let validator = BridgeRecordValidator(
             knownBridgeIDs: knownBridgeIDs,

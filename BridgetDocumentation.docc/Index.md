@@ -35,6 +35,8 @@ Welcome to the Bridget technical documentation. This documentation covers the ar
 - **[Guard Statement Patterns](GuardStatementPatterns.md)** - Code patterns and best practices
 - **[Caching Strategy](CachingStrategy.md)** - Caching implementation and strategies
 - **[Statistics Utilities](StatisticsUtilitiesSummary.md)** - Statistical analysis utilities
+- **[TransformMetrics Guide](TransformMetricsGuide.md)** - Comprehensive observability and accuracy tracking
+- **[Accuracy Guard Enhancements](AccuracyGuardEnhancements.md)** - Enhanced accuracy validation with stratified assertions
 
 ## 👥 Public-Facing Documentation
 

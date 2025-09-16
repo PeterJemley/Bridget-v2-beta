@@ -36,7 +36,7 @@ struct BridgeRecordValidatorIntegrationTests2 {
     // MARK: - 1) End-to-end validator acceptance (Phase 3.2 parity)
 
     @Test("E2E: Validator accepts transformed record for bridge 1")
-    func endToEndValidatorAcceptance_bridge1() throws {
+    func endToEndValidatorAcceptance_bridge1() async throws {
         let validator = makeValidator()
 
         let testRecord = BridgeOpeningRecord(
@@ -60,7 +60,7 @@ struct BridgeRecordValidatorIntegrationTests2 {
     // MARK: - 2) Transformation improves proximity at validator layer
 
     @Test("Integration: Transformation improves proximity (bridges 1 and 6)")
-    func transformationImprovesProximityViaValidator() throws {
+    func transformationImprovesProximityViaValidator() async throws {
         let validator = makeValidator()
 
         struct Case {
@@ -112,7 +112,7 @@ struct BridgeRecordValidatorIntegrationTests2 {
                 lon2: c.expected.lon
             )
 
-            let t = transformService.transformToReferenceSystem(
+            let t = await transformService.transformToReferenceSystem(
                 latitude: c.api.lat,
                 longitude: c.api.lon,
                 from: .seattleAPI,
@@ -153,7 +153,7 @@ struct BridgeRecordValidatorIntegrationTests2 {
     // MARK: - 3) Validator performance budget (Phase 3.2 parity)
 
     @Test("Performance: validation average < 10ms over 100 iterations")
-    func validatorPerformanceBudget() throws {
+    func validatorPerformanceBudget() async throws {
         let validator = makeValidator()
 
         let rec = BridgeOpeningRecord(
@@ -205,3 +205,4 @@ struct BridgeRecordValidatorIntegrationTests2 {
         return R * c
     }
 }
+
