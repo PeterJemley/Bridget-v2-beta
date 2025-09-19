@@ -53,7 +53,7 @@ struct BridgeRecordValidator {
 
   /// Returns first validation failure reason, or nil if valid, using ValidationUtils
   func validationFailure(for record: BridgeOpeningRecord)
-    -> ValidationFailureReason?
+    async -> ValidationFailureReason?
   {
     if !isNotEmpty(record.entityid) {
       return .emptyEntityID
@@ -95,7 +95,7 @@ struct BridgeRecordValidator {
 
     // Phase 3.1: Enhanced geospatial validation with transformation-based approach
     if let expected = bridgeLocations[record.entityid] {
-      return validateGeospatialWithTransformation(record: record,
+      return await validateGeospatialWithTransformation(record: record,
                                                   inputLat: lat,
                                                   inputLon: lon,
                                                   expectedLat: expected.lat,
@@ -131,7 +131,7 @@ struct BridgeRecordValidator {
                                                     inputLat: Double,
                                                     inputLon: Double,
                                                     expectedLat: Double,
-                                                    expectedLon: Double) -> ValidationFailureReason?
+                                                    expectedLon: Double) async -> ValidationFailureReason?
   {
     // Phase 4.1: Check feature flag for coordinate transformation
     let isTransformationEnabled = featureFlagService.isEnabled(.coordinateTransformation,
@@ -168,7 +168,7 @@ struct BridgeRecordValidator {
 
     // Step 1: Apply coordinate transformation with performance monitoring
     let startTime = CFAbsoluteTimeGetCurrent()
-    let transformationResult =
+    let transformationResult = await
       coordinateTransformService.transformToReferenceSystem(latitude: inputLat,
                                                             longitude: inputLon,
                                                             from: .seattleAPI,

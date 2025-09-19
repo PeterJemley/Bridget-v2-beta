@@ -5,8 +5,8 @@ This document provides a centralized view of all configuration settings, thresho
 ## 🎯 **Current Status: Production Ready** ✅
 
 **Last Updated**: January 2025  
-**Configuration Version**: Phase 4 Complete  
-**Status**: All systems operational with 100% feature flag rollout
+**Configuration Version**: Phase 5 Step 3 Complete  
+**Status**: All systems operational with 100% feature flag rollout + SIMD/vDSP optimizations
 
 ---
 
@@ -92,6 +92,28 @@ This document provides a centralized view of all configuration settings, thresho
 - **Seattle API**: Source coordinate system
 - **Reference System**: Target coordinate system
 - **Transformation Method**: Translation-only (no rotation/scaling)
+
+### **Matrix Caching Configuration** ✅ **ENABLED**
+- **Enable Matrix Caching**: `true` (default)
+- **Cache Capacity**: `512` matrices (LRU eviction)
+- **Cache Type**: Synchronous LRU cache on @MainActor
+- **Hit/Miss Tracking**: Enabled with metrics collection
+- **Cache Versioning**: Automatic invalidation on config changes
+
+### **Performance Optimizations** ✅ **ENABLED**
+- **SIMD Single-Point**: Enabled for all single-point transformations
+- **vDSP Batch Processing**: Enabled for batch operations
+- **Small Input Threshold**: `< 32 points` (falls back to SIMD)
+- **Double Precision**: Maintained end-to-end with 1e-12 tolerance
+- **Zero-Rotation Fast Path**: Optimized for matrices with no rotation
+
+### **TransformCache Configuration** (Advanced)
+- **Matrix Capacity**: `512` (LRU cache)
+- **Point Capacity**: `2048` (LRU cache)
+- **Point TTL**: `60 seconds`
+- **Point Cache Enabled**: `true`
+- **Quantization Precision**: `6` decimal places
+- **Cache Type**: Actor-based async cache
 
 ---
 
@@ -190,6 +212,15 @@ This document provides a centralized view of all configuration settings, thresho
 - **Performance Benchmarks**: Enabled
 - **Concurrency Testing**: Thread Sanitizer enabled
 
+### **Performance Testing Configuration**
+- **Enable Performance Tests**: `ENABLE_PERF_TESTS=true` (environment variable)
+- **Test Point Count**: `3000` points (reduced from 10,000 for stability)
+- **Tolerance Settings**: `1e-12` absolute, `1e-10` relative
+- **Performance Thresholds**: 
+  - SIMD vs Scalar: `≤ 1.1x` (allowing measurement variance)
+  - vDSP vs SIMD: `≤ 0.9x` (batch should be faster)
+- **Test Coverage**: 6 property tests with 100,000+ validation points
+
 ---
 
 ## 📝 **Configuration Management**
@@ -218,6 +249,9 @@ This document provides a centralized view of all configuration settings, thresho
 
 ### **Critical Settings**
 - **Coordinate Transformation**: ✅ **ENABLED** (100% rollout)
+- **Matrix Caching**: ✅ **ENABLED** (512 capacity)
+- **SIMD Optimizations**: ✅ **ENABLED** (single-point)
+- **vDSP Batch Processing**: ✅ **ENABLED** (chunked)
 - **Tight Validation**: ✅ **500m threshold**
 - **Fallback Validation**: ✅ **8km threshold**
 - **Monitoring**: ✅ **ACTIVE**
@@ -228,6 +262,9 @@ This document provides a centralized view of all configuration settings, thresho
 - **Success Rate**: > 95%
 - **Error Rate**: < 1%
 - **Distance Improvement**: > 100m average
+- **SIMD Performance**: ≤ 1.1x scalar time (with variance)
+- **vDSP Batch Performance**: ≤ 0.9x individual SIMD time
+- **Mathematical Precision**: 1e-12 absolute tolerance
 
 ### **Safety Thresholds**
 - **Min Success Rate**: 95%

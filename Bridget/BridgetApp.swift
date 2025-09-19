@@ -1,3 +1,4 @@
+#if os(iOS)
 //
 //  BridgetApp.swift
 //  Bridget
@@ -91,7 +92,7 @@ struct BridgetApp: App {
                                onWillEnterForeground: handleAppWillEnterForeground)
             .allowsHitTesting(false)
         )
-        .task { initializeMLPipeline() }
+        .onAppear { initializeMLPipeline() }
     }
     .modelContainer(sharedModelContainer)
   }
@@ -111,7 +112,21 @@ struct BridgetApp: App {
       UserDefaults.standard.set(Date(), forKey: "MLPipelineFirstLaunch")
     }
 
+    // Initialize coordinate transformation prewarming
+    Task {
+      await initializeCoordinateTransformation()
+    }
+
     logger.info("ML Training Data Pipeline initialized successfully")
+  }
+
+  private func initializeCoordinateTransformation() async {
+    logger.info("Initializing Coordinate Transformation System")
+    
+    // Perform prewarming in background
+    await CoordinateTransformServiceManager.shared.prewarm()
+    
+    logger.info("Coordinate Transformation System initialized successfully")
   }
 
   private func handleAppDidBecomeActive() {
@@ -182,3 +197,6 @@ struct BridgetApp: App {
                                                 operation: .maintenance)
   }
 }
+
+// This @main App is iOS-specific to avoid duplicate entry points in multi-target workspaces
+#endif

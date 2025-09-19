@@ -112,7 +112,7 @@ final class BridgeDataProcessor {
 
       // Validate records using the main actor for the validator calls
       for record in records {
-        if let reason = validator.validationFailure(for: record) {
+        if let reason = await validator.validationFailure(for: record) {
           failures.append(
             ValidationFailure(record: record, reason: reason)
           )

@@ -85,7 +85,22 @@ final class MLPipelineBackgroundManager {
   }
 
   private var isRunningInTests: Bool {
-    NSClassFromString("XCTest") != nil
+    // Check for unit tests
+    if NSClassFromString("XCTest") != nil {
+      return true
+    }
+    
+    // Check for UI tests
+    if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+      return true
+    }
+    
+    // Check for UI test bundle
+    if Bundle.main.bundleIdentifier?.contains("UITests") == true {
+      return true
+    }
+    
+    return false
   }
 
   // MARK: - Public Interface

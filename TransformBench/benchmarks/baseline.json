@@ -1,0 +1,34 @@
+[
+  {
+    "n" : 1,
+    "name" : "control_no_cache_1",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 2.09808349609375e-05,
+    "p95" : 3.3020973205566406e-05,
+    "throughputPtsPerS" : 47662.545454545456
+  },
+  {
+    "n" : 64,
+    "name" : "control_no_cache_64",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 0.00014102458953857422,
+    "p95" : 0.00014698505401611328,
+    "throughputPtsPerS" : 453821.56551141164
+  },
+  {
+    "n" : 1000,
+    "name" : "control_no_cache_1000",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 0.0008710622787475586,
+    "p95" : 0.0008910894393920898,
+    "throughputPtsPerS" : 1148023.5390721227
+  },
+  {
+    "n" : 10000,
+    "name" : "control_no_cache_10000",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 0.003610968589782715,
+    "p95" : 0.0036879777908325195,
+    "throughputPtsPerS" : 2769340.068006999
+  }
+]

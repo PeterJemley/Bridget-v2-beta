@@ -88,6 +88,8 @@ public class CoreMLTraining {
                          modelConfiguration: MLModelConfiguration? = nil,
                          tempDirectory: URL? = nil) async throws -> MLModel
   {
+    RuntimeGuards.assertNotInMetricsContext("CoreMLTraining.trainModel")
+
     let progressDelegate = progress ?? self.progressDelegate
 
     await progressDelegate?.trainingDidStart()
@@ -146,6 +148,8 @@ public class CoreMLTraining {
   public func evaluate(_ model: MLModel,
                        on features: [FeatureVector]) throws -> CoreMLModelValidationResult
   {
+    RuntimeGuards.assertNotInMetricsContext("CoreMLTraining.evaluate")
+
     guard !features.isEmpty else {
       throw CoreMLTrainingError.insufficientData(required: 1,
                                                  available: 0)
@@ -212,10 +216,12 @@ public class CoreMLTraining {
                                         lossTrend: [Double] = [],
                                         accuracyTrend: [Double] = []) throws -> StatisticalTrainingMetrics
   {
-    try metricsEvaluator.computeStatisticalMetrics(model,
-                                                   on: features,
-                                                   lossTrend: lossTrend,
-                                                   accuracyTrend: accuracyTrend)
+    RuntimeGuards.assertNotInMetricsContext("CoreMLTraining.computeStatisticalMetrics")
+
+    return try metricsEvaluator.computeStatisticalMetrics(model,
+                                                          on: features,
+                                                          lossTrend: lossTrend,
+                                                          accuracyTrend: accuracyTrend)
   }
 
   // MARK: - Phase 3: Statistical Variance Helpers
@@ -366,6 +372,7 @@ public class CoreMLTraining {
 
     // Create or load base model for training
     let baseModelURL = try await baseModelFactory.createOrLoadBaseModel(configuration: configuration,
+                                                                        baseModelURL: nil,
                                                                         tempDirectory: tempDirectory)
 
     // Create and start MLUpdateTask

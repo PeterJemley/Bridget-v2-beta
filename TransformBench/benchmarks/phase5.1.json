@@ -1,0 +1,98 @@
+[
+  {
+    "n" : 1,
+    "name" : "control_no_cache_1",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 1.0013580322265625e-05,
+    "p95" : 1.0967254638671875e-05,
+    "throughputPtsPerS" : 99864.38095238095
+  },
+  {
+    "n" : 1,
+    "name" : "matrix_only_1",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 9.059906005859375e-06,
+    "p95" : 9.894371032714844e-06,
+    "throughputPtsPerS" : 110376.42105263157
+  },
+  {
+    "n" : 1,
+    "name" : "matrix_plus_point_1",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 3.993511199951172e-05,
+    "p95" : 4.00543212890625e-05,
+    "throughputPtsPerS" : 25040.62089552239
+  },
+  {
+    "n" : 64,
+    "name" : "control_no_cache_64",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 8.106231689453125e-05,
+    "p95" : 8.404254913330078e-05,
+    "throughputPtsPerS" : 789516.0470588235
+  },
+  {
+    "n" : 64,
+    "name" : "matrix_only_64",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 7.903575897216797e-05,
+    "p95" : 8.106231689453125e-05,
+    "throughputPtsPerS" : 809760.0482654601
+  },
+  {
+    "n" : 64,
+    "name" : "matrix_plus_point_64",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 0.00032806396484375,
+    "p95" : 0.0003349781036376953,
+    "throughputPtsPerS" : 195083.90697674418
+  },
+  {
+    "n" : 1000,
+    "name" : "control_no_cache_1000",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 0.0005110502243041992,
+    "p95" : 0.0005129575729370117,
+    "throughputPtsPerS" : 1956754.8402146022
+  },
+  {
+    "n" : 1000,
+    "name" : "matrix_only_1000",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 0.0004900693893432617,
+    "p95" : 0.0004940032958984375,
+    "throughputPtsPerS" : 2040527.3656044758
+  },
+  {
+    "n" : 1000,
+    "name" : "matrix_plus_point_1000",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 0.0031690597534179688,
+    "p95" : 0.0032950639724731445,
+    "throughputPtsPerS" : 315551.00812518806
+  },
+  {
+    "n" : 10000,
+    "name" : "control_no_cache_10000",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 0.0025299787521362305,
+    "p95" : 0.0025310516357421875,
+    "throughputPtsPerS" : 3952602.3653583378
+  },
+  {
+    "n" : 10000,
+    "name" : "matrix_only_10000",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 0.0025440454483032227,
+    "p95" : 0.0026279687881469727,
+    "throughputPtsPerS" : 3930747.3876575604
+  },
+  {
+    "n" : 10000,
+    "name" : "matrix_plus_point_10000",
+    "notes" : "ref=seattleReference->seattleReference",
+    "p50" : 1.006113052368164,
+    "p95" : 1.0088319778442383,
+    "throughputPtsPerS" : 9939.24089987924
+  }
+]

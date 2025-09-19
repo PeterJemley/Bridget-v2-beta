@@ -52,11 +52,22 @@ struct CoordinateTransformationDashboard: View {
       }
       .sheet(isPresented: $showingExportData) {
         ExportDataView(monitoringService: monitoringService, timeRange: selectedTimeRange)
+          .onAppear { RuntimeGuards.metricsOnlyContext = true }
+          .onDisappear { RuntimeGuards.metricsOnlyContext = false }
       }
       .onAppear {
-        Task {
+        RuntimeGuards.metricsOnlyContext = true
+        Task.detached(priority: .userInitiated) {
           await loadData()
         }
+      }
+      .onChange(of: selectedTimeRange) { _, _ in
+        Task.detached(priority: .userInitiated) {
+          await loadData()
+        }
+      }
+      .onDisappear {
+        RuntimeGuards.metricsOnlyContext = false
       }
     }
   }
@@ -81,11 +92,6 @@ struct CoordinateTransformationDashboard: View {
         Text("Last 30 Days").tag(TimeRange.last30Days)
       }
       .pickerStyle(.segmented)
-      .onChange(of: selectedTimeRange) { _, _ in
-        Task { @MainActor in
-          await loadData()
-        }
-      }
     }
   }
 
@@ -179,8 +185,33 @@ struct CoordinateTransformationDashboard: View {
     isLoading = true
     defer { isLoading = false }
 
-    currentMetrics = monitoringService.getMetrics(timeRange: selectedTimeRange)
-    recentAlerts = monitoringService.getRecentAlerts(limit: 10)
+    // Perform potentially heavy work off the main actor
+    let (metrics, alerts) = await withTaskGroup(of: (TransformationMetrics?, [AlertEvent]).self) { group -> (TransformationMetrics?, [AlertEvent]) in
+        group.addTask {
+            // Off-main computation/IO safe block
+            let m = await monitoringService.getMetrics(timeRange: selectedTimeRange)
+            return (m, [])
+        }
+        group.addTask {
+            // Off-main computation/IO safe block
+            let a = await monitoringService.getRecentAlerts(limit: 10)
+            return (nil, a)
+        }
+
+        var aggMetrics: TransformationMetrics? = nil
+        var aggAlerts: [AlertEvent] = []
+        for await result in group {
+            if let m = result.0 { aggMetrics = m }
+            if !result.1.isEmpty { aggAlerts = result.1 }
+        }
+        return (aggMetrics, aggAlerts)
+    }
+
+    // Publish results back on the main actor
+    await MainActor.run {
+        self.currentMetrics = metrics
+        self.recentAlerts = alerts
+    }
   }
 }
 
@@ -409,7 +440,7 @@ struct ExportDataView: View {
           ProgressView("Exporting data...")
         } else {
           Button("Export Data") {
-            Task {
+            Task.detached(priority: .userInitiated) {
               await exportMonitoringData()
             }
           }
@@ -429,7 +460,7 @@ struct ExportDataView: View {
         }
       }
       .onAppear {
-        Task {
+        Task.detached(priority: .userInitiated) {
           await exportMonitoringData()
         }
       }
@@ -447,3 +478,4 @@ struct ExportDataView: View {
 #Preview {
   CoordinateTransformationDashboard()
 }
+
