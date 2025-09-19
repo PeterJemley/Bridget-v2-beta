@@ -38,6 +38,62 @@ struct FeatureFlagServiceTests {
         // Start from known defaults every time
         featureFlagService.resetToDefaults()
     }
+    
+    // Test helper: deterministic bucketing wrapper (composition, not inheritance)
+    @MainActor
+    private struct DeterministicFeatureFlagService {
+        private let bucketClosure: (String) -> Int
+        private let service: DefaultFeatureFlagService
+
+        @MainActor
+        init(userDefaults: UserDefaults, bucketClosure: @escaping (String) -> Int) {
+            self.bucketClosure = bucketClosure
+            self.service = DefaultFeatureFlagService(userDefaults: userDefaults)
+        }
+
+        // Expose minimal forwarding used by tests
+        @MainActor
+        func resetToDefaults() {
+            service.resetToDefaults()
+        }
+
+        @MainActor
+        func updateConfig(_ config: FeatureFlagConfig) throws {
+            try service.updateConfig(config)
+        }
+
+        // Helper to access underlying config for deterministic logic
+        private func getConfig(for flag: FeatureFlag) -> FeatureFlagConfig {
+            service.getConfig(for: flag)
+        }
+
+        // Deterministic enablement using injected bucket closure
+        @MainActor
+        func isEnabledDeterministic(_ flag: FeatureFlag, for userId: String) -> Bool {
+            let config = getConfig(for: flag)
+            guard config.enabled else { return false }
+            let threshold: Int
+            switch config.rolloutPercentage {
+                case .disabled: threshold = 0
+                case .tenPercent: threshold = 10
+                case .twentyFivePercent: threshold = 25
+                case .fiftyPercent: threshold = 50
+                case .oneHundredPercent: threshold = 100
+            case .seventyFivePercent: threshold = 75
+            @unknown default: threshold = 0
+            }
+            let bucket = bucketClosure(userId) % 100
+            return bucket < threshold
+        }
+
+        @MainActor
+        func getABTestVariantDeterministic(_ flag: FeatureFlag, for userId: String) -> ABTestVariant? {
+            let config = getConfig(for: flag)
+            guard config.enabled, config.abTestEnabled == true else { return nil }
+            let bucket = bucketClosure(userId) % 100
+            return bucket < 50 ? .control : .treatment
+        }
+    }
 
     @Test("Feature flag service should initialize with default configurations")
     func defaultInitialization() throws {
@@ -71,10 +127,7 @@ struct FeatureFlagServiceTests {
 
         // Test multiple users to verify bucketing
         var enabledCount = 0
-        let testUsers = [
-            "user1", "user2", "user3", "user4", "user5", "user6", "user7",
-            "user8", "user9", "user10",
-        ]
+        let testUsers = (1...100).map { "user\($0)" }
 
         for user in testUsers {
             if featureFlagService.isEnabled(
@@ -86,7 +139,73 @@ struct FeatureFlagServiceTests {
         }
 
         // Should be approximately 50% (allowing for some variance due to hashing)
-        #expect(enabledCount >= 3 && enabledCount <= 7)
+        // Widened range to account for hash distribution variance: 30-70 out of 100 (30-70%)
+        #expect(enabledCount >= 30 && enabledCount <= 70, "Expected ~50% enabled for 100 users; got \(enabledCount)")
+    }
+    
+    @Test("Feature flag 50% rollout is deterministic with stubbed bucketing")
+    func testRolloutPercentageDeterministic() throws {
+        // Deterministic bucket: userN -> N % 100
+        let deterministic = DeterministicFeatureFlagService(
+            userDefaults: testDefaults,
+            bucketClosure: { user in
+                if let n = Int(user.replacingOccurrences(of: "user", with: "")) {
+                    return n % 100
+                }
+                return 0
+            }
+        )
+        deterministic.resetToDefaults()
+        try deterministic.updateConfig(
+            FeatureFlagConfig(
+                flag: .coordinateTransformation,
+                enabled: true,
+                rolloutPercentage: .fiftyPercent
+            )
+        )
+
+        let testUsers = (0..<100).map { "user\($0)" }
+        let enabledCount = testUsers.reduce(0) { acc, u in
+            deterministic.isEnabledDeterministic(.coordinateTransformation, for: u) ? acc + 1 : acc
+        }
+        // Exactly half should be enabled with our stub (buckets 0..49)
+        #expect(enabledCount == 50, "Deterministic bucketing should enable exactly 50/100; got \(enabledCount)")
+    }
+
+    @Test("A/B testing yields deterministic 50/50 split with stubbed bucketing")
+    func aBTestingDeterministicSplit() throws {
+        let deterministic = DeterministicFeatureFlagService(
+            userDefaults: testDefaults,
+            bucketClosure: { user in
+                if let n = Int(user.replacingOccurrences(of: "user", with: "")) {
+                    return n % 100
+                }
+                return 0
+            }
+        )
+        deterministic.resetToDefaults()
+        try deterministic.updateConfig(
+            FeatureFlagConfig(
+                flag: .coordinateTransformation,
+                enabled: true,
+                rolloutPercentage: .oneHundredPercent,
+                abTestEnabled: true,
+                abTestVariant: .control
+            )
+        )
+
+        let testUsers = (0..<100).map { "user\($0)" }
+        var control = 0
+        var treatment = 0
+        for u in testUsers {
+            if let v = deterministic.getABTestVariantDeterministic(.coordinateTransformation, for: u) {
+                switch v {
+                case .control: control += 1
+                case .treatment: treatment += 1
+                }
+            }
+        }
+        #expect(control == 50 && treatment == 50, "Expected exact 50/50 split; got control=\(control), treatment=\(treatment)")
     }
 
     @Test("A/B testing should assign consistent variants to users")
@@ -320,3 +439,4 @@ struct FeatureFlagServiceTests {
         )
     }
 }
+

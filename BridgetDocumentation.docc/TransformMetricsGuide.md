@@ -8,6 +8,8 @@
 
 The `TransformMetrics` system provides comprehensive observability and accuracy tracking for coordinate transformation operations. It includes performance metrics, cache statistics, and advanced accuracy diagnostics to ensure transformation reliability and performance.
 
+**Real-World Usage**: Metrics are automatically collected during bridge data processing when the `coordinateTransformation` feature flag is enabled, specifically during Seattle API to Seattle Reference coordinate system transformations in the `BridgeRecordValidator`.
+
 ---
 
 ## 📊 **Core Metrics**
@@ -21,6 +23,34 @@ The `TransformMetrics` system provides comprehensive observability and accuracy 
 - **Residual Tracking**: Differences between baseline and instrumented results
 - **Exact Match Rates**: Percentage of perfect transformations
 - **Statistical Analysis**: Median, p95, and maximum residuals by category
+
+---
+
+## 🔄 **Data Flow & Integration**
+
+### **Automatic Collection**
+Metrics are automatically collected during these operations:
+
+1. **Bridge Record Validation** (`BridgeRecordValidator.swift`)
+   - Seattle API coordinates → Seattle Reference transformation
+   - Feature flag controlled: Only when `coordinateTransformation` enabled
+   - A/B testing: Performance comparison between control/treatment groups
+
+2. **Coordinate Transformation Service** (`CoordinateTransformService.swift`)
+   - Every `transform()` call triggers metrics collection
+   - Error tracking for invalid inputs, unsupported systems, matrix unavailability
+   - Cache performance monitoring for matrix lookups
+   - Request timing and throughput measurement
+
+3. **Dashboard & Monitoring** (`CoordinateTransformationDashboard.swift`)
+   - Real-time display of collected metrics
+   - Export functionality for analysis
+   - Alert configuration and monitoring
+
+### **Feature Flag Control**
+- Metrics only collected when `coordinateTransformation` feature flag is enabled
+- A/B testing variants control whether transformation (and metrics) are used
+- Graceful fallback to threshold-based validation when disabled
 
 ---
 

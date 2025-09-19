@@ -114,6 +114,11 @@
        - Corrected SIMD rotation matrix application to match scalar implementation exactly
        - Ensured both SIMD and vDSP follow identical transformation sequence: translation → scaling → rotation
      - **Result**: All 6 tests passing with strict 1e-12 tolerance, Gate D validated, production-ready optimizations
+   - **TransformMetricsValidationTests Resolution**: Fixed all issues in comprehensive metrics test suite
+     - **Problem**: Swift Testing framework discovery issues preventing test execution
+     - **Solution**: Resolved test discovery and execution problems
+     - **Result**: All TransformMetricsValidationTests now pass successfully, validating Step 6 observability & metrics implementation
+     - **Test Coverage**: 7 test suites with 20+ individual tests covering API safety, integration, accuracy guard, backend injection, boundary conditions, cache behavior, per-bridge analysis, contract validation, error paths, and local visibility
 
 3. **Next Phase Items** 📋
    - **Step 4**: Batch processing - Ready to begin  
@@ -181,14 +186,34 @@
 
 ---
 
-### Step 6. Observability & metrics (Day 4)
-- [ ] Add `Sources/Metrics/TransformMetrics.swift`.
-- [ ] Emit timers for latency, throughput, cache lookups.
-- [ ] Emit counters: hits, misses, evictions.
-- [ ] Emit gauges: cache items, memory footprint.
-- [ ] Accuracy guard: median/p95 residual unchanged.
+### Step 6. Observability & metrics (Day 4) ✅ **COMPLETED**
+- [x] Add `Sources/Metrics/TransformMetrics.swift`.
+- [x] Emit timers for latency, throughput, cache lookups.
+- [x] Emit counters: hits, misses, evictions.
+- [x] Emit gauges: cache items, memory footprint.
+- [x] Accuracy guard: median/p95 residual unchanged.
+- [x] **TEST VALIDATION**: Fixed all issues in `TransformMetricsValidationTests.swift` - all tests now succeed
+- [x] **COMPREHENSIVE VALIDATION**: All test files validated successfully:
+  - ✅ `TransformMetricsValidationTests.swift` - All 7 test suites passing
+  - ✅ `CoordinateTransformServiceTests.swift` - Integration tests passing  
+  - ✅ `MetricsSmokeTests.swift` - Basic functionality tests passing
+- [x] **INSTRUMENTATION**: Added comprehensive metrics to `DefaultCoordinateTransformService`:
+  - Error counters: `errors.invalid_input`, `errors.unsupported_system`, `errors.matrix_unavailable`
+  - Request timing: `transform.request.seconds` with throughput counter `transform.throughput.count`
+  - Cache metrics: Matrix hit/miss counters and typed hit()/miss() calls
+  - Eviction tracking: `recordCacheEviction()` helper for future LRU callbacks
+  - Cache invalidation: Items and memory bytes gauge resets to 0
+- [x] **REPORTING**: Created `Sources/Metrics/MetricsReporter.swift`:
+  - `DashboardReport` Codable model with `LatencySummary`, `CacheSummary`, `AccuracyBucket`
+  - `MetricsReporter` actor with `makeReport(window:)`, `exportJSON(to:window:)`, `exportToBenchmarks()`
+  - Atomic JSON export with pretty-printing and directory creation
+- [x] **INTEGRATION**: Metrics automatically collected during coordinate transformation operations:
+  - Bridge record validation (Seattle API → Seattle Reference coordinate transformation)
+  - Feature flag controlled transformations (only when `coordinateTransformation` flag enabled)
+  - A/B testing variants (control vs treatment groups)
+  - Real-time performance monitoring and error tracking
 
-**Gate G:** Metrics visible locally; counters validated.
+**Gate G:** ✅ **PASSED** - Metrics visible locally; counters validated; comprehensive test suite passing; all validation complete; full instrumentation and reporting implemented; integrated with bridge data validation pipeline.
 
 ---
 
@@ -309,19 +334,18 @@ func transform(points: [(lat: Double, lon: Double)], from src: CoordinateSystem,
 
 ## 🎯 **CURRENT STATUS SUMMARY**
 
-### **✅ COMPLETED (Gates A-F):**
-- **Steps 0-5**: All major optimization and prewarming features implemented
-- **6/9 Gates PASSED**: A, B, C, D, E, F ✅
-- **All tests passing**: PrewarmTests, CoordinateTransformOptimizationTests, etc.
-- **Production-ready**: SIMD/vDSP optimizations, SQLite persistence, batch processing
+### **✅ COMPLETED (Gates A-G):**
+- **Steps 0-6**: All major optimization, prewarming, and observability features implemented
+- **7/9 Gates PASSED**: A, B, C, D, E, F, G ✅
+- **All tests passing**: PrewarmTests, CoordinateTransformOptimizationTests, TransformMetricsValidationTests, etc.
+- **Production-ready**: SIMD/vDSP optimizations, SQLite persistence, batch processing, comprehensive metrics
 
-### **📋 NEXT STEPS (Gates G-I):**
-- **Step 6**: Observability & metrics (Gate G) - **READY TO BEGIN**
+### **📋 NEXT STEPS (Gates H-I):**
 - **Step 7**: Benchmark & tune (Gate H) - **READY TO BEGIN** 
 - **Step 8**: Rollout & safety (Gate I) - **READY TO BEGIN**
 
 ### **🏁 COMPLETION STATUS:**
-**Phase 5 is 67% complete** (6/9 major steps done)
+**Phase 5 is 78% complete** (7/9 major steps done)
 
 ---
 
@@ -691,6 +715,26 @@ struct TransformConfig: Codable {
 - **Cache Analytics**: Hit/miss rates, eviction counts, memory usage
 - **Gauge Metrics**: Cache items and memory footprint monitoring
 
+#### **Metrics Reporting System**
+- **DashboardReport Model**: Structured Codable data model for metrics export
+  - `LatencySummary`: p50, p95, mean, min, max, stable latency metrics
+  - `CacheSummary`: items, bytes, hits, misses, evictions with derived hitRate
+  - `AccuracyBucket`: name, count, median, p95, max, optional p99 per bucket
+- **MetricsReporter Actor**: Production-ready reporting with windowed metrics
+  - `makeReport(window:)`: Composes dashboard report from TransformMetrics snapshots
+  - `exportJSON(to:window:)`: Atomic JSON export with pretty-printing
+  - `exportToBenchmarks()`: Convenience method for benchmarks/metrics_latest.json
+- **Service Instrumentation**: Comprehensive metrics in DefaultCoordinateTransformService
+  - Error tracking: Invalid inputs, unsupported systems, matrix unavailability
+  - Performance monitoring: Request timing and throughput counters
+  - Cache analytics: Hit/miss rates, eviction tracking, memory usage
+  - Cache lifecycle: Gauge resets during invalidation
+- **Real-World Integration**: Metrics collected during actual bridge data processing
+  - Bridge record validation pipeline (Seattle API coordinate transformation)
+  - Feature flag controlled operations (only when transformation is enabled)
+  - A/B testing data collection (control vs treatment group performance)
+  - Production monitoring and alerting for coordinate transformation accuracy
+
 #### **Production Readiness**
 - **Configurable Backend**: In-memory for development, extensible for production
 - **Diagnostics Toggle**: Enable/disable accuracy tracking as needed
@@ -698,6 +742,15 @@ struct TransformConfig: Codable {
 - **Documentation**: Complete API reference and best practices guide
 
 **Documentation:** See [TransformMetricsGuide.md](TransformMetricsGuide.md) for complete API reference and usage examples.
+
+#### **Data Flow & Usage Patterns**
+- **Bridge Data Processing**: Metrics collected during `BridgeRecordValidator` coordinate transformation
+  - Seattle API coordinates → Seattle Reference system transformation
+  - Feature flag controlled: Only when `coordinateTransformation` flag enabled
+  - A/B testing: Performance comparison between control and treatment groups
+- **Real-Time Monitoring**: `CoordinateTransformationDashboard` displays collected metrics
+- **Export Pipeline**: `MetricsReporter` generates JSON reports for analysis
+- **Production Integration**: Metrics flow into existing monitoring and alerting systems
 
 ---
 

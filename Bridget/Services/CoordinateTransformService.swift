@@ -17,6 +17,8 @@
 
 import CoreLocation
 import Foundation
+import OSLog
+import Dispatch
 
 // MARK: - Coordinate System Types
 
@@ -419,6 +421,7 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
 
         // Validate input coordinates
         guard isValidCoordinate(latitude: latitude, longitude: longitude) else {
+            await TransformMetrics.incr("errors.invalid_input")
             return .failure(
                 .invalidInputCoordinates(
                     latitude: latitude,
@@ -426,6 +429,8 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
                 )
             )
         }
+
+        let t0 = CFAbsoluteTimeGetCurrent()
 
         // Check if transformation is supported
         guard
@@ -435,6 +440,7 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
                 bridgeId: bridgeId
             )
         else {
+            await TransformMetrics.incr("errors.unsupported_system")
             return .failure(.unsupportedCoordinateSystem(sourceSystem))
         }
 
@@ -446,45 +452,49 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
                 bridgeId: bridgeId
             )
         else {
+            await TransformMetrics.incr("errors.matrix_unavailable")
             return .failure(.transformationCalculationFailed)
         }
 
         // Apply transformation with timing
-        return await TransformMetrics.timeOuter {
-            do {
-                let (transformedLat, transformedLon) = try applyTransformation(
-                    latitude: latitude,
-                    longitude: longitude,
-                    matrix: matrix
-                )
+        let result: TransformationResult
+        do {
+            let (transformedLat, transformedLon) = try applyTransformation(
+                latitude: latitude,
+                longitude: longitude,
+                matrix: matrix
+            )
 
-                // Determine confidence based on transformation type
-                let confidence: Double
-                if matrix == .identity {
-                    confidence = 1.0
-                } else {
-                    // Note: This is a synchronous call since we can't await inside timeInner
-                    // We'll use the cached confidence from the matrix lookup
-                    confidence = bridgeTransformations[bridgeId ?? ""]?.confidence ?? 0.5
-                }
-
-                if enableLogging {
-                    print(
-                        "📍 CoordinateTransformService: Transformed (\(latitude), \(longitude)) to (\(transformedLat), \(transformedLon))"
-                    )
-                }
-
-                return .success(
-                    latitude: transformedLat,
-                    longitude: transformedLon,
-                    confidence: confidence,
-                    matrix: matrix
-                )
-
-            } catch {
-                return .failure(.transformationCalculationFailed)
+            // Determine confidence based on transformation type
+            let confidence: Double
+            if matrix == .identity {
+                confidence = 1.0
+            } else {
+                // Note: This is a synchronous call since we can't await inside timeInner
+                // We'll use the cached confidence from the matrix lookup
+                confidence = bridgeTransformations[bridgeId ?? ""]?.confidence ?? 0.5
             }
+
+            if enableLogging {
+                print(
+                    "📍 CoordinateTransformService: Transformed (\(latitude), \(longitude)) to (\(transformedLat), \(transformedLon))"
+                )
+            }
+
+            result = .success(
+                latitude: transformedLat,
+                longitude: transformedLon,
+                confidence: confidence,
+                matrix: matrix
+            )
+
+        } catch {
+            result = .failure(.transformationCalculationFailed)
         }
+        let elapsed = CFAbsoluteTimeGetCurrent() - t0
+        await TransformMetrics.timing("transform.request.seconds", seconds: elapsed)
+        await TransformMetrics.incr("transform.throughput.count")
+        return result
     }
 
     public func transformToReferenceSystem(
@@ -528,6 +538,7 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
             )
             
             if let cached = await cache.getMatrix(for: cacheKey) {
+                await TransformMetrics.incr("cache.matrix.hit")
                 await TransformMetrics.hit()
                 matrixHitCount &+= 1
                 
@@ -572,6 +583,7 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
                 version: key.version
             )
             
+            await TransformMetrics.incr("cache.matrix.miss")
             await TransformMetrics.miss()
             matrixMissCount &+= 1
             await cache.setMatrix(m, for: cacheKey)
@@ -586,6 +598,9 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
                     }
                 }
             }
+            
+            // Placeholder gauge update: actual item count update when API available
+            await TransformMetrics.gauge("cache.matrix.items", 0)
         }
 
         return computed
@@ -640,6 +655,16 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
         }
         matrixHitCount = 0
         matrixMissCount = 0
+        Task { await TransformMetrics.gauge("cache.matrix.items", 0) }
+        Task { await TransformMetrics.gauge("cache.matrix.memory_bytes", 0) }
+    }
+    
+    /// Records a cache eviction event for metrics
+    private func recordCacheEviction() {
+        Task {
+            await TransformMetrics.incr("cache.matrix.eviction")
+            await TransformMetrics.eviction()
+        }
     }
 
     // MARK: - Metrics & Introspection
@@ -712,11 +737,13 @@ public final class DefaultCoordinateTransformService: CoordinateTransformService
         matrix: TransformationMatrix
     ) throws -> (latitude: Double, longitude: Double) {
         // Use SIMD-optimized transformation for better performance
-        let (transformedLat, transformedLon) = applyTransformationSIMD(
-            latitude: latitude,
-            longitude: longitude,
-            matrix: matrix
-        )
+        let (transformedLat, transformedLon) = TransformMetrics.time("transform.point.seconds") {
+            applyTransformationSIMD(
+                latitude: latitude,
+                longitude: longitude,
+                matrix: matrix
+            )
+        }
 
         // Validate transformed coordinates
         guard
@@ -804,5 +831,10 @@ extension DefaultCoordinateTransformService {
 }
 
 extension DefaultCoordinateTransformService: @unchecked Sendable {}
+
+
+
+
+
 
 
